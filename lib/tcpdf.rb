@@ -1051,6 +1051,7 @@ class TCPDF
 			#set font
 			SetFont(@footer_font[0], @footer_font[1] , @footer_font[2]);
 			#set style for cell border
+			prevlinewidth = GetLineWidth()
 			line_width = 0.3;
 			SetLineWidth(line_width);
 			SetDrawColor(0, 0, 0);
@@ -1059,19 +1060,32 @@ class TCPDF
 			#get footer y position
 			footer_y = @h - @footer_margin - footer_height;
 			#set current position
-			SetXY(@original_l_margin, footer_y); 
+			if @rtl
+				SetXY(@original_r_margin, footer_y)
+			else
+				SetXY(@original_l_margin, footer_y)
+			end
 			
 			#print document barcode
 			if (@barcode)
 				Ln();
-				barcode_width = ((@w - @original_l_margin - @original_r_margin)).round; #max width
-				writeBarcode(@original_l_margin, footer_y + line_width, barcode_width, footer_height - line_width, "C128B", false, false, 2, @barcode);
+				barcode_width = ((@w - @original_l_margin - @original_r_margin)/3).round #max width
+				writeBarcode(GetX(), footer_y + line_width, barcode_width, footer_height - line_width, "C128B", false, false, 2, @barcode)
 			end
 			
-			SetXY(@original_l_margin, footer_y); 
-			
+			pagenumtxt = @l['w_page'] + " " + PageNo().to_s + ' / {nb}'
+			SetY(footer_y)
+
 			#Print page number
-			Cell(0, footer_height, @l['w_page'] + " " + PageNo().to_s + ' / {nb}', 'T', 0, 'R'); 
+			if @rtl
+				SetX(@original_r_margin) 
+				Cell(0, footer_height, pagenumtxt, 'T', 0, 'L')
+			else
+				SetX(@original_l_margin) 
+				Cell(0, footer_height, pagenumtxt, 'T', 0, 'R')
+			end
+			# restore line width
+			SetLineWidth(prevlinewidth)
 		end
 	end
 	  alias_method :footer, :Footer
