@@ -427,6 +427,18 @@ class TCPDF
 	end
 	
 	#
+	# Enable or disable Right-To-Left language mode
+	# @param Boolean :enable if true enable Right-To-Left language mode.
+	# @access public
+	# @since 2.0.000 (2008-01-03)
+	#
+	def SetRTL(enable)
+		@rtl    = enable ? true : false
+		@tmprtl = false
+	end
+  alias_method :set_rtl, :SetRTL
+
+	#
 	# Set the image scale.
 	# @param float :scale image scale.
 	# @author Nicola Asuni
