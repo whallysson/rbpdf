@@ -975,40 +975,61 @@ class TCPDF
 			end
 			
 			#set current position
-			SetXY(@original_l_margin, @header_margin);
-			
-			if ((@header_logo) and (@header_logo != @@k_blank_image))
-				Image(@header_logo, @original_l_margin, @header_margin, @header_logo_width);
+			if @rtl
+				SetXY(@original_r_margin, @header_margin)
 			else
-				@img_rb_y = GetY();
+				SetXY(@original_l_margin, @header_margin)
+			end
+			
+			if @header_logo and (@header_logo != @@k_blank_image)
+				Image(@header_logo, GetX(), @header_margin, @header_logo_width)
+			else
+				@img_rb_x = GetX()
+				@img_rb_y = GetY()
 			end
 			
 			cell_height = ((@@k_cell_height_ratio * @header_font[2]) / @k).round(2)
 			
-			header_x = @original_l_margin + (@header_logo_width * 1.05); #set left margin for text data cell
+			# set starting margin for text data cell
+			if @rtl
+				header_x = @original_r_margin + @header_logo_width * 1.1
+			else
+				header_x = @original_l_margin + @header_logo_width * 1.1
+			end
 			
 			# header title
 			SetFont(@header_font[0], 'B', @header_font[2] + 1);
 			SetX(header_x);
-			Cell(@header_width, cell_height, @header_title, 0, 1, 'L'); 
+			Cell(@header_width, cell_height, @header_title, 0, 1, '')
 			
 			# header string
 			SetFont(@header_font[0], @header_font[1], @header_font[2]);
 			SetX(header_x);
-			MultiCell(@header_width, cell_height, @header_string, 0, 'L', 0);
+			MultiCell(@header_width, cell_height, @header_string, 0, '', 0)
 			
 			# print an ending header line
-			if (@header_width)
+			if @header_width == 0
 				#set style for cell border
-				SetLineWidth(0.3);
+				prevlinewidth = GetLineWidth()
+				line_width = 0.3
+				SetLineWidth(line_width)
 				SetDrawColor(0, 0, 0);
 				SetY(1 + (@img_rb_y > GetY() ? @img_rb_y : GetY()));
-				SetX(@original_l_margin);
+				if @rtl
+					SetX(@original_r_margin)
+				else
+					SetX(@original_l_margin)
+				end
 				Cell(0, 0, '', 'T', 0, 'C'); 
+				SetLineWidth(prevlinewidth)
 			end
 			
 			#restore position
-			SetXY(@original_l_margin, @t_margin);
+			if @rtl
+				SetXY(@original_r_margin, @t_margin)
+			else
+				SetXY(@original_l_margin, @t_margin)
+			end
 		end
 	end
 	  alias_method :header, :Header
