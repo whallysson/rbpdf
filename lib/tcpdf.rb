@@ -543,7 +543,7 @@ class TCPDF
 	def SetLeftMargin(margin)
 		#Set left margin
 		@l_margin = margin
-		if ((@page>0) and (@x < margin))
+		if (@page > 0) and (@x < margin)
 			@x = margin
 		end
 	end
@@ -558,6 +558,9 @@ class TCPDF
 	def SetTopMargin(margin)
 		#Set top margin
 		@t_margin = margin
+		if (@page > 0) and (@y < margin)
+			@y = margin
+		end
 	end
   alias_method :set_top_margin, :SetTopMargin
 
@@ -568,8 +571,10 @@ class TCPDF
 	# @see SetLeftMargin(), SetTopMargin(), SetAutoPageBreak(), SetMargins()
 	#
 	def SetRightMargin(margin)
-		#Set right margin
 		@r_margin = margin
+		if (@page > 0) and (@x > (@w - margin))
+			@x = @w - margin
+		end
 	end
   alias_method :set_right_margin, :SetRightMargin
 
