@@ -439,6 +439,17 @@ class TCPDF
   alias_method :set_rtl, :SetRTL
 
 	#
+	# Force temporary RTL language direction
+	# @param mixed :mode can be false, 'L' for LTR or 'R' for RTL
+	# @access public
+	# @since 2.1.000 (2008-01-09)
+	#
+	def SetTempRTL(mode)
+		@tmprtl = mode
+	end
+  alias_method :set_temp_rtl, :SetTempRTL
+
+	#
 	# Set the image scale.
 	# @param float :scale image scale.
 	# @author Nicola Asuni
