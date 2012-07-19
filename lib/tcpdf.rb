@@ -1218,6 +1218,18 @@ class TCPDF
   alias_method :set_line_width, :SetLineWidth
 
 	#
+	# Returns the current the line width.
+	# @return int Line width
+	# @access public
+	# @since 2.1.000 (2008-01-07)
+	# @see Line(), SetLineWidth()
+	#
+	def GetLineWidth()
+		return @line_width
+	end
+  alias_method :get_line_width, :GetLineWidth
+
+	#
 	# Draws a line between two points.
 	# @param float :x1 Abscissa of first point
 	# @param float :y1 Ordinate of first point
