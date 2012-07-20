@@ -2336,29 +2336,44 @@ class TCPDF
   alias_method :ln, :Ln
 
 	#
-	# Returns the abscissa of the current position.
+	# Returns the relative X value of current position.
+	# The value is relative to the left border for LTR languages and to the right border for RTL languages.
 	# @return float
 	# @since 1.2
 	# @see SetX(), GetY(), SetY()
 	#
 	def GetX()
 		#Get x position
-		return @x;
+		if @rtl
+			return @w - @x
+		else
+			return @x
+		end
 	end
   alias_method :get_x, :GetX
 
 	#
-	# Defines the abscissa of the current position. If the passed value is negative, it is relative to the right of the page.
+	# Defines the abscissa of the current position.
+	# If the passed value is negative, it is relative to the right of the page (or left if language is RTL).
 	# @param float :x The value of the abscissa.
+	# @access public
 	# @since 1.2
 	# @see GetX(), GetY(), SetY(), SetXY()
 	#
 	def SetX(x)
 		#Set x position
-		if (x>=0)
-			@x = x;
+		if @rtl
+			if x >= 0
+				@x = @w - x
+			else
+				@x = x.abs
+			end
 		else
-			@x=@w+x;
+			if x >= 0
+				@x = x
+			else
+				@x = @w + x
+			end
 		end
 	end
   alias_method :set_x, :SetX
@@ -2376,14 +2391,19 @@ class TCPDF
   alias_method :get_y, :GetY
 
 	#
-	# Moves the current abscissa back to the left margin and sets the ordinate. If the passed value is negative, it is relative to the bottom of the page.
+	# Moves the current abscissa back to the left margin and sets the ordinate.
+	# If the passed value is negative, it is relative to the bottom of the page.
 	# @param float :y The value of the ordinate.
 	# @since 1.0
 	# @see GetX(), GetY(), SetY(), SetXY()
 	#
 	def SetY(y)
 		#Set y position and reset x
-		@x=@l_margin;
+		if @rtl
+			@x = @w - @r_margin
+		else
+			@x = @l_margin
+		end
 		if (y>=0)
 			@y = y;
 		else
