@@ -3544,6 +3544,24 @@ class TCPDF
 	
 	#
 	# Converts UTF-8 strings to UTF16-BE.<br>
+	# @param string :str string to process.
+	# @param boolean :setbom if true set the Byte Order Mark (BOM = 0xFEFF)
+	# @return string
+	# @access protected
+	# @author Nicola Asuni
+	# @since 1.53.0.TC005 (2005-01-05)
+	# @uses UTF8StringToArray(), arrUTF8ToUTF16BE()
+	#
+	def UTF8ToUTF16BE(str, setbom=true)
+		if !@is_unicode
+			return str # string is not in unicode
+		end
+		unicode = UTF8StringToArray(str) # array containing UTF-8 unicode values (UCS4)
+		return arrUTF8ToUTF16BE(unicode, setbom)
+	end
+
+	#
+	# Converts array of UTF-8 characters to UTF16-BE string.<br>
 	# Based on: http://www.faqs.org/rfcs/rfc2781.html
  	# <pre>
 	#   Encoding UTF-16:
@@ -3572,22 +3590,16 @@ class TCPDF
 	#    W1 = 110110yyyyyyyyyy
 	#    W2 = 110111xxxxxxxxxx
 	# </pre>
-	# @param string :str string to process.
+	# @param array :unicode array containing UTF-8 unicode values (UCS4)
 	# @param boolean :setbom if true set the Byte Order Mark (BOM = 0xFEFF)
-	# @return string
+	# @return string (UTF-16BE)
 	# @access protected
 	# @author Nicola Asuni
-	# @since 1.53.0.TC005 (2005-01-05)
-	# @uses UTF8StringToArray
+	# @since 2.1.000 (2008-01-08)
+	# @see UTF8ToUTF16BE()
 	#
-	def UTF8ToUTF16BE(str, setbom=true)
-		if (!@is_unicode)
-			return str; # string is not in unicode
-		end
+	def arrUTF8ToUTF16BE(unicode, setbom=true)
 		outstr = ""; # string to be returned
-		unicode = UTF8StringToArray(str); # array containing UTF-8 unicode values
-		numitems = unicode.length;
-		
 		if (setbom)
 			outstr << "\xFE\xFF"; # Byte Order Mark (BOM)
 		end
