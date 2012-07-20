@@ -2278,7 +2278,6 @@ class TCPDF
 	# Supported formats are JPEG and PNG.
 	# For JPEG, all flavors are allowed:<ul><li>gray scales</li><li>true colors (24 bits)</li><li>CMYK (32 bits)</li></ul>
 	# For PNG, are allowed:<ul><li>gray scales on at most 8 bits (256 levels)</li><li>indexed colors</li><li>true colors (24 bits)</li></ul>
-	# but are not supported:<ul><li>Interlacing</li><li>Alpha channel</li></ul>
 	# If a transparent color is defined, it will be taken into account (but will be only interpreted by Acrobat 4 and above).<br />
 	# The format can be specified explicitly or inferred from the file extension.<br />
 	# It is possible to put a link on the image.<br />
@@ -2290,10 +2289,11 @@ class TCPDF
 	# @param float :h Height of the image in the page. If not specified or equal to zero, it is automatically calculated.
 	# @param string :type Image format. Possible values are (case insensitive): JPG, JPEG, PNG. If not specified, the type is inferred from the file extension.
 	# @param mixed :link URL or identifier returned by AddLink().
+	# @param string :align Indicates the alignment of the pointer next to image insertion relative to image height. The value can be:<ul><li>T: top-right for LTR or top-left for RTL</li><li>M: middle-right for LTR or middle-left for RTL</li><li>B: bottom-right for LTR or bottom-left for RTL</li><li>N: next line</li></ul>
 	# @since 1.1
 	# @see AddLink()
 	#
-	def Image(file, x, y, w=0, h=0, type='', link=nil)
+	def Image(file, x, y, w=0, h=0, type='', link=nil, align='')
 		#Put an image on the page
 		if (@images[file].nil?)
 			#First use of image, get info
@@ -2307,6 +2307,8 @@ class TCPDF
 			type.downcase!
 			if (type == 'jpg' or type == 'jpeg')
 				info=parsejpg(file);
+#			elsif type == 'gif'
+#				info=parsegif(file)
 			elsif (type == 'png')
 				info=parsepng(file);
 			else
@@ -2316,6 +2318,10 @@ class TCPDF
 					Error('Unsupported image type: ' + type);
 				end
 				info=send(mtd, file);
+			end
+			if info == false
+				# If false, we cannot process image
+				return
 			end
 			info['i']=@images.length+1;
 			@images[file] = info;
@@ -2335,15 +2341,52 @@ class TCPDF
 		if (h == 0)
 			h = w * info['h'] / info['w'];
 		end
-		out(sprintf('q %.2f 0 0 %.2f %.2f %.2f cm /I%d Do Q', w*@k, h*@k, x*@k, (@h-(y+h))*@k, info['i']));
-		if (link)
-			Link(x, y, w, h, link);
+
+		# 2007-10-19 Warren Sherliker
+		# Check whether we need a new page first as this does not fit
+		# Copied from Cell()
+		if((@y + h) > @page_break_trigger) and !@in_footer and AcceptPageBreak()
+			# Automatic page break
+			AddPage(@cur_orientation)
+			# Reset coordinates to top fo next page
+			x = GetX()
+			y = GetY()
 		end
+		# 2007-10-19 Warren Sherliker: End Edit
 
 		#2002-07-31 - Nicola Asuni
-		# set right-bottom corner coordinates
-		@img_rb_x = x + w;
+		# set bottomcoordinates
 		@img_rb_y = y + h;
+		if @rtl
+			ximg = @w - x - w
+			# set left side coordinate
+			@img_rb_x = ximg
+		else
+			ximg = x
+			# set right side coordinate
+			@img_rb_x = ximg + w
+		end
+		xkimg = ximg * @k
+		out(sprintf('q %.2f 0 0 %.2f %.2f %.2f cm /I%d Do Q', w * @k, h * @k, xkimg, (@h -(y + h)) * @k, info['i']))
+
+		if link
+			Link(ximg, y, w, h, link)
+		end
+
+		# set pointer to align the successive text/objects
+		case align
+		when 'T'
+			@y = y
+			@x = @img_rb_x
+		when 'M'
+			@y = y + (h/2).round
+			@x = @img_rb_x
+		when 'B'
+			@y = @img_rb_y
+			@x = @img_rb_x
+		when 'N'
+			SetY(@img_rb_y)
+		end
 	end
   alias_method :image, :Image
 
