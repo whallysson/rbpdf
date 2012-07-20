@@ -225,6 +225,10 @@ class TCPDF
 		# 	mb_internal_encoding("ASCII");
 		# }
 			
+		# set language direction
+		@rtl = false
+		@tmprtl = false
+
 		#Some checks
 		dochecks();
 		
