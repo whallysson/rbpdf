@@ -3085,7 +3085,11 @@ class TCPDF
 		@page += 1;
 		@pages[@page]='';
 		@state=2;
-		@x=@l_margin;
+		if @rtl
+			@x = @w - @r_margin
+		else
+			@x = @l_margin
+		end
 		@y=@t_margin;
 		@font_family='';
 		#Page orientation
