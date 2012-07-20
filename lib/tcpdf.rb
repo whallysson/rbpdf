@@ -2164,15 +2164,24 @@ class TCPDF
 	def Write(h, txt, link=nil, fill=0)
 
 		#Output text in flowing mode
-		w = @w - @r_margin - @x;
-		wmax = (w - 2 * @c_margin);
+		# calculating remaining line width ($w)
+		if @rtl
+			w = @x - @l_margin
+		else
+			w = @w - @r_margin - @x
+		end
+		wmax = w - 2 * @c_margin
     
 		s = txt.gsub("\r", '');
 		nb = s.length;
 
 		# handle single space character
 		if ((nb==1) and (s == " "))
-			@x += GetStringWidth(s);
+			if @rtl
+				@x -= GetStringWidth(s)
+			else
+				@x += GetStringWidth(s)
+			end
 			return;
 		end
 
@@ -2192,8 +2201,13 @@ class TCPDF
 				j = i;
 				l = 0;
 				if (nl == 1)
-					@x = @l_margin;
-					w = @w - @r_margin - @x;
+					if @rtl
+						@x = @w - @r_margin
+						w = @x - @l_margin
+					else
+						@x = @l_margin
+						w = @w - @r_margin - @x
+					end
 					wmax = (w - 2 * @c_margin);
 				end
 				nl += 1;
@@ -2206,16 +2220,26 @@ class TCPDF
 			if (l > wmax)
 				#Automatic line break (word wrapping)
 				if (sep == -1)
-					if (@x > @l_margin)
+					if !@rtl and (@x > @l_margin)
 						#Move to next line
 						@x = @l_margin;
 						@y += h;
 						w=@w - @r_margin - @x;
-						wmax=(w - 2 * @c_margin);
+						wmax = w - 2 * @c_margin
 						i += 1
 						nl += 1
 						next
+					elsif @rtl and (@x < @r_margin)
+						# Move to next line
+						@x = @w - @r_margin
+						@y += h
+						w = @x - @l_margin
+						wmax = w - 2 * @c_margin
+						i +=1
+						nl += 1
+						next
 					end
+
 					if (i == j)
 						i += 1
 					end
@@ -2228,8 +2252,13 @@ class TCPDF
 				j = i;
 				l = 0;
 				if (nl==1)
-					@x = @l_margin;
-					w = @w - @r_margin - @x;
+					if @rtl
+						@x = @w - @r_margin
+						w = @x - @l_margin
+					else
+						@x = @l_margin
+						w = @w - @r_margin - @x
+					end
 					wmax = (w - 2 * @c_margin);
 				end
 				nl += 1;
@@ -2239,7 +2268,7 @@ class TCPDF
 		end
 		#Last chunk
 		if (i != j)
-			Cell(GetStringWidth(s[j..i]), h, s[j..i], 0, 0, '', fill, link);
+			Cell(GetStringWidth(s[j..i]) + 2 * @c_margin, h, s[j..i], 0, 0, '', fill, link)
 		end
 	end
   alias_method :write, :Write
