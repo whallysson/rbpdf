@@ -2398,7 +2398,11 @@ class TCPDF
 	#
 	def Ln(h='')
 		#Line feed; default value is last cell height
-		@x=@l_margin;
+		if @rtl
+			@x = @w - @r_margin
+		else
+			@x = @l_margin
+		end
 		if (h.is_a?(String))
 			@y += @lasth;
 		else
