@@ -2420,6 +2420,17 @@ class TCPDF
   alias_method :get_y, :GetY
 
 	#
+	# Returns the absolute X value of current position.
+	# @return float
+	# @since 1.2
+	# @see SetY(), GetX(), SetX()
+	#
+	def GetAbsX()
+		return @x
+	end
+  alias_method :get_abs_x, :GetAbsX
+
+	#
 	# Moves the current abscissa back to the left margin and sets the ordinate.
 	# If the passed value is negative, it is relative to the bottom of the page.
 	# @param float :y The value of the ordinate.
