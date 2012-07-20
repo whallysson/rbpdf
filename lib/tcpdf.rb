@@ -1247,6 +1247,19 @@ class TCPDF
   alias_method :get_string_width, :GetStringWidth
 
 	#
+	# Returns the numbero of characters in a string.
+	# @param string :s The input string.
+	# @return int number of characters
+	# @since 2.0.0001 (2008-01-07)
+	#
+	def GetNumChars(s)
+		if @is_unicode
+			return UTF8StringToArray(s).length
+		end 
+		return s.length
+	end
+
+	#
 	# Defines the line width. By default, the value equals 0.2 mm. The method can be called before the first page is created and the value is retained from page to page.
 	# @param float :width The width.
 	# @since 1.0
