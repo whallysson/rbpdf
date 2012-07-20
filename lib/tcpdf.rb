@@ -3015,6 +3015,9 @@ class TCPDF
 		elsif (@layout_mode=='two')
 			out('/PageLayout /TwoColumnLeft');
 		end
+		if @rtl
+			out('/ViewerPreferences << /Direction /R2L >>')
+		end
 	end
 
 	#
