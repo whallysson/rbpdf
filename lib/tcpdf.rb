@@ -2646,7 +2646,7 @@ class TCPDF
 	def begindoc()
 		#Start document
 		@state=1;
-		out('%PDF-1.3');
+		out('%PDF-' + @pdf_version)
 	end
 
 	#
