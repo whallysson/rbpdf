@@ -3356,6 +3356,7 @@ class TCPDF
 	#
 	def SetLanguageArray(language)
 		@l = language;
+		@rtl = @l['a_meta_dir'] == 'rtl' ? true : false
 	end
 	alias_method :set_language_array, :SetLanguageArray
 	#
