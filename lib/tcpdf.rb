@@ -1995,10 +1995,20 @@ class TCPDF
 		prevx = @x;
 		prevy = @y;
 		 
+		# get current page number
+		startpage = @page
+
+		# calculate remaining vertical space on first page ($startpage)
+		restspace = GetPageHeight() - GetY() - GetBreakMargin()
+
 		#Output text with automatic or explicit line breaks
 
 		if (w == 0)
-			w = @w - @r_margin - @x;
+			if @rtl
+				w = @x - @l_margin
+			else
+				w = @w - @r_margin - @x
+			end
 		end
 
 		wmax = (w - 2 * @c_margin);
@@ -2006,23 +2016,6 @@ class TCPDF
 		s = txt.gsub("\r", ''); # remove carriage returns
 		nb = s.length;
 
-		b=0;
-		if (border)
-			if (border==1)
-				border='LTRB';
-				b='LRT';
-				b2='LR';
-			elsif border.is_a?(String)
-				b2='';
-				if (border.include?('L'))
-					b2<<'L';
-				end
-				if (border.include?('R'))
-					b2<<'R';
-				end
-				b=(border.include?('T')) ? b2 + 'T' : b2;
-			end
-		end
 		sep=-1;
 		to_index=0;
 		from_j=0;
@@ -2043,7 +2036,7 @@ class TCPDF
         end_i = to_index == 0 ? 0 : to_index - 1
         # Changed from s[from_j..to_index] to fix bug reported by Hans Allis.
         from_j = to_index == 0 ? 1 : from_j 
-        Cell(w, h, s[from_j..end_i], b, 2, align, fill) 
+        Cell(w, h, s[from_j..end_i], 0, 2, align, fill, '') 
         #change end
 				to_index += 1
 				sep=-1
@@ -2051,7 +2044,6 @@ class TCPDF
 				l=0
 				ns=0
 				nl += 1
-				b = b2 if border and nl==2
 				next
 			end
 			if (c == " "[0])
@@ -2072,13 +2064,13 @@ class TCPDF
 						@ws = 0;
 						out('0 Tw');
 					end
-          Cell(w, h, s[from_j..to_index-1], b, 2, align, fill) # my FPDF version
+					Cell(w, h, s[from_j..to_index-1], 0, 2, align, fill, '') # my FPDF version
 				else
 					if (align=='J' || align=='justify' || align=='justified')
-						@ws = (ns>1) ? (wmax-ls)/(ns-1) : 0;
+						@ws = (ns>1) ? (wmax-ls) / 1000 * @font_size / (ns-1) : 0
 						out(sprintf('%.3f Tw', @ws * @k));
 					end
-					Cell(w, h, s[from_j..sep], b, 2, align, fill);
+					Cell(w, h, s[from_j..sep], 0, 2, align, fill, '')
 					to_index = sep + 1;
 				end
 				sep=-1;
@@ -2086,9 +2078,6 @@ class TCPDF
 				l=0;
 				ns=0;
 				nl += 1;
-				if (border and (nl==2))
-					b = b2;
-				end
 			else
 				to_index += 1;
 			end
@@ -2098,24 +2087,58 @@ class TCPDF
 			@ws=0;
 			out('0 Tw');
 		end
-		if (border.is_a?(String) and border.include?('B'))
-			b<<'B';
+
+		if(align == "J")
+			align = "L"
 		end
-		Cell(w, h, s[from_j, to_index-from_j], b, 2, align, fill);
+		Cell(w, h, s[from_j..end_i], 0, 2, align, fill, '')
+
+		# Get end-of-text Y position
+		currentY = GetY()
+		# get latest page number
+		endpage = @page
+
+		if border
+			# check if a new page has been created
+			if endpage > startpage
+				# design borders around HTML cells.
+				for page in startpage..endpage
+					@page = page
+					if page == startpage
+						@y = GetPageHeight() - restspace - GetBreakMargin()
+						h = restspace - 1
+					elsif page == endpage
+						@y = @t_margin # put cursor at the beginning of text
+						h = currentY - @t_margin
+					else
+						@y = @t_margin # put cursor at the beginning of text
+						h = GetPageHeight() - @t_margin - GetBreakMargin()
+					end
+					Cell(w, h, "", border, 1, '', 0)
+				end
+			else
+				h = h > currentY - prevy ? h : currentY - prevy
+				@y = prevy # put cursor at the beginning of text
+				# design a cell around the text
+				Cell(w, h, "", border, 1, '', 0)
+			end
+		end
 		
 		# move cursor to specified position
-		# since 2007-03-03
-		if (ln == 1)
-			# go to the beginning of the next line
-			@x = @l_margin;
-		elsif (ln == 0)
-			# go to the top-right of the cell
+		if ln > 0
+			# Go to the beginning of the next line
+			SetY(currentY)
+			if ln == 2
+				SetX(prevx + w)
+			end
+		else
+			# go left or right by case
+			@page = startpage
 			@y = prevy;
-			@x = prevx + w;
-		elsif (ln == 2)
-			# go to the bottom-left of the cell
-			@x = prevx;
+			SetX(prevx + w)
 		end
+
+		return nl
 	end
   alias_method :multi_cell, :MultiCell
 
