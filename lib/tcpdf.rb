@@ -1765,10 +1765,11 @@ class TCPDF
 	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L or empty string: left align (default value)</li><li>C: center</li><li>R: right align</li></ul>
 	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
 	# @param mixed :link URL or identifier returned by AddLink().
+	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
 	# @since 1.0
 	# @see SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), AddLink(), Ln(), MultiCell(), Write(), SetAutoPageBreak()
 	#
-	def Cell(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil)
+	def Cell(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0)
 		#Output a cell
 		k=@k;
 		if ((@y + h) > @page_break_trigger and !@in_footer and AcceptPageBreak())
@@ -1787,7 +1788,11 @@ class TCPDF
 			end
 		end
 		if (w == 0)
-			w = @w - @r_margin - @x;
+			if @rtl
+				w = @x - @l_margin
+			else
+				w = @w - @r_margin - @x
+			end
 		end
 		s = '';
 		if ((fill.to_i == 1) or (border.to_i == 1))
@@ -1796,30 +1801,102 @@ class TCPDF
 			else
 				op = 'S';
 			end
-			s = sprintf('%.2f %.2f %.2f %.2f re %s ', @x * k, (@h - @y) * k, w * k, -h * k, op);
+
+			if @rtl
+				xk = (@x - w) * k
+			else
+				xk = @x * k
+			end
+			s << sprintf('%.2f %.2f %.2f %.2f re %s ', xk, (@h - @y) * k, w * k, -h * k, op)
 		end
 		if (border.is_a?(String))
 			x=@x;
 			y=@y;
 			if (border.include?('L'))
-				s<<sprintf('%.2f %.2f m %.2f %.2f l S ', x*k,(@h-y)*k, x*k,(@h-(y+h))*k);
+				if @rtl
+					xk = (x - w) * k
+				else
+					xk = x * k
+				end
+				s << sprintf('%.2f %.2f m %.2f %.2f l S ', xk,(@h-y)*k, xk,(@h-(y+h))*k)
 			end
 			if (border.include?('T'))
-				s<<sprintf('%.2f %.2f m %.2f %.2f l S ', x*k,(@h-y)*k,(x+w)*k,(@h-y)*k);
+				if @rtl
+					xk = (x - w) * k
+					xwk = x * k
+				else
+					xk = x * k
+					xwk = (x + w) * k
+				end
+				s << sprintf('%.2f %.2f m %.2f %.2f l S ', xk,(@h-y)*k,xwk,(@h-y)*k)
 			end
 			if (border.include?('R'))
-				s<<sprintf('%.2f %.2f m %.2f %.2f l S ',(x+w)*k,(@h-y)*k,(x+w)*k,(@h-(y+h))*k);
+				if @rtl
+					xk = x * k
+				else
+					xk = (x + w) * k
+				end
+				s << sprintf('%.2f %.2f m %.2f %.2f l S ',xk,(@h-y)*k,xk,(@h-(y+h))*k)
 			end
 			if (border.include?('B'))
-				s<<sprintf('%.2f %.2f m %.2f %.2f l S ', x*k,(@h-(y+h))*k,(x+w)*k,(@h-(y+h))*k);
+				if @rtl
+					xk = (x - w) * k
+					xwk = x * k
+				else
+					xk = x * k
+					xwk = (x + w) * k
+				end
+				s << sprintf('%.2f %.2f m %.2f %.2f l S ', xk,(@h-(y+h))*k,xwk,(@h-(y+h))*k)
 			end
 		end
 		if (txt != '')
+			# text lenght
 			width = GetStringWidth(txt);
-			if (align == 'R' || align == 'right')
-				dx = w - @c_margin - width;
+			# ratio between cell lenght and text lenght
+			ratio = (w - (2 * @c_margin)) / width
+
+			# stretch text if requested
+			if (stretch > 0) and ((ratio < 1) or ((ratio > 1) and ((stretch % 2) == 0)))
+				if stretch > 2
+					# spacing
+					# Calculate character spacing in points
+					s_length =  GetNumChars(s) - 1
+					char_space = (w - (2 * @c_margin) - width) / (s_length > 1 ? s_length : 1) * @k
+					# Set character spacing
+					out(sprintf('BT %.2f Tc ET', char_space))
+				else
+					# scaling
+					# Calculate horizontal scaling
+					horiz_scale = ratio * 100.0
+					# Set horizontal scaling
+					out(sprintf('BT %.2f Tz ET', horiz_scale))
+				end
+				align = ''
+				width = w - (2 * @c_margin)
+			else
+				stretch == 0
+			end
+
+			if (align == 'L' || align == 'left')
+				if @rtl
+					dx = w - @c_margin - width
+				else
+					dx = @c_margin
+				end
+			elsif (align == 'R' || align == 'right')
+				if @rtl
+					dx = @c_margin
+				else
+					dx = w - @c_margin - width
+				end
 			elsif (align=='C' || align == 'center')
 				dx = (w - width)/2;
+			elsif (align=='J' || align=='justify' || align=='justified')
+				if @rtl
+					dx = w - @c_margin - width
+				else
+					dx = @c_margin
+				end
 			else
 				dx = @c_margin;
 			end
@@ -1827,29 +1904,74 @@ class TCPDF
 				s << 'q ' + @text_color + ' ';
 			end
 			txt2 = escapetext(txt);
-			s<<sprintf('BT %.2f %.2f Td (%s) Tj ET', (@x + dx) * k, (@h - (@y + 0.5 * h + 0.3 * @font_size)) * k, txt2);
+			if @rtl
+				xdk = (@x - dx - width) * k
+			else
+				xdk = (@x + dx) * k
+			end
+			# 2008-02-16 Jacek Czekaj - multibyte justification
+			if (align == 'J')
+				# count number of spaces
+				ns = txt.count(' ')
+				# get string width without spaces
+				width = GetStringWidth(txt.gsub(' ', ''))
+				# set word position to be used with TJ operator
+				txt2 = txt2.gsub(0.chr + ' ', ') ' + (-2830*(w-width-2)/(ns ? ns : 1)/@font_size/@k).to_s + ' (')
+			end
+			s << sprintf('BT %.2f %.2f Td [(%s)] TJ ET', xdk, (@h - (@y + 0.5 * h + 0.3 * @font_size)) * k, txt2);
 			if (@underline)
-				s<<' ' + dounderline(@x + dx, @y + 0.5 * h + 0.3 * @font_size, txt);
+				if @rtl
+					xdx = @x - dx - width
+				else
+					xdx = @x + dx
+				end
+				s << ' ' + dounderline(xdx, @y + 0.5 * h + 0.3 * @font_size, txt)
 			end
 			if (@color_flag)
 				s<<' Q';
 			end
 			if link && !link.empty?
-				Link(@x + dx, @y + 0.5 * h - 0.5 * @font_size, width, @font_size, link);
+				if @rtl
+					xdx = @x - dx - width
+				else
+					xdx = @x + dx
+				end
+				Link(xdx, @y + 0.5 * h - 0.5 * @font_size, width, @font_size, link)
 			end
 		end
+
+		# output cell
 		if (s)
+			# output cell
 			out(s);
+			# reset text stretching
+			if stretch > 2
+				# Reset character horizontal spacing
+				out('BT 0 Tc ET')
+			elsif stretch > 0
+				# Reset character horizontal scaling
+				out('BT 100 Tz ET')
+			end
 		end
+
 		@lasth = h;
 		if (ln.to_i>0)
-			# Go to next line
+			# Go to the beginning of the next line
 			@y += h;
 			if (ln == 1)
-				@x = @l_margin;
+				if @rtl
+					@x = @w - @r_margin
+				else
+					@x = @l_margin
+				end
 			end
 		else
-			@x += w;
+			# go left or right by case
+			if @rtl
+				@x -= w
+			else
+				@x += w
+			end
 		end
 	end
   alias_method :cell, :Cell
