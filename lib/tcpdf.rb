@@ -1665,9 +1665,14 @@ class TCPDF
 	#
 	def Text(x, y, txt)
 		#Output a string
-		s=sprintf('BT %.2f %.2f Td (%s) Tj ET', x * @k, (@h-y) * @k, escapetext(txt));
+		if @rtl
+			xr = @w - x - GetStringWidth(txt)
+		else
+			xr = x
+		end
+		s = sprintf('BT %.2f %.2f Td (%s) Tj ET', xr * @k, (@h-y) * @k, escapetext(txt))
 		if (@underline and (txt!=''))
-			s += ' ' + dounderline(x, y, txt);
+			s += ' ' + dounderline(xr, y, txt)
 		end
 		if (@color_flag)
 			s='q ' + @text_color + ' ' + s + ' Q';
