@@ -3139,6 +3139,9 @@ class TCPDF
 
 	#
 	# Underline text
+	# @param int :x X coordinate
+	# @param int :y Y coordinate
+	# @param string :txt text to underline
 	# @access protected
 	#
 	def dounderline(x, y, txt)
