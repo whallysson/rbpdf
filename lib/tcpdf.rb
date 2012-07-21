@@ -3730,11 +3730,11 @@ class TCPDF
 	# @param string :html text to display
 	# @param boolean :ln if true add a new line after text (default = true)
 	# @param int :fill Indicates if the background must be painted (1) or transparent (0). Default value: 0.
+	# @param boolean :reseth if true reset the last cell height (default false).
+	# @param boolean :cell if true add the default @c_margin space to each Write.
 	#
-	def writeHTML(html, ln=true, fill=0, h=0)
-    
-    @lasth = h if h > 0
-		if (@lasth == 0)
+	def writeHTML(html, ln=true, fill=0, reseth=false, cell=false)
+		if (@lasth == 0) or reseth
 			#set row height
 			@lasth = @font_size * @@k_cell_height_ratio; 
 		end
@@ -3773,7 +3773,12 @@ class TCPDF
 						Cell(@tdwidth, @tdheight, '', @tableborder, 0, @tdalign, @tdfill);
 					end
 				elsif ((element.strip.length > 0) and (element != "&nbsp;"))
+					ctmpmargin = @c_margin
+					if !cell
+						@c_margin = 0
+					end
 					Write(@lasth, unhtmlentities(element), '', fill);
+					@c_margin = ctmpmargin
 				end
       end
     end
