@@ -3798,33 +3798,39 @@ class TCPDF
 	# @param float :y upper-left corner Y coordinate
 	# @param string :html html text to print. Default value: empty string.
 	# @param mixed :border Indicates if borders must be drawn around the cell. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
-	# @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right</li><li>1: to the beginning of the next line</li><li>2: below</li></ul>
+	# @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right (or left for RTL language)</li><li>1: to the beginning of the next line</li><li>2: below</li></ul>
 # Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
 	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
+	# @param boolean :reseth if true reset the last cell height (default false).
 	# @see Cell()
 	#
-	def writeHTMLCell(w, h, x, y, html='', border=0, ln=0, fill=0)
+	def writeHTMLCell(w, h, x, y, html='', border=0, ln=0, fill=0, reseth=false)
 		
-		if (@lasth == 0)
+		if (@lasth == 0) or reseth
 			#set row height
 			@lasth = @font_size * @@k_cell_height_ratio; 
 		end
 		
-		if (x == 0)
-			x = GetX();
-		end
-		if (y == 0)
-			y = GetY();
-		end
-		
 		# get current page number
-		pagenum = @page;
+		startpage = @page
 		
-		SetX(x);
-		SetY(y);
+		if y != 0
+			SetY(y)
+		else
+			y = GetY()
+		end
+		if x != 0
+			SetX(x)
+		else
+			x = GetX()
+		end
 				
 		if (w == 0)
-			w = @fw - x - @r_margin;
+			if @rtl
+				w = @x - @l_margin
+			else
+				w = @w - @r_margin - @x
+			end
 		end
 		
 		# store original margin values
@@ -3832,42 +3838,66 @@ class TCPDF
 		r_margin = @r_margin;
 		
 		# set new margin values
-		SetLeftMargin(x);
-		SetRightMargin(@fw - x - w);
+		if @rtl
+			SetLeftMargin(@x - w)
+			SetRightMargin(@w - @x)
+		else
+			SetLeftMargin(@x)
+			SetRightMargin(@w - @x - w)
+		end
 				
-		# calculate remaining vertical space on page
+		# calculate remaining vertical space on first page (startpage)
 		restspace = GetPageHeight() - GetY() - GetBreakMargin();
 		
-		writeHTML(html, true, fill); # write html text
+		# Write HTML text
+		writeHTML(html, true, fill, reseth, true)
 		
+		# Get end-of-text Y position
 		currentY =  GetY();
+		# get latest page number
+		endpage = @page
 		
-		# check if a new page has been created
-		if (@page > pagenum)
-			# design a cell around the text on first page
-			currentpage = @page;
-			@page = pagenum;
-			SetY(GetPageHeight() - restspace - GetBreakMargin());
-			h = restspace - 1;
-			Cell(w, h, "", border, ln, 'L', 0);
-			# design a cell around the text on last page
-			@page = currentpage;
-			h = currentY - @t_margin;
-			SetY(@t_margin); # put cursor at the beginning of text
-			Cell(w, h, "", border, ln, 'L', 0);
-		else
-			h = [h, (currentY - y)].max;
-			SetY(y); # put cursor at the beginning of text
-			# design a cell around the text
-			Cell(w, h, "", border, ln, 'L', 0);
+		if border != 0
+			# check if a new page has been created
+			if endpage > startpage
+				# design borders around HTML cells.
+				startpage.upto(endpage) do |page|
+					@page = page
+					if page==startpage
+						SetY(GetPageHeight() - restspace - GetBreakMargin())
+						h = restspace - 1
+					elsif page==endpage
+						SetY(@t_margin) # put cursor at the beginning of text
+						h = currentY - @t_margin
+					else
+						SetY(@t_margin); # put cursor at the beginning of text
+						h = GetPageHeight() - @t_margin - GetBreakMargin()
+					end
+					Cell(w, h, "", border, 1, '', 0)
+				end
+			else
+				h = [h, (currentY - y)].max
+				SetY(y) # put cursor at the beginning of text
+				# design a cell around the text
+				Cell(w, h, "", border, 1, '', 0)
+			end
 		end
 		
 		# restore original margin values
 		SetLeftMargin(l_margin);
 		SetRightMargin(r_margin);
 		
-		if (ln)
-			Ln(0);
+		if ln > 0
+			# Go to the beginning of the next line
+			SetY(currentY)
+			if ln == 2
+				SetX(x + w)
+			end
+		else
+			# go left or right by case
+			@page = startpage
+			@y = y
+			SetX(x + w)
 		end
 	end
   alias_method :write_html_cell, :writeHTMLCell
