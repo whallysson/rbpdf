@@ -98,8 +98,11 @@ class TCPDF
   cattr_accessor :k_path_cache
   @@k_path_cache = Rails.root.join('tmp').to_s
   
-  cattr_accessor :k_path_url_cache
-  @@k_path_url_cache = Rails.root.join('tmp').to_s
+  cattr_accessor :k_path_main
+  @@k_path_main = Rails.root.join('tmp').to_s
+  
+  cattr_accessor :k_path_url
+  @@k_path_url = Rails.root.join('tmp').to_s
   
   cattr_accessor :decoder
 		
@@ -3910,6 +3913,12 @@ class TCPDF
 	# @access private
 	#
 	def openHTMLTagHandler(tag, attrs, fill=0)
+		# check for text direction attribute
+		if attrs['dir'].nil?
+			@tmprtl = false
+		else
+			@tmprtl = attrs['dir'] == 'rtl' ? 'R' : 'L';
+		end
 		#Opening tag
 		case (tag)
 			when 'table'
@@ -3940,6 +3949,12 @@ class TCPDF
 						when 'left'
 							@tdalign = "L";
 					end
+				else
+					if @rtl
+						@tdalign = "R"
+					else
+						@tdalign = "L"
+					end
 				end
 				if ((!attrs['bgcolor'].nil?) and (attrs['bgcolor'] != ''))
 					coul = convertColorHexToDec(attrs['bgcolor']);
@@ -3957,9 +3972,10 @@ class TCPDF
 				end
 				x = GetX();
 				y = GetY();
+				prevlinewidth = GetLineWidth()
 				SetLineWidth(0.2);
 				Line(x, y, x + hrWidth, y);
-				SetLineWidth(0.2);
+				SetLineWidth(prevlinewidth)
 				Ln();
 				
 			when 'strong'
@@ -3977,7 +3993,10 @@ class TCPDF
 			when 'img'
 				if (!attrs['src'].nil?)
 					# replace relative path with real server path
-					attrs['src'] = attrs['src'].gsub(@@k_path_url_cache, @@k_path_cache);
+					#if attrs['src'][0] == '/'
+					#	attrs['src'] = Rails.root.join('public') + attrs['src']
+					#end
+					attrs['src'] = attrs['src'].gsub(@@k_path_url, @@k_path_main)
 					if (attrs['width'].nil?)
 						attrs['width'] = 0;
 					end
@@ -3985,7 +4004,21 @@ class TCPDF
 						attrs['height'] = 0;
 					end
 					
-					Image(attrs['src'], GetX(),GetY(), pixelsToMillimeters(attrs['width']), pixelsToMillimeters(attrs['height']));
+					if attrs['align'].nil?
+						align = 'N'
+					else
+						case (attrs['align'])
+						when 'top'
+							align = 'T'
+						when 'middle'
+							align = 'M'
+						when 'bottom'
+							align = 'B'
+						else
+							align = 'N'
+						end
+					end
+					Image(attrs['src'], GetX(),GetY(), pixelsToMillimeters(attrs['width']), pixelsToMillimeters(attrs['height']), '', '', align)
 					#SetX(@img_rb_x);
 					SetY(@img_rb_y);
 					
@@ -4002,18 +4035,28 @@ class TCPDF
 			when 'li'
 				Ln();
 				if (@listordered)
-				  @listcount += 1
-					@lispacer = "    " + (@listcount).to_s + ". ";
+					if !attrs['value'].nil?
+						@listcount = attrs['value'].to_i
+					end
+					@listcount += 1
+					@lispacer = "    " + (@listcount).to_s + ". "
 				else
 					#unordered list simbol
 					@lispacer = "    -  ";
 				end
+				rtldir = @tmprtl
+				@tmprtl = false
 				Write(@lasth, @lispacer, '', fill);
+				@tmprtl = rtldir
 
 			when 'blockquote', 'br'
 				Ln();
 				if (@lispacer.length > 0)
-					@x += GetStringWidth(@lispacer);
+					if @rtl
+						@x -= GetStringWidth(@lispacer)
+					else
+						@x += GetStringWidth(@lispacer)
+					end
 				end
 				
 			when 'p'
