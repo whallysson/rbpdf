@@ -4123,7 +4123,11 @@ class TCPDF
 				@tdbegin = false;
 				@tdwidth = 0;
 				@tdheight = 0;
-				@tdalign = "L";
+				if @rtl
+					@tdalign = "R"
+				else
+					@tdalign = "L"
+				end
 				@tdfill = 0;
 				SetFillColor(@prevfill_color[0], @prevfill_color[1], @prevfill_color[2]);
 				
@@ -4179,10 +4183,12 @@ class TCPDF
 				#@text_color = @prevtext_color;
 				@lasth = @font_size * @@k_cell_height_ratio;
 				
-			when 'ul'
+			when 'p'
+				Ln();
 				Ln();
 				
-			when 'ol'
+			when 'ul', 'ol'
+				Ln();
 				Ln();
 				
 			when 'li'
@@ -4196,6 +4202,7 @@ class TCPDF
 				@lasth = @font_size * @@k_cell_height_ratio;
 								
 		end
+		@tmprtl = false
 	end
 	
 	#
