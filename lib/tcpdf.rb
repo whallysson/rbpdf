@@ -85,6 +85,8 @@ class TCPDF
   include RFPDF
   include Core::RFPDF
   include RFPDF::Math
+  require 'unicode_data.rb'
+  include Unicode_data
   
   cattr_accessor :k_cell_height_ratio
   @@k_cell_height_ratio = 1.25
@@ -4332,8 +4334,478 @@ class TCPDF
 			@@decoder.decode(string)
 		end
 	end
-  
-end # END OF CLASS
+
+	# BIDIRECTIONAL TEXT SECTION --------------------------
+
+	#
+	# Reverse the RLT substrings using the Bidirectional Algorithm (http://unicode.org/reports/tr9/).
+	# @param string :str string to manipulate. (UTF-8)
+	# @param bool :forcertl if 'R' forces RTL, if 'L' forces LTR
+	# @return string (UTF-16BE)
+	# @author Nicola Asuni
+	# @since 2.1.000 (2008-01-08)
+	def utf8StrRev(str, setbom=false, forcertl=false)
+		return arrUTF8ToUTF16BE(utf8Bidi(UTF8StringToArray(str), forcertl), setbom)
+	end
+
+	#
+	# Reverse the RLT substrings using the Bidirectional Algorithm (http://unicode.org/reports/tr9/).
+	# @param array :ta array of characters composing the string. (UCS4)
+	# @param bool :forcertl if 'R' forces RTL, if 'L' forces LTR
+	# @return array of unicode chars (UCS4)
+	# @author Nicola Asuni
+	# @since 2.4.000 (2008-03-06)
+	#
+	def utf8Bidi(ta, forcertl=false)
+		# paragraph embedding level
+		pel = 0
+		# max level
+		maxlevel = 0
+
+		# create string from array
+		str = UTF8ArrSubString(ta)
+			
+		# check if string contains arabic text
+		if str =~ @@k_re_pattern_arabic
+			arabic = true
+		else
+			arabic = false
+		end
+
+		# check if string contains RTL text
+		unless forcertl or arabic or (str =~ @@k_re_pattern_rtl)
+			return ta
+		end
+			
+		# get number of chars
+		numchars = ta.length
+			
+		if forcertl == 'R'
+			pel = 1
+		elsif forcertl == 'L'
+			pel = 0
+		else
+			# P2. In each paragraph, find the first character of type L, AL, or R.
+			# P3. If a character is found in P2 and it is of type AL or R, then set the paragraph embedding level to one; otherwise, set it to zero.
+			0.upto(numchars -1) do |i|
+				type = @@unicode[ta[i]]
+				if type == 'L'
+					pel = 0
+					break
+				elsif (type == 'AL') or (type == 'R')
+					pel = 1
+					break
+				end
+			end
+		end
+			
+		# Current Embedding Level
+		cel = pel
+		# directional override status
+		dos = 'N'
+		remember = []
+		# start-of-level-run
+		sor = (pel % 2 == 1) ? 'R' : 'L'
+		eor = sor
+			
+		# Array of characters data
+		chardata = []
+			
+		# X1. Begin by setting the current embedding level to the paragraph embedding level. Set the directional override status to neutral. Process each character iteratively, applying rules X2 through X9. Only embedding levels from 0 to 61 are valid in this phase.
+		# 	In the resolution of levels in rules I1 and I2, the maximum embedding level of 62 can be reached.
+		0.upto(numchars-1) do |i|
+			if ta[i] == @@k_rle
+				# X2. With each RLE, compute the least greater odd embedding level.
+				#	a. If this new level would be valid, then this embedding code is valid. Remember (push) the current embedding level and override status. Reset the current level to this new level, and reset the override status to neutral.
+				#	b. If the new level would not be valid, then this code is invalid. Do not change the current level or override status.
+				next_level = cel + (cel % 2) + 1
+				if next_level < 62
+					remember.push :num => @@k_rle, :cel => cel, :dos => dos
+					cel = next_level
+					dos = 'N'
+					sor = eor
+					eor = (cel % 2 == 1) ? 'R' : 'L'
+				end
+			elsif ta[i] == @@k_lre
+				# X3. With each LRE, compute the least greater even embedding level.
+				#	a. If this new level would be valid, then this embedding code is valid. Remember (push) the current embedding level and override status. Reset the current level to this new level, and reset the override status to neutral.
+				#	b. If the new level would not be valid, then this code is invalid. Do not change the current level or override status.
+				next_level = cel + 2 - (cel % 2)
+				if next_level < 62
+					remember.push :num => @@k_lre, :cel => cel, :dos => dos
+					cel = next_level
+					dos = 'N'
+					sor = eor
+					eor = (cel % 2 == 1) ? 'R' : 'L'
+				end
+			elsif ta[i] == @@k_rlo
+				# X4. With each RLO, compute the least greater odd embedding level.
+				#	a. If this new level would be valid, then this embedding code is valid. Remember (push) the current embedding level and override status. Reset the current level to this new level, and reset the override status to right-to-left.
+				#	b. If the new level would not be valid, then this code is invalid. Do not change the current level or override status.
+				next_level = cel + (cel % 2) + 1
+				if next_level < 62
+					remember.push :num => @@k_rlo, :cel => cel, :dos => dos
+					cel = next_level
+					dos = 'R'
+					sor = eor
+					eor = (cel % 2 == 1) ? 'R' : 'L'
+				end
+			elsif ta[i] == @@k_lro
+				# X5. With each LRO, compute the least greater even embedding level.
+				#	a. If this new level would be valid, then this embedding code is valid. Remember (push) the current embedding level and override status. Reset the current level to this new level, and reset the override status to left-to-right.
+				#	b. If the new level would not be valid, then this code is invalid. Do not change the current level or override status.
+				next_level = cel + 2 - (cel % 2)
+				if next_level < 62
+					remember.push :num => @@k_lro, :cel => cel, :dos => dos
+					cel = next_level
+					dos = 'L'
+					sor = eor
+					eor = (cel % 2 == 1) ? 'R' : 'L'
+				end
+			elsif ta[i] == @@k_pdf
+				# X7. With each PDF, determine the matching embedding or override code. If there was a valid matching code, restore (pop) the last remembered (pushed) embedding level and directional override.
+				if remember.length
+					last = remember.length - 1
+					if (remember[last][:num] == @@k_rle) or 
+						  (remember[last][:num] == @@k_lre) or 
+						  (remember[last][:num] == @@k_rlo) or 
+						  (remember[last][:num] == @@k_lro)
+						match = remember.pop
+						cel = match[:cel]
+						dos = match[:dos]
+						sor = eor
+						eor = ((cel > match[:cel] ? cel : match[:cel]) % 2 == 1) ? 'R' : 'L'
+					end
+				end
+			elsif (ta[i] != @@k_rle) and
+					 (ta[i] != @@k_lre) and
+					 (ta[i] != @@k_rlo) and
+					 (ta[i] != @@k_lro) and
+					 (ta[i] != @@k_pdf)
+				# X6. For all types besides RLE, LRE, RLO, LRO, and PDF:
+				#	a. Set the level of the current character to the current embedding level.
+				#	b. Whenever the directional override status is not neutral, reset the current character type to the directional override status.
+				if dos != 'N'
+					chardir = dos
+				else
+					chardir = @@unicode[ta[i]]
+				end
+				# stores string characters and other information
+				chardata.push :char => ta[i], :level => cel, :type => chardir, :sor => sor, :eor => eor
+			end
+		end # end for each char
+			
+		# X8. All explicit directional embeddings and overrides are completely terminated at the end of each paragraph. Paragraph separators are not included in the embedding.
+		# X9. Remove all RLE, LRE, RLO, LRO, PDF, and BN codes.
+		# X10. The remaining rules are applied to each run of characters at the same level. For each run, determine the start-of-level-run (sor) and end-of-level-run (eor) type, either L or R. This depends on the higher of the two levels on either side of the boundary (at the start or end of the paragraph, the level of the 'other' run is the base embedding level). If the higher level is odd, the type is R; otherwise, it is L.
+		
+		# 3.3.3 Resolving Weak Types
+		# Weak types are now resolved one level run at a time. At level run boundaries where the type of the character on the other side of the boundary is required, the type assigned to sor or eor is used.
+		# Nonspacing marks are now resolved based on the previous characters.
+		numchars = chardata.length
+			
+		# W1. Examine each nonspacing mark (NSM) in the level run, and change the type of the NSM to the type of the previous character. If the NSM is at the start of the level run, it will get the type of sor.
+		prevlevel = -1 # track level changes
+		levcount = 0 # counts consecutive chars at the same level
+		0.upto(numchars-1) do |i|
+			if chardata[i][:type] == 'NSM'
+				if levcount
+					chardata[i][:type] = chardata[i][:sor]
+				elsif i > 0
+					chardata[i][:type] = chardata[i-1][:type]
+				end
+			end
+			if chardata[i][:level] != prevlevel
+				levcount = 0
+			else
+				levcount += 1
+			end
+			prevlevel = chardata[i][:level]
+		end
+			
+		# W2. Search backward from each instance of a European number until the first strong type (R, L, AL, or sor) is found. If an AL is found, change the type of the European number to Arabic number.
+		prevlevel = -1
+		levcount = 0
+		0.upto(numchars-1) do |i|
+			if chardata[i][:char] == 'EN'
+				levcount.downto(0) do |j|
+					if chardata[j][:type] == 'AL'
+						chardata[i][:type] = 'AN'
+					elsif (chardata[j][:type] == 'L') or (chardata[j][:type] == 'R')
+						break
+					end
+				end
+			end
+			if chardata[i][:level] != prevlevel
+				levcount = 0
+			else
+				levcount +=1
+			end
+			prevlevel = chardata[i][:level]
+		end
+		
+		# W3. Change all ALs to R.
+		0.upto(numchars-1) do |i|
+			if chardata[i][:type] == 'AL'
+				chardata[i][:type] = 'R'
+			end
+		end
+		
+		# W4. A single European separator between two European numbers changes to a European number. A single common separator between two numbers of the same type changes to that type.
+		prevlevel = -1
+		levcount = 0
+		0.upto(numchars-1) do |i|
+			if (levcount > 0) and (i+1 < numchars) and (chardata[i+1][:level] == prevlevel)
+				if (chardata[i][:type] == 'ES') and (chardata[i-1][:type] == 'EN') and (chardata[i+1][:type] == 'EN')
+					chardata[i][:type] = 'EN'
+				elsif (chardata[i][:type] == 'CS') and (chardata[i-1][:type] == 'EN') and (chardata[i+1][:type] == 'EN')
+					chardata[i][:type] = 'EN'
+				elsif (chardata[i][:type] == 'CS') and (chardata[i-1][:type] == 'AN') and (chardata[i+1][:type] == 'AN')
+					chardata[i][:type] = 'AN'
+				end
+			end
+			if chardata[i][:level] != prevlevel
+				levcount = 0
+			else
+				levcount += 1
+			end
+			prevlevel = chardata[i][:level]
+		end
+		
+		# W5. A sequence of European terminators adjacent to European numbers changes to all European numbers.
+		prevlevel = -1
+		levcount = 0
+		0.upto(numchars-1) do |i|
+			if chardata[i][:type] == 'ET'
+				if (levcount > 0) and (chardata[i-1][:type] == 'EN')
+					chardata[i][:type] = 'EN'
+				else
+					j = i+1
+					while (j < numchars) and (chardata[j][:level] == prevlevel)
+						if chardata[j][:type] == 'EN'
+							chardata[i][:type] = 'EN'
+							break
+						elsif chardata[j][:type] != 'ET'
+							break
+						end
+						j += 1
+					end
+				end
+			end
+			if chardata[i][:level] != prevlevel
+				levcount = 0
+			else
+				levcount += 1
+			end
+			prevlevel = chardata[i][:level]
+		end
+		
+		# W6. Otherwise, separators and terminators change to Other Neutral.
+		prevlevel = -1
+		levcount = 0
+		0.upto(numchars-1) do |i|
+			if (chardata[i][:type] == 'ET') or (chardata[i][:type] == 'ES') or (chardata[i][:type] == 'CS')
+				chardata[i][:type] = 'ON'
+			end
+			if chardata[i][:level] != prevlevel
+				levcount = 0
+			else
+				levcount += 1
+			end
+			prevlevel = chardata[i][:level]
+		end
+		
+		# W7. Search backward from each instance of a European number until the first strong type (R, L, or sor) is found. If an L is found, then change the type of the European number to L.
+		prevlevel = -1
+		levcount = 0
+		0.upto(numchars-1) do |i|
+			if chardata[i][:char] == 'EN'
+				levcount.downto(0) do |j|
+					if chardata[j][:type] == 'L'
+						chardata[i][:type] = 'L'
+					elsif chardata[j][:type] == 'R'
+						break
+					end
+				end
+			end
+			if chardata[i][:level] != prevlevel
+				levcount = 0
+			else
+				levcount += 1
+			end
+			prevlevel = chardata[i][:level]
+		end
+		
+		# N1. A sequence of neutrals takes the direction of the surrounding strong text if the text on both sides has the same direction. European and Arabic numbers act as if they were R in terms of their influence on neutrals. Start-of-level-run (sor) and end-of-level-run (eor) are used at level run boundaries.
+		prevlevel = -1
+		levcount = 0
+		0.upto(numchars-1) do |i|
+			if (levcount > 0) and (i+1 < numchars) and (chardata[i+1][:level] == prevlevel)
+				if (chardata[i][:type] == 'N') and (chardata[i-1][:type] == 'L') and (chardata[i+1][:type] == 'L')
+					chardata[i][:type] = 'L'
+				elsif (chardata[i][:type] == 'N') and
+				 ((chardata[i-1][:type] == 'R') or (chardata[i-1][:type] == 'EN') or (chardata[i-1][:type] == 'AN')) and
+				 ((chardata[i+1][:type] == 'R') or (chardata[i+1][:type] == 'EN') or (chardata[i+1][:type] == 'AN'))
+					chardata[i][:type] = 'R'
+				elsif chardata[i][:type] == 'N'
+					# N2. Any remaining neutrals take the embedding direction
+					chardata[i][:type] = chardata[i][:sor]
+				end
+			elsif (levcount == 0) and (i+1 < numchars) and (chardata[i+1][:level] == prevlevel)
+				# first char
+				if (chardata[i][:type] == 'N') and (chardata[i][:sor] == 'L') and (chardata[i+1][:type] == 'L')
+					chardata[i][:type] = 'L'
+				elsif (chardata[i][:type] == 'N') and
+				 ((chardata[i][:sor] == 'R') or (chardata[i][:sor] == 'EN') or (chardata[i][:sor] == 'AN')) and
+				 ((chardata[i+1][:type] == 'R') or (chardata[i+1][:type] == 'EN') or (chardata[i+1][:type] == 'AN'))
+					chardata[i][:type] = 'R'
+				elsif chardata[i][:type] == 'N'
+					# N2. Any remaining neutrals take the embedding direction
+					chardata[i][:type] = chardata[i][:sor]
+				end
+			elsif (levcount > 0) and ((i+1 == numchars) or ((i+1 < numchars) and (chardata[i+1][:level] != prevlevel)))
+				# last char
+				if (chardata[i][:type] == 'N') and (chardata[i-1][:type] == 'L') and (chardata[i][:eor] == 'L')
+					chardata[i][:type] = 'L'
+				elsif (chardata[i][:type] == 'N') and
+				 ((chardata[i-1][:type] == 'R') or (chardata[i-1][:type] == 'EN') or (chardata[i-1][:type] == 'AN')) and
+				 ((chardata[i][:eor] == 'R') or (chardata[i][:eor] == 'EN') or (chardata[i][:eor] == 'AN'))
+					chardata[i][:type] = 'R'
+				elsif chardata[i][:type] == 'N'
+					# N2. Any remaining neutrals take the embedding direction
+					chardata[i][:type] = chardata[i][:sor]
+				end
+			elsif chardata[i][:type] == 'N'
+				# N2. Any remaining neutrals take the embedding direction
+				chardata[i][:type] = chardata[i][:sor]
+			end
+			if chardata[i][:level] != prevlevel
+				levcount = 0
+			else
+				levcount += 1
+			end
+			prevlevel = chardata[i][:level]
+		end
+		
+		# I1. For all characters with an even (left-to-right) embedding direction, those of type R go up one level and those of type AN or EN go up two levels.
+		# I2. For all characters with an odd (right-to-left) embedding direction, those of type L, EN or AN go up one level.
+		0.upto(numchars-1) do |i|
+			odd = chardata[i][:level] % 2
+			if odd == 1
+				if (chardata[i][:type] == 'L') or (chardata[i][:type] == 'AN') or (chardata[i][:type] == 'EN')
+					chardata[i][:level] += 1
+				end
+			else
+				if chardata[i][:type] == 'R'
+					chardata[i][:level] += 1
+				elsif (chardata[i][:type] == 'AN') or (chardata[i][:type] == 'EN')
+					chardata[i][:level] += 2
+				end
+			end
+			maxlevel = [chardata[i][:level],maxlevel].max
+		end
+		
+		# L1. On each line, reset the embedding level of the following characters to the paragraph embedding level:
+		#	1. Segment separators,
+		#	2. Paragraph separators,
+		#	3. Any sequence of whitespace characters preceding a segment separator or paragraph separator, and
+		#	4. Any sequence of white space characters at the end of the line.
+		0.upto(numchars-1) do |i|
+			if (chardata[i][:type] == 'B') or (chardata[i][:type] == 'S')
+				chardata[i][:level] = pel
+			elsif chardata[i][:type] == 'WS'
+				j = i+1
+				while j < numchars
+					if ((chardata[j][:type] == 'B') or (chardata[j][:type] == 'S')) or
+						((j == numchars-1) and (chardata[j][:type] == 'WS'))
+						chardata[i][:level] = pel
+						break
+					elsif chardata[j][:type] != 'WS'
+						break
+					end
+					j += 1
+				end
+			end
+		end
+		
+		# Arabic Shaping
+		# Cursively connected scripts, such as Arabic or Syriac, require the selection of positional character shapes that depend on adjacent characters. Shaping is logically applied after the Bidirectional Algorithm is used and is limited to characters within the same directional run. 
+		if arabic
+			0.upto(numchars-1) do |i|
+				if @@unicode[chardata[i][:char]] == 'AL'
+					if (i > 0) and (i+1 < numchars) and 
+							(@@unicode[chardata[i-1][:char]] == 'AL') and 
+							(@@unicode[chardata[i+1][:char]] == 'AL') and
+							(chardata[i-1][:type] == chardata[i][:type]) and
+							(chardata[i+1][:type] == chardata[i][:type])
+						# medial
+						unless @@unicode_arlet[chardata[i][:char]][3].nil?
+							chardata[i][:char] = @@unicode_arlet[chardata[i][:char]][3]
+						end
+					elsif (i+1 < numchars) and 
+							(@@unicode[chardata[i+1][:char]] == 'AL') and 
+							(chardata[i+1][:type] == chardata[i][:type])
+						# initial
+						unless @@unicode_arlet[chardata[i][:char]][2].nil?
+							chardata[i][:char] = @@unicode_arlet[chardata[i][:char]][2]
+						end
+					elsif (i > 0) and 
+							(@@unicode[chardata[i-1][:char]] == 'AL') and 
+							(chardata[i-1][:type] == chardata[i][:type])
+						# final
+						unless @@unicode_arlet[chardata[i][:char]][1].nil?
+							chardata[i][:char] = @@unicode_arlet[chardata[i][:char]][1]
+						end
+					elsif !@@unicode_arlet[chardata[i][:char]][0].nil?
+						# isolated
+						chardata[i][:char] = @@unicode_arlet[chardata[i][:char]][0]
+					end
+				end
+			end
+		end
+		
+		# L2. From the highest level found in the text to the lowest odd level on each line, including intermediate levels not actually present in the text, reverse any contiguous sequence of characters that are at that level or higher.
+		maxlevel.downto(1) do |j|
+			ordarray = []
+			revarr = []
+			onlevel = false
+			0.upto(numchars-1) do |i|
+				if chardata[i][:level] >= j
+					onlevel = true
+					unless @@unicode_mirror[chardata[i][:char]].nil?
+						# L4. A character is depicted by a mirrored glyph if and only if (a) the resolved directionality of that character is R, and (b) the Bidi_Mirrored property value of that character is true.
+						chardata[i][:char] = @@unicode_mirror[chardata[i][:char]]
+					end
+					revarr.push chardata[i]
+				else
+					if onlevel
+						revarr.reverse!
+						ordarray.concat(revarr)
+						revarr = []
+						onlevel = false
+					end
+					ordarray.push chardata[i]
+				end
+			end
+			if onlevel
+				revarr.reverse!
+				ordarray.concat(revarr)
+			end
+			chardata = ordarray
+		end
+		
+		ordarray = []
+		0.upto(numchars-1) do |i|
+			chardata[i][:char]
+			ordarray.push chardata[i][:char]
+		end
+		
+		return ordarray
+	end
+		
+	# END OF BIDIRECTIONAL TEXT SECTION -------------------
+
+end # END OF TCPDF CLASS
 
 #TODO 2007-05-25 (EJM) Level=0 - 
 #Handle special IE contype request
