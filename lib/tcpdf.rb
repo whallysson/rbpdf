@@ -4269,12 +4269,12 @@ class TCPDF
 	# @return string converted
 	#
 	def unhtmlentities(string)
-	  if @@decoder.nil?
-      CGI.unescapeHTML(string)
-    else
-  	  @@decoder.decode(string)
-    end
-  end
+		if @@decoder.nil?
+			CGI.unescapeHTML(string)
+		else
+			@@decoder.decode(string)
+		end
+	end
   
 end # END OF CLASS
 
