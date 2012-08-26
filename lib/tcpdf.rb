@@ -2277,6 +2277,33 @@ class TCPDF
   alias_method :write, :Write
 
 	#
+	# Returns the unicode caracter specified by UTF-8 code
+	# @param int :c UTF-8 code (UCS4)
+	# @return Returns the specified character. (UTF-8)
+	# @author Miguel Perez, Nicola Asuni
+	# @since 2.3.000 (2008-03-05)
+	#
+	def unichr(c)
+		if !@is_unicode
+			return c.chr
+		elsif c <= 0x7F
+			# one byte
+			return c.chr
+		elsif c <= 0x7FF
+			# two bytes
+			return (0xC0 | c >> 6).chr + (0x80 | c & 0x3F).chr
+		elsif c <= 0xFFFF
+			# three bytes
+			return (0xE0 | c >> 12).chr + (0x80 | c >> 6 & 0x3F).chr + (0x80 | c & 0x3F).chr
+		elsif c <= 0x10FFFF
+			# four bytes
+			return (0xF0 | c >> 18).chr + (0x80 | c >> 12 & 0x3F).chr + (0x80 | c >> 6 & 0x3F).chr + (0x80 | c & 0x3F).chr
+		else
+			return ""
+		end
+	end
+
+	#
 	# Puts an image in the page. The upper-left corner must be given. The dimensions can be specified in different ways:<ul><li>explicit width and height (expressed in user unit)</li><li>one explicit dimension, the other being calculated automatically in order to keep the original proportions</li><li>no explicit dimension, in which case the image is put at 72 dpi</li></ul>
 	# Supported formats are JPEG and PNG.
 	# For JPEG, all flavors are allowed:<ul><li>gray scales</li><li>true colors (24 bits)</li><li>CMYK (32 bits)</li></ul>
