@@ -3341,8 +3341,8 @@ class TCPDF
 	#
 	def escapetext(s)
 		if (@is_unicode)
-			#Convert string to UTF-16BE
-			s = UTF8ToUTF16BE(s, false);
+			# Convert string to UTF-16BE and reverse RTL language
+			s = utf8StrRev(s, false, @tmprtl)
 		end
 		return escape(s);
 	end
