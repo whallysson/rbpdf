@@ -2277,6 +2277,24 @@ class TCPDF
   alias_method :write, :Write
 
 	#
+	# Extract a slice of the :strarr array and return it as string.
+	# @param string :strarr The input array of characters. (UCS4)
+	# @param int :start the starting element of :strarr.
+	# @param int :last first element that will not be returned.
+	# @return Return part of a string (UTF-8)
+	#
+	def UTF8ArrSubString(strarr, start=0, last=nil)
+		if last.nil?
+			last = strarr.size
+		end
+		string = ""
+		start.upto(last-1) do |i|
+			string << unichr(strarr[i])
+		end
+		return string
+	end
+
+	#
 	# Returns the unicode caracter specified by UTF-8 code
 	# @param int :c UTF-8 code (UCS4)
 	# @return Returns the specified character. (UTF-8)
