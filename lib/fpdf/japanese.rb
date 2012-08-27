@@ -103,7 +103,7 @@ module PDF_Japanese
   		o=s[i]
   		if(o<128)
   			#ASCII
-  			l+=cw[o.chr]
+  			l+=cw[o.chr] if cw[o.chr]
   			i+=1
   		elsif(o>=161 and o<=223)
   			#Half-width katakana
@@ -146,13 +146,9 @@ module PDF_Japanese
   			b2='LR'
   		else
   			b2=''
-  			if(border.index('L').nil?)
-  				b2+='L'
-      	end  
-  			if(border.index('R').nil?)
-  				b2+='R'
-      	end  
-  			b=border.index('T').nil? ? b2+'T' : b2
+  			b2='L' unless border.to_s.index('L').nil?
+  			b2=b2+'R' unless border.to_s.index('R').nil?
+  			b=(border.to_s.index('T')) ? (b2+'T') : b2
   		end
   	end
   	sep=-1
@@ -163,7 +159,7 @@ module PDF_Japanese
   	while(i<nb)
   		#Get next character
   		c=s[i]
-  		o=ord(c)
+  		o=c #o=ord(c)
   		if(o==10)
   			#Explicit line break
   			Cell(w,h,s[j,i-j],b,2,align,fill)
@@ -179,7 +175,7 @@ module PDF_Japanese
   		end
   		if(o<128)
   			#ASCII
-  			l+=cw[c.chr]
+  			l+=cw[c.chr] || 0
   			n=1
   			if(o==32)
   				sep=i
@@ -204,7 +200,7 @@ module PDF_Japanese
   				Cell(w,h,s[j,i-j],b,2,align,fill)
   			else
   				Cell(w,h,s[j,sep-j],b,2,align,fill)
-  				i=(s[sep]==' ') ? sep+1 : sep
+  				i=(s[sep].chr==' ') ? sep+1 : sep
   			end
   			sep=-1
   			j=i
@@ -221,7 +217,7 @@ module PDF_Japanese
   		end
   	end
   	#Last chunk
-  	if(border and not border.index('B').nil?)
+  	if(border and not border.to_s.index('B').nil?)
   		b+='B'
   	end  
   	Cell(w,h,s[j,i-j],b,2,align,fill)
@@ -270,7 +266,7 @@ module PDF_Japanese
   		end
   		if(o<128)
   			#ASCII
-  			l+=cw[c.chr]
+  			l+=cw[c.chr] || 0
   			n=1
   			if(o==32)
   				sep=i
@@ -305,7 +301,7 @@ module PDF_Japanese
   				Cell(w,h,s[j,i-j],0,2,'',0,link)
   			else
   				Cell(w,h,s[j,sep-j],0,2,'',0,link)
-  				i=(s[sep]==' ') ? sep+1 : sep
+  				i=(s[sep].chr==' ') ? sep+1 : sep
   			end
   			sep=-1
   			j=i
