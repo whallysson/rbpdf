@@ -2474,7 +2474,8 @@ class TCPDF
 
   def putType0(font)
   	#Type0
-		out('<</Type /Font')
+  	newobj();
+  	out('<</Type /Font')
   	out('/Subtype /Type0')
   	out('/BaseFont /'+font['name']+'-'+font['cMap'])
   	out('/Encoding /'+font['cMap'])
