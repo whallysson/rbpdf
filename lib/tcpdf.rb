@@ -2823,11 +2823,11 @@ class TCPDF
 		end
 		w=freadint(f);
 		h=freadint(f);
-		bpc=f.read(1)[0];
+		bpc=f.read(1).unpack('C')[0]
 		if (bpc>8)
 			Error('16-bit depth not supported: ' + file);
 		end
-		ct=f.read(1)[0];
+		ct=f.read(1).unpack('C')[0]
 		if (ct==0)
 			colspace='DeviceGray';
 		elsif (ct==2)
@@ -2837,13 +2837,13 @@ class TCPDF
 		else
 			Error('Alpha channel not supported: ' + file);
 		end
-		if (f.read(1)[0] != 0)
+		if (f.read(1).unpack('C')[0] != 0)
 			Error('Unknown compression method: ' + file);
 		end
-		if (f.read(1)[0]!=0)
+		if (f.read(1).unpack('C')[0]!=0)
 			Error('Unknown filter method: ' + file);
 		end
-		if (f.read(1)[0]!=0)
+		if (f.read(1).unpack('C')[0]!=0)
 			Error('Interlacing not supported: ' + file);
 		end
 		f.read(4);
@@ -2863,9 +2863,9 @@ class TCPDF
 				#Read transparency info
 				t=f.read( n);
 				if (ct==0)
-					trns = t[1][0]
+					trns = t[1].unpack('C')[0]
 				elsif (ct==2)
-					trns = t[[1][0], t[3][0], t[5][0]]
+					trns = t[[1].unpack('C')[0], t[3].unpack('C')[0], t[5].unpack('C')[0]]
 				else
 					pos=t.include?(0.chr);
 					if (pos!=false)
