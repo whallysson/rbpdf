@@ -1218,38 +1218,48 @@ class TCPDF
 	# @since 1.2
 	#
 	def GetStringWidth(s)
-		#Get width of a string in the current font
-		s = s.to_s;
-		cw = @current_font['cw']
-		w = 0;
-		if (@is_unicode)
-      unicode = UTF8StringToArray(s);
-      unicode.each do |char|
-				if (!cw[char].nil?)
-					w += cw[char];
-				# This should not happen. UTF8StringToArray should guarentee the array is ascii values.
-        # elsif (c!cw[char[0]].nil?)
-        #   w += cw[char[0]];
-        #         elsif (!cw[char.chr].nil?)
-        #           w += cw[char.chr];
-				elsif (!@current_font['desc']['MissingWidth'].nil?)
-					w += @current_font['desc']['MissingWidth']; # set default size
-				else
-					w += 500;
-				end
-			end
-		else
-		  s.each_byte do |c|
-				if cw[c]
-					w += cw[c];
-				elsif cw[?c]
-					w += cw[?c]
-				end
-			end
-		end
-		return (w * @font_size / 1000.0);
+		return GetArrStringWidth(utf8Bidi(UTF8StringToArray(s), @tmprtl))
 	end
   alias_method :get_string_width, :GetStringWidth
+
+	#
+	# Returns the string length of an array of chars in user unit. A font must be selected.<br>
+	# @param string :arr The array of chars whose total length is to be computed
+	# @return int string length
+	# @author Nicola Asuni
+	# @since 2.4.000 (2008-03-06)
+	#
+	def GetArrStringWidth(sa)
+		w = 0
+		sa.each do |char|
+			w += GetCharWidth(char)
+		end
+		return w
+	end
+
+	#
+	# Returns the length of the char in user unit. A font must be selected.<br>
+	# @param string :char The char whose length is to be returned
+	# @return int char width
+	# @author Nicola Asuni
+	# @since 2.4.000 (2008-03-06)
+	#
+	def GetCharWidth(char)
+		cw = @current_font['cw']
+		if !cw[char].nil?
+			w = cw[char]
+		# This should not happen. UTF8StringToArray should guarentee the array is ascii values.
+		#elsif !cw[char[0]].nil?
+		#	w = cw[char[0]]
+		#elsif !cw[char.chr].nil?
+		#	w = cw[char.chr]
+		elsif !@current_font['desc'].nil? and !@current_font['desc']['MissingWidth'].nil?
+			w = @current_font['desc']['MissingWidth'] # set default size
+		else
+			w = 500
+		end
+		return (w * @font_size / 1000.0)
+	end
 
 	#
 	# Returns the numbero of characters in a string.
