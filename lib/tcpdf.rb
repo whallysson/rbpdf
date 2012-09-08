@@ -1788,9 +1788,13 @@ class TCPDF
 	# @see SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), AddLink(), Ln(), MultiCell(), Write(), SetAutoPageBreak()
 	#
 	def Cell(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0)
-		#Output a cell
 		k=@k;
-		if ((@y + h) > @page_break_trigger and !@in_footer and AcceptPageBreak())
+		min_cell_height = @font_size * @@k_cell_height_ratio
+		if h < min_cell_height
+			h = min_cell_height
+		end
+
+		if ((@y + h) > @page_break_trigger) and !@in_footer and AcceptPageBreak()
 			#Automatic page break
 			x = @x;
 			ws = @ws;
@@ -1799,11 +1803,11 @@ class TCPDF
 				out('0 Tw');
 			end
 			AddPage(@cur_orientation);
-			@x = x;
 			if (ws > 0)
 				@ws = ws;
 				out(sprintf('%.3f Tw', ws * k));
 			end
+			@x = x
 		end
 		if (w == 0)
 			if @rtl
@@ -1873,13 +1877,13 @@ class TCPDF
 			# ratio between cell lenght and text lenght
 			ratio = (w - (2 * @c_margin)) / width
 
-			# stretch text if requested
+			# stretch text if required
 			if (stretch > 0) and ((ratio < 1) or ((ratio > 1) and ((stretch % 2) == 0)))
 				if stretch > 2
 					# spacing
 					# Calculate character spacing in points
-					s_length =  GetNumChars(s) - 1
-					char_space = (w - (2 * @c_margin) - width) / (s_length > 1 ? s_length : 1) * @k
+					txt_length =  GetNumChars(txt) - 1
+					char_space = ((w - width - (2 * @c_margin)) * @k) / (txt_length > 1 ? txt_length : 1)
 					# Set character spacing
 					out(sprintf('BT %.2f Tc ET', char_space))
 				else
@@ -1897,7 +1901,7 @@ class TCPDF
 
 			if (align == 'L' || align == 'left')
 				if @rtl
-					dx = w - @c_margin - width
+					dx = w - width - @c_margin
 				else
 					dx = @c_margin
 				end
@@ -1905,13 +1909,13 @@ class TCPDF
 				if @rtl
 					dx = @c_margin
 				else
-					dx = w - @c_margin - width
+					dx = w - width - @c_margin
 				end
 			elsif (align=='C' || align == 'center')
 				dx = (w - width)/2;
 			elsif (align=='J' || align=='justify' || align=='justified')
 				if @rtl
-					dx = w - @c_margin - width
+					dx = w - width - @c_margin
 				else
 					dx = @c_margin
 				end
@@ -1927,15 +1931,25 @@ class TCPDF
 			else
 				xdk = (@x + dx) * k
 			end
-			# 2008-02-16 Jacek Czekaj - multibyte justification
+			# Justification
 			if (align == 'J')
 				# count number of spaces
 				ns = txt.count(' ')
-				# get string width without spaces
-				width = GetStringWidth(txt.gsub(' ', ''))
-				# set word position to be used with TJ operator
-				txt2 = txt2.gsub(0.chr + ' ', ') ' + (-2830*(w-width-2)/(ns ? ns : 1)/@font_size/@k).to_s + ' (')
+				if @is_unicode
+					# get string width without spaces
+					width = GetStringWidth(txt.gsub(' ', ''))
+					# calculate average space width
+					spacewidth = (w - width - (2 * @c_margin)) / (ns ? ns : 1) / @font_size / @k
+					# set word position to be used with TJ operator
+					txt2 = txt2.gsub(0.chr + ' ', ') ' + (-2830 * spacewidth).to_s + ' (')
+				else
+					# get string width
+					width = GetStringWidth(txt)
+					spacewidth = ((w - width - (2 * @c_margin)) / (ns ? ns : 1)) * @k
+					out(sprintf('BT %.3f Tw ET', spacewidth))
+				end
 			end
+
 			s << sprintf('BT %.2f %.2f Td [(%s)] TJ ET', xdk, (@h - (@y + 0.5 * h + 0.3 * @font_size)) * k, txt2);
 			if (@underline)
 				if @rtl
@@ -1972,7 +1986,13 @@ class TCPDF
 			end
 		end
 
+		# reset word spacing
+		if !@is_unicode and (align == 'J')
+			out('BT 0 Tw ET')
+		end
+
 		@lasth = h;
+
 		if (ln.to_i>0)
 			# Go to the beginning of the next line
 			@y += h;
