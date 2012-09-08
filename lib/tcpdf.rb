@@ -1694,7 +1694,10 @@ class TCPDF
 	def Text(x, y, txt)
 		#Output a string
 		if @rtl
-			xr = @w - x - GetStringWidth(txt)
+			# bidirectional algorithm (some chars may be changed affecting the line length)
+			s = utf8Bidi(UTF8StringToArray(txt), @tmprtl)
+			#l = GetArrStringWidth(s) # This should not happen. not use.
+			xr = @w - x - GetArrStringWidth(s)
 		else
 			xr = x
 		end
