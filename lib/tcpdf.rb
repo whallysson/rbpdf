@@ -2018,28 +2018,41 @@ class TCPDF
 	# This method allows printing text with line breaks. They can be automatic (as soon as the text reaches the right border of the cell) or explicit (via the \n character). As many cells as necessary are output, one below the other.<br />
 	# Text can be aligned, centered or justified. The cell block can be framed and the background painted.
 	# @param float :w Width of cells. If 0, they extend up to the right margin of the page.
-	# @param float :h Height of cells.
+	# @param float :h Cell minimum height. The cell extends automatically if needed.
 	# @param string :txt String to print
 	# @param mixed :border Indicates if borders must be drawn around the cell block. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
 	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L or empty string: left align</li><li>C: center</li><li>R: right align</li><li>J: justification (default value)</li></ul>
 	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
 	# @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right</li><li>1: to the beginning of the next line [DEFAULT]</li><li>2: below</li></ul>
+	# @param int :x x position in user units
+	# @param int :y y position in user units
+	# @param boolean :reseth if true reset the last cell height (default true).
+	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
+	# @param boolean :ishtml se to true if txt is HTML content (default = false).
+	# @return int Rerurn the number of lines or 1 for html mode.
 	# @since 1.3
 	# @see SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), Cell(), Write(), SetAutoPageBreak()
 	#
-	def MultiCell(w, h, txt, border=0, align='J', fill=0, ln=1)
+	def MultiCell(w, h, txt, border=0, align='J', fill=0, ln=1, x=0, y=0, reseth=true, stretch=0, ishtml=false)
 		
-		# save current position
-		prevx = @x;
-		prevy = @y;
+		if !@lasth or reseth
+			# set row height
+			@lasth = @font_size * @@k_cell_height_ratio
+		end
 		 
 		# get current page number
 		startpage = @page
 
-		# calculate remaining vertical space on first page ($startpage)
-		restspace = GetPageHeight() - GetY() - GetBreakMargin()
-
-		#Output text with automatic or explicit line breaks
+		if y != 0
+			SetY(y)
+		else
+			y = GetY()
+		end
+		if x != 0
+			SetX(x)
+		else
+			x = GetX()
+		end
 
 		if (w == 0)
 			if @rtl
@@ -2049,87 +2062,45 @@ class TCPDF
 			end
 		end
 
-		wmax = (w - 2 * @c_margin);
+		# store original margin values
+		l_margin = @l_margin
+		r_margin = @r_margin
 
-		s = txt.gsub("\r", ''); # remove carriage returns
-		nb = s.length;
-
-		sep=-1;
-		to_index=0;
-		from_j=0;
-		l=0;
-		ns=0;
-		nl=1;
-		
-		while to_index < nb
-			#Get next character
-			c = s[to_index];
-			if c == "\n"[0]
-				#Explicit line break
-				if @ws > 0
-					@ws = 0
-					out('0 Tw')
-				end
-        #Ed Moss - change begin            
-        end_i = to_index == 0 ? 0 : to_index - 1
-        # Changed from s[from_j..to_index] to fix bug reported by Hans Allis.
-        from_j = to_index == 0 ? 1 : from_j 
-        Cell(w, h, s[from_j..end_i], 0, 2, align, fill, '') 
-        #change end
-				to_index += 1
-				sep=-1
-        from_j=to_index
-				l=0
-				ns=0
-				nl += 1
-				next
-			end
-			if (c == " "[0])
-				sep = to_index;
-				ls = l;
-				ns += 1;
-			end
-
-			l = GetStringWidth(s[from_j, to_index-from_j]);
-
-			if (l > wmax)
-				#Automatic line break
-				if (sep == -1)
-					if (to_index == from_j)
-						to_index += 1;
-					end
-					if (@ws > 0)
-						@ws = 0;
-						out('0 Tw');
-					end
-					Cell(w, h, s[from_j..to_index-1], 0, 2, align, fill, '') # my FPDF version
-				else
-					if (align=='J' || align=='justify' || align=='justified')
-						@ws = (ns>1) ? (wmax-ls) / 1000 * @font_size / (ns-1) : 0
-						out(sprintf('%.3f Tw', @ws * @k));
-					end
-					Cell(w, h, s[from_j..sep], 0, 2, align, fill, '')
-					to_index = sep + 1;
-				end
-				sep=-1;
-				from_j = to_index;
-				l=0;
-				ns=0;
-				nl += 1;
-			else
-				to_index += 1;
-			end
-		end
-		#Last chunk
-		if (@ws>0)
-			@ws=0;
-			out('0 Tw');
+		# set new margin values
+		if @rtl
+			SetLeftMargin(@x - w)
+			SetRightMargin(@w - @x)
+		else
+			SetLeftMargin(@x)
+			SetRightMargin(@w - @x - w)
 		end
 
-		if(align == "J")
-			align = "L"
+		# calculate remaining vertical space on first page (startpage)
+		restspace = GetPageHeight() - GetY() - GetBreakMargin()
+
+		# Adjust internal padding
+		if @c_margin < (@line_width / 2)
+			@c_margin = @line_width / 2
 		end
-		Cell(w, h, s[from_j..end_i], 0, 2, align, fill, '')
+
+		# Add top space if needed
+		if (@lasth - @font_size) < @line_width
+			@y += @line_width / 2
+		end
+
+		if ishtml
+			# Write HTML text
+			writeHTML(txt, true, fill, reseth, true)
+			nl = 1
+		else
+			# Write text
+			nl = Write(@lasth, txt, '', fill, align, true, stretch)
+		end
+
+		# Add bottom space if needed
+		if (@lasth - @font_size) < @line_width
+			@y += @line_width / 2
+		end
 
 		# Get end-of-text Y position
 		currentY = GetY()
@@ -2143,37 +2114,42 @@ class TCPDF
 				for page in startpage..endpage
 					@page = page
 					if page == startpage
-						@y = GetPageHeight() - restspace - GetBreakMargin()
+						SetY(GetPageHeight() - restspace - GetBreakMargin())
 						h = restspace - 1
 					elsif page == endpage
-						@y = @t_margin # put cursor at the beginning of text
+						SetY(@t_margin) # put cursor at the beginning of text
 						h = currentY - @t_margin
 					else
-						@y = @t_margin # put cursor at the beginning of text
+						SetY(@t_margin) # put cursor at the beginning of text
 						h = GetPageHeight() - @t_margin - GetBreakMargin()
 					end
+					SetX(x)
 					Cell(w, h, "", border, 1, '', 0)
 				end
 			else
-				h = h > currentY - prevy ? h : currentY - prevy
-				@y = prevy # put cursor at the beginning of text
+				h = h > currentY - y ? h : currentY - y
+				SetY(y) # put cursor at the beginning of text
+				SetX(x)
 				# design a cell around the text
 				Cell(w, h, "", border, 1, '', 0)
 			end
 		end
 		
-		# move cursor to specified position
+		# restore original margin values
+		SetLeftMargin(l_margin)
+		SetRightMargin(r_margin)
+
 		if ln > 0
 			# Go to the beginning of the next line
 			SetY(currentY)
 			if ln == 2
-				SetX(prevx + w)
+				SetX(x + w)
 			end
 		else
 			# go left or right by case
 			@page = startpage
-			@y = prevy;
-			SetX(prevx + w)
+			@y = y
+			SetX(x + w)
 		end
 
 		return nl
