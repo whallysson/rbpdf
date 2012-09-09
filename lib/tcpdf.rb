@@ -2181,40 +2181,49 @@ class TCPDF
   alias_method :multi_cell, :MultiCell
 
 	#
-	# This method prints text from the current position. When the right margin is reached (or the \n character is met) a line break occurs and text continues from the left margin. Upon method exit, the current position is left just at the end of the text. It is possible to put a link on the text.<br />
-	# <b>Example:</b><br />
-	# <pre>
-	# #Begin with regular font
-	# :pdf->SetFont('Arial','',14);
-	# :pdf->Write(5,'Visit ');
-	# #Then put a blue underlined link
-	# :pdf->SetTextColor(0,0,255);
-	# :pdf->SetFont('','U');
-	# :pdf->Write(5,'www.tecnick.com','http://www.tecnick.com');
-	# </pre>
+	# This method prints text from the current position.<br />
 	# @param float :h Line height
 	# @param string :txt String to print
 	# @param mixed :link URL or identifier returned by AddLink()
 	# @param int :fill Indicates if the background must be painted (1) or transparent (0). Default value: 0.
+	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L or empty string: left align (default value)</li><li>C: center</li><li>R: right align</li><li>J: justify</li></ul>
+	# @param boolean :ln if true set cursor at the bottom of the line, otherwise set cursor at the top of the line.
+	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
+	# @return int Rerurn the number of lines.
 	# @since 1.5
-	# @see SetFont(), SetTextColor(), AddLink(), MultiCell(), SetAutoPageBreak()
 	#
-	def Write(h, txt, link=nil, fill=0)
+	def Write(h, txt, link=nil, fill=0, align='', ln=false, stretch=0)
+		txt.force_encoding('ASCII-8BIT') if txt.respond_to?(:force_encoding)
 
-		#Output text in flowing mode
-		# calculating remaining line width ($w)
+		# store current position
+		prevx = @x
+		prevy = @y
+
+		# calculating remaining line width (w)
 		if @rtl
 			w = @x - @l_margin
 		else
 			w = @w - @r_margin - @x
 		end
-		wmax = w - 2 * @c_margin
     
+		# remove carriage returns
 		s = txt.gsub("\r", '');
-		nb = s.length;
+
+		# check if string contains arabic text
+		if s =~ @@k_re_pattern_arabic
+			arabic = true
+		else
+			arabic = false
+		end
+
+		# get array of chars
+		chars = UTF8StringToArray(s)
+
+		# get the number of characters
+		nb = chars.size
 
 		# handle single space character
-		if ((nb==1) and (s == " "))
+		if (nb == 1) and (s =~ /\s/)
 			if @rtl
 				@x -= GetStringWidth(s)
 			else
@@ -2223,73 +2232,37 @@ class TCPDF
 			return;
 		end
 
-		sep=-1;
-		i=0;
-		j=0;
-		l=0;
-		nl=1;
-		while(i<nb)
-			#Get next character
-			c = s[i];
-			if (c == "\n"[0])
-				#Explicit line break
-				Cell(w, h, s[j,i-j], 0, 2, '', fill, link);
-				i += 1;
-				sep = -1;
-				j = i;
-				l = 0;
-				if (nl == 1)
-					if @rtl
-						@x = @w - @r_margin
-						w = @x - @l_margin
-					else
-						@x = @l_margin
-						w = @w - @r_margin - @x
-					end
-					wmax = (w - 2 * @c_margin);
-				end
-				nl += 1;
-				next
-			end
-			if (c == " "[0])
-				sep= i;
-			end
-			l = GetStringWidth(s[j, i-j]);
-			if (l > wmax)
-				#Automatic line break (word wrapping)
-				if (sep == -1)
-					if !@rtl and (@x > @l_margin)
-						#Move to next line
-						@x = @l_margin;
-						@y += h;
-						w=@w - @r_margin - @x;
-						wmax = w - 2 * @c_margin
-						i += 1
-						nl += 1
-						next
-					elsif @rtl and (@x < @r_margin)
-						# Move to next line
-						@x = @w - @r_margin
-						@y += h
-						w = @x - @l_margin
-						wmax = w - 2 * @c_margin
-						i +=1
-						nl += 1
-						next
-					end
+		# max column width
+		wmax = w - (2 * @c_margin)
 
-					if (i == j)
-						i += 1
+		i = 0    # character position
+		j = 0    # current srting starting position
+		sep = -1 # position of the last blank space
+		l = 0    # current string lenght
+		nl = 0   # number of lines
+
+		while(i<nb)
+			# Get the current character
+			c = chars[i]
+			# 10 = "\n" = new line
+			if (c == 10)
+				#Explicit line break
+				if align == "J"
+					if @rtl
+						talign = "R"
+					else
+						talign = "L"
 					end
-					Cell(w, h, s[j, (i-1)], 0, 2, '', fill, link);
 				else
-					Cell(w, h, s[j, (sep-j)], 0, 2, '', fill, link);
-					i = sep+1;
+					talign = align
 				end
-				sep = -1;
-				j = i;
-				l = 0;
-				if (nl==1)
+				Cell(w, h, UTF8ArrSubString(chars, j, i), 0, 2, talign, fill, link, stretch)
+				nl += 1
+				j = i + 1
+				l = 0
+				sep = -1
+				if (nl == 1)
+					# set the next line width and position
 					if @rtl
 						@x = @w - @r_margin
 						w = @x - @l_margin
@@ -2297,17 +2270,82 @@ class TCPDF
 						@x = @l_margin
 						w = @w - @r_margin - @x
 					end
-					wmax = (w - 2 * @c_margin);
+					wmax = w - (2 * @c_margin)
 				end
-				nl += 1;
-			else
-				i += 1;
+			else 
+				if unichr(c) =~ /\s/
+					# update last blank space position
+					sep = i
+				end
+
+				# update string length
+				if @is_unicode
+					if arabic
+						# with bidirectional algorithm some chars may be changed affecting the line length
+						# *** very slow ***
+						l = GetArrStringWidth(utf8Bidi(chars[j..i], @tmprtl))
+					else
+						l += GetCharWidth(c)
+					end
+				else
+					l += GetCharWidth(c)
+				end
+
+				if (l > wmax)
+					# we have reached the end of column
+					if (sep == -1)
+						# truncate the word because do not fit on column
+						Cell(w, h, UTF8ArrSubString(chars, j, i), 0, 2, align, fill, link, stretch)
+						nl += 1
+						if nl == 1
+							# set the next line width and position
+							if @rtl
+								@x = @w - @r_margin
+								w = @x - @l_margin
+							else
+								@x = @l_margin
+								w = @w - @r_margin - @x
+							end
+							wmax = w - (2 * @c_margin)
+						end
+					else
+						# word wrapping
+						Cell(w, h, UTF8ArrSubString(chars, j, sep), 0, 2, align, fill, link, stretch)
+						nl += 1
+						i = sep + 1
+						if nl == 1
+							# set the next line width and position
+							if @rtl
+								@x = @w - @r_margin
+								w = @x - @l_margin
+							else
+								@x = @l_margin
+								w = @w - @r_margin - @x
+							end
+							wmax = w - (2 * @c_margin)
+						end
+					end
+					sep = -1
+					j = i
+					l = 0
+				end
 			end
+			i +=1
+		end # end while i < nb
+		# print last row
+		if i != j
+			Cell(w, h, UTF8ArrSubString(chars, j, nb), 0, (ln ? 1 : 0), align, fill, link, stretch)
+			nl += 1
 		end
-		#Last chunk
-		if (i != j)
-			Cell(GetStringWidth(s[j..i]) + 2 * @c_margin, h, s[j..i], 0, 0, '', fill, link)
+
+		w = GetStringWidth(UTF8ArrSubString(chars, j, nb)) + (2 * @c_margin)
+		if @rtl
+			@x = prevx - w
+		else
+			@x = prevx + w
 		end
+
+		return nl
 	end
   alias_method :write, :Write
 
