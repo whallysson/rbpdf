@@ -3568,15 +3568,21 @@ class TCPDF
 	#   UTF8-tail   = %x80-BF
 	#   ---------------------------------------------------------------------
 	# </pre>
-	# @param string :str string to process.
-	# @return array containing codepoints (UTF-8 characters values)
+	# @param string :str string to process. (UTF-8)
+	# @return array containing codepoints (UTF-8 characters values) (UCS4)
 	# @access protected
 	# @author Nicola Asuni
 	# @since 1.53.0.TC005 (2005-01-05)
 	#
 	def UTF8StringToArray(str)
-		if (!@is_unicode)
-			return str; # string is not in unicode
+		if !@is_unicode
+			# split string into array of chars
+			strarr = str.split(//)
+			# convert chars to equivalent code
+			strarr.each_with_index do |char, pos| # was while(list(pos,char)=each(strarr))
+				strarr[pos] = char.unpack('C')[0]
+			end
+			return strarr
 		end
 
 		unicode = [] # array containing unicode values
@@ -3619,12 +3625,12 @@ class TCPDF
 						# encoding form (as surrogate pairs) and do not directly represent
 						# characters
 						unicode << 0xFFFD; # use replacement character
-  				else
-  					unicode << char; # add char to array
+					else
+						unicode << char # add char to array
 					end
-  				# reset data for next char
-  				bytes = []
-  				numbytes = 1;
+					# reset data for next char
+					bytes = []
+					numbytes = 1
 				end
 			else
 				# use replacement character for other invalid sequences
