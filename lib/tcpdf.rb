@@ -4252,7 +4252,7 @@ class TCPDF
 		#Put a hyperlink
 		SetTextColor(0, 0, 255);
 		SetStyle('u', true);
-		Write(@lasth, name, url, fill);
+		Write(@lasth, name, url, fill, '', false, 0)
 		SetStyle('u', false);
 		SetTextColor(0);
 	end
