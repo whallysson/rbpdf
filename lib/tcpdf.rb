@@ -3917,104 +3917,12 @@ class TCPDF
 	# @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right (or left for RTL language)</li><li>1: to the beginning of the next line</li><li>2: below</li></ul>
 # Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
 	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
-	# @param boolean :reseth if true reset the last cell height (default false).
-	# @see Cell()
+	# @param boolean :reseth if true reset the last cell height (default true).
+	# @uses MultiCell()
+	# @see Multicell(), writeHTML(), Cell()
 	#
-	def writeHTMLCell(w, h, x, y, html='', border=0, ln=0, fill=0, reseth=false)
-		
-		if (@lasth == 0) or reseth
-			#set row height
-			@lasth = @font_size * @@k_cell_height_ratio; 
-		end
-		
-		# get current page number
-		startpage = @page
-		
-		if y != 0
-			SetY(y)
-		else
-			y = GetY()
-		end
-		if x != 0
-			SetX(x)
-		else
-			x = GetX()
-		end
-				
-		if (w == 0)
-			if @rtl
-				w = @x - @l_margin
-			else
-				w = @w - @r_margin - @x
-			end
-		end
-		
-		# store original margin values
-		l_margin = @l_margin;
-		r_margin = @r_margin;
-		
-		# set new margin values
-		if @rtl
-			SetLeftMargin(@x - w)
-			SetRightMargin(@w - @x)
-		else
-			SetLeftMargin(@x)
-			SetRightMargin(@w - @x - w)
-		end
-				
-		# calculate remaining vertical space on first page (startpage)
-		restspace = GetPageHeight() - GetY() - GetBreakMargin();
-		
-		# Write HTML text
-		writeHTML(html, true, fill, reseth, true)
-		
-		# Get end-of-text Y position
-		currentY =  GetY();
-		# get latest page number
-		endpage = @page
-		
-		if border != 0
-			# check if a new page has been created
-			if endpage > startpage
-				# design borders around HTML cells.
-				startpage.upto(endpage) do |page|
-					@page = page
-					if page==startpage
-						SetY(GetPageHeight() - restspace - GetBreakMargin())
-						h = restspace - 1
-					elsif page==endpage
-						SetY(@t_margin) # put cursor at the beginning of text
-						h = currentY - @t_margin
-					else
-						SetY(@t_margin); # put cursor at the beginning of text
-						h = GetPageHeight() - @t_margin - GetBreakMargin()
-					end
-					Cell(w, h, "", border, 1, '', 0)
-				end
-			else
-				h = [h, (currentY - y)].max
-				SetY(y) # put cursor at the beginning of text
-				# design a cell around the text
-				Cell(w, h, "", border, 1, '', 0)
-			end
-		end
-		
-		# restore original margin values
-		SetLeftMargin(l_margin);
-		SetRightMargin(r_margin);
-		
-		if ln > 0
-			# Go to the beginning of the next line
-			SetY(currentY)
-			if ln == 2
-				SetX(x + w)
-			end
-		else
-			# go left or right by case
-			@page = startpage
-			@y = y
-			SetX(x + w)
-		end
+	def writeHTMLCell(w, h, x, y, html='', border=0, ln=0, fill=0, reseth=true)
+		return MultiCell(w, h, html, border, '', fill, ln, x, y, reseth, 0, true)
 	end
   alias_method :write_html_cell, :writeHTMLCell
 
