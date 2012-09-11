@@ -3418,6 +3418,7 @@ class TCPDF
 	# @access protected
 	#
 	def out(s)
+		s.force_encoding('ASCII-8BIT') if s.respond_to?(:force_encoding)
 		if (@state==2)
 			@pages[@page] << s.to_s + "\n";
 		else
