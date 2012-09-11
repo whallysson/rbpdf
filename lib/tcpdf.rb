@@ -1554,9 +1554,9 @@ class TCPDF
 		end
 
 		# try to add font (if not already added)
-		if (@is_unicode)
+		#if @is_unicode # it's bug.
 			AddFont(family, style);
-		end
+		#end
 		
 		#Test if font is already selected
 		if ((@font_family == family) and (@font_style == style) and (@font_size_pt == size))
