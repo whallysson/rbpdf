@@ -2753,7 +2753,7 @@ class TCPDF
 	def putpages()
 		nb = @page;
 		if (@alias_nb_pages)
-			nbstr = UTF8ToUTF16BE(nb, false);
+			nbstr = UTF8ToUTF16BE(nb.to_s, false)
 			#Replace number of pages
 			1.upto(nb) do |n|
 				@pages[n].gsub!(@alias_nb_pages, nbstr)
