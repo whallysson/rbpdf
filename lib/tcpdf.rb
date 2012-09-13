@@ -774,6 +774,15 @@ class TCPDF
   # alias_method :close, :Close
 
 	#
+	# Reset pointer to the last document page.
+	# @since 2.0.000 (2008-01-04)
+	# @see setPage(), getPage(), getNumPages()
+	#
+	def LastPage()
+		@page = @pages.size == 0 ? 0 : @pages.size - 1
+	end
+
+	#
 	# Get current document page number.
 	# @return int page number
 	# @since 2.1.000 (2008-01-07)
