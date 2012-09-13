@@ -783,6 +783,18 @@ class TCPDF
 	end
 
 	#
+	# Move pointer to the apecified document page.
+	# @param int :pnum page number
+	# @since 2.1.000 (2008-01-07)
+	# @see getPage(), lastpage(), getNumPages()
+	#
+	def SetPage(pnum)
+		if(pnum > 0) and (pnum <= @pages.size - 1)
+			@page = pnum
+		end
+	end
+
+	#
 	# Get current document page number.
 	# @return int page number
 	# @since 2.1.000 (2008-01-07)
