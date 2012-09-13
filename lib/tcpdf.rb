@@ -599,6 +599,17 @@ class TCPDF
   alias_method :set_right_margin, :SetRightMargin
 
 	#
+	# Set the internal Cell padding.
+	# @param float :pad internal padding.
+	# @since 2.1.000 (2008-01-09)
+	# @see Cell(), SetLeftMargin(), SetTopMargin(), SetAutoPageBreak(), SetMargins()
+	#
+	def SetCellPadding(pad)
+		@c_margin = pad
+	end
+  alias_method :set_cell_padding, :SetCellPadding
+
+	#
 	# Enables or disables the automatic page breaking mode. When enabling, the second parameter is the distance from the bottom of the page that defines the triggering limit. By default, the mode is on and the margin is 2 cm.
 	# @param boolean :auto Boolean indicating if mode should be on or off.
 	# @param float :margin Distance from the bottom of the page.
