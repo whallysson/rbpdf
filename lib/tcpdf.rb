@@ -1115,6 +1115,15 @@ class TCPDF
 				@original_r_margin = @r_margin;
 			end
 			
+			# reset original header margins
+			@r_margin = @original_r_margin
+			@l_margin = @original_l_margin
+
+			# save current font values
+			font_family =  @font_family
+			font_style = @font_style
+			font_size = @font_size_pt
+
 			#set font
 			SetFont(@footer_font[0], @footer_font[1] , @footer_font[2]);
 			#set style for cell border
@@ -1153,6 +1162,9 @@ class TCPDF
 			end
 			# restore line width
 			SetLineWidth(prevlinewidth)
+
+			# restore font values
+			SetFont(font_family, font_style, font_size)
 		end
 	end
 	  alias_method :footer, :Footer
