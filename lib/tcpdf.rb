@@ -823,6 +823,13 @@ class TCPDF
 	# @see TCPDF(), Header(), Footer(), SetMargins()
 	#
 	def AddPage(orientation='')
+		if @pages.size - 1 > @page
+			# this page has been already added
+			@page += 1
+			@y = @t_margin
+			return
+		end
+
 		#Start a new page
 		if (@state==0)
 			Open();
