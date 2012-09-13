@@ -459,6 +459,17 @@ class TCPDF
   alias_method :set_temp_rtl, :SetTempRTL
 
 	#
+	# Set the last cell height.
+	# @param float :h cell height.
+	# @author Nicola Asuni
+	# @since 1.53.0.TC034
+	#
+	def SetLastH(h)
+		@lasth = h
+	end
+  alias_method :set_last_h, :SetLastH
+
+	#
 	# Set the image scale.
 	# @param float :scale image scale.
 	# @author Nicola Asuni
