@@ -234,6 +234,9 @@ class TCPDF
 		@rtl = false
 		@tmprtl = false
 
+		# bookmark
+		@outlines ||= []
+
 		#Some checks
 		dochecks();
 		
@@ -3155,6 +3158,7 @@ class TCPDF
 		putresourcedict();
 		out('>>');
 		out('endobj');
+		putbookmarks()
 	end
 	
 	#
@@ -3203,6 +3207,10 @@ class TCPDF
 			out('/PageLayout /OneColumn');
 		elsif (@layout_mode=='two')
 			out('/PageLayout /TwoColumnLeft');
+		end
+		if @outlines.size > 0
+			out('/Outlines ' + @outline_root.to_s + ' 0 R')
+			out('/PageMode /UseOutlines')
 		end
 		if @rtl
 			out('/ViewerPreferences << /Direction /R2L >>')
@@ -4858,6 +4866,79 @@ class TCPDF
 	end
 		
 	# END OF BIDIRECTIONAL TEXT SECTION -------------------
+
+	#
+	# Adds a bookmark.
+	# @param string :txt bookmark description.
+	# @param int :level bookmark level.
+	# @param float :y Ordinate of the boorkmark position (default = -1 = current position).
+	# @access public
+	# @author Olivier Plathey, Nicola Asuni
+	# @since 2.1.002 (2008-02-12)
+	#
+	def Bookmark(txt, level=0, y=-1)
+		if y == -1
+			y = GetY()
+		end
+		@outlines.push :t => txt, :l => level, :y => y, :p => PageNo()
+	end
+
+	#
+	# Create a bookmark PDF string.
+	# @access private
+	# @author Olivier Plathey, Nicola Asuni
+	# @since 2.1.002 (2008-02-12)
+	#
+	def putbookmarks()
+		nb = @outlines.size
+		if nb == 0
+			return
+		end
+		lru = []
+		level = 0
+		@outlines.each_with_index do |o, i|
+			if o[:l] > 0
+				parent = lru[o[:l] - 1]
+				# Set parent and last pointers
+				@outlines[i][:parent] = parent
+				@outlines[parent][:last] = i
+				if o[:l] > level
+					# Level increasing: set first pointer
+					@outlines[parent][:first] = i
+				end
+			else
+				@outlines[i][:parent] = nb
+			end
+			if o[:l] <= level and i > 0
+				# Set prev and next pointers
+				prev = lru[o[:l]]
+				@outlines[prev][:next] = i
+				@outlines[i][:prev] = prev
+			end
+			lru[o[:l]] = i
+			level = o[:l]
+		end
+		# Outline items
+		n = @n + 1
+		@outlines.each_with_index do |o, i|
+			newobj()
+			out('<</Title ' + textstring(o[:t]))
+			out('/Parent ' + (n + o[:parent]).to_s + ' 0 R')
+			out('/Prev ' + (n + o[:prev]).to_s + ' 0 R') if !o[:prev].nil?
+			out('/Next ' + (n + o[:next]).to_s + ' 0 R') if !o[:next].nil?
+			out('/First ' + (n + o[:first]).to_s + ' 0 R') if !o[:first].nil?
+			out('/Last ' + (n + o[:last]).to_s + ' 0 R') if !o[:last].nil?
+			out('/Dest [%d 0 R /XYZ 0 %.2f null]' % [1 + 2 * o[:p], (@h - o[:y]) * @k])
+			out('/Count 0>>')
+			out('endobj')
+		end
+		# Outline root
+		newobj()
+		@outline_root = @n
+		out('<</Type /Outlines /First ' + n.to_s + ' 0 R')
+		out('/Last ' + (n + lru[0]).to_s + ' 0 R>>')
+		out('endobj')
+	end
 
 end # END OF TCPDF CLASS
 
