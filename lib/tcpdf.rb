@@ -4804,37 +4804,147 @@ class TCPDF
 		# Arabic Shaping
 		# Cursively connected scripts, such as Arabic or Syriac, require the selection of positional character shapes that depend on adjacent characters. Shaping is logically applied after the Bidirectional Algorithm is used and is limited to characters within the same directional run. 
 		if arabic
+			endedletter = [1569,1570,1571,1572,1573,1575,1577,1583,1584,1585,1586,1608,1688]
+			alfletter = [1570,1571,1573,1575]
+			chardata2 = chardata
+			laaletter = false
+			charAL = []
+			x = 0
 			0.upto(numchars-1) do |i|
-				if @@unicode[chardata[i][:char]] == 'AL'
-					if (i > 0) and (i+1 < numchars) and 
-							(@@unicode[chardata[i-1][:char]] == 'AL') and 
-							(@@unicode[chardata[i+1][:char]] == 'AL') and
-							(chardata[i-1][:type] == chardata[i][:type]) and
-							(chardata[i+1][:type] == chardata[i][:type])
+				if (@@unicode[chardata[i][:char]] == 'AL') or (chardata[i][:char] == 32) or (chardata[i]['char'] == 8204) # 4.0.008 - Arabic shaping for "Zero-Width Non-Joiner" character (U+200C) was fixed.
+					charAL[x] = chardata[i]
+					charAL[x][:i] = i
+					chardata[i][:x] = x
+					x += 1
+				end
+			end
+			numAL = x
+			0.upto(numchars-1) do |i|
+				thischar = chardata[i]
+				if i > 0
+					prevchar = chardata[i-1]
+				else
+					prevchar = false
+				end
+				if i+1 < numchars
+					nextchar = chardata[i+1]
+				else
+					nextchar = false
+				end
+				if @@unicode[thischar[:char]] == 'AL'
+					x = thischar[:x]
+					if x > 0
+						prevchar = charAL[x-1]
+					else
+						prevchar = false
+					end
+					if x+1 < numAL
+						nextchar = charAL[x+1]
+					else
+						nextchar = false
+					end
+					# if laa letter
+					if (prevchar != false) and (prevchar[:char] == 1604) and alfletter.include?(thischar[:char])
+						arabicarr = @@laa_array
+						laaletter = true
+						if x > 1
+							prevchar = charAL[x-2]
+						else
+							prevchar = false
+						end
+					else
+						arabicarr = @@unicode_arlet
+						laaletter = false
+					end	
+					if (prevchar != false) and (nextchar != false) and
+						((@@unicode[prevchar[:char]] == 'AL') or (@@unicode[prevchar[:char]] == 'NSM')) and
+						((@@unicode[nextchar[:char]] == 'AL') or (@@unicode[nextchar[:char]] == 'NSM')) and
+						(nextchar[:type] == thischar[:type]) and
+						(nextchar[:char] != 1567)
 						# medial
-						unless @@unicode_arlet[chardata[i][:char]][3].nil?
-							chardata[i][:char] = @@unicode_arlet[chardata[i][:char]][3]
+						if endedletter.include?(prevchar[:char])
+							if !arabicarr[thischar[:char]].nil? and !arabicarr[thischar[:char]][2].nil?
+								# initial
+								chardata2[i][:char] = arabicarr[thischar[:char]][2]
+							end
+						else
+							if !arabicarr[thischar[:char]].nil? and !arabicarr[thischar[:char]][3].nil?
+								# medial
+								chardata2[i][:char] = arabicarr[thischar[:char]][3]
+							end
 						end
-					elsif (i+1 < numchars) and 
-							(@@unicode[chardata[i+1][:char]] == 'AL') and 
-							(chardata[i+1][:type] == chardata[i][:type])
-						# initial
-						unless @@unicode_arlet[chardata[i][:char]][2].nil?
-							chardata[i][:char] = @@unicode_arlet[chardata[i][:char]][2]
+					elsif (nextchar != false) and
+						((@@unicode[nextchar[:char]] == 'AL') or (@@unicode[nextchar[:char]] == 'NSM')) and
+						(nextchar[:type] == thischar[:type]) and
+						(nextchar[:char] != 1567)
+						if !arabicarr[thischar[:char]].nil? and !arabicarr[thischar[:char]][2].nil?
+							# initial
+							chardata2[i][:char] = arabicarr[thischar[:char]][2]
 						end
-					elsif (i > 0) and 
-							(@@unicode[chardata[i-1][:char]] == 'AL') and 
-							(chardata[i-1][:type] == chardata[i][:type])
+					elsif ((prevchar != false) and
+						((@@unicode[prevchar[:char]] == 'AL') or (@@unicode[prevchar[:char]] == 'NSM')) and
+						(prevchar[:type] == thischar[:type])) or
+						((nextchar != false) and (nextchar[:char] == 1567))
 						# final
-						unless @@unicode_arlet[chardata[i][:char]][1].nil?
-							chardata[i][:char] = @@unicode_arlet[chardata[i][:char]][1]
+						if (i > 1) and (thischar[:char] == 1607) and
+							(chardata[i-1][:char] == 1604) and
+							(chardata[i-2][:char] == 1604)
+							# Allah Word
+							# mark characters to delete with false
+							chardata2[i-2][:char] = false
+							chardata2[i-1][:char] = false 
+							chardata2[i][:char] = 65010
+						else
+							if (prevchar != false) and endedletter.include?(prevchar[:char])
+								if !arabicarr[thischar[:char]].nil? and !arabicarr[thischar[:char]][0].nil?
+									# isolated
+									chardata2[i][:char] = arabicarr[thischar[:char]][0]
+								end
+							else
+								if !arabicarr[thischar[:char]].nil? and !arabicarr[thischar[:char]][1].nil?
+									# final
+									chardata2[i][:char] = arabicarr[thischar[:char]][1]
+								end
+							end
 						end
-					elsif !@@unicode_arlet[chardata[i][:char]][0].nil?
+					elsif !arabicarr[thischar[:char]].nil? and !arabicarr[thischar[:char]][0].nil?
 						# isolated
-						chardata[i][:char] = @@unicode_arlet[chardata[i][:char]][0]
+						chardata2[i][:char] = arabicarr[thischar[:char]][0]
+					end
+					# if laa letter
+					if laaletter
+						# mark characters to delete with false
+						chardata2[charAL[x-1][:i]][:char] = false
+					end
+				end # end if AL (Arabic Letter)
+			end # end for each char
+
+			# 
+			# Combining characters that can occur with Shadda (0651 HEX, 1617 DEC) are placed in UE586-UE594. 
+			# Putting the combining mark and shadda in the same glyph allows us to avoid the two marks overlapping each other in an illegible manner.
+			#
+			cw = @current_font['cw']
+                        0.upto(numchars-2) do |i|
+				if (chardata2[i][:char] == 1617) and !@@diacritics[chardata2[i+1][:char]].nil?
+					# check if the subtitution font is defined on current font
+					unless cw[@@diacritics[chardata2[i+1][:char]]].nil?
+						chardata2[i][:char] = false
+						chardata2[i+1][:char] = @@diacritics[chardata2[i+1][:char]]
 					end
 				end
 			end
+			# remove marked characters
+			chardata2.each_with_index do |value, key|
+				if value[:char] == false
+					chardata2.delete_at(key)
+				end
+			end
+			chardata = chardata2
+			numchars = chardata.size
+			chardata2 = nil
+			arabicarr = nil
+			laaletter = nil
+			charAL = nil
 		end
 		
 		# L2. From the highest level found in the text to the lowest odd level on each line, including intermediate levels not actually present in the text, reverse any contiguous sequence of characters that are at that level or higher.

@@ -18,6 +18,7 @@
 #============================================================+
 # THANKS TO
 # Efthimios Mavrogeorgiadis
+# Saleh AlMatrafe
 
 #
 # Unicode Include file for TCPDF.
@@ -25,7 +26,7 @@
 # @copyright 2004-2008 Nicola Asuni - Tecnick.com S.r.l (www.tecnick.com) Via Della Pace, 11 - 09044 - Quartucciu (CA) - ITALY - www.tecnick.com - info@tecnick.com
 # @package com.tecnick.tcpdf
 # @version 2.1.000
-# @link http://tcpdf.sourceforge.net
+# @link http://www.tcpdf.org
 # @license http://www.gnu.org/copyleft/lesser.html LGPL
 # @since 2.1.000 (2008-01-08)
 #
@@ -17810,7 +17811,8 @@ module Unicode_data
 
 #
 # Mirror unicode characters.
-# For information on bidi mirroring, see UAX #9: Bidirectional Algorithm, at http://www.unicode.org/unicode/reports/tr9/
+# For information on bidi mirroring, see UAX #9: Bidirectional Algorithm,
+# at http://www.unicode.org/unicode/reports/tr9/
 #
 @@unicode_mirror = {
 0x0028=>0x0029,
@@ -18172,12 +18174,12 @@ module Unicode_data
 #
 @@unicode_arlet = {
 1569=>[65152],
-1570=>[65153, 65154],
-1571=>[65155, 65156],
+1570=>[65153, 65154, 65153, 65154],
+1571=>[65155, 65156, 65155, 65156],
 1572=>[65157, 65158],
-1573=>[65159, 65160],
+1573=>[65159, 65160, 65159, 65160],
 1574=>[65161, 65162, 65163, 65164],
-1575=>[65165, 65166],
+1575=>[65165, 65166, 65165, 65166],
 1576=>[65167, 65168, 65169, 65170],
 1577=>[65171, 65172],
 1578=>[65173, 65174, 65175, 65176],
@@ -18185,10 +18187,10 @@ module Unicode_data
 1580=>[65181, 65182, 65183, 65184],
 1581=>[65185, 65186, 65187, 65188],
 1582=>[65189, 65190, 65191, 65192],
-1583=>[65193, 65194],
-1584=>[65195, 65196],
-1585=>[65197, 65198],
-1586=>[65199, 65200],
+1583=>[65193, 65194, 65193, 65194],
+1584=>[65195, 65196, 65195, 65196],
+1585=>[65197, 65198, 65197, 65198],
+1586=>[65199, 65200, 65199, 65200],
 1587=>[65201, 65202, 65203, 65204],
 1588=>[65205, 65206, 65207, 65208],
 1589=>[65209, 65210, 65211, 65212],
@@ -18204,7 +18206,7 @@ module Unicode_data
 1605=>[65249, 65250, 65251, 65252],
 1606=>[65253, 65254, 65255, 65256],
 1607=>[65257, 65258, 65259, 65260],
-1608=>[65261, 65262],
+1608=>[65261, 65262, 65261, 65262],
 1609=>[65263, 65264, 64488, 64489],
 1610=>[65265, 65266, 65267, 65268],
 1649=>[64336, 64337],
@@ -18224,7 +18226,7 @@ module Unicode_data
 1677=>[64386, 64387],
 1678=>[64390, 64391],
 1681=>[64396, 64397],
-1688=>[64394, 64395],
+1688=>[64394, 64395, 64394, 64395],
 1700=>[64362, 64363, 64364, 64365],
 1702=>[64366, 64367, 64368, 64369],
 1705=>[64398, 64399, 64400, 64401],
@@ -18249,6 +18251,31 @@ module Unicode_data
 1747=>[64432, 64433],
 8204=>[00000],
 8205=>[00000, 00000, 00000, 00000]
+}
+
+#
+# Arabic laa letter
+# char code => isolated, final, initial, medial
+#
+@@laa_array = {
+1570=>[65269, 65270, 65269, 65270],
+1571=>[65271, 65272, 65271, 65272],
+1573=>[65273, 65274, 65273, 65274],
+1575=>[65275, 65276, 65275, 65276]
+}
+
+#
+# Array of character substitutions for sequences of two diacritics symbols starting with SHADDA (0651 HEX, 1617 DEC).
+# Combining characters that can occur with Shadda (U0651) are placed in UE586-UE594. 
+# Putting the combining mark and shadda in the same glyph allows us to avoid the two marks overlapping each other in an illegible manner.
+# second NSM char code => substitution char
+#
+@@diacritics = {
+1612=>64606, # Shadda + Dammatan
+1613=>64607, # Shadda + Kasratan
+1614=>64608, # Shadda + Fatha
+1615=>64609, # Shadda + Damma
+1616=>64610  # Shadda + Kasra
 }
 end
 
