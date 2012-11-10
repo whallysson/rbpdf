@@ -1951,7 +1951,7 @@ class TCPDF
 			end
 			@x = x
 		end
-		if (w == 0)
+		if !w or (w <= 0)
 			if @rtl
 				w = @x - @l_margin
 			else
@@ -2092,25 +2092,27 @@ class TCPDF
 				end
 			end
 
-			s << sprintf('BT %.2f %.2f Td [(%s)] TJ ET', xdk, (@h - (@y + 0.5 * h + 0.3 * @font_size)) * k, txt2);
-			if (@underline)
-				if @rtl
-					xdx = @x - dx - width
-				else
-					xdx = @x + dx
-				end
-				s << ' ' + dounderline(xdx, @y + 0.5 * h + 0.3 * @font_size, txt)
+			# calculate approximate position of the font base line
+			basefonty = @y + (h / 2) + (@font_size / 3)
+
+			# print text
+			s << sprintf('BT %.2f %.2f Td [(%s)] TJ ET', xdk, (@h - basefonty) * k, txt2)
+			if @rtl
+				xdx = @x - dx - width
+			else
+				xdx = @x + dx
+			end
+			if @underline
+				s << ' ' + dounderline(xdx, basefonty, txt)
+			end
+			if @linethrough
+				s << ' ' + dolinethrough(xdx, basefonty, txt)
 			end
 			if (@color_flag)
 				s<<' Q';
 			end
 			if link && !link.empty?
-				if @rtl
-					xdx = @x - dx - width
-				else
-					xdx = @x + dx
-				end
-				Link(xdx, @y + 0.5 * h - 0.5 * @font_size, width, @font_size, link)
+				Link(xdx, @y + ((h - @font_size) / 2), width, @font_size, link)
 			end
 		end
 
