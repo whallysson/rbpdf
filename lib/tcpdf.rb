@@ -1102,6 +1102,8 @@ class TCPDF
 			else
 				header_x = @original_l_margin + @header_logo_width * 1.1
 			end
+
+			SetTextColor(0, 0, 0, false)
 			
 			# header title
 			SetFont(@header_font[0], 'B', @header_font[2] + 1);
@@ -1163,6 +1165,8 @@ class TCPDF
 			font_family =  @font_family
 			font_style = @font_style
 			font_size = @font_size_pt
+
+			SetTextColor(0, 0, 0, false)
 
 			#set font
 			SetFont(@footer_font[0], @footer_font[1] , @footer_font[2]);
