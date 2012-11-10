@@ -848,6 +848,17 @@ class TCPDF
 	# @see TCPDF(), Header(), Footer(), SetMargins()
 	#
 	def AddPage(orientation='')
+		# store current margin values
+		l_margin = @l_margin
+		r_margin = @r_margin
+
+		if @original_l_margin.nil?
+			@original_l_margin = @l_margin
+		end
+		if @original_r_margin.nil?
+			@original_r_margin = @r_margin
+		end
+
 		if @pages.size - 1 > @page
 			# this page has been already added
 			@page += 1
@@ -860,7 +871,7 @@ class TCPDF
 			Open();
 		end
 		family=@font_family;
-		style=@font_style + (@underline ? 'U' : '');
+		style=@font_style + (@underline ? 'U' : '') + (@linethrough ? 'D' : '')
 		size=@font_size_pt;
 		lw=@line_width;
 		dc=@draw_color;
@@ -919,6 +930,10 @@ class TCPDF
 		end
 		@text_color = tc;
 		@color_flag = cf;
+
+		# restore previous margin values
+		SetLeftMargin(l_margin)
+		SetRightMargin(r_margin)
 	end
 	  alias_method :add_page, :AddPage
 	
