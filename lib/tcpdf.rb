@@ -1817,10 +1817,12 @@ class TCPDF
 	# @param float :x Abscissa of the origin
 	# @param float :y Ordinate of the origin
 	# @param string :txt String to print
+	# @param int :stroke outline size in points (0 = disable)
+	# @param boolean :clip if true activate clipping mode (you must call StartTransform() before this function and StopTransform() to stop the clipping tranformation).
 	# @since 1.0
 	# @see SetFont(), SetTextColor(), Cell(), MultiCell(), Write()
 	#
-	def Text(x, y, txt)
+	def Text(x, y, txt, stroke=0, clip=false)
 		#Output a string
 		if @rtl
 			# bidirectional algorithm (some chars may be changed affecting the line length)
@@ -1830,12 +1832,23 @@ class TCPDF
 		else
 			xr = x
 		end
-		s = sprintf('BT %.2f %.2f Td (%s) Tj ET', xr * @k, (@h-y) * @k, escapetext(txt))
-		if (@underline and (txt!=''))
-			s += ' ' + dounderline(xr, y, txt)
+		opt = ""
+		if (stroke > 0) and !clip
+			opt << "1 Tr " + stroke.to_i + " w "
+		elsif (stroke > 0) and clip
+			opt << "5 Tr " + stroke.to_i + " w "
+		elsif clip
+			opt << "7 Tr "
 		end
-		if (@color_flag)
-			s='q ' + @text_color + ' ' + s + ' Q';
+		s = sprintf('BT %.2f %.2f Td %s(%s) Tj ET', xr * @k, (@h - y) * @k, opt, escapetext(txt))
+		if @underline and (txt != '')
+			s << ' ' + dounderline(xr, y, txt)
+		end
+		if @linethrough and (txt != '') 
+			s << ' ' + dolinethrough(xr, y, txt) 
+		end
+		if @color_flag and !clip
+			s = 'q ' + @text_color + ' ' + s + ' Q'
 		end
 		out(s);
 	end
