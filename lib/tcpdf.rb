@@ -2173,7 +2173,7 @@ class TCPDF
 	# @param boolean :reseth if true reset the last cell height (default true).
 	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
 	# @param boolean :ishtml se to true if txt is HTML content (default = false).
-	# @return int Rerurn the number of lines or 1 for html mode.
+	# @return int Rerurn the number of cells or 1 for html mode.
 	# @since 1.3
 	# @see SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), Cell(), Write(), SetAutoPageBreak()
 	#
@@ -2198,7 +2198,7 @@ class TCPDF
 			x = GetX()
 		end
 
-		if (w == 0)
+		if !w or (w <= 0)
 			if @rtl
 				w = @x - @l_margin
 			else
@@ -2210,13 +2210,38 @@ class TCPDF
 		l_margin = @l_margin
 		r_margin = @r_margin
 
-		# set new margin values
 		if @rtl
-			SetLeftMargin(@x - w)
 			SetRightMargin(@w - @x)
+			SetLeftMargin(@x - w)
 		else
 			SetLeftMargin(@x)
 			SetRightMargin(@w - @x - w)
+		end
+
+		# set special margins for html alignment
+		if ishtml
+			# HTML mode requires special alignment
+			strwidth = GetStringWidth(unhtmlentities(txt.gsub(/<[^>]+>/, "")))
+			if @tdalign == "C"
+				if strwidth < w
+					mdiff = ((w - strwidth) / 2) - @c_margin
+				else
+					mdiff = 0
+				end
+				if @rtl
+					SetRightMargin(@w - @x + mdiff)
+					SetLeftMargin(@x - w + mdiff)
+				else
+					SetLeftMargin(@x + mdiff)
+					SetRightMargin(@w - @x - w)
+				end
+			elsif (@tdalign == "R") and !@rtl
+				SetLeftMargin(@x + w - strwidth - 2 * @c_margin)
+				SetRightMargin(@w - @x - w)
+			elsif (@tdalign == "L") and @rtl
+				SetRightMargin(@w - @x + w - strwidth - 2 * @c_margin)
+				SetLeftMargin(@x - w)
+			end
 		end
 
 		# calculate remaining vertical space on first page (startpage)
