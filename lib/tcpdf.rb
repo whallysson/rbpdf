@@ -3389,8 +3389,22 @@ class TCPDF
 	def dounderline(x, y, txt)
 		up = @current_font['up'];
 		ut = @current_font['ut'];
-		w = GetStringWidth(txt) + @ws * txt.count(' ');
+		w = GetStringWidth(txt)
 		sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - (y - up / 1000.0 * @font_size)) * @k, w * @k, -ut / 1000.0 * @font_size_pt);
+	end
+
+	#
+	# Line through text
+	# @param int :x X coordinate
+	# @param int :y Y coordinate
+	# @param string :txt text to underline
+	# @access protected
+	#
+	def dolinethrough(x, y, txt)
+		up = @current_font['up']
+		ut = @current_font['ut']
+		w = GetStringWidth(txt)
+		sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - (y - (@font_size/2) - up / 1000.0 * @font_size)) * @k, w * @k, -ut / 1000.0 * @font_size_pt)
 	end
 
 	#
