@@ -1632,7 +1632,7 @@ class TCPDF
 	# </pre><br />
 	# If the file corresponding to the requested font is not found, the error "Could not include font metric file" is generated.
 	# @param string :family Family font. It can be either a name defined by AddFont() or one of the standard families (case insensitive):<ul><li>Courier (fixed-width)</li><li>Helvetica or Arial (synonymous; sans serif)</li><li>Times (serif)</li><li>Symbol (symbolic)</li><li>ZapfDingbats (symbolic)</li></ul>It is also possible to pass an empty string. In that case, the current family is retained.
-	# @param string :style Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li></ul>or any combination. The default value is regular. Bold and italic styles do not apply to Symbol and ZapfDingbats
+	# @param string :style Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li></ul>or any combination. The default value is regular. Bold and italic styles do not apply to Symbol and ZapfDingbats
 	# @param float :size Font size in points. The default value is the current size. If no size has been specified since the beginning of the document, the value taken is 12
 	# @since 1.0
 	# @see AddFont(), SetFontSize(), Cell(), MultiCell(), Write()
@@ -1654,12 +1654,22 @@ class TCPDF
 		
 		style=style.upcase;
 
+		# underline
 		if (style.include?('U'))
 			@underline=true;
 			style= style.gsub('U','');
 		else
 			@underline=false;
 		end
+
+		# line through (deleted)
+		if style.include?('D')
+			@linethrough = true
+			style = style.gsub('D','')
+		else
+			@linethrough = false
+		end
+
 		if (style=='IB')
 			style='BI';
 		end
@@ -1717,12 +1727,8 @@ class TCPDF
 		#Select it
 		@font_family = family;
 		@font_style = style;
-		@font_size_pt = size;
-		@font_size = size / @k;
 		@current_font = @fonts[fontkey]; # was & may need deep copy?
-		if (@page>0)
-			out(sprintf('BT /F%d %.2f Tf ET', @current_font['i'], @font_size_pt));
-		end
+		SetFontSize(size)
 	end
   alias_method :set_font, :SetFont
 
