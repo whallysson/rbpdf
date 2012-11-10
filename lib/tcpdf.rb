@@ -261,6 +261,8 @@ class TCPDF
 		@font_family ||= ''
 		@font_files ||= {}
 		@font_style ||= ''
+		@font_ascent ||= ''
+		@font_descent ||= ''
 		@font_size ||= 12
 		@font_size_pt ||= 12
   	@header_width ||= 0
@@ -1740,12 +1742,19 @@ class TCPDF
 	#
 	def SetFontSize(size)
 		#Set font size in points
-		if (@font_size_pt== size)
-			return;
-		end
 		@font_size_pt = size;
 		@font_size = size.to_f / @k;
-		if (@page > 0)
+		if !@current_font['desc'].nil? and !@current_font['desc']['Ascent'].nil? and (@current_font['desc']['Ascent'] > 0)
+			@font_ascent = @current_font['desc']['Ascent'] * @font_size / 1000
+		else
+			@font_ascent = 0.8 * @font_size
+		end
+		if !@current_font['desc'].nil? and !@current_font['desc']['Descent'].nil? and (@current_font['desc']['Descent'] > 0)
+			@font_descent = - @current_font['desc']['Descent'] * @font_size / 1000
+		else
+			@font_descent = 0.2 * @font_size
+		end
+		if (@page > 0) and !@current_font['i'].nil?
 			out(sprintf('BT /F%d %.2f Tf ET', @current_font['i'], @font_size_pt));
 		end
 	end
