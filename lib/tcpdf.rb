@@ -4387,14 +4387,18 @@ class TCPDF
 	
 	#
 	# Sets font style.
-	# @param string :tag tag name (in lowercase)
+	# @param string :tag tag name in lowercase. Supported tags are:<ul>
+	# <li>b : bold text</li>
+	# <li>i : italic</li>
+	# <li>u : underlined</li>
+	# <li>lt : line-through</li></ul>
 	# @param boolean :enable
-	# @access private
+	# @access protected
 	#
 	def SetStyle(tag, enable)
 		#Modify style and select corresponding font
 		style='';
-		['b', 'i', 'u'].each do |s|
+		['b', 'i', 'u', 'd'].each do |s|
 				style << s if tag.downcase == s and enable
 		end
 		SetFont('', style);
