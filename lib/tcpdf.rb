@@ -4562,11 +4562,12 @@ class TCPDF
 	#
 	def addHtmlLink(url, name, fill=0)
 		#Put a hyperlink
-		SetTextColor(0, 0, 255);
+		prevcolor = @fgcolor[-1]
+		SetTextColor(0, 0, 255, false)
 		SetStyle('u', true);
 		Write(@lasth, name, url, fill, '', false, 0)
 		SetStyle('u', false);
-		SetTextColor(0);
+		SetTextColor(prevcolor['R'], prevcolor['G'], prevcolor['B'], false)
 	end
 	
 	#
