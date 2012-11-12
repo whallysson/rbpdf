@@ -86,7 +86,9 @@ class TCPDF
   include Core::RFPDF
   include RFPDF::Math
   require 'unicode_data.rb'
+  require 'htmlcolors.rb'
   include Unicode_data
+  include Html_colors
   
   cattr_accessor :k_cell_height_ratio
   @@k_cell_height_ratio = 1.25
@@ -179,10 +181,6 @@ class TCPDF
 	attr_accessor :pages
 	
 	attr_accessor :pdf_version
-	
-	attr_accessor :prevfill_color
-	
-	attr_accessor :prevtext_color
 	
 	attr_accessor :print_header
 	
@@ -286,13 +284,12 @@ class TCPDF
 		@page_links ||= {}
 		@pages ||= []
   	@pdf_version ||= "1.3"
-  	@prevfill_color ||= [255,255,255]
-  	@prevtext_color ||= [0,0,0]
   	@print_header ||= false
   	@print_footer ||= false
 		@state ||= 0
   	@fgcolor ||= []
   	@bgcolor ||= []
+  	@bgtag ||= []
   	@tableborder ||= 0
   	@tdbegin ||= false
   	@tdwidth ||= 0
@@ -1303,6 +1300,7 @@ class TCPDF
 	end
   alias_method :set_fill_color, :SetFillColor
 
+=begin
   # This hasn't been ported from tcpdf, it's a variation on SetTextColor for setting cmyk colors
 	def SetCmykFillColor(c, m, y, k, storeprev=false)
 		#Set color for all filling operations
@@ -1317,6 +1315,7 @@ class TCPDF
 		end
 	end
   alias_method :set_cmyk_fill_color, :SetCmykFillColor
+=end
 
 	#
 	# Defines the color used for text. It can be expressed in RGB components or gray scale. The method can be called before the first page is created and the value is retained from page to page.
@@ -1367,6 +1366,7 @@ class TCPDF
 	end
   alias_method :set_text_color, :SetTextColor
 
+=begin
   # This hasn't been ported from tcpdf, it's a variation on SetTextColor for setting cmyk colors
 	def SetCmykTextColor(c, m, y, k, storeprev=false)
 		#Set color for text
@@ -1378,6 +1378,7 @@ class TCPDF
 		end
 	end
   alias_method :set_cmyk_text_color, :SetCmykTextColor
+=end
   
 	#
 	# Returns the length of a string in user unit. A font must be selected.<br>
@@ -4183,7 +4184,7 @@ class TCPDF
 	# @param string :tag tag name (in upcase)
 	# @param string :attr tag attribute (in upcase)
 	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
-	# @access private
+	# @access protected
 	#
 	def openHTMLTagHandler(tag, attrs, fill=0)
 		# check for text direction attribute
@@ -4192,6 +4193,26 @@ class TCPDF
 		else
 			@tmprtl = attrs['dir'] == 'rtl' ? 'R' : 'L';
 		end
+
+		if (tag != 'br') and (tag != 'hr') and (tag != 'img')
+			# set foreground color attribute
+			if !attrs['color'].nil? and (attrs['color'] != '')
+				col = convertHTMLColorToDec(attrs['color'])
+			else
+				col = @fgcolor[-1]
+			end
+			SetTextColor(col['R'], col['G'], col['B'], true)
+
+			# set background color attribute
+			if !attrs['bgcolor'].nil? and (attrs['bgcolor'] != '')
+				col = convertHTMLColorToDec(attrs['bgcolor'])
+				@bgtag.push(@bgcolor.size)
+			else
+				col = @bgcolor[-1]
+			end
+			SetFillColor(col['R'], col['G'], col['B'], true)
+		end
+
 		#Opening tag
 		case (tag)
 			when 'table'
@@ -4203,6 +4224,7 @@ class TCPDF
 			when 'tr', 'td', 'th'
         # SetStyle('b', true) if tag == 'th'
 				
+				@tdbegin = tag
 				if ((!attrs['width'].nil?) and (attrs['width'] != ''))
 					@tdwidth = (attrs['width'].to_i/4);
 				else
@@ -4229,12 +4251,19 @@ class TCPDF
 						@tdalign = "L"
 					end
 				end
-				if ((!attrs['bgcolor'].nil?) and (attrs['bgcolor'] != ''))
-					coul = convertColorHexToDec(attrs['bgcolor']);
-					SetFillColor(coul['R'], coul['G'], coul['B']);
-					@tdfill=1;
+				if !attrs['colspan'].nil? and (attrs['colspan'].is_a? Integer)
+					@tdcolspan = attrs['colspan'].to_i
+				else
+					@tdcolspan = 1
 				end
-				@tdbegin=true;
+				# write a void cell
+				cfill = (@bgtag.size > 0) ? 1 : 0
+				cell_start_x = @x
+				cell_start_y = @y
+				Cell(@tdcolspan * @tdwidth, @tdheight, '', @tableborder, '', @tdalign, cfill)
+				# restore the cursor at the previous position
+				@x = cell_start_x
+				@y = cell_start_y
 				
 			when 'hr'
 				Ln();
@@ -4260,6 +4289,9 @@ class TCPDF
 			when 'b', 'i', 'u'
 				SetStyle(tag, true);
 				
+			when 'del'
+				SetStyle('d', true)
+
 			when 'a'
 				@href = attrs['href'];
 				
@@ -4291,13 +4323,14 @@ class TCPDF
 							align = 'N'
 						end
 					end
-					Image(attrs['src'], GetX(),GetY(), pixelsToMillimeters(attrs['width']), pixelsToMillimeters(attrs['height']), '', '', align)
+					Image(attrs['src'], GetX(),GetY(), pixelsToUnits(attrs['width']), pixelsToUnits(attrs['height']), '', '', align)
+
 					#SetX(@img_rb_x);
 					SetY(@img_rb_y);
 					
 				end
 				
-			when 'ul'
+			when 'dl', 'ul'
 				@listordered = false;
 				@listcount = 0;
 				
@@ -4305,22 +4338,29 @@ class TCPDF
 				@listordered = true;
 				@listcount = 0;
 				
-			when 'li'
+			when 'dd', 'li'
 				Ln();
-				if (@listordered)
-					if !attrs['value'].nil?
-						@listcount = attrs['value'].to_i
+				if tag == 'li'
+					if (@listordered)
+						if !attrs['value'].nil?
+							@listcount = attrs['value'].to_i
+						end
+						@listcount += 1
+						@lispacer = "    " + (@listcount).to_s + ". "
+					else
+						#unordered list simbol
+						@lispacer = "    -  ";
 					end
-					@listcount += 1
-					@lispacer = "    " + (@listcount).to_s + ". "
 				else
-					#unordered list simbol
-					@lispacer = "    -  ";
+					@lispacer = "        "
 				end
 				rtldir = @tmprtl
 				@tmprtl = false
 				Write(@lasth, @lispacer, '', fill);
 				@tmprtl = rtldir
+
+			when 'dt'
+				Ln()
 
 			when 'blockquote', 'br'
 				Ln();
@@ -4355,14 +4395,16 @@ class TCPDF
 				SetXY(GetX(), GetY() + ((currentfont_size - @font_size)/3));
 				
 			when 'font'
-				if (!attrs['color'].nil? and attrs['color']!='')
-					coul = convertColorHexToDec(attrs['color']);
-					SetTextColor(coul['R'], coul['G'], coul['B']);
-					@issetcolor=true;
-				end
-				if (!attrs['face'].nil? and @fontlist.include?(attrs['face'].downcase))
-					SetFont(attrs['face'].downcase);
-					@issetfont=true;
+				if !attrs['face'].nil?
+					fontslist = attrs['face'].downcase.split(",")
+					fontslist.each { |font|
+						font = font.strip
+						if @fontlist.include?(font)
+							SetFont(font) 
+							@issetfont = true
+							break;
+						end
+					}
 				end
 				if (!attrs['size'].nil?)
 					headsize = attrs['size'].to_i;
@@ -4387,9 +4429,26 @@ class TCPDF
 	#
 	# Process closing tags.
 	# @param string :tag tag name (in upcase)
-	# @access private
+	# @access protected
 	#
 	def closedHTMLTagHandler(tag)
+		# restore foreground color
+		nfg = @fgcolor.size
+		if nfg > 1
+			@fgcolor.pop
+			SetTextColor(@fgcolor[nfg - 2]['R'], @fgcolor[nfg - 2]['G'], @fgcolor[nfg - 2]['B'], false)
+		end
+
+		# restore background color
+		nbg = @bgcolor.size
+		if nbg > 1
+			@bgcolor.pop
+			if @bgtag[-1] == nbg - 1
+				@bgtag.pop
+			end
+			SetFillColor(@bgcolor[nbg - 2]['R'], @bgcolor[nbg - 2]['G'], @bgcolor[nbg - 2]['B'], false)
+		end
+
 		#Closing tag
 		case (tag)
 			when 'td','th'
@@ -4401,8 +4460,6 @@ class TCPDF
 				else
 					@tdalign = "L"
 				end
-				@tdfill = 0;
-				SetFillColor(@prevfill_color[0], @prevfill_color[1], @prevfill_color[2]);
 				
 			when 'tr'
 				Ln();
@@ -4419,6 +4476,9 @@ class TCPDF
 			when 'b', 'i', 'u'
 				SetStyle(tag, false);
 				
+			when 'del'
+				SetStyle('d', false)
+
 			when 'a'
 				@href = nil;
 				
@@ -4441,9 +4501,6 @@ class TCPDF
 				SetXY(GetX(), GetY() - ((@font_size - currentfont_size)/3));
 				
 			when 'font'
-				if (@issetcolor == true)
-					SetTextColor(@prevtext_color[0], @prevtext_color[1], @prevtext_color[2]);
-				end
 				if (@issetfont)
 					@font_family = @prevfont_family;
 					@font_style = @prevfont_style;
@@ -4453,18 +4510,17 @@ class TCPDF
 				currentfont_size = @font_size;
 				SetFontSize(@tempfontsize);
 				@tempfontsize = @font_size_pt;
-				#@text_color = @prevtext_color;
 				@lasth = @font_size * @@k_cell_height_ratio;
 				
 			when 'p'
 				Ln();
 				Ln();
 				
-			when 'ul', 'ol'
+			when 'dl', 'ul', 'ol'
 				Ln();
 				Ln();
 				
-			when 'li'
+			when 'dd', 'li'
 				@lispacer = "";
 				
 			when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
@@ -4515,27 +4571,53 @@ class TCPDF
 	
 	#
 	# Returns an associative array (keys: R,G,B) from 
-	# a hex html code (e.g. #3FE5AA).
-	# @param string :color hexadecimal html color [#rrggbb]
+	# an html color name or a six-digit or three-digit 
+	# hexadecimal color representation (i.e. #3FE5AA or #7FF).
+	# @param string :color html color 
 	# @return array
-	# @access private
+	# @access protected
 	#
-	def convertColorHexToDec(color = "#000000")
-		tbl_color = {}
-		tbl_color['R'] = color[1,2].hex.to_i;
-		tbl_color['G'] = color[3,2].hex.to_i;
-		tbl_color['B'] = color[5,2].hex.to_i;
-		return tbl_color;
+	def convertHTMLColorToDec(color = "#000000")
+		# set default color to be returned in case of error
+		returncolor = {'R' => 0, 'G' => 0, 'B' => 0}
+		if !color
+			return returncolor
+		end
+		if color[0].chr != "#"
+			# decode color name
+			color_code = @@webcolor[color.downcase]
+			if color_code.nil?
+				return returncolor
+			end
+		else
+			color_code = color.sub(/^#/, "")
+		end
+		case color_code.length
+		when 3
+			# three-digit hexadecimal representation
+			r = color_code[0]
+			g = color_code[1]
+			b = color_code[2]
+			returncolor['R'] = (r + r).hex
+			returncolor['G'] = (g + g).hex
+			returncolor['B'] = (b + b).hex
+		when 6
+			# six-digit hexadecimal representation
+			returncolor['R'] = color_code[0,2].hex
+			returncolor['G'] = color_code[2,2].hex
+			returncolor['B'] = color_code[4,2].hex
+		end
+		return returncolor
 	end
 	
 	#
-	# Converts pixels to millimeters in 72 dpi.
+	# Converts pixels to Units.
 	# @param int :px pixels
 	# @return float millimeters
-	# @access private
+	# @access public
 	#
-	def pixelsToMillimeters(px)
-		return px.to_f * 25.4 / 72;
+	def pixelsToUnits(px)
+		return px.to_f / @k
 	end
 		
 	#
