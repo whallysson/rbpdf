@@ -291,6 +291,8 @@ class TCPDF
   	@print_header ||= false
   	@print_footer ||= false
 		@state ||= 0
+  	@fgcolor ||= []
+  	@bgcolor ||= []
   	@tableborder ||= 0
   	@tdbegin ||= false
   	@tdwidth ||= 0
@@ -1250,27 +1252,53 @@ class TCPDF
 
 	#
 	# Defines the color used for all filling operations (filled rectangles and cell backgrounds). It can be expressed in RGB components or gray scale. The method can be called before the first page is created and the value is retained from page to page.
-	# @param int :r If g et b are given, red component; if not, indicates the gray level. Value between 0 and 255
-	# @param int :g Green component (between 0 and 255)
-	# @param int :b Blue component (between 0 and 255)
-	# @param boolean :storeprev if true stores the RGB array on :prevfill_color variable.
+	# @param int :col1 Gray level for single color, or Red color for RGB, or Cyan color for CMYK. Value between 0 and 255
+	# @param int :col2 Green color for RGB, or Magenta color for CMYK. Value between 0 and 255
+	# @param int :col3 Blue color for RGB, or Yellow color for CMYK. Value between 0 and 255
+	# @param boolean :storeprev if true stores the current color on :bgcolor array.
+	# @param int :col4 Key (Black) color for CMYK. Value between 0 and 255
 	# @since 1.3
 	# @see SetDrawColor(), SetTextColor(), Rect(), Cell(), MultiCell()
 	#
-	def SetFillColor(r, g=-1, b=-1, storeprev=false)
-		#Set color for all filling operations
-		if ((r==0 and g==0 and b==0) or g==-1)
-			@fill_color=sprintf('%.3f g', r/255.0);
+	def SetFillColor(col1=0, col2=-1, col3=-1, storeprev=false, col4=-1)
+		# set default values
+		unless col1.is_a? Integer
+			col1 = 0
+		end
+		unless col2.is_a? Integer
+			col2 = -1
+		end
+		unless col3.is_a? Integer
+			col3 = -1
+		end
+		unless col4.is_a? Integer
+			col4 = -1
+		end
+
+		# Set color for all filling operations
+		if (col2 == -1) and (col3 == -1) and (col4 == -1)
+			# Grey scale
+			@fill_color = sprintf('%.3f g', col1 / 255.0)
+			if storeprev
+				@bgcolor.push({'G' => col1})
+			end
+		elsif col4 == -1
+			# RGB
+			@fill_color = sprintf('%.3f %.3f %.3f rg', col1 / 255.0, col2 / 255.0, col3 / 255.0)
+			if storeprev
+				@bgcolor.push({'R' => col1, 'G' => col2, 'B' => col3})
+			end
 		else
-			@fill_color=sprintf('%.3f %.3f %.3f rg', r/255.0, g/255.0, b/255.0);
+			# CMYK
+			@fill_color = sprintf('%.3f %.3f %.3f %.3f k', col1 / 100.0, col2 / 100.0, col3 / 100.0, col4 / 100.0)
+			if storeprev
+				@bgcolor.push({'C' => col1, 'M' => col2, 'Y' => col3, 'K' => col4})
+			end
 		end
-		@color_flag=(@fill_color!=@text_color);
-		if (@page>0)
-			out(@fill_color);
-		end
-		if (storeprev)
-			# store color as previous value
-			@prevfill_color = [r, g, b]
+
+		@color_flag = @fill_color != @text_color
+		if @page > 0
+			out(@fill_color)
 		end
 	end
   alias_method :set_fill_color, :SetFillColor
@@ -1292,25 +1320,50 @@ class TCPDF
 
 	#
 	# Defines the color used for text. It can be expressed in RGB components or gray scale. The method can be called before the first page is created and the value is retained from page to page.
-	# @param int :r If g et b are given, red component; if not, indicates the gray level. Value between 0 and 255
-	# @param int :g Green component (between 0 and 255)
-	# @param int :b Blue component (between 0 and 255)
-	# @param boolean :storeprev if true stores the RGB array on :prevtext_color variable.
+	# @param int :col1 Gray level for single color, or Red color for RGB, or Cyan color for CMYK. Value between 0 and 255
+	# @param int :col2 Green color for RGB, or Magenta color for CMYK. Value between 0 and 255
+	# @param int :col3 Blue color for RGB, or Yellow color for CMYK. Value between 0 and 255
+	# @param boolean :storeprev if true stores the current color on :fgcolor array.
+	# @param int :col4 Key (Black) color for CMYK. Value between 0 and 255
 	# @since 1.3
 	# @see SetDrawColor(), SetFillColor(), Text(), Cell(), MultiCell()
 	#
-	def SetTextColor(r, g=-1, b=-1, storeprev=false)
-		#Set color for text
-		if ((r==0 and :g==0 and :b==0) or :g==-1)
-			@text_color=sprintf('%.3f g', r/255.0);
+	def SetTextColor(col1=0, col2=-1, col3=-1, storeprev=false, col4=-1)
+		# set default values
+		unless col1.is_a? Integer
+			col1 = 0
+		end
+		unless col2.is_a? Integer
+			col2 = -1
+		end
+		unless col3.is_a? Integer
+			col3 = -1
+		end
+		unless col4.is_a? Integer
+			col4 = -1
+		end
+
+		# Set color for text
+		if (col2 == -1) and (col3 == -1) and (col4 == -1)
+			# Grey scale
+			@text_color = sprintf('%.3f g', col1 / 255.0)
+			if storeprev
+				@fgcolor.push({'G' => col1})
+			end
+		elsif col4 == -1
+			# RGB
+			@text_color = sprintf('%.3f %.3f %.3f rg', col1 / 255.0, col2 / 255.0, col3 / 255.0)
+			if storeprev
+				@fgcolor.push({'R' => col1, 'G' => col2, 'B' => col3})
+			end
 		else
-			@text_color=sprintf('%.3f %.3f %.3f rg', r/255.0, g/255.0, b/255.0);
+			# CMYK
+			@text_color = sprintf('%.3f %.3f %.3f %.3f k', col1 / 100.0, col2 / 100.0, col3 / 100.0, col4 / 100.0)
+			if storeprev
+				@fgcolor.push({'C' => col1, 'M' => col2, 'Y' => col3, 'K' => col4})
+			end
 		end
-		@color_flag=(@fill_color!=@text_color);
-		if (storeprev)
-			# store color as previous value
-			@prevtext_color = [r, g, b]
-		end
+		@color_flag = @fill_color != @text_color
 	end
   alias_method :set_text_color, :SetTextColor
 
