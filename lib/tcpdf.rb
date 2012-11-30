@@ -2353,7 +2353,7 @@ class TCPDF
 					# we have reached the end of column
 					if (sep == -1)
 						# check if the line was already started
-						if (@rtl and (@x < @w - @r_margin)) or (!@rtl and (@x > @l_margin))
+						if (@rtl and (@x <= @w - @r_margin)) or (!@rtl and (@x >= @l_margin))
 							# print a void cell and go to next line
 							Cell(w, h, "", 0, 1)
 							linebreak = true
