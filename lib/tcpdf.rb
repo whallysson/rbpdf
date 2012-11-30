@@ -281,25 +281,20 @@ class TCPDF
 		@offsets ||= []
 		@orientation_changes ||= []
 		@page ||= 0
+		@pagedim ||= []
 		@page_links ||= {}
 		@pages ||= []
   	@pdf_version ||= "1.3"
   	@print_header ||= false
   	@print_footer ||= false
 		@state ||= 0
-  	@fgcolor ||= []
-  	@bgcolor ||= []
-  	@bgtag ||= []
-  	@tableborder ||= 0
-  	@tdbegin ||= false
-  	@tdwidth ||= 0
-  	@tdheight ||= 0
-  	@tdalign ||= "L"
   	@tdfill ||= 0
   	@tempfontsize ||= 10
 		@text_color ||= '0 g'
 		@underline ||= false
 		@ws ||= 0
+		@dpi = 72
+		@pagegroups ||= {}
 		
 		#Standard Unicode fonts
 		@core_fonts = {
@@ -319,97 +314,12 @@ class TCPDF
 		'zapfdingbats'=>'ZapfDingbats'}
 
 		#Scale factor
-		case unit.downcase
-			when 'pt'; @k=1
-			when 'mm'; @k=72/25.4
-			when 'cm'; @k=72/2.54
-			when 'in'; @k=72
-			else Error("Incorrect unit: #{unit}")
-		end
+		# Set scale factor
+		setPageUnit(unit)
 
-		#Page format
-		if format.is_a?(String)
-			# Page formats (45 standard ISO paper formats and 4 american common formats).
-			# Paper cordinates are calculated in this way: (inches# 72) where (1 inch = 2.54 cm)
-			case (format.upcase)
-				when  '4A0'; format = [4767.87,6740.79]
-				when  '2A0'; format = [3370.39,4767.87]
-				when  'A0'; format = [2383.94,3370.39]
-				when  'A1'; format = [1683.78,2383.94]
-				when  'A2'; format = [1190.55,1683.78]
-				when  'A3'; format = [841.89,1190.55]
-				when  'A4'; format = [595.28,841.89] #: default
-				when  'A5'; format = [419.53,595.28]
-				when  'A6'; format = [297.64,419.53]
-				when  'A7'; format = [209.76,297.64]
-				when  'A8'; format = [147.40,209.76]
-				when  'A9'; format = [104.88,147.40]
-				when  'A10'; format = [73.70,104.88]
-				when  'B0'; format = [2834.65,4008.19]
-				when  'B1'; format = [2004.09,2834.65]
-				when  'B2'; format = [1417.32,2004.09]
-				when  'B3'; format = [1000.63,1417.32]
-				when  'B4'; format = [708.66,1000.63]
-				when  'B5'; format = [498.90,708.66]
-				when  'B6'; format = [354.33,498.90]
-				when  'B7'; format = [249.45,354.33]
-				when  'B8'; format = [175.75,249.45]
-				when  'B9'; format = [124.72,175.75]
-				when  'B10'; format = [87.87,124.72]
-				when  'C0'; format = [2599.37,3676.54]
-				when  'C1'; format = [1836.85,2599.37]
-				when  'C2'; format = [1298.27,1836.85]
-				when  'C3'; format = [918.43,1298.27]
-				when  'C4'; format = [649.13,918.43]
-				when  'C5'; format = [459.21,649.13]
-				when  'C6'; format = [323.15,459.21]
-				when  'C7'; format = [229.61,323.15]
-				when  'C8'; format = [161.57,229.61]
-				when  'C9'; format = [113.39,161.57]
-				when  'C10'; format = [79.37,113.39]
-				when  'RA0'; format = [2437.80,3458.27]
-				when  'RA1'; format = [1729.13,2437.80]
-				when  'RA2'; format = [1218.90,1729.13]
-				when  'RA3'; format = [864.57,1218.90]
-				when  'RA4'; format = [609.45,864.57]
-				when  'SRA0'; format = [2551.18,3628.35]
-				when  'SRA1'; format = [1814.17,2551.18]
-				when  'SRA2'; format = [1275.59,1814.17]
-				when  'SRA3'; format = [907.09,1275.59]
-				when  'SRA4'; format = [637.80,907.09]
-				when  'LETTER'; format = [612.00,792.00]
-				when  'LEGAL'; format = [612.00,1008.00]
-				when  'EXECUTIVE'; format = [521.86,756.00]
-				when  'FOLIO'; format = [612.00,936.00]
-				#else then Error("Unknown page format: #{format}"
-			end
-			@fw_pt = format[0]
-			@fh_pt = format[1]
-		else
-			@fw_pt = format[0]*@k
-			@fh_pt = format[1]*@k
-		end
+		# set page format and orientation
+		setPageFormat(format, orientation)
 
-		@fw = @fw_pt/@k
-		@fh = @fh_pt/@k
-
-		#Page orientation
-		orientation = orientation.downcase
-		if orientation == 'p' or orientation == 'portrait'
-			@def_orientation = 'P'
-			@w_pt = @fw_pt
-			@h_pt = @fh_pt
-		elsif orientation == 'l' or orientation == 'landscape'
-			@def_orientation = 'L'
-			@w_pt = @fh_pt
-			@h_pt = @fw_pt
-		else
-			Error("Incorrect orientation: #{orientation}")
-		end
-
-		@cur_orientation = @def_orientation
-		@w = @w_pt/@k
-		@h = @h_pt/@k
 		#Page margins (1 cm)
 		margin = 28.35/@k
 		SetMargins(margin, margin)
@@ -433,12 +343,168 @@ class TCPDF
 		@href = ''
 		@fontlist = ["arial", "times", "courier", "helvetica", "symbol"]
 		@issetfont = false
-		@issetcolor = false
-	
+		@fgcolor ||= []
+		@bgcolor ||= []
+#		@extgstates ||= []
+		@bgtag ||= []
+		@tableborder ||= 0
+		@tdbegin ||= false
+		@tdwidth ||=  0
+		@tdheight ||= 0
+		if @rtl
+			@tdalign ||= "R"
+		else
+			@tdalign ||= "L"
+		end
 		SetFillColor(200, 200, 200, true)
 		SetTextColor(0, 0, 0, true)
+
+		# user's rights
+		@ur = false;
+		@ur_document = "/FullSave";
+		@ur_annots = "/Create/Delete/Modify/Copy/Import/Export";
+		@ur_form = "/Add/Delete/FillIn/Import/Export/SubmitStandalone/SpawnTemplate";
+		@ur_signature = "/Modify";
+
+		#/ set default JPEG quality
+		@jpeg_quality = 75;
+
+		# initialize some settings
+#		utf8Bidi([""]);
 	end
 	
+	#
+	# Set the units of measure for page.
+	# @param string :unit User measure unit. Possible values are:<ul><li>pt: point</li><li>mm: millimeter (default)</li><li>cm: centimeter</li><li>in: inch</li></ul><br />A point equals 1/72 of inch, that is to say about 0.35 mm (an inch being 2.54 cm). This is a very common unit in typography; font sizes are expressed in that unit.
+	# @since 3.0.015 (2008-06-06)
+	#
+	def setPageUnit(unit)
+		# Set scale factor
+		case unit.downcase
+		when 'pt'; @k=1             # points
+		when 'mm'; @k = @dpi / 25.4 # millimeters
+		when 'cm'; @k = @dpi / 2.54 # centimeters
+		when 'in'; @k = @dpi        # inches
+		# unsupported unit
+		else Error("Incorrect unit: #{unit}")
+		end
+		unless @cur_orientation.nil?
+			setPageOrientation(@cur_orientation)
+		end
+	end
+
+	#
+	# Set the page format
+	# @param mixed :format The format used for pages. It can be either one of the following values (case insensitive) or a custom format in the form of a two-element array containing the width and the height (expressed in the unit given by unit).<ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
+	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
+	# @since 3.0.015 (2008-06-06)
+	#
+	def setPageFormat(format, orientation="P")
+		# Page format
+		if format.is_a?(String)
+			# Page formats (45 standard ISO paper formats and 4 american common formats).
+			# Paper cordinates are calculated in this way: (inches * 72) where (1 inch = 2.54 cm)
+			case format.upcase
+			when '4A0'; format = [4767.87,6740.79]
+			when '2A0'; format = [3370.39,4767.87]
+			when 'A0'; format = [2383.94,3370.39]
+			when 'A1'; format = [1683.78,2383.94]
+			when 'A2'; format = [1190.55,1683.78]
+			when 'A3'; format = [841.89,1190.55]
+			when 'A4'; format = [595.28,841.89] # default
+			when 'A5'; format = [419.53,595.28]
+			when 'A6'; format = [297.64,419.53]
+			when 'A7'; format = [209.76,297.64]
+			when 'A8'; format = [147.40,209.76]
+			when 'A9'; format = [104.88,147.40]
+			when 'A10'; format = [73.70,104.88]
+			when 'B0'; format = [2834.65,4008.19]
+			when 'B1'; format = [2004.09,2834.65]
+			when 'B2'; format = [1417.32,2004.09]
+			when 'B3'; format = [1000.63,1417.32]
+			when 'B4'; format = [708.66,1000.63]
+			when 'B5'; format = [498.90,708.66]
+			when 'B6'; format = [354.33,498.90]
+			when 'B7'; format = [249.45,354.33]
+			when 'B8'; format = [175.75,249.45]
+			when 'B9'; format = [124.72,175.75]
+			when 'B10'; format = [87.87,124.72]
+			when 'C0'; format = [2599.37,3676.54]
+			when 'C1'; format = [1836.85,2599.37]
+			when 'C2'; format = [1298.27,1836.85]
+			when 'C3'; format = [918.43,1298.27]
+			when 'C4'; format = [649.13,918.43]
+			when 'C5'; format = [459.21,649.13]
+			when 'C6'; format = [323.15,459.21]
+			when 'C7'; format = [229.61,323.15]
+			when 'C8'; format = [161.57,229.61]
+			when 'C9'; format = [113.39,161.57]
+			when 'C10'; format = [79.37,113.39]
+			when 'RA0'; format = [2437.80,3458.27]
+			when 'RA1'; format = [1729.13,2437.80]
+			when 'RA2'; format = [1218.90,1729.13]
+			when 'RA3'; format = [864.57,1218.90]
+			when 'RA4'; format = [609.45,864.57]
+			when 'SRA0'; format = [2551.18,3628.35]
+			when 'SRA1'; format = [1814.17,2551.18]
+			when 'SRA2'; format = [1275.59,1814.17]
+			when 'SRA3'; format = [907.09,1275.59]
+			when 'SRA4'; format = [637.80,907.09]
+			when 'LETTER'; format = [612.00,792.00]
+			when 'LEGAL'; format = [612.00,1008.00]
+			when 'EXECUTIVE'; format = [521.86,756.00]
+			when 'FOLIO'; format = [612.00,936.00]
+			end
+			@fw_pt = format[0]
+			@fh_pt = format[1]
+		else
+			@fw_pt = format[0] * @k
+			@fh_pt = format[1] * @k
+		end
+		setPageOrientation(orientation)
+	end
+
+	#
+	# Set page orientation.
+	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
+	# @param boolean :autopagebreak Boolean indicating if auto-page-break mode should be on or off.
+	# @param float :bottommargin bottom margin of the page.
+	# @since 3.0.015 (2008-06-06)
+	#
+	def setPageOrientation(orientation, autopagebreak='', bottommargin='')
+		orientation = orientation.upcase
+		if (orientation == 'P') or (orientation == 'PORTRAIT')
+			@cur_orientation = 'P'
+			@w_pt = @fw_pt
+			@h_pt = @fh_pt
+		elsif (orientation == 'L') or (orientation == 'LANDSCAPE')
+			@cur_orientation = 'L'
+			@w_pt = @fh_pt
+			@h_pt = @fw_pt
+		else
+			Error("Incorrect orientation: #{orientation}")
+		end
+		@w = @w_pt / @k
+		@h = @h_pt / @k
+		@pagedim[@page] = [@w_pt, @h_pt]
+		if autopagebreak == ''
+			unless @auto_page_break.nil?
+				autopagebreak = @auto_page_break
+			else
+				autopagebreak = true
+			end
+		end
+		if bottommargin == ''
+			unless @b_margin.nil?
+				bottommargin = @b_margin
+			else
+				# default value = 2 cm
+				bottommargin = 2 * 28.35 / @k
+			end
+		end
+		SetAutoPageBreak(autopagebreak, bottommargin)
+	end
+
 	#
 	# Enable or disable Right-To-Left language mode
 	# @param Boolean :enable if true enable Right-To-Left language mode.
@@ -844,11 +910,12 @@ class TCPDF
 	# Adds a new page to the document. If a page is already present, the Footer() method is called first to output the footer. Then the page is added, the current position set to the top-left corner according to the left and top margins, and Header() is called to display the header.
 	# The font which was set before calling is automatically restored. There is no need to call SetFont() again if you want to continue with the same font. The same is true for colors and line width.
 	# The origin of the coordinate system is at the top-left corner and increasing ordinates go downwards.
-	# @param string :orientation Page orientation. Possible values are (case insensitive):<ul><li>P or Portrait</li><li>L or Landscape</li></ul> The default value is the one passed to the constructor.
+	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
+	# @param mixed :format The format used for pages. It can be either one of the following values (case insensitive) or a custom format in the form of a two-element array containing the width and the height (expressed in the unit given by unit).<ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
 	# @since 1.0
 	# @see TCPDF(), Header(), Footer(), SetMargins()
 	#
-	def AddPage(orientation='')
+	def AddPage(orientation='', format='')
 		# store current margin values
 		l_margin = @l_margin
 		r_margin = @r_margin
@@ -860,7 +927,7 @@ class TCPDF
 			@original_r_margin = @r_margin
 		end
 
-		if @pages.size - 1 > @page
+		if GetNumPages() > @page
 			# this page has been already added
 			@page += 1
 			@y = @t_margin
@@ -888,7 +955,7 @@ class TCPDF
 			endpage();
 		end
 		#Start new page
-		beginpage(orientation);
+		beginpage(orientation, format)
 		#Set line cap style to square
 		out('2 J');
 		#Set line width
@@ -2330,34 +2397,45 @@ class TCPDF
 		# get latest page number
 		endpage = @page
 
-		if border
-			# check if a new page has been created
-			if endpage > startpage
-				# design borders around HTML cells.
-				for page in startpage..endpage
-					@page = page
-					if page == startpage
-						SetY(GetPageHeight() - restspace - GetBreakMargin())
-						h = restspace - 1
-					elsif page == endpage
-						SetY(@t_margin) # put cursor at the beginning of text
-						h = currentY - @t_margin
-					else
-						SetY(@t_margin) # put cursor at the beginning of text
-						h = GetPageHeight() - @t_margin - GetBreakMargin()
-					end
-					SetX(x)
-					Cell(w, h, "", border, 1, '', 0)
+		# calculate last page
+		rh = y + h
+		while rh > @page_break_trigger
+			if GetNumPages() == endpage
+				AddPage()
+			end
+			endpage += 1
+			rh -= @page_break_trigger
+		end
+
+		# check if a new page has been created
+		if endpage > startpage
+			# design borders around HTML cells.
+			for page in startpage..endpage
+				@page = page
+				if page == startpage
+					SetY(GetPageHeight() - restspace - GetBreakMargin())
+					h = restspace - 1
+				elsif page == endpage
+					SetY(@t_margin) # put cursor at the beginning of text
+					h = currentY - @t_margin
+				else
+					SetY(@t_margin) # put cursor at the beginning of text
+					h = GetPageHeight() - @t_margin - GetBreakMargin()
 				end
-			else
-				h = h > currentY - y ? h : currentY - y
-				SetY(y) # put cursor at the beginning of text
 				SetX(x)
-				# design a cell around the text
 				Cell(w, h, "", border, 1, '', 0)
 			end
+		else
+			h = h > currentY - y ? h : currentY - y
+			SetY(y) # put cursor at the beginning of text
+			SetX(x)
+			# design a cell around the text
+			Cell(w, h, "", border, 1, '', 0)
 		end
 		
+		# Get end-of-text Y position
+		currentY = GetY()
+
 		# restore original margin values
 		SetLeftMargin(l_margin)
 		SetRightMargin(r_margin)
@@ -2985,7 +3063,7 @@ class TCPDF
 	# @access protected
 	#
 	def putpages()
-		nb = @page;
+		nb = GetNumPages()
 		if (@alias_nb_pages)
 			nbstr = UTF8ToUTF16BE(nb.to_s, false)
 			#Replace number of pages
@@ -2993,22 +3071,13 @@ class TCPDF
 				@pages[n].gsub!(@alias_nb_pages, nbstr)
 			end
 		end
-		if @def_orientation=='P'
-			w_pt=@fw_pt
-			h_pt=@fh_pt
-		else
-			w_pt=@fh_pt
-			h_pt=@fw_pt
-		end
 		filter=(@compress) ? '/Filter /FlateDecode ' : ''
 		1.upto(nb) do |n|
 			#Page
 			newobj
 			out('<</Type /Page')
 			out('/Parent 1 0 R')
-			unless @orientation_changes[n].nil?
-				out(sprintf('/MediaBox [0 0 %.2f %.2f]', h_pt, w_pt))
-			end
+			out(sprintf('/MediaBox [0 0 %.2f %.2f]', @pagedim[n][0], @pagedim[n][1]))
 			out('/Resources 2 0 R')
 			if @page_links[n]
 				#Links
@@ -3020,7 +3089,7 @@ class TCPDF
 						annots<<'/A <</S /URI /URI (' + escape(pl[4]) + ')>>>>';
 					else
 						l=@links[pl[4]];
-						h=!@orientation_changes[l[0]].nil? ? w_pt : h_pt;
+						h = @pagedim[l[0]][1]
 						annots<<sprintf('/Dest [%d 0 R /XYZ 0 %.2f null]>>',1+2*l[0], h-l[1]*@k);
 					end
 				end
@@ -3045,7 +3114,7 @@ class TCPDF
 		end
 		out(kids + ']');
 		out('/Count ' + nb.to_s);
-		out(sprintf('/MediaBox [0 0 %.2f %.2f]', w_pt, h_pt));
+		# out(sprintf('/MediaBox [0 0 %.2f %.2f]', @pagedim[0][0], @pagedim[0][1]))
 		out('>>');
 		out('endobj');
 	end
@@ -3415,43 +3484,42 @@ class TCPDF
 
 	#
 	# beginpage
+	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
+	# @param mixed :format The format used for pages. It can be either one of the following values (case insensitive) or a custom format in the form of a two-element array containing the width and the height (expressed in the unit given by unit).<ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
 	# @access protected
 	#
-	def beginpage(orientation)
+	def beginpage(orientation='', format='')
 		@page += 1;
 		@pages[@page]='';
 		@state=2;
+		@font_family = ''
+		if orientation == ''
+			unless @cur_orientation.nil?
+				orientation = @cur_orientation
+			else
+				orientation = 'P'
+			end
+		end
+		if format != ''
+			setPageFormat(format, orientation)
+		else
+			setPageOrientation(orientation)
+		end
 		if @rtl
 			@x = @w - @r_margin
 		else
 			@x = @l_margin
 		end
 		@y=@t_margin;
-		@font_family='';
-		#Page orientation
-		if (orientation.empty?)
-			orientation=@def_orientation;
-		else
-			orientation.upcase!
-			if (orientation!=@def_orientation)
-				@orientation_changes[@page]=true;
-			end
-		end
-		if (orientation!=@cur_orientation)
-			#Change orientation
-			if (orientation=='P')
-				@w_pt=@fw_pt;
-				@h_pt=@fh_pt;
-				@w=@fw;
-				@h=@fh;
-			else
-				@w_pt=@fh_pt;
-				@h_pt=@fw_pt;
-				@w=@fh;
-				@h=@fw;
-			end
-			@page_break_trigger=@h-@b_margin;
-			@cur_orientation = orientation;
+		if @newpagegroup
+			# start a new group
+			n = @pagegroups.size + 1
+			alias_nb = "{nb" + n.to_s + "}"
+			@pagegroups[alias_nb] = 1
+			@currpagegroup = alias_nb
+			@newpagegroup = false
+		elsif @currpagegroup
+			@pagegroups[@currpagegroup] += 1
 		end
 	end
 
