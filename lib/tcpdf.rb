@@ -1694,7 +1694,7 @@ class TCPDF
 		require(getfontpath(file))
 		font_desc = TCPDFFontDescriptor.font(file)
 
-		if (font_desc[:name].nil? and @@fpdf_charwidths.nil?)
+		if (font_desc[:name].nil? or @@fpdf_charwidths.nil?)
 			Error('Could not include font definition file');
 		end
 
