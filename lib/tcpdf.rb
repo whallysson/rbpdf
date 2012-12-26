@@ -1295,18 +1295,37 @@ class TCPDF
 
 	#
 	# Defines the color used for all drawing operations (lines, rectangles and cell borders). It can be expressed in RGB components or gray scale. The method can be called before the first page is created and the value is retained from page to page.
-	# @param int :r If g et b are given, red component; if not, indicates the gray level. Value between 0 and 255
-	# @param int :g Green component (between 0 and 255)
-	# @param int :b Blue component (between 0 and 255)
+	# @param int :col1 Gray level for single color, or Red color for RGB, or Cyan color for CMYK. Value between 0 and 255
+	# @param int :col2 Green color for RGB, or Magenta color for CMYK. Value between 0 and 255
+	# @param int :col3 Blue color for RGB, or Yellow color for CMYK. Value between 0 and 255
+	# @param int :col4 Key (Black) color for CMYK. Value between 0 and 255
 	# @since 1.3
 	# @see SetFillColor(), SetTextColor(), Line(), Rect(), Cell(), MultiCell()
 	#
-	def SetDrawColor(r, g=-1, b=-1)
+	def SetDrawColor(col1=0, col2=-1, col3=-1, col4=-1)
+		# set default values
+		unless col1.is_a? Integer
+			col1 = 0
+		end
+		unless col2.is_a? Integer
+			col2 = 0
+		end
+		unless col3.is_a? Integer
+			col3 = 0
+		end
+		unless col4.is_a? Integer
+			col4 = 0
+		end
 		#Set color for all stroking operations
-		if ((r==0 and g==0 and b==0) or g==-1)
-			@draw_color=sprintf('%.3f G', r/255.0);
+		if (col2 == -1) and (col3 == -1) and (col4 == -1)
+			# Grey scale
+			@draw_color = sprintf('%.3f G', col1 / 255)
+		elsif col4 == -1
+			# RGB
+			@draw_color = sprintf('%.3f %.3f %.3f RG', col1 / 255, col2 / 255, col3 / 255)
 		else
-			@draw_color=sprintf('%.3f %.3f %.3f RG', r/255.0, g/255.0, b/255.0);
+			# CMYK
+			@draw_color = sprintf('%.3f %.3f %.3f %.3f K', col1 / 100, col2 / 100, col3 / 100, col4 / 100)
 		end
 		if (@page>0)
 			out(@draw_color);
