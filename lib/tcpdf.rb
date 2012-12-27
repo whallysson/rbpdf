@@ -1188,7 +1188,7 @@ class TCPDF
 			prevlinewidth = GetLineWidth()
 			line_width = 0.3
 			SetLineWidth(line_width)
-			SetDrawColor(0, 0, 0)
+			SetDrawColorArray([0, 0, 0])
 			SetY(1 + (@img_rb_y > GetY() ? @img_rb_y : GetY()))
 			if @rtl
 				SetX(@original_r_margin)
@@ -1242,7 +1242,7 @@ class TCPDF
 			prevlinewidth = GetLineWidth()
 			line_width = 0.3;
 			SetLineWidth(line_width);
-			SetDrawColor(0, 0, 0);
+			SetDrawColorArray([0, 0, 0])
 			
 			footer_height = ((@@k_cell_height_ratio * @footer_font[2]) / @k).round; #footer height, was , 2)
 			#get footer y position
@@ -1292,6 +1292,27 @@ class TCPDF
 		return @page;
 	end
   alias_method :page_no, :PageNo
+
+	#
+	# Defines the color used for all drawing operations (lines, rectangles and cell borders). 
+	# It can be expressed in RGB components or gray scale. 
+	# The method can be called before the first page is created and the value is retained from page to page.
+	# @param array or ordered hash :color array(or ordered hash) of colors
+	# @since 3.1.000 (2008-6-11)
+	# @see SetDrawColor()
+	#
+	def SetDrawColorArray(color)
+		if !color.nil?
+			color = color.values if color.is_a? Hash
+			r = !color[0].nil? ? color[0] : -1
+			g = !color[1].nil? ? color[1] : -1
+			b = !color[2].nil? ? color[2] : -1
+			k = !color[3].nil? ? color[3] : -1
+			if r >= 0
+				SetDrawColor(r, g, b, k)
+			end
+		end
+	end
 
 	#
 	# Defines the color used for all drawing operations (lines, rectangles and cell borders). It can be expressed in RGB components or gray scale. The method can be called before the first page is created and the value is retained from page to page.
