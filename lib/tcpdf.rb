@@ -2118,27 +2118,37 @@ class TCPDF
 	# @see SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), AddLink(), Ln(), MultiCell(), Write(), SetAutoPageBreak()
 	#
 	def Cell(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0)
-		k=@k;
 		min_cell_height = @font_size * @@k_cell_height_ratio
 		if h < min_cell_height
 			h = min_cell_height
 		end
+		checkPageBreak(h)
+		out(getCellCode(w, h, txt, border, ln, align, fill, link, stretch))
+	end
+  alias_method :cell, :Cell
 
-		if ((@y + h) > @page_break_trigger) and !@in_footer and AcceptPageBreak()
-			#Automatic page break
-			x = @x;
-			ws = @ws;
-			if (ws > 0)
-				@ws = 0;
-				out('0 Tw');
-			end
-			AddPage(@cur_orientation);
-			if (ws > 0)
-				@ws = ws;
-				out(sprintf('%.3f Tw', ws * k));
-			end
-			@x = x
+	#
+	# Returns the PDF string code to print a cell (rectangular area) with optional borders, background color and character string. The upper-left corner of the cell corresponds to the current position. The text can be aligned or centered. After the call, the current position moves to the right or to the next line. It is possible to put a link on the text.<br />
+	# If automatic page breaking is enabled and the cell goes beyond the limit, a page break is done before outputting.
+	# @param float :w Cell width. If 0, the cell extends up to the right margin.
+	# @param float :h Cell height. Default value: 0.
+	# @param string :txt String to print. Default value: empty string.
+	# @param mixed :border Indicates if borders must be drawn around the cell. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
+	# @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right (or left for RTL languages)</li><li>1: to the beginning of the next line</li><li>2: below</li></ul>Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
+	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L or empty string: left align (default value)</li><li>C: center</li><li>R: right align</li><li>J: justify</li></ul>
+	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
+	# @param mixed :link URL or identifier returned by AddLink().
+	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
+	# @since 1.0
+	# @see Cell()
+	#
+	def getCellCode(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0)
+		rs = "" # string to be returned
+		min_cell_height = @font_size * @@k_cell_height_ratio
+		if h < min_cell_height
+			h = min_cell_height
 		end
+		k = @k
 		if !w or (w <= 0)
 			if @rtl
 				w = @x - @l_margin
@@ -2147,8 +2157,8 @@ class TCPDF
 			end
 		end
 		s = '';
-		if ((fill.to_i == 1) or (border.to_i == 1))
-			if (fill.to_i == 1)
+		if (fill == 1) or (border.to_i == 1)
+			if (fill == 1)
 				op = (border.to_i == 1) ? 'B' : 'f';
 			else
 				op = 'S';
@@ -2215,13 +2225,13 @@ class TCPDF
 					txt_length =  GetNumChars(txt) - 1
 					char_space = ((w - width - (2 * @c_margin)) * @k) / (txt_length > 1 ? txt_length : 1)
 					# Set character spacing
-					out(sprintf('BT %.2f Tc ET', char_space))
+					rs << sprintf('BT %.2f Tc ET ', char_space)
 				else
 					# scaling
 					# Calculate horizontal scaling
 					horiz_scale = ratio * 100.0
 					# Set horizontal scaling
-					out(sprintf('BT %.2f Tz ET', horiz_scale))
+					rs << sprintf('BT %.2f Tz ET ', horiz_scale)
 				end
 				align = ''
 				width = w - (2 * @c_margin)
@@ -2265,7 +2275,7 @@ class TCPDF
 			if (align == 'J')
 				# count number of spaces
 				ns = txt.count(' ')
-				if @is_unicode
+				if (@current_font['type'] == "TrueTypeUnicode") or (@current_font['type'] == "cidfont0")
 					# get string width without spaces
 					width = GetStringWidth(txt.gsub(' ', ''))
 					# calculate average space width
@@ -2276,7 +2286,7 @@ class TCPDF
 					# get string width
 					width = GetStringWidth(txt)
 					spacewidth = ((w - width - (2 * @c_margin)) / (ns ? ns : 1)) * @k
-					out(sprintf('BT %.3f Tw ET', spacewidth))
+					rs << sprintf('BT %.3f Tw ET ', spacewidth)
 				end
 			end
 
@@ -2307,20 +2317,20 @@ class TCPDF
 		# output cell
 		if (s)
 			# output cell
-			out(s);
+			rs << s
 			# reset text stretching
 			if stretch > 2
 				# Reset character horizontal spacing
-				out('BT 0 Tc ET')
+				rs << ' BT 0 Tc ET'
 			elsif stretch > 0
 				# Reset character horizontal scaling
-				out('BT 100 Tz ET')
+				rs << ' BT 100 Tz ET'
 			end
 		end
 
 		# reset word spacing
 		if !@is_unicode and (align == 'J')
-			out('BT 0 Tw ET')
+			rs << ' BT 0 Tw ET'
 		end
 
 		@lasth = h;
@@ -2343,8 +2353,8 @@ class TCPDF
 				@x += w
 			end
 		end
+		return rs
 	end
-  alias_method :cell, :Cell
 
 	#
 	# This method allows printing text with line breaks. They can be automatic (as soon as the text reaches the right border of the cell) or explicit (via the \n character). As many cells as necessary are output, one below the other.<br />
