@@ -2066,6 +2066,33 @@ class TCPDF
 	end
   alias_method :accept_page_break, :AcceptPageBreak
 
+	#
+	# Add page if needed.
+	# @param float :h Cell height. Default value: 0.
+	# @since 3.2.000 (2008-07-01)
+	# @access protected
+	#
+	def checkPageBreak(h)
+		if (@y + h > @page_break_trigger) and !@in_footer and AcceptPageBreak()
+			rs = ""
+			# Automatic page break
+			x = @x
+			ws = @ws
+			if ws > 0
+				@ws = 0
+				rs << '0 Tw'
+			end
+			AddPage(@cur_orientation)
+			if ws > 0
+				@ws = ws
+				rs << sprintf('%.3f Tw', ws * k)
+			end
+			out(rs)
+			@y = @t_margin
+			@x = x
+		end
+	end
+
   def BreakThePage?(h)
 		if ((@y + h) > @page_break_trigger and !@in_footer and AcceptPageBreak())
       true
