@@ -343,8 +343,8 @@ class TCPDF
 		@href = ''
 		@fontlist = ["arial", "times", "courier", "helvetica", "symbol"]
 		@issetfont = false
-		@fgcolor ||= []
-		@bgcolor ||= []
+		@fgcolor = ActiveSupport::OrderedHash.new
+		@bgcolor = ActiveSupport::OrderedHash.new
 #		@extgstates ||= []
 		@bgtag ||= []
 		@tableborder ||= 0
@@ -356,8 +356,8 @@ class TCPDF
 		else
 			@tdalign ||= "L"
 		end
-		SetFillColor(200, 200, 200, true)
-		SetTextColor(0, 0, 0, true)
+		SetFillColor(200, 200, 200)
+		SetTextColor(0, 0, 0)
 
 		# user's rights
 		@ur = false;
@@ -1171,7 +1171,7 @@ class TCPDF
 				header_x = @original_l_margin + @header_logo_width * 1.1
 			end
 
-			SetTextColor(0, 0, 0, false)
+			SetTextColor(0, 0, 0)
 			
 			# header title
 			SetFont(@header_font[0], 'B', @header_font[2] + 1);
@@ -1234,7 +1234,7 @@ class TCPDF
 			font_style = @font_style
 			font_size = @font_size_pt
 
-			SetTextColor(0, 0, 0, false)
+			SetTextColor(0, 0, 0)
 
 			#set font
 			SetFont(@footer_font[0], @footer_font[1] , @footer_font[2]);
@@ -1355,16 +1355,37 @@ class TCPDF
   alias_method :set_draw_color, :SetDrawColor
 
 	#
+	# Defines the color used for all filling operations (filled rectangles and cell backgrounds). 
+	# It can be expressed in RGB components or gray scale. 
+	# The method can be called before the first page is created and the value is retained from page to page.
+	# @param array :color array of colors
+	# @access public
+	# @since 3.1.000 (2008-6-11)
+	# @see SetFillColor()
+	#
+	def SetFillColorArray(color)
+		if !color.nil?
+			color = color.values if color.is_a? Hash
+			r = !color[0].nil? ? color[0] : -1
+			g = !color[1].nil? ? color[1] : -1
+			b = !color[2].nil? ? color[2] : -1
+			k = !color[3].nil? ? color[3] : -1
+			if r >= 0
+				SetFillColor(r, g, b, k)
+			end
+		end
+	end
+
+	#
 	# Defines the color used for all filling operations (filled rectangles and cell backgrounds). It can be expressed in RGB components or gray scale. The method can be called before the first page is created and the value is retained from page to page.
 	# @param int :col1 Gray level for single color, or Red color for RGB, or Cyan color for CMYK. Value between 0 and 255
 	# @param int :col2 Green color for RGB, or Magenta color for CMYK. Value between 0 and 255
 	# @param int :col3 Blue color for RGB, or Yellow color for CMYK. Value between 0 and 255
-	# @param boolean :storeprev if true stores the current color on :bgcolor array.
 	# @param int :col4 Key (Black) color for CMYK. Value between 0 and 255
 	# @since 1.3
 	# @see SetDrawColor(), SetTextColor(), Rect(), Cell(), MultiCell()
 	#
-	def SetFillColor(col1=0, col2=-1, col3=-1, storeprev=false, col4=-1)
+	def SetFillColor(col1=0, col2=-1, col3=-1, col4=-1)
 		# set default values
 		unless col1.is_a? Integer
 			col1 = 0
@@ -1383,21 +1404,20 @@ class TCPDF
 		if (col2 == -1) and (col3 == -1) and (col4 == -1)
 			# Grey scale
 			@fill_color = sprintf('%.3f g', col1 / 255.0)
-			if storeprev
-				@bgcolor.push({'G' => col1})
-			end
+			@bgcolor['G'] = col1
 		elsif col4 == -1
 			# RGB
 			@fill_color = sprintf('%.3f %.3f %.3f rg', col1 / 255.0, col2 / 255.0, col3 / 255.0)
-			if storeprev
-				@bgcolor.push({'R' => col1, 'G' => col2, 'B' => col3})
-			end
+			@bgcolor['R'] = col1
+			@bgcolor['G'] = col2
+			@bgcolor['B'] = col3
 		else
 			# CMYK
 			@fill_color = sprintf('%.3f %.3f %.3f %.3f k', col1 / 100.0, col2 / 100.0, col3 / 100.0, col4 / 100.0)
-			if storeprev
-				@bgcolor.push({'C' => col1, 'M' => col2, 'Y' => col3, 'K' => col4})
-			end
+			@bgcolor['C'] = col1
+			@bgcolor['M'] = col2
+			@bgcolor['Y'] = col3
+			@bgcolor['K'] = col4
 		end
 
 		@color_flag = @fill_color != @text_color
@@ -1423,18 +1443,37 @@ class TCPDF
 	end
   alias_method :set_cmyk_fill_color, :SetCmykFillColor
 =end
+	#
+	# Defines the color used for text. It can be expressed in RGB components or gray scale. 
+	# The method can be called before the first page is created and the value is retained from page to page.
+	# @param array :color array of colors
+	# @access public
+	# @since 3.1.000 (2008-6-11)
+	# @see SetFillColor()
+	#
+	def SetTextColorArray(color)
+		unless color.nil?
+			color = color.values if color.is_a? Hash
+			r = !color[0].nil? ? color[0] : -1
+			g = !color[1].nil? ? color[1] : -1
+			b = !color[2].nil? ? color[2] : -1
+			k = !color[3].nil? ? color[3] : -1
+			if r >= 0
+				SetTextColor(r, g, b, k)
+			end
+		end
+	end
 
 	#
 	# Defines the color used for text. It can be expressed in RGB components or gray scale. The method can be called before the first page is created and the value is retained from page to page.
 	# @param int :col1 Gray level for single color, or Red color for RGB, or Cyan color for CMYK. Value between 0 and 255
 	# @param int :col2 Green color for RGB, or Magenta color for CMYK. Value between 0 and 255
 	# @param int :col3 Blue color for RGB, or Yellow color for CMYK. Value between 0 and 255
-	# @param boolean :storeprev if true stores the current color on :fgcolor array.
 	# @param int :col4 Key (Black) color for CMYK. Value between 0 and 255
 	# @since 1.3
 	# @see SetDrawColor(), SetFillColor(), Text(), Cell(), MultiCell()
 	#
-	def SetTextColor(col1=0, col2=-1, col3=-1, storeprev=false, col4=-1)
+	def SetTextColor(col1=0, col2=-1, col3=-1, col4=-1)
 		# set default values
 		unless col1.is_a? Integer
 			col1 = 0
@@ -1453,21 +1492,20 @@ class TCPDF
 		if (col2 == -1) and (col3 == -1) and (col4 == -1)
 			# Grey scale
 			@text_color = sprintf('%.3f g', col1 / 255.0)
-			if storeprev
-				@fgcolor.push({'G' => col1})
-			end
+			@fgcolor['G'] = col1
 		elsif col4 == -1
 			# RGB
 			@text_color = sprintf('%.3f %.3f %.3f rg', col1 / 255.0, col2 / 255.0, col3 / 255.0)
-			if storeprev
-				@fgcolor.push({'R' => col1, 'G' => col2, 'B' => col3})
-			end
+			@fgcolor['R'] = col1
+			@fgcolor['G'] = col2
+			@fgcolor['B'] = col3
 		else
 			# CMYK
 			@text_color = sprintf('%.3f %.3f %.3f %.3f k', col1 / 100.0, col2 / 100.0, col3 / 100.0, col4 / 100.0)
-			if storeprev
-				@fgcolor.push({'C' => col1, 'M' => col2, 'Y' => col3, 'K' => col4})
-			end
+			@fgcolor['C'] = col1
+			@fgcolor['M'] = col2
+			@fgcolor['Y'] = col3
+			@fgcolor['K'] = col4
 		end
 		@color_flag = @fill_color != @text_color
 	end
@@ -4353,7 +4391,7 @@ class TCPDF
 			else
 				col = @fgcolor[-1]
 			end
-			SetTextColor(col['R'], col['G'], col['B'], true)
+			SetTextColorArray(col)
 
 			# set background color attribute
 			if !attrs['bgcolor'].nil? and (attrs['bgcolor'] != '')
@@ -4362,7 +4400,7 @@ class TCPDF
 			else
 				col = @bgcolor[-1]
 			end
-			SetFillColor(col['R'], col['G'], col['B'], true)
+			SetFillColorArray(col)
 		end
 
 		#Opening tag
@@ -4587,18 +4625,16 @@ class TCPDF
 		# restore foreground color
 		nfg = @fgcolor.size
 		if nfg > 1
-			@fgcolor.pop
-			SetTextColor(@fgcolor[nfg - 2]['R'], @fgcolor[nfg - 2]['G'], @fgcolor[nfg - 2]['B'], false)
+			SetTextColorArray(@fgcolor[nfg - 2])
 		end
 
 		# restore background color
 		nbg = @bgcolor.size
 		if nbg > 1
-			@bgcolor.pop
 			if @bgtag[-1] == nbg - 1
 				@bgtag.pop
 			end
-			SetFillColor(@bgcolor[nbg - 2]['R'], @bgcolor[nbg - 2]['G'], @bgcolor[nbg - 2]['B'], false)
+			SetFillColorArray(@bgcolor[nbg - 2])
 		end
 
 		#Closing tag
@@ -4715,11 +4751,11 @@ class TCPDF
 	def addHtmlLink(url, name, fill=0)
 		#Put a hyperlink
 		prevcolor = @fgcolor[-1]
-		SetTextColor(0, 0, 255, false)
+		SetTextColor(0, 0, 255)
 		SetStyle('u', true);
 		Write(@lasth, name, url, fill, '', false, 0)
 		SetStyle('u', false);
-		SetTextColor(prevcolor['R'], prevcolor['G'], prevcolor['B'], false)
+		SetTextColorArray(prevcolor)
 	end
 	
 	#
