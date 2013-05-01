@@ -2877,23 +2877,30 @@ class TCPDF
   alias_method :image, :Image
 
 	#
-	# Performs a line break. The current abscissa goes back to the left margin and the ordinate increases by the amount passed in parameter.
+	# Performs a line break. 
+	# The current abscissa goes back to the left margin and the ordinate increases by the amount passed in parameter.
 	# @param float :h The height of the break. By default, the value equals the height of the last printed cell.
+	# @param boolean :cell if true add a cMargin to the x coordinate
 	# @since 1.0
 	# @see Cell()
 	#
-	def Ln(h='')
-		#Line feed; default value is last cell height
+	def Ln(h='', cell=false)
+		# Line feed; default value is last cell height
+		cellmargin = 0
+		if cell
+			cellmargin = @c_margin
+		end
 		if @rtl
-			@x = @w - @r_margin
+			@x = @w - @r_margin - cellmargin
 		else
-			@x = @l_margin
+			@x = @l_margin + cellmargin
 		end
-		if (h.is_a?(String))
-			@y += @lasth;
+		if h.is_a?(String)
+			@y += @lasth
 		else
-			@y += h;
+			@y += h
 		end
+		@newline = true
 	end
   alias_method :ln, :Ln
 
