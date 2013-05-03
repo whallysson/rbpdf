@@ -2581,10 +2581,11 @@ class TCPDF
 	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L or empty string: left align (default value)</li><li>C: center</li><li>R: right align</li><li>J: justify</li></ul>
 	# @param boolean :ln if true set cursor at the bottom of the line, otherwise set cursor at the top of the line.
 	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
-	# @return int Rerurn the number of cells.
+	# @param boolean :firstline if true prints only the first line and return the remaining string.
+	# @return mixed Return the number of cells or the remaining string if :firstline = true.
 	# @since 1.5
 	#
-	def Write(h, txt, link=nil, fill=0, align='', ln=false, stretch=0)
+	def Write(h, txt, link=nil, fill=0, align='', ln=false, stretch=0, firstline=false)
 		txt.force_encoding('ASCII-8BIT') if txt.respond_to?(:force_encoding)
 
 		# remove carriage returns
@@ -2648,7 +2649,23 @@ class TCPDF
 				else
 					talign = align
 				end
+				if firstline
+					startx = @x
+					linew = GetArrStringWidth(utf8Bidi(chars[j, i], @tmprtl))
+					if @rtl
+						@endlinex = startx - linew
+					else
+						@endlinex = startx + linew
+					end
+					w = linew
+					tmpcmargin = @c_margin
+					@c_margin = 0
+				end
 				Cell(w, h, UTF8ArrSubString(chars, j, i), 0, 1, talign, fill, link, stretch)
+				if firstline
+					@c_margin = tmpcmargin
+					return UTF8ArrSubString(chars, i)
+				end
 				nl += 1
 				j = i + 1
 				l = 0
@@ -2680,23 +2697,48 @@ class TCPDF
 							linebreak = true
 						else
 							# truncate the word because do not fit on column
+							if firstline
+								startx = @x
+								linew = GetArrStringWidth(utf8Bidi(chars[j, i], @tmprtl))
+								if @rtl
+									@endlinex = startx - linew
+								else
+									@endlinex = startx + linew
+								end
+								w = linew
+								tmpcmargin = @c_margin
+								@c_margin = 0
+							end
 							Cell(w, h, UTF8ArrSubString(chars, j, i), 0, 1, align, fill, link, stretch)
+							if firstline
+								@c_margin = tmpcmargin
+								return UTF8ArrSubString(chars, i)
+							end
 							j = i
 							i -= 1
 						end
 					else
 						# word wrapping
+						if firstline
+							startx = @x
+							linew = GetArrStringWidth(utf8Bidi(chars[j, sep], @tmprtl))
+							if @rtl
+								@endlinex = startx - linew
+							else
+								@endlinex = startx + linew
+							end
+							w = linew
+							tmpcmargin = @c_margin
+							@c_margin = 0
+						end
 						Cell(w, h, UTF8ArrSubString(chars, j, sep), 0, 1, align, fill, link, stretch)
+						if firstline
+							@c_margin = tmpcmargin
+							return UTF8ArrSubString(chars, sep)
+						end
 						i = sep
 						sep = -1
 						j = i + 1
-					end
-					if @lispacer.length > 0
-						if @rtl
-							@x -= GetStringWidth(@lispacer)
-						else
-							@x += GetStringWidth(@lispacer)
-						end
 					end
 					w = getRemainingWidth()
 					wmax = w - (2 * @c_margin)
@@ -2731,7 +2773,23 @@ class TCPDF
 			else
 				w = l
 			end
+			if firstline
+				startx = @x
+				linew = GetArrStringWidth(utf8Bidi(chars[j, nb], @tmprtl))
+				if @rtl
+					@endlinex = startx - linew
+				else
+					@endlinex = startx + linew
+				end
+				w = linew
+				tmpcmargin = @c_margin
+				@c_margin = 0
+			end
 			Cell(w, h, UTF8ArrSubString(chars, j, nb), 0, (ln ? 1 : 0), align, fill, link, stretch)
+			if firstline
+				@c_margin = tmpcmargin
+				return UTF8ArrSubString(chars, nb)
+			end
 			nl += 1
 		end
 
