@@ -4804,16 +4804,18 @@ class TCPDF
 	# @param string :url link URL
 	# @param string :name link name
 	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
+	# @param boolean :firstline if true prints only the first line and return the remaining string.
+	# @return the number of cells used or the remaining text if :firstline = true
 	# @access public
 	#
-	def addHtmlLink(url, name, fill=0)
-		#Put a hyperlink
-		prevcolor = @fgcolor[-1]
+	def addHtmlLink(url, name, fill=0, firstline=false)
+		prevcolor = @fgcolor
 		SetTextColor(0, 0, 255)
 		SetStyle('u', true);
-		Write(@lasth, name, url, fill, '', false, 0)
+		ret = Write(@lasth, name, url, fill, '', false, 0, firstline)
 		SetStyle('u', false);
 		SetTextColorArray(prevcolor)
+		return ret
 	end
 	
 	#
