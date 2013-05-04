@@ -295,6 +295,7 @@ class TCPDF
 		@ws ||= 0
 		@dpi = 72
 		@pagegroups ||= {}
+		@intmrk ||= []
 		
 		#Standard Unicode fonts
 		@core_fonts = {
@@ -4576,106 +4577,145 @@ class TCPDF
   
 	#
 	# Process closing tags.
-	# @param string :tag tag name (in upcase)
+	# @param array :dom html dom array 
+	# @param int :key current element id
+	# @param boolean :cell if true add the default c_margin space to each new line (default false).
 	# @access protected
 	#
-	def closedHTMLTagHandler(tag)
-		# restore foreground color
-		nfg = @fgcolor.size
-		if nfg > 1
-			SetTextColorArray(@fgcolor[nfg - 2])
-		end
-
-		# restore background color
-		nbg = @bgcolor.size
-		if nbg > 1
-			if @bgtag[-1] == nbg - 1
-				@bgtag.pop
-			end
-			SetFillColorArray(@bgcolor[nbg - 2])
-		end
-
-		#Closing tag
-		case (tag)
-			when 'td','th'
-				@tdbegin = false;
-				@tdwidth = 0;
-				@tdheight = 0;
-				if @rtl
-					@tdalign = "R"
-				else
-					@tdalign = "L"
-				end
-				
-			when 'tr'
-				Ln();
-				
+	def closeHTMLTagHandler(dom, key, cell=false)
+		tag = dom[key]
+		parent = dom[(dom[key]['parent'])]
+		# Closing tag
+		case (tag['value'])
 			when 'table'
-				@tableborder=0;
-				
-			when 'strong'
-				SetStyle('b', false);
-				
-			when 'em'
-				SetStyle('i', false);
-				
-			when 'b', 'i', 'u'
-				SetStyle(tag, false);
-				
+				if !parent['cellpadding'].nil?
+					@c_margin = @old_c_margin
+				end
+			when 'td','th'
+			when 'tr'
+				# draw borders
+				table_el = dom[(dom[(dom[key]['parent'])]['parent'])]
+				if (!table_el['attribute']['border'].nil? and (table_el['attribute']['border'] > 0)) or (table_el['style']['border'].nil? and (table_el['style']['border'] > 0))
+					border = 1
+				end
+				@y = parent['starty']
+				restspace = GetPageHeight() - @y - GetBreakMargin()
+				startpage = parent['startpage']
+				endpage = parent['endpage']
+				# for each cell on the row
+				parent['cellpos'].each_with_index { |cellpos, k |
+					if !cellpos['rowspanid'].nil?
+						cellpos['startx'] = table_el['rowspans'][(cellpos['rowspanid'])]['startx']
+						cellpos['endx'] = table_el['rowspans'][(cellpos['rowspanid'])]['endx']
+						endy = table_el['rowspans'][(cellpos['rowspanid'])]['endy']
+						startpage = table_el['rowspans'][(cellpos['rowspanid'])]['startpage']
+						endpage = table_el['rowspans'][(cellpos['rowspanid'])]['endpage']
+					else
+						endy = parent['endy']
+					end
+					if endpage > startpage
+						# design borders around HTML cells.
+						startpage.upto(endpage) do |page|
+							@page = page
+							if page == startpage
+								@y = GetPageHeight() - restspace - GetBreakMargin()
+								ch = restspace
+							elsif page == endpage
+								@y = @t_margin # put cursor at the beginning of text
+								ch = endy - @t_margin
+							else
+								@y = @t_margin # put cursor at the beginning of text
+								ch = GetPageHeight() - @t_margin - GetBreakMargin()
+							end
+
+							if !cellpos['bgcolor'].nil? and (cellpos['bgcolor'] != false )
+								SetFillColorArray(cellpos['bgcolor'])
+								fill = true
+							else
+								fill = false
+							end
+							cw = (cellpos['endx'] - cellpos['startx']).abs
+							@x = cellpos['startx'];
+							# design a cell around the text
+							ccode = @fill_color + "\n" + getCellCode(cw, ch, "", border, 1, '', fill)
+							pstart = substr(@pages[@page], 0, @intmrk[@page])
+							pend = substr(@pages[@page], @intmrk[@page])
+							@pages[@page] = pstart + ccode + "\n" + pend
+							@intmrk[@page] += strlen(ccode + "\n")
+						end
+					else
+						ch = endy - parent['starty']
+						if cellpos['bgcolor'].nil? and (cellpos['bgcolor'] != false)
+							SetFillColorArray(cellpos['bgcolor'])
+							fill = true
+						else
+							fill = false
+						end
+						cw = (cellpos['endx'] - cellpos['startx']).abs
+						@x = cellpos['startx']
+						@y = parent['starty']
+						# design a cell around the text
+						ccode = @fill_color + "\n" + getCellCode(cw, ch, "", border, 1, '', fill)
+						pstart = substr(@pages[@page], 0, @intmrk[@page])
+						pend = substr(@pages[@page], @intmrk[@page])
+						@pages[@page] = pstart + ccode + "\n" + pend
+						@intmrk[@page] += strlen(ccode + "\n")
+					end
+				}                                       
+				if table_el['attribute']['cellspacing']
+					cellspacing = pixelsToUnits(table_el['attribute']['cellspacing'])
+					@y += cellspacing
+				end
+				Ln(0, cell)
+				@x = parent['startx']
+			when 'u'
+				SetStyle('u', false)
 			when 'del'
 				SetStyle('d', false)
-
 			when 'a'
-				@href = nil;
-				
+				@href = nil
 			when 'sup'
-				currentfont_size = @font_size;
-				SetFontSize(@tempfontsize);
-				@tempfontsize = @font_size_pt;
-				SetXY(GetX(), GetY() - ((currentfont_size - @font_size)*(@@k_small_ratio)));
-				
+				SetXY(GetX(), GetY() + ((@font_size_pt - parent['fontsize']) / @k))
 			when 'sub'
-				currentfont_size = @font_size;
-				SetFontSize(@tempfontsize);
-				@tempfontsize = @font_size_pt;
-				SetXY(GetX(), GetY() + ((currentfont_size - @font_size)*(@@k_small_ratio)));
-				
+				SetXY(GetX(), GetY() - ((@font_size_pt - 0.5 * parent['fontsize']) / @k))
 			when 'small'
-				currentfont_size = @font_size;
-				SetFontSize(@tempfontsize);
-				@tempfontsize = @font_size_pt;
-				SetXY(GetX(), GetY() - ((@font_size - currentfont_size)/3));
-				
-			when 'font'
-				if (@issetfont)
-					@font_family = @prevfont_family;
-					@font_style = @prevfont_style;
-					SetFont(@font_family);
-					@issetfont = false;
-				end
-				currentfont_size = @font_size;
-				SetFontSize(@tempfontsize);
-				@tempfontsize = @font_size_pt;
-				@lasth = @font_size * @@k_cell_height_ratio;
-				
+				SetXY(GetX(), GetY() - ((@font_size_pt - parent['fontsize']) / @k))
 			when 'p'
-				Ln();
-				Ln();
-				
-			when 'dl', 'ul', 'ol'
-				Ln();
-				Ln();
-				
-			when 'dd', 'li'
-				@lispacer = "";
-				
+				Ln('', cell)
+				Ln('', cell)
+			when 'dl'
+				@listnum -= 1
+				if @listnum <= 0
+					@listnum = 0
+					Ln('', cell)
+					Ln('', cell)
+				end
+			when 'dt'
+				@lispacer = ""
+			when 'dd'
+				@lispacer = ""
+				if @rtl
+					@r_margin -= @listindent
+				else
+					@l_margin -= @listindent
+				end
+			when 'ul', 'ol'
+				@listnum -= 1
+				@lispacer = ""
+				if @rtl
+					@r_margin -= @listindent
+				else
+					@l_margin -= @listindent
+				end
+				if @listnum <= 0
+					@listnum = 0
+					Ln('', cell)
+					Ln('', cell)
+				end
+			when 'li'
+				@lispacer = ""
 			when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
-				SetFontSize(@tempfontsize);
-				@tempfontsize = @font_size_pt;
-				SetStyle('b', false);
-				Ln();
-				@lasth = @font_size * @@k_cell_height_ratio;
-								
+				Ln((parent['fontsize'] * 1.5) / @k, cell)
 		end
 		@tmprtl = false
 	end
