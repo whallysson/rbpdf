@@ -4343,67 +4343,351 @@ class TCPDF
 	# --- HTML PARSER FUNCTIONS ---
 	
 	#
-	# Allows to preserve some HTML formatting.<br />
-	# Supports: h1, h2, h3, h4, h5, h6, b, u, i, a, img, p, br, strong, em, font, blockquote, li, ul, ol, hr, td, th, tr, table, sup, sub, small
+	# Allows to preserve some HTML formatting (limited support).<br />
+	# Supported tags are: a, b, blockquote, br, dd, del, div, dl, dt, em, font, h1, h2, h3, h4, h5, h6, hr, i, img, li, ol, p, small, span, strong, sub, sup, table, td, th, tr, u, ul, 
 	# @param string :html text to display
 	# @param boolean :ln if true add a new line after text (default = true)
-	# @param int :fill Indicates if the background must be painted (1) or transparent (0). Default value: 0.
+	# @param int :fill Indicates if the background must be painted (1:true) or transparent (0:false).
 	# @param boolean :reseth if true reset the last cell height (default false).
-	# @param boolean :cell if true add the default @c_margin space to each Write (default false).
+	# @param boolean :cell if true add the default c_margin space to each Write (default false).
+	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
 	#
-	def writeHTML(html, ln=true, fill=0, reseth=false, cell=false)
-		if (@lasth == 0) or reseth
-			#set row height
-			@lasth = @font_size * @@k_cell_height_ratio; 
+	def writeHTML(html, ln=true, fill=0, reseth=false, cell=false, align='')
+		# store current values
+		prevFontFamily = @font_family
+		prevFontStyle = @font_style
+		prevFontSizePt = @font_size_pt
+		curfontname = prevFontFamily
+		curfontstyle = prevFontStyle
+		curfontsize = prevFontSizePt
+		prevbgcolor = @bgcolor
+		prevfgcolor = @fgcolor
+		@newline = true
+		startlinepage = @page
+		startlinepos = @pages[@page].length
+		lalign = align
+		plalign = align
+
+		if cell
+			@y += @c_margin
+			if @rtl
+				@x -= @c_margin
+			else
+				@x += @c_margin
+			end
 		end
-		
-    @href = nil
-    @style = {}
-    html.gsub!(/[\t\r\n\f]/, "")#\0\x0B
-    html.split(/(<[^>]+>)/).each do |element|
-      if "<" == element[0,1]
-        #Tag
-        if (element[1, 1] == '/')
-					closedHTMLTagHandler(element[2..-2].downcase);
-        else
-					#Extract attributes
-					# get tag name
-					tag = element.scan(/([a-zA-Z0-9]*)/).flatten.delete_if {|x| x.length == 0}
-					tag = tag[0].downcase;
-					
-					# get attributes
-					attr_array = element.scan(/([^=\s]*)=["\']?([^"\']*)["\']?/)
-          attrs = {}
-          attr_array.each do |name, value|
-    			  attrs[name.downcase] = value;
-    		  end
-					openHTMLTagHandler(tag, attrs, fill);
-				end
-				
-      else
-        #Text
-				if (@href)
-					addHtmlLink(@href, element, fill);
-				elsif (@tdbegin)
-					if ((element.strip.length > 0) and (element != "&nbsp;"))
-						Cell(@tdwidth, @tdheight, unhtmlentities(element.strip), @tableborder, 0, @tdalign, @tdfill);
-					elsif (element == "&nbsp;")
-						Cell(@tdwidth, @tdheight, '', @tableborder, 0, @tdalign, @tdfill);
+		if @rtl
+			w = @x - @l_margin
+		else
+			w = @w - @r_margin - @x
+		end
+		w -= 2 * @c_margin
+		@listindent = GetStringWidth("0000")
+		@listnum = 0
+		if !@lasth or reseth
+			#set row height
+			@lasth = @font_size * @@k_cell_height_ratio
+		end
+		dom = getHtmlDomArray(html)
+		maxel = dom.size
+		key = 0
+		while key < maxel
+			if dom[key]['tag'] or (key == 0)
+				if !dom[key]['fontname'].nil? or !dom[key]['fontstyle'].nil? or !dom[key]['fontsize'].nil?
+					fontname  = !dom[key]['fontname'].nil?  ? dom[key]['fontname']  : ''
+					fontstyle = !dom[key]['fontstyle'].nil? ? dom[key]['fontstyle'] : ''
+					fontsize  = !dom[key]['fontsize'].nil?  ? dom[key]['fontsize']  : ''
+					if (fontname != curfontname) or (fontstyle != curfontstyle) or (fontsize != curfontsize)
+						SetFont(fontname, fontstyle, fontsize)
+						@lasth = @font_size * @@k_cell_height_ratio
+						curfontname = fontname
+						curfontstyle = fontstyle
+						curfontsize = fontsize
 					end
-				elsif ((element.strip.length > 0) and (element != "&nbsp;"))
+				end
+				if !dom[key]['bgcolor'].nil? and (dom[key]['bgcolor'].length > 0)
+					SetFillColorArray(dom[key]['bgcolor'])
+					wfill = 1
+				else
+					wfill = fill || 0
+				end
+				if !dom[key]['fgcolor'].nil? and (dom[key]['fgcolor'].length > 0)
+					SetTextColorArray(dom[key]['fgcolor'])
+				end
+				if !dom[key]['align'].nil?
+					lalign = dom[key]['align']
+				end
+				if lalign.empty?
+					lalign = align
+				end
+			end
+			# align lines
+			if @newline and (dom[key]['value'].length > 0) and (dom[key]['value'] != 'td') and (dom[key]['value'] != 'th')
+				# we are at the beginning of a new line
+				if defined?(startlinex)
+					if !plalign.nil? and (((plalign == 'C') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl)))
+						# the last line must be shifted to be aligned as requested
+						linew = (@endlinex - startlinex).abs
+						pstart = @pages[startlinepage][0, startlinepos]
+						if defined?(opentagpos) and !@footerpos[startlinepage].nil?
+							midpos = [opentagpos, @footerpos[startlinepage]].min
+						elsif defined?(opentagpos)
+							midpos = opentagpos
+						elsif !@footerpos[startlinepage].nil?
+							midpos = @footerpos[startlinepage]
+						else
+							midpos = 0
+						end
+						if midpos > 0
+							pmid = @pages[startlinepage][startlinepos..(midpos - startlinepos + 1)]
+							pend = @pages[startlinepage][midpos..-1]
+						else
+							pmid = @pages[startlinepage][startlinepos..-1]
+							pend = ""
+						end
+						# calculate shifting amount
+						mdiff = (w - linew - @c_margin).abs
+						if plalign == 'C'
+							if @rtl
+								t_x = -(mdiff / 2)
+							else
+								t_x = (mdiff / 2)
+							end
+						elsif (plalign == 'R') and !@rtl
+							# right alignment on LTR document
+							t_x = mdiff
+						elsif (plalign == 'L') and @rtl
+							# left alignment on RTL document
+							t_x = -mdiff
+						end
+						# shift the line
+						trx = sprintf('1 0 0 1 %.3f 0 cm', (t_x * @k))
+						@pages[startlinepage] = pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n" + pend
+						endlinepos = (pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n").length
+					end
+				end
+				checkPageBreak(@lasth)
+				SetFont(fontname, fontstyle, fontsize)
+				if wfill
+					SetFillColorArray(@bgcolor)
+				end
+				startlinex = @x
+				startlinepage = @page
+				if !endlinepos.nil?
+					startlinepos = endlinepos
+					endlinepos = nil
+				else
+					startlinepos = @pages[@page].length
+				end
+				plalign = lalign
+				@newline = false
+			end
+			if defined?(opentagpos)
+				opentagpos = nil
+			end
+			if dom[key]['tag']
+				if dom[key]['opening']    
+					# table content is handled in a special way
+					if (dom[key]['value'] == 'td') or (dom[key]['value'] == 'th')
+						trid = dom[key]['parent']
+						table_el = dom[trid]['parent']
+						if dom[table_el]['cols'].nil?
+							dom[table_el]['cols'] = trid['cols']
+						end
+						# calculate cell width
+						if !dom[(dom[key]['parent'])]['width'].nil?
+							table_width = pixelsToUnits(dom[(dom[key]['parent'])]['width'])
+						else
+							table_width = w
+						end
+						if !dom[(dom[trid]['parent'])]['attribute']['cellpadding'].nil?
+							currentcmargin = pixelsToUnits(dom[(dom[trid]['parent'])]['attribute']['cellpadding'])
+							@c_margin = currentcmargin
+						end
+						if dom[(dom[trid]['parent'])]['attribute']['cellspacing']
+							cellspacing = pixelsToUnits(dom[(dom[trid]['parent'])]['attribute']['cellspacing'])
+						else
+							cellspacing = 0
+						end
+						if @rtl
+							cellspacingx = -cellspacing
+						else
+							cellspacingx = cellspacing
+						end
+						colspan = dom[key]['attribute']['colspan']
+						if !dom[key]['width'].nil?
+							cellw = pixelsToUnits(dom[key]['width'])
+						else
+							cellw = colspan * (table_width / dom[table_el]['cols'])
+						end
+						cellw -= cellspacing
+						cell_content = dom[key]['content']
+						tagtype = dom[key]['value']
+						parentid = key
+						while (key < maxel) and !(dom[key]['tag'] and !dom[key]['opening'] and (dom[key]['value'] == tagtype) and (dom[key]['parent'] == parentid))
+							# move :key index forward
+							key += 1
+						end
+						if dom[trid]['startx'].nil?
+							dom[trid]['startx'] = @x
+						end
+						if dom[trid]['starty'].nil?
+							dom[trid]['starty'] = @y
+						else
+							@y = dom[trid]['starty']
+						end
+						if dom[trid]['startpage'].nil?
+							dom[trid]['startpage'] = @page
+						else
+							@page = dom[trid]['startpage']
+						end
+						@x += (cellspacingx / 2)
+						if !dom[parentid]['attribute']['rowspan'].nil?
+							rowspan = dom[parentid]['attribute']['rowspan'].to_i
+							# add rowspan information to table element
+							if rowspan > 1
+								dom[table_el]['rowspans'].push({'rowspan' => rowspan, 'colspan' => colspan, 'startpage' => @page, 'startx' => @x, 'starty' => @y, 'intmrkpos' => @pages[@page].length})
+								trsid = dom[table_el]['rowspans'].size
+							end
+						else
+							rowspan = 1
+						end
+						endrwsp = -1
+						if !dom[table_el]['rowspans'].nil?
+							dom[table_el]['rowspans'].each_with_index { |trwsp, k |
+								if  (trwsp['startx'] == @x) and (trwsp['starty'] < @y) and (trwsp['rowspan'] > 1)
+									@x = trwsp['endx'] + cellspacingx
+									dom[table_el]['rowspans'][k]['rowspan'] -= 1
+									endrwsp = k
+									break
+								end
+							}
+						end
+						dom[trid]['cellpos'].push({'startx' => @x})
+						cellid = dom[trid]['cellpos'].size
+						if rowspan > 1
+							dom[trid]['cellpos'][cellid - 1]['rowspanid'] = trsid - 1
+						end
+						# push background colors
+						if !dom[parentid]['bgcolor'].nil? and (dom[parentid]['bgcolor'].length > 0)
+							dom[trid]['cellpos'][cellid - 1]['bgcolor'] = dom[parentid]['bgcolor'].dup
+						end
+						# write the cell content
+						MultiCell(cellw, 0, cell_content, 0, lalign, false, 2, 0, 0, true, 0, true)
+						@c_margin = currentcmargin
+						dom[trid]['cellpos'][cellid - 1]['endx'] = @x
+						if rowspan > 1
+							dom[table_el]['rowspans'][trsid - 1]['endx'] = @x
+							dom[table_el]['rowspans'][trsid - 1]['endy'] = [@y, dom[trid]['endy']].max
+							dom[table_el]['rowspans'][trsid - 1]['endpage'] = [@page, dom[trid]['endpage']].max
+						else
+							if dom[trid]['endy'].nil?
+								dom[trid]['endy'] = @y
+							else
+								dom[trid]['endy'] = [@y, dom[trid]['endy']].max
+							end
+							if dom[trid]['endpage'].nil?
+								dom[trid]['endpage'] = @page
+							else
+								dom[trid]['endpage'] = [@page, dom[trid]['endpage']].max
+							end
+						end
+						if endrwsp >= 0
+							dom[trid]['endy'] = [dom[table_el]['rowspans'][endrwsp]['endy'], dom[trid]['endy']].max
+							dom[trid]['endpage'] = [dom[table_el]['rowspans'][endrwsp]['endpage'], dom[trid]['endpage']].max
+						end
+						@x += (cellspacingx / 2)
+					else
+						# opening tag (or self-closing tag)
+						if !defined?(opentagpos) or opentagpos.nil?
+							opentagpos = @pages[@page].length
+						end
+						openHTMLTagHandler(dom, key, cell)
+					end
+				else
+					# closing tag
+					closeHTMLTagHandler(dom, key, cell)
+				end
+			elsif dom[key]['value'].length > 0
+				# text
+				if @href
+					# HTML <a> Link
+					strrest = addHtmlLink(@href, dom[key]['value'], wfill, true)
+				else
 					ctmpmargin = @c_margin
 					if !cell
 						@c_margin = 0
 					end
-					Write(@lasth, unhtmlentities(element), '', fill, '', false, 0)
+					# write only the first line and get the rest
+					strrest = Write(@lasth, dom[key]['value'], '', wfill, "", false, 0, true)
 					@c_margin = ctmpmargin
 				end
-      end
-    end
-    
-		if (ln)
-			Ln(@lasth);
+				if !strrest.nil? and strrest.length > 0
+					# store the remaining string on the previous :key position
+					@newline = true
+					if cell
+						if @rtl
+							@x -= @c_margin
+						else
+							@x += @c_margin
+						end
+					end
+					dom[key]['value'] = strrest.strip
+					key -= 1
+				end
+			end
+			key += 1
+		end # end for each :key
+		# align the last line
+		if defined?(startlinex)
+			if !plalign.nil? and (((plalign == 'C') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl)))
+				# the last line must be shifted to be aligned as requested
+				linew = (@endlinex - startlinex).abs
+				pstart = @pages[startlinepage][0, startlinepos]
+				if defined?(opentagpos) and !@footerpos[startlinepage].nil?
+					midpos = [opentagpos, @footerpos[startlinepage]].min
+				elsif defined?(opentagpos)
+					midpos = opentagpos
+				elsif !@footerpos[startlinepage].nil?
+					midpos = @footerpos[startlinepage]
+				else
+					midpos = 0
+				end
+				if midpos > 0
+					pmid = @pages[startlinepage][startlinepos..(midpos - startlinepos + 1)]
+					pend = @pages[startlinepage][midpos..-1]
+				else
+					pmid = @pages[startlinepage][startlinepos..-1]
+					pend = ""
+				end
+				# calculate shifting amount
+				mdiff = (w - linew - @c_margin).abs
+				if plalign == 'C'
+					if @rtl
+						t_x = -(mdiff / 2)
+					else
+						t_x = (mdiff / 2)
+					end
+				elsif (plalign == 'R') and !@rtl
+					# right alignment on LTR document
+					t_x = mdiff
+				elsif (plalign == 'L') and @rtl
+					# left alignment on RTL document
+					t_x = -mdiff
+				end
+				# shift the line
+				trx = sprintf('1 0 0 1 %.3f 0 cm', t_x * @k)
+				@pages[startlinepage] = pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n" + pend
+			end
 		end
+		if ln and !(cell and (dom[key-1]['value'] == 'table'))
+			Ln(@lasth)
+		end
+		# restore previous values
+		SetFont(prevFontFamily, prevFontStyle, prevFontSizePt)
+		SetFillColorArray(prevbgcolor)
+		SetTextColorArray(prevfgcolor)
+		dom = nil
 	end
   alias_method :write_html, :writeHTML
 
