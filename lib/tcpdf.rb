@@ -5005,6 +5005,67 @@ class TCPDF
 	end
 	
 	#
+	# convert html string containing value and unit of measure to user's units or points.
+	# @param string :htmlval string containing values and unit
+	# @param string :refsize reference value in points
+	# @param string :defaultunit default unit (can be one of the following: %, em, ex, px, in, mm, pc, pt).
+	# @param boolean :point if true returns points, otherwise returns value in user's units
+	# @return float value in user's unit or point if :points=true
+	# @access public
+	# @since 4.4.004 (2008-12-10)
+	#
+	def getHTMLUnitToUnits(htmlval, refsize=1, defaultunit='px', points=false)
+		supportedunits = ['%', 'em', 'ex', 'px', 'in', 'cm', 'mm', 'pc', 'pt']
+		retval = 0
+		value = 0
+		unit = 'px'
+		k = @k
+		if points
+			k = 1
+		end
+		if supportedunits.include?(defaultunit)
+			unit = defaultunit
+		end
+		if htmlval.is_a? Integer
+			value = htmlval.to_f
+		else
+			mnum = htmlval.scan(/([0-9\.]+)/)
+			unless mnum.empty?
+				value = mnum[1].to_f
+				munit = htmlval.scan(/([a-z%]+)/)
+				unless munit.empty?
+					if supportedunits.include?(munit[1])
+						unit = munit[1]
+					end
+				end
+			end
+		end
+		case unit
+			# percentage
+		when '%'
+			retval = ((value * refsize) / 100)
+			# relative-size
+		when 'em'
+			retval = (value * refsize)
+		when 'ex'
+			retval = value * (refsize / 2)
+			# absolute-size
+		when 'in'
+			retval = (value * @dpi) / k
+		when 'cm'
+			retval = (value / 2.54 * @dpi) / k
+		when 'mm'
+			retval = (value / 25.4 * @dpi) / k
+		when 'pc'
+			# one pica is 12 points
+			retval = (value * 12) / k
+		when 'px', 'pt'
+			retval = value / k
+		end
+		return retval
+	end
+
+	#
 	# Sets font style.
 	# @param string :tag tag name in lowercase. Supported tags are:<ul>
 	# <li>b : bold text</li>
