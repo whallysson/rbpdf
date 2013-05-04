@@ -274,8 +274,8 @@ class TCPDF
 		@is_unicode = unicode
 		@lasth ||= 0
 		@links ||= []
-  	@listordered ||= false
-  	@listcount ||= 0
+  	@listordered ||= []
+  	@listcount ||= []
   	@lispacer ||= ""
 		@n ||= 2
 		@offsets ||= []
@@ -4429,248 +4429,148 @@ class TCPDF
 
 	#
 	# Process opening tags.
-	# @param string :tag tag name (in upcase)
-	# @param string :attr tag attribute (in upcase)
-	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
+	# @param array :dom html dom array 
+	# @param int :key current element id
+	# @param boolean :cell if true add the default c_margin space to each new line (default false).
 	# @access protected
 	#
-	def openHTMLTagHandler(tag, attrs, fill=0)
+	def openHTMLTagHandler(dom, key, cell=false)
+		tag = dom[key]
+		parent = dom[(dom[key]['parent'])]
+		firstorlast = (key == 1)
 		# check for text direction attribute
-		if attrs['dir'].nil?
-			@tmprtl = false
+		if !tag['attribute']['dir'].nil?
+			@tmprtl = tag['attribute']['dir'] == 'rtl' ? 'R' : 'L'
 		else
-			@tmprtl = attrs['dir'] == 'rtl' ? 'R' : 'L';
-		end
-
-		if (tag != 'br') and (tag != 'hr') and (tag != 'img')
-			# set foreground color attribute
-			if !attrs['color'].nil? and (attrs['color'] != '')
-				col = convertHTMLColorToDec(attrs['color'])
-			else
-				col = @fgcolor[-1]
-			end
-			SetTextColorArray(col)
-
-			# set background color attribute
-			if !attrs['bgcolor'].nil? and (attrs['bgcolor'] != '')
-				col = convertHTMLColorToDec(attrs['bgcolor'])
-				@bgtag.push(@bgcolor.size)
-			else
-				col = @bgcolor[-1]
-			end
-			SetFillColorArray(col)
+			@tmprtl = false
 		end
 
 		#Opening tag
-		case (tag)
-			when 'table'
-				if attrs['border'].nil? or attrs['border'] == ''
-					@tableborder = 0;
-				else
-					@tableborder = attrs['border'];
+		case tag['value']
+		when 'table'
+			dom[key]['rowspans'] = []
+			if !tag['attribute']['cellpadding'].nil?
+				@old_c_margin = @c_margin
+				@c_margin = pixelsToUnits(tag['attribute']['cellpadding'])
+			end
+		when 'tr'
+			# array of columns positions
+			dom[key]['cellpos'] = []
+		when 'td', 'th'
+		when 'hr'
+			Ln('', cell)
+			if !tag['attribute']['width'].nil? and (tag['attribute']['width'] != '')
+				hrWidth = pixelsToUnits(tag['attribute']['width']);
+			else
+				hrWidth = @w - @l_margin - @r_margin
+			end
+			x = GetX()
+			y = GetY()
+			prevlinewidth = GetLineWidth()
+			Line(x, y, x + hrWidth, y)
+			SetLineWidth(prevlinewidth)
+			Ln('', cell)
+		when 'u'
+			SetStyle('u', true)
+		when 'del'
+			SetStyle('d', true)
+		when 'a'
+			@href = tag['attribute']['href']
+		when 'img'
+			if !tag['attribute']['src'].nil?
+				# replace relative path with real server path
+				#if tag['attribute']['src'][0] == '/'
+				#	tag['attribute']['src'] = Rails.root.join('public') + tag['attribute']['src']
+				#end
+				tag['attribute']['src'] = tag['attribute']['src'].gsub(@@k_path_url, @@k_path_main)
+				if tag['attribute']['width'].nil?
+					tag['attribute']['width'] = 0
 				end
-			when 'tr', 'td', 'th'
-        # SetStyle('b', true) if tag == 'th'
-				
-				@tdbegin = tag
-				if ((!attrs['width'].nil?) and (attrs['width'] != ''))
-					@tdwidth = (attrs['width'].to_i/4);
-				else
-					@tdwidth = ((@w - @l_margin - @r_margin) / @default_table_columns);
+				if tag['attribute']['height'].nil?
+					tag['attribute']['height'] = 0
 				end
-				if ((!attrs['height'].nil?) and (attrs['height'] != ''))
-					@tdheight=(attrs['height'].to_i / @k);
+				if tag['attribute']['align'].nil?
+					align = 'N'
 				else
-					@tdheight = @lasth;
-				end
-				if ((!attrs['align'].nil?) and (attrs['align'] != ''))
-					case (attrs['align'])
-						when 'center'
-							@tdalign = "C";
-						when 'right'
-							@tdalign = "R";
-						when 'left'
-							@tdalign = "L";
-					end
-				else
-					if @rtl
-						@tdalign = "R"
+					case tag['attribute']['align']
+					when 'top'
+						align = 'T'
+					when 'middle'
+						align = 'M'
+					when 'bottom'
+						align = 'B'
 					else
-						@tdalign = "L"
-					end
-				end
-				if !attrs['colspan'].nil? and (attrs['colspan'].is_a? Integer)
-					@tdcolspan = attrs['colspan'].to_i
-				else
-					@tdcolspan = 1
-				end
-				# write a void cell
-				cfill = (@bgtag.size > 0) ? 1 : 0
-				cell_start_x = @x
-				cell_start_y = @y
-				Cell(@tdcolspan * @tdwidth, @tdheight, '', @tableborder, '', @tdalign, cfill)
-				# restore the cursor at the previous position
-				@x = cell_start_x
-				@y = cell_start_y
-				
-			when 'hr'
-				Ln();
-				if ((!attrs['width'].nil?) and (attrs['width'] != ''))
-					hrWidth = attrs['width'];
-				else
-					hrWidth = @w - @l_margin - @r_margin;
-				end
-				x = GetX();
-				y = GetY();
-				prevlinewidth = GetLineWidth()
-				SetLineWidth(0.2);
-				Line(x, y, x + hrWidth, y);
-				SetLineWidth(prevlinewidth)
-				Ln();
-				
-			when 'strong'
-				SetStyle('b', true);
-				
-			when 'em'
-				SetStyle('i', true);
-				
-			when 'b', 'i', 'u'
-				SetStyle(tag, true);
-				
-			when 'del'
-				SetStyle('d', true)
-
-			when 'a'
-				@href = attrs['href'];
-				
-			when 'img'
-				if (!attrs['src'].nil?)
-					# replace relative path with real server path
-					#if attrs['src'][0] == '/'
-					#	attrs['src'] = Rails.root.join('public') + attrs['src']
-					#end
-					attrs['src'] = attrs['src'].gsub(@@k_path_url, @@k_path_main)
-					if (attrs['width'].nil?)
-						attrs['width'] = 0;
-					end
-					if (attrs['height'].nil?)
-						attrs['height'] = 0;
-					end
-					
-					if attrs['align'].nil?
 						align = 'N'
-					else
-						case (attrs['align'])
-						when 'top'
-							align = 'T'
-						when 'middle'
-							align = 'M'
-						when 'bottom'
-							align = 'B'
-						else
-							align = 'N'
-						end
 					end
-					Image(attrs['src'], GetX(),GetY(), pixelsToUnits(attrs['width']), pixelsToUnits(attrs['height']), '', '', align)
-
-					#SetX(@img_rb_x);
-					SetY(@img_rb_y);
-					
 				end
-				
-			when 'dl', 'ul'
-				@listordered = false;
-				@listcount = 0;
-				
-			when 'ol'
-				@listordered = true;
-				@listcount = 0;
-				
-			when 'dd', 'li'
-				Ln();
-				if tag == 'li'
-					if (@listordered)
-						if !attrs['value'].nil?
-							@listcount = attrs['value'].to_i
-						end
-						@listcount += 1
-						@lispacer = "    " + (@listcount).to_s + ". "
-					else
-						#unordered list simbol
-						@lispacer = "    -  ";
+				Image(tag['attribute']['src'], GetX(), GetY(), pixelsToUnits(tag['attribute']['width']), pixelsToUnits(tag['attribute']['height']), '', '', align)
+			end
+		when 'dl'
+			@listnum += 1
+		when 'dt'
+			Ln('', cell)
+		when 'dd'
+			if @rtl
+				@r_margin += @listindent
+			else
+				@l_margin += @listindent
+			end
+			Ln('', cell)
+		when 'ul', 'ol'
+			@listnum += 1
+			if tag['value'] == "ol"
+				@listordered[@listnum] = true
+			else
+				@listordered[@listnum] = false
+			end
+			@listcount[@listnum] = 0
+			if @rtl
+				@r_margin += @listindent
+			else
+				@l_margin += @listindent
+			end
+		when 'li'
+			Ln('', cell)
+			if tag['value'] == 'li'
+				if @listordered[@listnum]
+					if !tag['attribute']['value'].nil?
+						@listcount[@listnum] = tag['attribute']['value'].to_i
 					end
-				else
-					@lispacer = "        "
-				end
-				rtldir = @tmprtl
-				@tmprtl = false
-				Write(@lasth, @lispacer, '', fill);
-				@tmprtl = rtldir
-
-			when 'dt'
-				Ln()
-
-			when 'blockquote', 'br'
-				Ln();
-				if (@lispacer.length > 0)
+					@listcount[@listnum] += 1
 					if @rtl
-						@x -= GetStringWidth(@lispacer)
+						@lispacer = "." + @listcount[@listnum].to_s
 					else
-						@x += GetStringWidth(@lispacer)
+						@lispacer = @listcount[@listnum].to_s + "."
 					end
-				end
-				
-			when 'p'
-				Ln();
-				Ln();
-				
-			when 'sup'
-				currentfont_size = @font_size;
-				@tempfontsize = @font_size_pt;
-				SetFontSize(@font_size_pt * @@k_small_ratio);
-				SetXY(GetX(), GetY() - ((currentfont_size - @font_size)*(@@k_small_ratio)));
-				
-			when 'sub'
-				currentfont_size = @font_size;
-				@tempfontsize = @font_size_pt;
-				SetFontSize(@font_size_pt * @@k_small_ratio);
-				SetXY(GetX(), GetY() + ((currentfont_size - @font_size)*(@@k_small_ratio)));
-				
-			when 'small'
-				currentfont_size = @font_size;
-				@tempfontsize = @font_size_pt;
-				SetFontSize(@font_size_pt * @@k_small_ratio);
-				SetXY(GetX(), GetY() + ((currentfont_size - @font_size)/3));
-				
-			when 'font'
-				if !attrs['face'].nil?
-					fontslist = attrs['face'].downcase.split(",")
-					fontslist.each { |font|
-						font = font.strip
-						if @fontlist.include?(font)
-							SetFont(font) 
-							@issetfont = true
-							break;
-						end
-					}
-				end
-				if (!attrs['size'].nil?)
-					headsize = attrs['size'].to_i;
 				else
-					headsize = 0;
+					# unordered list symbol
+					@lispacer = "-"
 				end
-				currentfont_size = @font_size;
-				@tempfontsize = @font_size_pt;
-				SetFontSize(@font_size_pt + headsize);
-				@lasth = @font_size * @@k_cell_height_ratio;
-				
-			when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
-				headsize = (4 - tag[1,1].to_f) * 2
-				@tempfontsize = @font_size_pt;
-				SetFontSize(@font_size_pt + headsize);
-				SetStyle('b', true);
-				@lasth = @font_size * @@k_cell_height_ratio;
-				
+			else
+				@lispacer = ""
+			end
+			tmpx = @x
+			lspace = GetStringWidth(@lispacer + "  ")
+			if @rtl
+				@x += lspace
+			else
+				@x -= lspace
+			end
+			Write(@lasth, @lispacer, '', false, '', false, 0, false)
+			@x = tmpx
+		when 'blockquote', 'br'
+			Ln('', cell)
+		when 'p'
+			Ln('', cell)
+			Ln('', cell)
+		when 'sup'
+			SetXY(GetX(), GetY() - ((parent['fontsize'] - @font_size_pt) / @k))
+		when 'sub'
+			SetXY(GetX(), GetY() + ((parent['fontsize'] - (0.5 * @font_size_pt)) / @k))
+		when 'small'
+			SetXY(GetX(), GetY() + ((parent['fontsize'] - @font_size_pt) / @k))
+		when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
+			Ln((tag['fontsize'] * 1.5) / @k, cell)
 		end
 	end
   
