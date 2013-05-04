@@ -5052,7 +5052,10 @@ class TCPDF
 	#
 	def convertHTMLColorToDec(color = "#000000")
 		# set default color to be returned in case of error
-		returncolor = {'R' => 0, 'G' => 0, 'B' => 0}
+		returncolor = ActiveSupport::OrderedHash.new
+		returncolor['R'] = 0
+		returncolor['G'] = 0
+		returncolor['B'] = 0
 		if !color
 			return returncolor
 		end
