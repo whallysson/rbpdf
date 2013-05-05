@@ -302,6 +302,8 @@ class TCPDF
 		@linestyle_join ||= '0 j'
 		@linestyle_dash ||= '[] 0 d'
 		@fontkeys ||= []
+		@thead ||= ''
+		@thead_margin = nil
 		
 		#Standard Unicode fonts
 		@core_fonts = {
@@ -1300,6 +1302,30 @@ class TCPDF
 	end
 	  alias_method :footer, :Footer
 	
+	#
+	# This method is used to render the table header on new page (if any). 
+	# @access protected
+	# @since 4.5.030 (2009-03-25)
+	#
+	def setTableHeader()
+		if !@thead_margin.nil?
+			# restore the original top-margin
+			@t_margin = @thead_margin
+			@pagedim[@page]['tm'] = @thead_margin
+			@y = @thead_margin
+		end
+		if !@thead.empty?
+			# print table header
+			writeHTML(@thead, false, false, false, false, '')
+			# set new top margin to skip the table headers
+			if @thead_margin.nil?
+				@thead_margin = @t_margin
+			end
+			@t_margin = @y
+			@pagedim[@page]['tm'] = @t_margin
+		end
+	end
+
 	#
 	# Returns the current page number.
 	# @return int page number
