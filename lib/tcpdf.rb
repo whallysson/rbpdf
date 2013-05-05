@@ -1180,6 +1180,24 @@ class TCPDF
 	  alias_method :set_print_footer, :SetPrintFooter
 	
 	#
+	# Return the right-bottom (or left-bottom for RTL) corner X coordinate of last inserted image
+	# @return float 
+	# @access public
+	#
+	def GetImageRBX()
+		return @img_rb_x
+	end
+
+	#
+	# Return the right-bottom (or left-bottom for RTL) corner Y coordinate of last inserted image
+	# @return float 
+	# @access public
+	#
+	def GetImageRBY()
+		return @img_rb_y
+	end
+
+	#
  	# This method is used to render the page header.
  	# It is automatically called by AddPage() and could be overwritten in your own inherited class.
 	#
