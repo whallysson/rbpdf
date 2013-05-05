@@ -533,6 +533,17 @@ class TCPDF
   alias_method :set_rtl, :SetRTL
 
 	#
+	# Return the RTL status
+	# @return boolean
+	# @access public
+	# @since 4.0.012 (2008-07-24)
+	#
+	def GetRTL()
+		return @rtl
+	end
+  alias_method :get_rtl, :GetRTL
+
+	#
 	# Force temporary RTL language direction
 	# @param mixed :mode can be false, 'L' for LTR or 'R' for RTL
 	# @access public
