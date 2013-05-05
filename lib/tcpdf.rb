@@ -297,10 +297,14 @@ class TCPDF
 		@dpi = 72
 		@pagegroups ||= {}
 		@intmrk ||= []
+		@footerpos ||= []
+		@footerlen ||= []
 		@linestyle_width ||= ''
 		@linestyle_cap ||= '0 J'
 		@linestyle_join ||= '0 j'
 		@linestyle_dash ||= '[] 0 d'
+		@numpages ||= 0
+		@pagelen ||= []
 		@fontkeys ||= []
 		@thead ||= ''
 		@thead_margin = nil
@@ -1302,6 +1306,79 @@ class TCPDF
 	end
 	  alias_method :footer, :Footer
 	
+	#
+	# This method is used to render the page header. 
+	# @access protected
+	# @since 4.0.012 (2008-07-24)
+	#
+	def setHeader()
+		if @print_header
+			lasth = @lasth
+			out('q')
+			@r_margin = @original_r_margin
+			@l_margin = @original_l_margin
+			@c_margin = 0
+			# set current position
+			if @rtl
+				SetXY(@original_r_margin, @header_margin)
+			else
+				SetXY(@original_l_margin, @header_margin)
+			end
+			SetFont(@header_font[0], @header_font[1], @header_font[2])
+			Header()
+			# restore position
+			if @rtl
+				SetXY(@original_r_margin, @t_margin)
+			else
+				SetXY(@original_l_margin, @t_margin)
+			end
+			out('Q')
+			@lasth = lasth
+		end
+	end
+
+	#
+	# This method is used to render the page footer. 
+	# @access protected
+	# @since 4.0.012 (2008-07-24)
+	#
+	def setFooter()
+		# Page footer
+		# save current graphic settings
+		gvars = getGraphicVars()
+		# mark this point
+		@footerpos[@page] = @pagelen[@page]
+		out("\n")
+		if @print_footer
+			lasth = @lasth
+			out('q')
+			@r_margin = @original_r_margin
+			@l_margin = @original_l_margin
+			@c_margin = 0
+			# set current position
+			footer_y = @h - @footer_margin
+			if @rtl
+				SetXY(@original_r_margin, footer_y)
+			else
+				SetXY(@original_l_margin, footer_y)
+			end
+			SetFont(@footer_font[0], @footer_font[1] , @footer_font[2])
+			Footer()
+			# restore position
+			if @rtl
+				SetXY(@original_r_margin, @t_margin)
+			else
+				SetXY(@original_l_margin, @t_margin)
+			end
+			out('Q')
+			@lasth = lasth
+		end
+		# restore graphic settings
+		setGraphicVars(gvars)
+		# calculate footer lenght
+		@footerlen[@page] = @pagelen[@page] - @footerpos[@page]
+	end
+
 	#
 	# This method is used to render the table header on new page (if any). 
 	# @access protected
