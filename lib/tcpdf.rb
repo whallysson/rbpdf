@@ -109,6 +109,8 @@ class TCPDF
   cattr_accessor :k_path_url
   @@k_path_url = Rails.root.join('tmp').to_s
   
+  @@k_path_images = ""
+
   cattr_accessor :decoder
 		
 	attr_accessor :barcode
@@ -1201,85 +1203,46 @@ class TCPDF
 	#
  	# This method is used to render the page header.
  	# It is automatically called by AddPage() and could be overwritten in your own inherited class.
+	# @access public
 	#
 	def Header()
-		if (@print_header)
-			if (@original_l_margin.nil?)
-				@original_l_margin = @l_margin;
-			end
-			if (@original_r_margin.nil?)
-				@original_r_margin = @r_margin;
-			end
-			
-			# reset original header margins
-			@r_margin = @original_r_margin
-			@l_margin = @original_l_margin
-
-			# save current font values
-			font_family =  @font_family
-			font_style = @font_style
-			font_size = @font_size_pt
-
-			#set current position
-			if @rtl
-				SetXY(@original_r_margin, @header_margin)
-			else
-				SetXY(@original_l_margin, @header_margin)
-			end
-			
-			if @header_logo and (@header_logo != @@k_blank_image)
-				Image(@header_logo, GetX(), @header_margin, @header_logo_width)
-			else
-				@img_rb_x = GetX()
-				@img_rb_y = GetY()
-			end
-			
-			cell_height = ((@@k_cell_height_ratio * @header_font[2]) / @k).round(2)
-			
-			# set starting margin for text data cell
-			if @rtl
-				header_x = @original_r_margin + @header_logo_width * 1.1
-			else
-				header_x = @original_l_margin + @header_logo_width * 1.1
-			end
-
-			SetTextColor(0, 0, 0)
-			
-			# header title
-			SetFont(@header_font[0], 'B', @header_font[2] + 1);
-			SetX(header_x);
-			Cell(@header_width, cell_height, @header_title, 0, 1, '')
-			
-			# header string
-			SetFont(@header_font[0], @header_font[1], @header_font[2]);
-			SetX(header_x);
-			MultiCell(@header_width, cell_height, @header_string, 0, '', 0, 1, 0, 0, true, 0)
-			
-			# print an ending header line
-			# set style for cell border
-			prevlinewidth = GetLineWidth()
-			line_width = 0.3
-			SetLineWidth(line_width)
-			SetDrawColorArray([0, 0, 0])
-			SetY(1 + (@img_rb_y > GetY() ? @img_rb_y : GetY()))
-			if @rtl
-				SetX(@original_r_margin)
-			else
-				SetX(@original_l_margin)
-			end
-			Cell(0, 0, '', 'T', 0, 'C') 
-			SetLineWidth(prevlinewidth)
-			
-			#restore position
-			if @rtl
-				SetXY(@original_r_margin, @t_margin)
-			else
-				SetXY(@original_l_margin, @t_margin)
-			end
-
-			# restore font values
-			SetFont(font_family, font_style, font_size)
+		ormargins = GetOriginalMargins()
+		headerfont = GetHeaderFont()
+		headerdata = GetHeaderData()
+		if headerdata['logo'] and (headerdata['logo'] != @@k_blank_image)
+			Image(@@k_path_images + headerdata['logo'], GetX(), GetHeaderMargin(), headerdata['logo_width'])
+			imgy = GetImageRBY()
+		else
+			imgy = GetY()
 		end
+		cell_height = ((GetCellHeightRatio() * headerfont[2]) / GetScaleFactor()).round(2)
+
+		# set starting margin for text data cell
+		if GetRTL()
+			header_x = ormargins['right'] + (headerdata['logo_width'] * 1.1)
+		else
+			header_x = ormargins['left'] + (headerdata['logo_width'] * 1.1)
+		end
+		SetTextColor(0, 0, 0)
+		# header title
+		SetFont(headerfont[0], 'B', headerfont[2] + 1)
+		SetX(header_x)
+		Cell(0, cell_height, headerdata['title'], 0, 1, '', 0, '', 0)
+		# header string
+		SetFont(headerfont[0], headerfont[1], headerfont[2])
+		SetX(header_x)
+		MultiCell(0, cell_height, headerdata['string'], 0, '', 0, 1, 0, 0, true, 0, false)
+
+		# print an ending header line
+		SetLineStyle({'width' => 0.85 / GetScaleFactor(), 'cap' => 'butt', 'join' => 'miter', 'dash' => 0, 'color' => [0, 0, 0]})
+		SetY((2.835 / GetScaleFactor()) + (imgy > GetY() ? imgy : GetY()))
+
+		if GetRTL()
+			SetX(ormargins['right'])
+		else
+			SetX(ormargins['left'])
+		end
+		Cell(0, 0, '', 'T', 0, 'C')
 	end
 	  alias_method :header, :Header
 	
