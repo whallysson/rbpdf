@@ -4522,6 +4522,21 @@ class TCPDF
 	end
 	
 	#
+	# Returns an array containing original margins:
+	# <ul>
+	#   <li>:ret['left'] = left  margin</li>
+	#   <li>:ret['right'] = right margin</li>
+	# </ul>
+	# @return array containing all margins measures 
+	# @access public
+	# @since 4.0.012 (2008-07-24)
+	#
+	def GetOriginalMargins()
+		ret = { 'left' => @original_l_margin, 'right' => @original_r_margin }
+		return ret
+	end
+
+	#
  	# Returns the PDF data.
 	#
 	def GetPDFData()
