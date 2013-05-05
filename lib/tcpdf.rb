@@ -306,6 +306,7 @@ class TCPDF
 		@numpages ||= 0
 		@pagelen ||= []
 		@fontkeys ||= []
+		@pageopen ||= []
 		@thead ||= ''
 		@thead_margin = nil
 		
@@ -921,104 +922,91 @@ class TCPDF
 	end
 
 	#
-	# Adds a new page to the document. If a page is already present, the Footer() method is called first to output the footer. Then the page is added, the current position set to the top-left corner according to the left and top margins, and Header() is called to display the header.
-	# The font which was set before calling is automatically restored. There is no need to call SetFont() again if you want to continue with the same font. The same is true for colors and line width.
-	# The origin of the coordinate system is at the top-left corner and increasing ordinates go downwards.
+	# Adds a new page to the document. If a page is already present, the Footer() method is called first to output the footer (if enabled). Then the page is added, the current position set to the top-left corner according to the left and top margins (or top-right if in RTL mode), and Header() is called to display the header (if enabled).
+	# The origin of the coordinate system is at the top-left corner (or top-right for RTL) and increasing ordinates go downwards.
 	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
 	# @param mixed :format The format used for pages. It can be either one of the following values (case insensitive) or a custom format in the form of a two-element array containing the width and the height (expressed in the unit given by unit).<ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
+	# @access public
 	# @since 1.0
-	# @see TCPDF(), Header(), Footer(), SetMargins()
+	# @see startPage(), endPage()
 	#
 	def AddPage(orientation='', format='')
-		# store current margin values
-		l_margin = @l_margin
-		r_margin = @r_margin
-
 		if @original_l_margin.nil?
 			@original_l_margin = @l_margin
 		end
 		if @original_r_margin.nil?
 			@original_r_margin = @r_margin
 		end
-
-		if GetNumPages() > @page
-			# this page has been already added
-			@page += 1
-			@y = @t_margin
-			return
-		end
-
-		#Start a new page
-		if (@state==0)
-			Open();
-		end
-		family=@font_family;
-		style=@font_style + (@underline ? 'U' : '') + (@linethrough ? 'D' : '')
-		size=@font_size_pt;
-		lw=@line_width;
-		dc=@draw_color;
-		fc=@fill_color;
-		tc=@text_color;
-		cf=@color_flag;
-		if (@page>0)
-			#Page footer
-			@in_footer=true;
-			Footer();
-			@in_footer=false;
-			#Close page
-			endpage();
-		end
-		#Start new page
-		beginpage(orientation, format)
-		#Set line cap style to square
-		out('2 J');
-		#Set line width
-		@line_width = lw;
-		out(sprintf('%.2f w', lw*@k));
-		#Set font
-		if (family)
-			SetFont(family, style, size);
-		end
-		#Set colors
-		@draw_color = dc;
-		if (dc!='0 G')
-			out(dc);
-		end
-		@fill_color = fc;
-		if (fc!='0 g')
-			out(fc);
-		end
-		@text_color = tc;
-		@color_flag = cf;
-		#Page header
-		Header();
-		#Restore line width
-		if (@line_width != lw)
-			@line_width = lw;
-			out(sprintf('%.2f w', lw*@k));
-		end
-		#Restore font
-		if (family)
-			SetFont(family, style, size);
-		end
-		#Restore colors
-		if (@draw_color != dc)
-			@draw_color = dc;
-			out(dc);
-		end
-		if (@fill_color != fc)
-			@fill_color = fc;
-			out(fc);
-		end
-		@text_color = tc;
-		@color_flag = cf;
-
-		# restore previous margin values
-		SetLeftMargin(l_margin)
-		SetRightMargin(r_margin)
+		# terminate previous page
+		endPage()
+		# start new page
+		startPage(orientation, format)
 	end
 	  alias_method :add_page, :AddPage
+
+	#
+	# Terminate the current page
+	# @access protected
+	# @since 4.2.010 (2008-11-14)
+	# @see startPage(), AddPage()
+	#
+	def endPage()
+		# check if page is already closed
+		if (@page == 0) or (@numpages > @page) or !@pageopen[@page]
+			return
+		end
+		@in_footer = true
+		# print page footer
+		setFooter()
+		# close page
+		endpage()
+		# mark page as closed
+		@pageopen[@page] = false
+		@in_footer = false
+	end
 	
+	#
+	# Starts a new page to the document. The page must be closed using the endPage() function.
+	# The origin of the coordinate system is at the top-left corner and increasing ordinates go downwards.
+	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
+	# @param mixed :format The format used for pages. It can be either one of the following values (case insensitive) or a custom format in the form of a two-element array containing the width and the height (expressed in the unit given by unit).<ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
+	# @access protected
+	# @since 4.2.010 (2008-11-14)
+	# @see endPage(), AddPage()
+	#
+	def startPage(orientation='', format='')
+		if @numpages > @page
+			# this page has been already added
+			SetPage(@page + 1)
+			SetY(@t_margin)
+			return
+		end
+		# start a new page
+		if @state == 0
+			Open()
+		end
+		@numpages += 1
+		swapMargins(@booklet)
+		# save current graphic settings
+		gvars = getGraphicVars()
+		# start new page
+		beginpage(orientation, format)
+		# mark page as open
+		@pageopen[@page] = true
+		# restore graphic settings
+		setGraphicVars(gvars)
+		# mark this point
+		SetPageMark()
+		# print page header
+		setHeader()
+		# restore graphic settings
+		setGraphicVars(gvars)
+		# mark this point
+		SetPageMark()
+		# print table header (if any)
+		setTableHeader()
+	end
+
 	#
 	# Set start-writing mark on current page for multicell borders and fills.
 	# This function must be called after calling Image() function for a background image.
