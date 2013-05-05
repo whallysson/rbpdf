@@ -1013,6 +1013,17 @@ class TCPDF
 	end
 	  alias_method :add_page, :AddPage
 	
+	#
+	# Set start-writing mark on current page for multicell borders and fills.
+	# This function must be called after calling Image() function for a background image.
+	# Background images must be always inserted before calling Multicell() or WriteHTMLCell() or WriteHTML() functions.
+	# @access public
+	# @since 4.0.016 (2008-07-30)
+	#
+	def SetPageMark()
+		@intmrk[@page] = @pagelen[@page]
+	end
+
   #
   # Rotate object.
   # @param float :angle angle in degrees for counter-clockwise rotation
