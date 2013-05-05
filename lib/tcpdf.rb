@@ -4397,6 +4397,7 @@ class TCPDF
 	#
  	# Set header font.
 	# @param array :font font
+	# @access public
 	# @since 1.1
 	#
 	def SetHeaderFont(font)
@@ -4405,8 +4406,20 @@ class TCPDF
 	alias_method :set_header_font, :SetHeaderFont
 	
 	#
+	# Get header font.
+	# @return array()
+	# @access public
+	# @since 4.0.012 (2008-07-24)
+	#
+	def GetHeaderFont()
+		return @header_font
+	end
+	alias_method :get_header_font, :GetHeaderFont
+
+	#
  	# Set footer font.
 	# @param array :font font
+	# @access public
 	# @since 1.1
 	#
 	def SetFooterFont(font)
@@ -4414,6 +4427,17 @@ class TCPDF
 	end
 	alias_method :set_footer_font, :SetFooterFont
 	
+	#
+	# Get Footer font.
+	# @return array()
+	# @access public
+	# @since 4.0.012 (2008-07-24)
+	#
+	def GetFooterFont(font)
+		return @footer_font
+	end
+	alias_method :get_footer_font, :GetFooterFont
+
 	#
  	# Set language array.
 	# @param array :language
