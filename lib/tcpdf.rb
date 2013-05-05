@@ -82,6 +82,7 @@ end
 # @license http://www.gnu.org/copyleft/lesser.html LGPL
 #
 class TCPDF
+  include ActionView::Helpers
   include RFPDF
   include Core::RFPDF
   include RFPDF::Math
@@ -296,6 +297,7 @@ class TCPDF
 		@dpi = 72
 		@pagegroups ||= {}
 		@intmrk ||= []
+		@fontkeys ||= []
 		
 		#Standard Unicode fonts
 		@core_fonts = {
@@ -343,6 +345,7 @@ class TCPDF
 		@u = 0
 		@href = ''
 		@fontlist = ["arial", "times", "courier", "helvetica", "symbol"]
+		@default_monospaced_font = 'courier'
 		@issetfont = false
 		@fgcolor = ActiveSupport::OrderedHash.new
 		@bgcolor = ActiveSupport::OrderedHash.new
@@ -4711,6 +4714,383 @@ class TCPDF
 		return MultiCell(w, h, html, border, '', fill, ln, x, y, reseth, 0, true)
 	end
   alias_method :write_html_cell, :writeHTMLCell
+
+	#
+	# Returns the HTML DOM array.
+	# <ul><li>dom[key]['tag'] = true if tag, false otherwise;</li><li>dom[key]['value'] = tag name or text;</li><li>dom[key]['opening'] = true if opening tag, false otherwise;</li><li>dom[key]['attribute'] = array of attributes (attribute name is the key);</li><li>dom[key]['style'] = array of style attributes (attribute name is the key);</li><li>dom[key]['parent'] = id of parent element;</li><li>dom[key]['fontname'] = font family name;</li><li>dom[key]['fontstyle'] = font style;</li><li>dom[key]['fontsize'] = font size in points;</li><li>dom[key]['bgcolor'] = RGB array of background color;</li><li>dom[key]['fgcolor'] = RGB array of foreground color;</li><li>dom[key]['width'] = width in pixels;</li><li>dom[key]['height'] = height in pixels;</li><li>dom[key]['align'] = text alignment;</li><li>dom[key]['cols'] = number of colums in table;</li><li>dom[key]['rows'] = number of rows in table;</li></ul>
+	# @param string :html html code
+	# @return array
+	# @since 3.2.000 (2008-06-20)
+	#
+	def getHtmlDomArray(html)
+		# remove all unsupported tags (the line below lists all supported tags)
+		html = sanitize(html, :tags=> %w(marker a b blockquote br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table td th thead tr tt u ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir))
+		# replace some blank characters
+		html.gsub!(/@(\r\n|\r)@/, "\n")
+		html.gsub!(/[\t\0\x0B]/, " ")
+		html.gsub!(/\\/, "\\\\\\")
+		while html =~ /<pre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi
+			# preserve newlines on <pre> tag
+			html = html.gsub(/<pre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi, "<pre\\1>\\2<br />\\3</pre>")
+		end
+		html.gsub!(/[\n]/, " ")
+		# remove extra spaces from tables
+		html.gsub!(/[\s]*<\/table>[\s]*/, '</table>')
+		html.gsub!(/[\s]*<\/tr>[\s]*/, '</tr>')
+		html.gsub!(/[\s]*<tr/, '<tr')
+		html.gsub!(/[\s]*<\/th>[\s]*/, '</th>')
+		html.gsub!(/[\s]*<th/, '<th')
+		html.gsub!(/[\s]*<\/td>[\s]*/, '</td>')
+		html.gsub!(/[\s]*<td/, '<td')
+
+		html.gsub!(/<\/th>/, '<marker style="font-size:0"/></th>')
+		html.gsub!(/<\/td>/, '<marker style="font-size:0"/></td>')
+		html.gsub!(/<\/table>([\s]*)<marker style="font-size:0"\/>/, '</table>')
+		html.gsub!(/<img/, ' <img')
+		html.gsub!(/<img([^\>]*)>/xi, '<img\\1><span></span>')
+		html.gsub!(/[\s]+<ul/, '<ul')
+		html.gsub!(/[\s]+<ol/, '<ol')
+		html.gsub!(/[\s]+<li/, '<li')
+		html.gsub!(/[\s]*<\/li>[\s]*/, '</li>')
+		html.gsub!(/[\s]*<\/ul>[\s]*/, '</ul>')
+		html.gsub!(/[\s]*<\/ol>[\s]*/, '</ol>')
+		html.gsub!(/[\s]+<br/, '<br')
+
+		# pattern for generic tag
+		tagpattern = /(<[^>]+>)/
+		# explodes the string
+		a = html.split(tagpattern)
+		# count elements
+		maxel = a.size
+		elkey = 0
+		key = 0
+		# create an array of elements
+		dom = []
+		dom[key] = {}
+		# set first void element
+		dom[key]['tag'] = false
+		dom[key]['value'] = ''
+		dom[key]['parent'] = 0
+		dom[key]['fontname'] = @font_family.dup
+		dom[key]['fontstyle'] = @font_style.dup
+		dom[key]['fontsize'] = @font_size_pt
+		dom[key]['bgcolor'] = ActiveSupport::OrderedHash.new
+		dom[key]['fgcolor'] = @fgcolor.dup
+
+		dom[key]['align'] = ''
+		dom[key]['listtype'] = ''
+		thead = false # true when we are inside the THEAD tag
+		key += 1
+		level = []
+		level.push(0) # root
+		while elkey < maxel
+			dom[key] = {}
+			element = a[elkey]
+			dom[key]['elkey'] = elkey
+			if element =~ tagpattern
+				# html tag
+				element = element[1..-2]
+				# get tag name
+				tag = element.scan(/[\/]?([a-zA-Z0-9]*)/).flatten.delete_if {|x| x.length == 0}
+				tagname = tag[0].downcase
+				# check if we are inside a table header
+				if tagname == 'thead'
+					if element[0,1] == '/'
+						thead = false
+					else
+						thead = true
+					end
+					elkey += 1
+					next
+				end
+				dom[key]['tag'] = true
+				dom[key]['value'] = tagname
+				if element[0,1] == '/'
+					# closing html tag
+					dom[key]['opening'] = false
+					dom[key]['parent'] = level[-1]
+					level.pop
+					dom[key]['fontname'] = dom[(dom[(dom[key]['parent'])]['parent'])]['fontname'].dup
+					dom[key]['fontstyle'] = dom[(dom[(dom[key]['parent'])]['parent'])]['fontstyle'].dup
+					dom[key]['fontsize'] = dom[(dom[(dom[key]['parent'])]['parent'])]['fontsize']
+					dom[key]['bgcolor'] = dom[(dom[(dom[key]['parent'])]['parent'])]['bgcolor'].dup
+					dom[key]['fgcolor'] = dom[(dom[(dom[key]['parent'])]['parent'])]['fgcolor'].dup
+					dom[key]['align'] = dom[(dom[(dom[key]['parent'])]['parent'])]['align'].dup
+					if !dom[(dom[(dom[key]['parent'])]['parent'])]['listtype'].nil?
+						dom[key]['listtype'] = dom[(dom[(dom[key]['parent'])]['parent'])]['listtype'].dup
+					end
+					# set the number of columns in table tag
+					if (dom[key]['value'] == 'tr') and dom[(dom[(dom[key]['parent'])]['parent'])]['cols'].nil?
+						dom[(dom[(dom[key]['parent'])]['parent'])]['cols'] = dom[(dom[key]['parent'])]['cols']
+					end
+					if (dom[key]['value'] == 'td') or (dom[key]['value'] == 'th')
+						dom[(dom[key]['parent'])]['content'] = ''
+						(dom[key]['parent'] + 1).upto(key - 1) do |i|
+							dom[(dom[key]['parent'])]['content'] << a[dom[i]['elkey']]
+						end
+					end
+					# store header rows on a new table
+					if (dom[key]['value'] == 'tr') and (dom[(dom[key]['parent'])]['thead'] == true)
+						if dom[(dom[(dom[key]['parent'])]['parent'])]['thead'].length.nil? or dom[(dom[(dom[key]['parent'])]['parent'])]['thead'].length == 0
+							dom[(dom[(dom[key]['parent'])]['parent'])]['thead'] = a[dom[(dom[(dom[key]['parent'])]['parent'])]['elkey']].dup
+						end
+						dom[key]['parent'].upto(key) do |i|
+							dom[(dom[(dom[key]['parent'])]['parent'])]['thead'] << a[dom[i]['elkey']]
+						end
+					end
+					if (dom[key]['value'] == 'table') and dom[(dom[key]['parent'])]['thead'] and (dom[(dom[key]['parent'])]['thead'].length > 0)
+						dom[(dom[key]['parent'])]['thead'] << '</table>'
+					end
+				else
+					# opening html tag
+					dom[key]['opening'] = true
+					dom[key]['parent'] = level[-1]
+					if element[-1, 1] != '/'
+						# not self-closing tag
+						level.push(key)
+						dom[key]['self'] = false
+					else
+						dom[key]['self'] = true
+					end
+					# copy some values from parent
+					parentkey = 0
+					if key > 0
+						parentkey = dom[key]['parent']
+						dom[key]['fontname'] = dom[parentkey]['fontname'].dup
+						dom[key]['fontstyle'] = dom[parentkey]['fontstyle'].dup
+						dom[key]['fontsize'] = dom[parentkey]['fontsize']
+						dom[key]['bgcolor'] = dom[parentkey]['bgcolor'].dup
+						dom[key]['fgcolor'] = dom[parentkey]['fgcolor'].dup
+						dom[key]['align'] = dom[parentkey]['align'].dup
+						dom[key]['listtype'] = dom[parentkey]['listtype'].dup
+					end
+					# get attributes
+					attr_array = element.scan(/([^=\s]*)=["\']?([^"\']*)["\']?/)
+					dom[key]['attribute'] = {} # reset attribute array
+					attr_array.each do |name, value|
+						dom[key]['attribute'][name.downcase] = value
+					end
+					# split style attributes
+					if !dom[key]['attribute']['style'].nil?
+						# get style attributes
+						style_array = dom[key]['attribute']['style'].scan(/([^;:\s]*):([^;]*)/)
+						dom[key]['style'] = {} # reset style attribute array
+						style_array.each do |name, value|
+							dom[key]['style'][name.downcase] = value.strip
+						end
+						# --- get some style attributes ---
+						if !dom[key]['style']['font-family'].nil?
+							# font family
+							if !dom[key]['style']['font-family'].nil?
+								fontslist = dom[key]['style']['font-family'].downcase.split(',')
+								fontslist.each {|font|
+									font = font.downcase.strip
+									if @fontlist.include?(font) or @fontkeys.include?(font)
+										dom[key]['fontname'] = font
+										break
+									end
+								}
+							end
+						end
+						# list-style-type
+						if !dom[key]['style']['list-style-type'].nil?
+							dom[key]['listtype'] = dom[key]['style']['list-style-type'].downcase.strip
+							if dom[key]['listtype'] == 'inherit'
+								dom[key]['listtype'] = dom[parentkey]['listtype']
+							end
+						end
+						# font size
+						if !dom[key]['style']['font-size'].nil?
+							fsize = dom[key]['style']['font-size'].strip
+							case fsize
+								# absolute-size
+							when 'xx-small'
+								dom[key]['fontsize'] = dom[0]['fontsize'] - 4
+							when 'x-small'
+								dom[key]['fontsize'] = dom[0]['fontsize'] - 3
+							when 'small'
+								dom[key]['fontsize'] = dom[0]['fontsize'] - 2
+							when 'medium'
+								dom[key]['fontsize'] = dom[0]['fontsize']
+							when 'large'
+								dom[key]['fontsize'] = dom[0]['fontsize'] + 2
+							when 'x-large'
+								dom[key]['fontsize'] = dom[0]['fontsize'] + 4
+							when 'xx-large'
+								dom[key]['fontsize'] = dom[0]['fontsize'] + 6
+								# relative-size
+							when 'smaller'
+								dom[key]['fontsize'] = dom[parentkey]['fontsize'] - 3
+							when 'larger'
+								dom[key]['fontsize'] = dom[parentkey]['fontsize'] + 3
+							else
+								dom[key]['fontsize'] = getHTMLUnitToUnits(fsize, dom[parentkey]['fontsize'], 'pt', true)
+							end
+						end
+						# font style
+						dom[key]['fontstyle'] ||= ""
+						if !dom[key]['style']['font-weight'].nil? and (dom[key]['style']['font-weight'][0,1].downcase == 'b')
+							dom[key]['fontstyle'] << 'B'
+						end
+						if !dom[key]['style']['font-style'].nil? and (dom[key]['style']['font-style'][0,1].downcase == 'i')
+							dom[key]['fontstyle'] << 'I'
+						end
+						# font color
+						if !dom[key]['style']['color'].nil? and (dom[key]['style']['color'].length > 0)
+							dom[key]['fgcolor'] = convertHTMLColorToDec(dom[key]['style']['color'])
+						end
+						# background color
+						if !dom[key]['style']['background-color'].nil? and (dom[key]['style']['background-color'].length > 0)
+							dom[key]['bgcolor'] = convertHTMLColorToDec(dom[key]['style']['background-color'])
+						end
+						# text-decoration
+						if !dom[key]['style']['text-decoration'].nil?
+							decors = dom[key]['style']['text-decoration'].downcase.split(' ')
+							decors.each {|dec|
+								dec = dec.strip
+								unless dec.empty?
+									if dec[0,1] == 'u'
+										dom[key]['fontstyle'] << 'U'
+									elsif dec[0,1] == 'l'
+										dom[key]['fontstyle'] << 'D'
+									end
+								end
+							}
+						end
+						# check for width attribute
+						if !dom[key]['style']['width'].nil?
+							dom[key]['width'] = dom[key]['style']['width']
+						end
+						# check for height attribute
+						if !dom[key]['style']['height'].nil?
+							dom[key]['height'] = dom[key]['style']['height']
+						end
+						# check for text alignment
+						if !dom[key]['style']['text-align'].nil?
+							dom[key]['align'] = dom[key]['style']['text-align'][0,1].upcase
+						end
+						# check for border attribute
+						if !dom[key]['style']['border'].nil?
+							dom[key]['attribute']['border'] = dom[key]['style']['border']
+						end
+					end
+					# check for font tag
+					if dom[key]['value'] == 'font'
+						# font family
+						if !dom[key]['attribute']['face'].nil?
+							fontslist = dom[key]['attribute']['face'].downcase.split(',')
+							fontslist.each { |font|
+								font = font.downcase.strip
+								if @fontlist.include?(font) or @fontkeys.include?(font)
+									dom[key]['fontname'] = font
+									break
+								end
+							}
+						end
+						# font size
+						if !dom[key]['attribute']['size'].nil?
+							if key > 0
+								if dom[key]['attribute']['size'][0,1] == '+'
+									dom[key]['fontsize'] = dom[(dom[key]['parent'])]['fontsize'] + dom[key]['attribute']['size'][1..-1].to_i
+								elsif dom[key]['attribute']['size'][0,1] == '-'
+									dom[key]['fontsize'] = dom[(dom[key]['parent'])]['fontsize'] - dom[key]['attribute']['size'][1..-1].to_i
+								else
+									dom[key]['fontsize'] = dom[key]['attribute']['size'].to_i
+								end
+							else
+								dom[key]['fontsize'] = dom[key]['attribute']['size'].to_i
+							end
+						end
+					end
+					# force natural alignment for lists
+					if (dom[key]['value'] == 'ul') or (dom[key]['value'] == 'ol') or (dom[key]['value'] == 'dl') and (dom[key]['align'].nil? or dom[key]['align'].empty? or (dom[key]['align'] != 'J'))
+						if @rtl
+							dom[key]['align'] = 'R'
+						else
+							dom[key]['align'] = 'L'
+						end
+					end
+					if (dom[key]['value'] == 'small') or (dom[key]['value'] == 'sup') or (dom[key]['value'] == 'sub')
+						dom[key]['fontsize'] = dom[key]['fontsize'] * @@k_small_ratio
+					end
+					if (dom[key]['value'] == 'strong') or (dom[key]['value'] == 'b')
+						dom[key]['fontstyle'] << 'B'
+					end
+					if (dom[key]['value'] == 'em') or (dom[key]['value'] == 'i')
+						dom[key]['fontstyle'] << 'I'
+					end
+					if dom[key]['value'] == 'u'
+						dom[key]['fontstyle'] << 'U'
+					end
+					if dom[key]['value'] == 'del'
+						dom[key]['fontstyle'] << 'D'
+					end
+					if (dom[key]['value'] == 'pre') or (dom[key]['value'] == 'tt')
+						dom[key]['fontname'] = @default_monospaced_font
+					end
+					if (dom[key]['value'][0,1] == 'h') and (dom[key]['value'][1,1].to_i > 0) and (dom[key]['value'][1,1].to_i < 7)
+						headsize = (4 - dom[key]['value'][1,1].to_i) * 2
+						dom[key]['fontsize'] = dom[0]['fontsize'] + headsize
+						dom[key]['fontstyle'] << 'B'
+					end
+					if dom[key]['value'] == 'table'
+						dom[key]['rows'] = 0 # number of rows
+						dom[key]['trids'] = [] # IDs of TR elements
+						dom[key]['thead'] = '' # table header rows
+					end
+					if dom[key]['value'] == 'tr'
+						dom[key]['cols'] = 0
+						# store the number of rows on table element
+						dom[(dom[key]['parent'])]['rows'] += 1
+						# store the TR elements IDs on table element
+						dom[(dom[key]['parent'])]['trids'].push(key)
+						if thead
+							dom[key]['thead'] = true
+						else
+							dom[key]['thead'] = false
+						end
+					end
+					if (dom[key]['value'] == 'th') or (dom[key]['value'] == 'td')
+						if !dom[key]['attribute']['colspan'].nil?
+							colspan = dom[key]['attribute']['colspan'].to_i
+						else
+							colspan = 1
+						end
+						dom[key]['attribute']['colspan'] = colspan
+						dom[(dom[key]['parent'])]['cols'] += colspan
+					end
+					# set foreground color attribute
+					if !dom[key]['attribute']['color'].nil? and (dom[key]['attribute']['color'].length > 0)
+						dom[key]['fgcolor'] = convertHTMLColorToDec(dom[key]['attribute']['color'])
+					end
+					# set background color attribute
+					if !dom[key]['attribute']['bgcolor'].nil? and (dom[key]['attribute']['bgcolor'].length > 0)
+						dom[key]['bgcolor'] = convertHTMLColorToDec(dom[key]['attribute']['bgcolor'])
+					end
+					# check for width attribute
+					if !dom[key]['attribute']['width'].nil?
+						dom[key]['width'] = dom[key]['attribute']['width']
+					end
+					# check for height attribute
+					if !dom[key]['attribute']['height'].nil?
+						dom[key]['height'] = dom[key]['attribute']['height']
+					end
+					# check for text alignment
+					if !dom[key]['attribute']['align'].nil? and (dom[key]['attribute']['align'].length > 0) and (dom[key]['value'] != 'img')
+						dom[key]['align'] = dom[key]['attribute']['align'][0,1].upcase
+					end
+				end # end opening tag
+			else
+				# text
+				dom[key]['tag'] = false
+				dom[key]['value'] = unhtmlentities(element).gsub(/\\\\/, "\\")
+				dom[key]['parent'] = level[-1]
+			end
+			elkey += 1
+			key += 1
+		end
+		return dom
+	end
 
 	#
 	# Process opening tags.
