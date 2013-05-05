@@ -1786,6 +1786,70 @@ class TCPDF
   alias_method :get_line_width, :GetLineWidth
 
 	#
+	# Set line style.
+	# @param array :style Line style. Array with keys among the following:
+	# <ul>
+	#        <li>width (float): Width of the line in user units.</li>
+	#        <li>cap (string): Type of cap to put on the line. Possible values are: butt, round, square. The difference between "square" and "butt" is that "square" projects a flat end past the end of the line.</li>
+	#        <li>join (string): Type of join. Possible values are: miter, round, bevel.</li>
+	#        <li>dash (mixed): Dash pattern. Is 0 (without dash) or string with series of length values, which are the lengths of the on and off dashes. For example: "2" represents 2 on, 2 off, 2 on, 2 off, ...; "2,1" is 2 on, 1 off, 2 on, 1 off, ...</li>
+	#        <li>phase (integer): Modifier on the dash pattern which is used to shift the point at which the pattern starts.</li>
+	#        <li>color (array): Draw color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K).</li>
+	# </ul>
+	# @access public
+	# @since 2.1.000 (2008-01-08)
+	#
+	def SetLineStyle(style)
+		if !style['width'].nil?
+			width = style['width']
+			width_prev = @line_width
+			SetLineWidth(width)
+			@line_width = width_prev
+		end
+		if !style['cap'].nil?
+			cap = style['cap']
+			ca = {'butt' => 0, 'round'=> 1, 'square' => 2}
+			if !ca[cap].nil?
+				@linestyle_cap = ca[cap].to_s + ' J'
+				out(@linestyle_cap)
+			end
+		end
+		if !style['join'].nil?
+			join = style['join']
+			ja = {'miter' => 0, 'round' => 1, 'bevel' => 2}
+			if !ja[join].nil?
+				@linestyle_join = ja[join].to_s + ' j'
+				out(@linestyle_join);
+			end
+		end
+		if !style['dash'].nil?
+			dash = style['dash']
+			dash_string = ''
+			if dash != 0
+				if dash =~ /^.+,/
+					tab = dash.split(',')
+				else
+					tab = [dash]
+				end
+				dash_string = ''
+				tab.each_with_index { |v, i|
+					if i != 0
+						dash_string << ' '
+					end
+					dash_string << sprintf("%.2f", v)
+				}
+			end
+			phase = 0
+			@linestyle_dash = sprintf("[%s] %.2f d", dash_string, phase)
+			out(@linestyle_dash)
+		end
+		if !style['color'].nil?
+			color = style['color']
+			SetDrawColorArray(color)
+		end
+	end
+
+	#
 	# Draws a line between two points.
 	# @param float :x1 Abscissa of first point
 	# @param float :y1 Ordinate of first point
