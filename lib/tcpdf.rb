@@ -1132,13 +1132,25 @@ class TCPDF
 	#
  	# Set header margin.
 	# (minimum distance between header and top page margin)
-	# @param int :hm distance in millimeters
+	# @param int :hm distance in user units
+	# @access public
 	#
 	def SetHeaderMargin(hm=10)
 		@header_margin = hm;
 	end
 	  alias_method :set_header_margin, :SetHeaderMargin
 	
+	#
+	# Returns header margin in user units.
+	# @return float
+	# @since 4.0.012 (2008-07-24)
+	# @access public
+	#
+	def GetHeaderMargin()
+		return @header_margin
+	end
+	  alias_method :get_header_margin, :GetHeaderMargin
+
 	#
  	# Set footer margin.
 	# (minimum distance between footer and bottom page margin)
