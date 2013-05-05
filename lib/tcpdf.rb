@@ -5400,6 +5400,24 @@ class TCPDF
 	end
 	
 	#
+	# Swap the left and right margins.
+	# @param boolean :reverse if true swap left and right margins.
+	# @access protected
+	# @since 4.2.000 (2008-10-29)
+	#
+	def swapMargins(reverse=true)
+		if reverse
+			# swap left and right margins
+			mtemp = @original_l_margin
+			@original_l_margin = @original_r_margin
+			@original_r_margin = mtemp
+			deltam = @original_l_margin - @original_r_margin
+			@l_margin += deltam
+			@r_margin -= deltam
+		end
+	end
+
+	#
 	# convert html string containing value and unit of measure to user's units or points.
 	# @param string :htmlval string containing values and unit
 	# @param string :refsize reference value in points
