@@ -297,6 +297,10 @@ class TCPDF
 		@dpi = 72
 		@pagegroups ||= {}
 		@intmrk ||= []
+		@linestyle_width ||= ''
+		@linestyle_cap ||= '0 J'
+		@linestyle_join ||= '0 j'
+		@linestyle_dash ||= '[] 0 d'
 		@fontkeys ||= []
 		
 		#Standard Unicode fonts
@@ -5443,6 +5447,69 @@ class TCPDF
 			retval = value / k
 		end
 		return retval
+	end
+
+	#
+	# Returns current graphic variables as array.
+	# @return array graphic variables
+	# @access protected
+	# @since 4.2.010 (2008-11-14)
+	#
+	def getGraphicVars()
+		grapvars = {
+			'FontFamily' => @font_family,
+			'FontStyle' => @font_style,
+			'FontSizePt' => @font_size_pt,
+			'rMargin' => @r_margin,
+			'lMargin' => @l_margin,
+			'cMargin' => @c_margin,
+			'LineWidth' => @line_width,
+			'linestyleWidth' => @linestyle_width,
+			'linestyleCap' => @linestyle_cap,
+			'linestyleJoin' => @linestyle_join,
+			'linestyleDash' => @linestyle_dash,
+			'DrawColor' => @draw_color,
+			'FillColor' => @fill_color,
+			'TextColor' => @text_color,
+			'ColorFlag' => @color_flag,
+			'bgcolor' => @bgcolor,
+			'fgcolor' => @fgcolor,
+			'htmlvspace' => @htmlvspace,
+			'lasth' => @lasth
+		}
+		return grapvars
+	end
+
+	#
+	# Set graphic variables.
+	# @param :gvars array graphic variables
+	# @access protected
+	# @since 4.2.010 (2008-11-14)
+	#
+	def setGraphicVars(gvars)
+		@font_family = gvars['FontFamily']
+		@font_style = gvars['FontStyle']
+		@font_size_pt = gvars['FontSizePt']
+		@r_margin = gvars['rMargin']
+		@l_margin = gvars['lMargin']
+		@c_margin = gvars['cMargin']
+		@line_width = gvars['LineWidth']
+		@linestyle_width = gvars['linestyleWidth']
+		@linestyle_cap = gvars['linestyleCap']
+		@linestyle_join = gvars['linestyleJoin']
+		@linestyle_dash = gvars['linestyleDash']
+		@draw_color = gvars['DrawColor']
+		@fill_color = gvars['FillColor']
+		@text_color = gvars['TextColor']
+		@color_flag = gvars['ColorFlag']
+		@bgcolor = gvars['bgcolor']
+		@fgcolor = gvars['fgcolor']
+		@htmlvspace = gvars['htmlvspace']
+		#@lasth = gvars['lasth']
+		out('' + @linestyle_width + ' ' + @linestyle_cap + ' ' + @linestyle_join + ' ' + @linestyle_dash + ' ' + @draw_color + ' ' + @fill_color + '')
+		unless @font_family.empty?
+			SetFont(@font_family, @font_style, @font_size_pt)
+		end
 	end
 
 	#
