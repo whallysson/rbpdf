@@ -1113,6 +1113,23 @@ class TCPDF
 	  alias_method :set_header_data, :SetHeaderData
 	
 	#
+	# Returns header data:
+	# <ul><li>:ret['logo'] = logo image</li><li>:ret['logo_width'] = width of the image logo in user units</li><li>:ret['title'] = header title</li><li>:ret['string'] = header description string</li></ul>
+	# @return hash
+	# @access public
+	# @since 4.0.012 (2008-07-24)
+	#
+	def GetHeaderData()
+		ret = {}
+		ret['logo'] = @header_logo
+		ret['logo_width'] = @header_logo_width
+		ret['title'] = @header_title
+		ret['string'] = @header_string
+		return ret
+	end
+	  alias_method :get_header_data, :GetHeaderData
+
+	#
  	# Set header margin.
 	# (minimum distance between header and top page margin)
 	# @param int :hm distance in millimeters
