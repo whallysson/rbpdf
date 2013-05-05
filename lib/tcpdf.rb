@@ -307,6 +307,7 @@ class TCPDF
 		@pagelen ||= []
 		@fontkeys ||= []
 		@pageopen ||= []
+		@cell_height_ratio = @@k_cell_height_ratio
 		@thead ||= ''
 		@thead_margin = nil
 		
@@ -4448,6 +4449,26 @@ class TCPDF
 		@rtl = @l['a_meta_dir'] == 'rtl' ? true : false
 	end
 	alias_method :set_language_array, :SetLanguageArray
+
+	#
+	# Set the height of cell repect font height.
+	# @param int :h cell proportion respect font height (typical value = 1.25).
+	# @access public
+	# @since 3.0.014 (2008-06-04)
+	#
+	def SetCellHeightRatio(h) 
+		@cell_height_ratio = h 
+	end
+
+	#
+	# return the height of cell repect font height.
+	# @access public
+	# @since 4.0.012 (2008-07-24)
+	#
+	def GetCellHeightRatio()
+		return @cell_height_ratio
+	end
+
 	#
  	# Set document barcode.
 	# @param string :bc barcode
