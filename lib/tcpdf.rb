@@ -284,6 +284,7 @@ class TCPDF
 		@offsets ||= []
 		@orientation_changes ||= []
 		@page ||= 0
+		@opencell = true
 		@pagedim ||= []
 		@page_links ||= {}
 		@pages ||= []
@@ -2767,6 +2768,78 @@ class TCPDF
 		return nl
 	end
   alias_method :multi_cell, :MultiCell
+
+	#
+	# Get the border mode accounting for multicell position (opens bottom side of multicell crossing pages)
+	# @param mixed :border Indicates if borders must be drawn around the cell block. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
+	# @param string multicell position: 'start', 'middle', 'end'
+	# @return border mode
+	# @access protected
+	# @since 4.4.002 (2008-12-09)
+	#
+	def getBorderMode(border, position='start')
+		if !@opencell and (border == 1)
+			return 1
+		end
+		return 0 if border == 0
+		cborder = ''
+		case position
+		when 'start'
+			if border == 1
+				cborder = 'LTR'
+			else
+				if nil != border.index('L')
+					cborder << 'L'
+				end
+				if nil != border.index('T')
+					cborder << 'T'
+				end
+				if nil != border.index('R')
+					cborder << 'R'
+				end
+				if !@opencell and (nil != border.index('B'))
+					cborder << 'B'
+				end
+			end
+		when 'middle'
+			if border == 1
+				cborder = 'LR'
+			else
+				if nil != border.index('L')
+					cborder << 'L'
+				end
+				if !@opencell and (nil != border.index('T'))
+					cborder << 'T'
+				end
+				if nil != border.index('R')
+					cborder << 'R'
+				end
+				if !@opencell and (nil != border.index('B'))
+					cborder << 'B'
+				end
+			end
+		when 'end'
+			if border == 1
+				cborder = 'LRB'
+			else
+				if nil != border.index('L')
+					cborder << 'L'
+				end
+				if !@opencell and (nil != border.index('T'))
+					cborder << 'T'
+				end
+				if nil != border.index('R')
+					cborder << 'R'
+				end
+				if nil != border.index('B')
+					cborder << 'B'
+				end
+			end
+		else
+			cborder = border
+		end
+		return cborder
+	end
 
 	#
 	# This method prints text from the current position.<br />
