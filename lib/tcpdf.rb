@@ -303,6 +303,7 @@ class TCPDF
 		@intmrk ||= []
 		@footerpos ||= []
 		@footerlen ||= []
+		@newpagegroup ||= []
 		@linestyle_width ||= ''
 		@linestyle_cap ||= '0 J'
 		@linestyle_join ||= '0 j'
@@ -3949,9 +3950,9 @@ class TCPDF
 	#
 	def beginpage(orientation='', format='')
 		@page += 1;
-		@pages[@page]='';
+		setPageBuffer(@page, '')
+		# initialize array for graphics tranformation positions inside a page buffer
 		@state=2;
-		@font_family = ''
 		if orientation == ''
 			unless @cur_orientation.nil?
 				orientation = @cur_orientation
@@ -3970,13 +3971,12 @@ class TCPDF
 			@x = @l_margin
 		end
 		@y=@t_margin;
-		if @newpagegroup
+		if !@newpagegroup[@page].nil?
 			# start a new group
 			n = @pagegroups.size + 1
-			alias_nb = "{nb" + n.to_s + "}"
+			alias_nb = '{nb' + n.to_s + '}'
 			@pagegroups[alias_nb] = 1
 			@currpagegroup = alias_nb
-			@newpagegroup = false
 		elsif @currpagegroup
 			@pagegroups[@currpagegroup] += 1
 		end
