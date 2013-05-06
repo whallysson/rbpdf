@@ -5851,6 +5851,50 @@ class TCPDF
 	end
 
 	#
+	# Set page buffer content.
+	# @param int :page page number
+	# @param string :data page data
+	# @param boolean :append if true append data, false replace.
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def setPageBuffer(page, data, append=false)
+		#if @diskcache
+		#	if @pages[page].nil?
+		#		@pages[page] = getObjFilename('page' + page)
+		#	end
+		#	writeDiskCache(@pages[page], data, append)
+		#else
+			if append
+				@pages[page] << data
+			else
+				@pages[page] = data
+			end
+		#end
+		if append and !@pagelen[page].nil?
+			@pagelen[page] += data.length
+		else
+			@pagelen[page] = data.length
+		end
+	end
+
+	#
+	# Get page buffer content.
+	# @param int :page page number
+	# @return string page buffer content or false in case of error
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def getPageBuffer(page)
+		#if @diskcache
+		#	return readDiskCache(@pages[page])
+		#elsif !@pages[page].nil?
+			return @pages[page]
+		#end
+		return false
+	end
+
+	#
 	# Sets font style.
 	# @param string :tag tag name in lowercase. Supported tags are:<ul>
 	# <li>b : bold text</li>
