@@ -285,6 +285,7 @@ class TCPDF
 		@orientation_changes ||= []
 		@page ||= 0
 		@opencell = true
+		@transfmrk ||= []
 		@pagedim ||= []
 		@page_links ||= {}
 		@pages ||= []
@@ -2592,39 +2593,45 @@ class TCPDF
 	end
 
 	#
-	# This method allows printing text with line breaks. They can be automatic (as soon as the text reaches the right border of the cell) or explicit (via the \n character). As many cells as necessary are output, one below the other.<br />
+	# This method allows printing text with line breaks.
+	# They can be automatic (as soon as the text reaches the right border of the cell) or explicit (via the \n character). As many cells as necessary are output, one below the other.<br />
 	# Text can be aligned, centered or justified. The cell block can be framed and the background painted.
 	# @param float :w Width of cells. If 0, they extend up to the right margin of the page.
 	# @param float :h Cell minimum height. The cell extends automatically if needed.
 	# @param string :txt String to print
 	# @param mixed :border Indicates if borders must be drawn around the cell block. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
-	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L or empty string: left align</li><li>C: center</li><li>R: right align</li><li>J: justification (default value)</li></ul>
+	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L or empty string: left align</li><li>C: center</li><li>R: right align</li><li>J: justification (default value when :ishtml=false)</li></ul>
 	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
 	# @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right</li><li>1: to the beginning of the next line [DEFAULT]</li><li>2: below</li></ul>
 	# @param int :x x position in user units
 	# @param int :y y position in user units
 	# @param boolean :reseth if true reset the last cell height (default true).
 	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
-	# @param boolean :ishtml se to true if txt is HTML content (default = false).
+	# @param boolean :ishtml set to true if :txt is HTML content (default = false).
+	# @param boolean :autopadding if true, uses internal padding and automatically adjust it to account for line width.
+	# @param float :maxh maximum height. It should be >= :h and less then remaining space to the bottom of the page, or 0 for disable this feature. This feature works only when :ishtml=false.
 	# @return int Rerurn the number of cells or 1 for html mode.
+	# @access public
 	# @since 1.3
 	# @see SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), Cell(), Write(), SetAutoPageBreak()
 	#
-	def MultiCell(w, h, txt, border=0, align='J', fill=0, ln=1, x=0, y=0, reseth=true, stretch=0, ishtml=false)
-		
+	def MultiCell(w, h, txt, border=0, align='J', fill=0, ln=1, x=0, y=0, reseth=true, stretch=0, ishtml=false, autopadding=true, maxh=0)
 		if !@lasth or reseth
 			# set row height
 			@lasth = @font_size * @@k_cell_height_ratio
 		end
 		 
-		# get current page number
-		startpage = @page
-
 		if y != 0
 			SetY(y)
 		else
 			y = GetY()
 		end
+		# check for page break
+		checkPageBreak(h)
+		y = GetY()
+		# get current page number
+		startpage = @page
+
 		if x != 0
 			SetX(x)
 		else
@@ -2651,101 +2658,104 @@ class TCPDF
 			SetRightMargin(@w - @x - w)
 		end
 
-		# set special margins for html alignment
-		if ishtml
-			# HTML mode requires special alignment
-			strwidth = GetStringWidth(unhtmlentities(txt.gsub(/<[^>]+>/, "")))
-			if @tdalign == "C"
-				if strwidth < w
-					mdiff = ((w - strwidth) / 2) - @c_margin
-				else
-					mdiff = 0
-				end
-				if @rtl
-					SetRightMargin(@w - @x + mdiff)
-					SetLeftMargin(@x - w + mdiff)
-				else
-					SetLeftMargin(@x + mdiff)
-					SetRightMargin(@w - @x - w)
-				end
-			elsif (@tdalign == "R") and !@rtl
-				SetLeftMargin(@x + w - strwidth - 2 * @c_margin)
-				SetRightMargin(@w - @x - w)
-			elsif (@tdalign == "L") and @rtl
-				SetRightMargin(@w - @x + w - strwidth - 2 * @c_margin)
-				SetLeftMargin(@x - w)
+		starty = @y
+		if autopadding
+			# Adjust internal padding
+			if @c_margin < (@line_width / 2)
+				@c_margin = @line_width / 2
 			end
-		end
-
-		# calculate remaining vertical space on first page (startpage)
-		restspace = GetPageHeight() - GetY() - GetBreakMargin()
-
-		# Adjust internal padding
-		if @c_margin < (@line_width / 2)
-			@c_margin = @line_width / 2
-		end
-
-		# Add top space if needed
-		if (@lasth - @font_size) < @line_width
-			@y += @line_width / 2
+			# Add top space if needed
+			if (@lasth - @font_size) < @line_width
+				@y += @line_width / 2
+			end
+			# add top padding
+			@y += @c_margin
 		end
 
 		if ishtml
-			# Write HTML text
-			writeHTML(txt, true, fill, reseth, true)
+			# ******* Write HTML text
+			writeHTML(txt, true, 0, reseth, true, align)
 			nl = 1
 		else
-			# Write text
-			nl = Write(@lasth, txt, '', fill, align, true, stretch)
+			# ******* Write text
+			nl = Write(@lasth, txt, '', 0, align, true, stretch, false, false, maxh)
 		end
 
-		# Add bottom space if needed
-		if (@lasth - @font_size) < @line_width
-			@y += @line_width / 2
+		if autopadding
+			# add bottom padding
+			@y += @c_margin
+			# Add bottom space if needed
+			if (@lasth - @font_size) < @line_width
+				@y += @line_width / 2
+			end
 		end
 
 		# Get end-of-text Y position
 		currentY = GetY()
 		# get latest page number
-		endpage = @page
-
-		# calculate last page
-		rh = y + h
-		while rh > @page_break_trigger
-			if GetNumPages() == endpage
-				AddPage()
-			end
-			endpage += 1
-			rh -= @page_break_trigger
-		end
+		end_page = @page
 
 		# check if a new page has been created
-		if endpage > startpage
+		if end_page > startpage
 			# design borders around HTML cells.
-			for page in startpage..endpage
-				@page = page
+			for page in startpage..end_page
+				SetPage(page)
 				if page == startpage
-					SetY(GetPageHeight() - restspace - GetBreakMargin())
-					h = restspace - 1
-				elsif page == endpage
-					SetY(@t_margin) # put cursor at the beginning of text
+					@y = starty # put cursor at the beginning of cell on the first page
+					h = GetPageHeight() - starty - GetBreakMargin()
+					cborder = getBorderMode(border, position='start')
+				elsif page == end_page
+					@y = @t_margin # put cursor at the beginning of last page
 					h = currentY - @t_margin
+					cborder = getBorderMode(border, position='end')
 				else
-					SetY(@t_margin) # put cursor at the beginning of text
+					@y = @t_margin # put cursor at the beginning of the current page
 					h = GetPageHeight() - @t_margin - GetBreakMargin()
+					cborder = getBorderMode(border, position='middle')
 				end
-				SetX(x)
-				Cell(w, h, "", border, 1, '', 0)
+				nx = x
+				# account for margin changes
+				if page > startpage
+					if @rtl and (@pagedim[page]['orm'] != @pagedim[startpage]['orm'])
+						nx = x + (@pagedim[page]['orm'] - @pagedim[startpage]['orm'])
+					elsif !@rtl and (@pagedim[page]['olm'] != @pagedim[startpage]['olm'])
+						nx = x + (@pagedim[page]['olm'] - @pagedim[startpage]['olm'])
+					end
+				end
+				SetX(nx)
+				ccode = getCellCode(w, h, '', cborder, 1, '', fill)
+				if (cborder != 0) or (fill == 1)
+					pstart = (getPageBuffer(@page))[0, @intmrk[@page]]
+					pend = (getPageBuffer(@page))[@intmrk[@page]..-1]
+					setPageBuffer(@page, pstart + ccode + "\n" + pend)
+					@intmrk[@page] += (ccode + "\n").length
+				end
 			end
 		else
 			h = h > currentY - y ? h : currentY - y
-			SetY(y) # put cursor at the beginning of text
+			# put cursor at the beginning of text
+			SetY(y)
 			SetX(x)
 			# design a cell around the text
-			Cell(w, h, "", border, 1, '', 0)
+			ccode = getCellCode(w, h, '', border, 1, '', fill)
+			if (border != 0) or (fill == 1)
+				if !@transfmrk[@page].nil?
+					pagemark = @transfmrk[@page]
+					@transfmrk[@page] += (ccode + "\n").length
+				elsif @in_footer
+					pagemark = @footerpos[@page]
+					@footerpos[@page] += (ccode + "\n").length
+				else
+					pagemark = @intmrk[@page]
+					@intmrk[@page] += (ccode + "\n").length
+				end
+				pstart = (getPageBuffer(@page))[0, pagemark]
+				pend = (getPageBuffer(@page))[pagemark..-1]
+				setPageBuffer(@page, pstart + ccode + "\n" + pend)
+			end
 		end
 		
-		# Get end-of-text Y position
+		# Get end-of-cell Y position
 		currentY = GetY()
 
 		# restore original margin values
@@ -2760,7 +2770,7 @@ class TCPDF
 			end
 		else
 			# go left or right by case
-			@page = startpage
+			SetPage(startpage)
 			@y = y
 			SetX(x + w)
 		end
