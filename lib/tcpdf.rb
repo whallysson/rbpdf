@@ -2862,10 +2862,12 @@ class TCPDF
 	# @param boolean :ln if true set cursor at the bottom of the line, otherwise set cursor at the top of the line.
 	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
 	# @param boolean :firstline if true prints only the first line and return the remaining string.
+	# @param boolean :firstblock if true the string is the starting of a line.
+	# @param float :maxh maximum height. The remaining unprinted text will be returned. It should be >= :h and less then remaining space to the bottom of the page, or 0 for disable this feature.
 	# @return mixed Return the number of cells or the remaining string if :firstline = true.
 	# @since 1.5
 	#
-	def Write(h, txt, link=nil, fill=0, align='', ln=false, stretch=0, firstline=false)
+	def Write(h, txt, link=nil, fill=0, align='', ln=false, stretch=0, firstline=false, firstblock=false, maxh=0)
 		txt.force_encoding('ASCII-8BIT') if txt.respond_to?(:force_encoding)
 
 		# remove carriage returns
@@ -2878,6 +2880,8 @@ class TCPDF
 			arabic = false
 		end
 
+		# get a char width
+		chrwidth = GetCharWidth('.')
 		# get array of chars
 		chars = UTF8StringToArray(s)
 
@@ -2894,9 +2898,18 @@ class TCPDF
 			return;
 		end
 
+		# replacement for SHY character (minus symbol)
+		shy_replacement = 45
+		shy_replacement_char = unichr(shy_replacement)
+		# widht for SHY replacement
+		shy_replacement_width = GetCharWidth(shy_replacement)
+
 		# store current position
 		prevx = @x
 		prevy = @y
+
+		# max Y
+		maxy = @y + maxh - h - (2 * @c_margin)
 
 		# calculating remaining line width (w)
 		if @rtl
@@ -2911,20 +2924,24 @@ class TCPDF
 		i = 0    # character position
 		j = 0    # current starting position
 		sep = -1 # position of the last blank space
+		shy = false # true if the last blank is a soft hypen (SHY)
 		l = 0    # current string lenght
 		nl = 0   # number of lines
 		linebreak = false
 
 		while(i<nb)
+			if (maxh > 0) and (@y >= maxy)
+				firstline = true
+			end
 			# Get the current character
 			c = chars[i]
 			if (c == 10) # 10 = "\n" = new line
 				#Explicit line break
-				if align == "J"
+				if align == 'J'
 					if @rtl
-						talign = "R"
+						talign = 'R'
 					else
-						talign = "L"
+						talign = 'L'
 					end
 				else
 					talign = align
@@ -2939,7 +2956,9 @@ class TCPDF
 					end
 					w = linew
 					tmpcmargin = @c_margin
-					@c_margin = 0
+					if maxh == 0
+						@c_margin = 0
+					end
 				end
 				Cell(w, h, UTF8ArrSubString(chars, j, i), 0, 1, talign, fill, link, stretch)
 				if firstline
@@ -2950,16 +2969,29 @@ class TCPDF
 				j = i + 1
 				l = 0
 				sep = -1
+				shy = false;
+				# account for margin changes
+				if ((@y + @lasth) > @page_break_trigger) and !@in_footer
+					# AcceptPageBreak() may be overriden on extended classed to include margin changes
+					AcceptPageBreak()
+				end
 				w = getRemainingWidth()
 				wmax = w - (2 * @c_margin)
 			else 
-				if unichr(c) =~ /\s/
+				# 160 is the non-breaking space, 173 is SHY (Soft Hypen)
+				if (c != 160) and ((unichr(c) =~ /\s/) or (c == 173))
 					# update last blank space position
 					sep = i
+					# check if is a SHY
+					if c == 173
+						shy = true
+					else 
+						shy = false
+					end
 				end
 
 				# update string length
-				if @is_unicode and arabic
+				if ((@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')) and arabic
 					# with bidirectional algorithm some chars may be changed affecting the line length
 					# *** very slow ***
 					l = GetArrStringWidth(utf8Bidi(chars[j..i], @tmprtl))
@@ -2967,14 +2999,17 @@ class TCPDF
 					l += GetCharWidth(c)
 				end
 
-				if (l > wmax)
+				if (l > wmax) or (shy and ((l + shy_replacement_width) > wmax))
 					# we have reached the end of column
 					if (sep == -1)
 						# check if the line was already started
-						if (@rtl and (@x <= @w - @r_margin)) or (!@rtl and (@x >= @l_margin))
+						if (@rtl and (@x <= @w - @r_margin - chrwidth)) or (!@rtl and (@x >= @l_margin + chrwidth))
 							# print a void cell and go to next line
-							Cell(w, h, "", 0, 1)
+							Cell(w, h, '', 0, 1)
 							linebreak = true
+							if firstline
+								return UTF8ArrSubString(chars, j)
+							end
 						else
 							# truncate the word because do not fit on column
 							if firstline
@@ -2987,7 +3022,9 @@ class TCPDF
 								end
 								w = linew
 								tmpcmargin = @c_margin
-								@c_margin = 0
+								if maxh == 0
+									@c_margin = 0
+								end
 							end
 							Cell(w, h, UTF8ArrSubString(chars, j, i), 0, 1, align, fill, link, stretch)
 							if firstline
@@ -2999,26 +3036,56 @@ class TCPDF
 						end
 					else
 						# word wrapping
+						if @rtl and !firstblock
+							endspace = 1
+						else
+							endspace = 0
+						end
+						if shy
+							# add hypen (minus symbol) at the end of the line
+							shy_width = shy_replacement_width
+							if @rtl
+								shy_char_left = shy_replacement_char
+								shy_char_right = ''
+							else
+								shy_char_left = ''
+								shy_char_right = shy_replacement_char
+							end
+						else
+							shy_width = 0
+							shy_char_left = ''
+							shy_char_right = ''
+						end
 						if firstline
 							startx = @x
-							linew = GetArrStringWidth(utf8Bidi(chars[j, sep], @tmprtl))
+							linew = GetArrStringWidth(utf8Bidi(chars[j, sep + endspace], @tmprtl))
 							if @rtl
-								@endlinex = startx - linew
+								@endlinex = startx - linew - shy_width
 							else
-								@endlinex = startx + linew
+								@endlinex = startx + linew + shy_width
 							end
 							w = linew
 							tmpcmargin = @c_margin
-							@c_margin = 0
+							if maxh == 0
+								@c_margin = 0
+							end
 						end
-						Cell(w, h, UTF8ArrSubString(chars, j, sep), 0, 1, align, fill, link, stretch)
+						# print the line
+						Cell(w, h, shy_char_left + UTF8ArrSubString(chars, j, (sep + endspace)) + shy_char_right, 0, 1, align, fill, link, stretch)
 						if firstline
+							# return the remaining text
 							@c_margin = tmpcmargin
-							return UTF8ArrSubString(chars, sep)
+							return UTF8ArrSubString(chars, sep + endspace)
 						end
 						i = sep
 						sep = -1
+						shy = false
 						j = i + 1
+					end
+					# account for margin changes
+					if (@y + @lasth > @page_break_trigger) and !@in_footer
+						# AcceptPageBreak() may be overriden on extended classed to include margin changes
+						AcceptPageBreak()
 					end
 					w = getRemainingWidth()
 					wmax = w - (2 * @c_margin)
@@ -3063,7 +3130,9 @@ class TCPDF
 				end
 				w = linew
 				tmpcmargin = @c_margin
-				@c_margin = 0
+				if maxh == 0
+					@c_margin = 0
+				end
 			end
 			Cell(w, h, UTF8ArrSubString(chars, j, nb), 0, (ln ? 1 : 0), align, fill, link, stretch)
 			if firstline
@@ -3073,6 +3142,9 @@ class TCPDF
 			nl += 1
 		end
 
+		if firstline
+			return ''
+		end
 		return nl
 	end
   alias_method :write, :Write
