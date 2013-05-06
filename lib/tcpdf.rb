@@ -1919,8 +1919,10 @@ class TCPDF
   alias_method :rect, :Rect
 
 	#
-	# Imports a TrueType or Type1 font and makes it available. It is necessary to generate a font definition file first with the makefont.rb utility. The definition file (and the font file itself when embedding) must be present either in the current directory or in the one indicated by FPDF_FONTPATH if the constant is defined. If it could not be found, the error "Could not include font definition file" is generated.
-	# Support UTF-8 Unicode [Nicola Asuni, 2005-01-02].
+	# Imports a TrueType, Type1, core, or CID0 font and makes it available.
+	# It is necessary to generate a font definition file first with the makefont.rb utility.
+	# The definition file (and the font file itself when embedding) must be present either in the current directory or in the one indicated by FPDF_FONTPATH if the constant is defined. If it could not be found, the error "Could not include font definition file" is generated.
+	# Changed to support UTF-8 Unicode [Nicola Asuni, 2005-01-02].
 	# <b>Example</b>:<br />
 	# <pre>
 	# :pdf->AddFont('Comic','I');
@@ -1930,32 +1932,56 @@ class TCPDF
 	# @param string :family Font family. The name can be chosen arbitrarily. If it is a standard family name, it will override the corresponding font.
 	# @param string :style Font style. Possible values are (case insensitive):<ul><li>empty string: regular (default)</li><li>B: bold</li><li>I: italic</li><li>BI or IB: bold italic</li></ul>
 	# @param string :file The font definition file. By default, the name is built from the family and style, in lower case with no space.
+	# @return array containing the font data, or false in case of error.
 	# @since 1.5
 	# @see SetFont()
 	#
 	def AddFont(family, style='', file='')
 		if (family.empty?)
-			return;
+			if !@font_family.empty?
+				family = @font_family
+			else
+				Error('Empty font family')
+			end
 		end
 
-		#Add a TrueType or Type1 font
 		family = family.downcase
 		if ((!@is_unicode) and (family == 'arial'))
 			family = 'helvetica';
 		end
-
-		style=style.upcase
-		style=style.gsub('U','');
-		if (style == 'IB')
-			style = 'BI';
+		if (family == "symbol") or (family == "zapfdingbats")
+			style = ''
 		end
 
+		tempstyle = style.upcase
+		style = ''
+		# underline
+		if tempstyle.index('U') != nil
+			@underline = true
+		else
+			@underline = false
+		end
+		# line through (deleted)
+		if tempstyle.index('D') != nil
+			@linethrough = true
+		else
+			@linethrough = false
+		end
+		# bold
+		if tempstyle.index('B') != nil
+			style << 'B';
+		end
+		# oblique
+		if tempstyle.index('I') != nil
+			style << 'I';
+		end
 		fontkey = family + style;
+		font_style = style + (@underline ? 'U' : '') + (@linethrough ? 'D' : '')
+		fontdata = {'fontkey' => fontkey, 'family' => family, 'style' => font_style}
 		# check if the font has been already added
 		if !@fonts[fontkey].nil?
-			return;
+			return fontdata
 		end
-
 		if (file=='')
 			file = family.gsub(' ', '') + style.downcase + '.rb';
 		end
@@ -1963,25 +1989,44 @@ class TCPDF
 		if (font_file_name.nil?)
 			# try to load the basic file without styles
 			file = family.gsub(' ', '') + '.rb';
-  		font_file_name = getfontpath(file)
+			font_file_name = getfontpath(file)
 		end
-    if font_file_name.nil?
+		if font_file_name.nil?
 			Error("Could not find font #{file}.")
-    end
+		end
 		require(getfontpath(file))
 		font_desc = TCPDFFontDescriptor.font(file)
 
-		if (font_desc[:name].nil? or @@fpdf_charwidths.nil?)
+		if font_desc[:type].nil? or font_desc[:cw].nil?
 			Error('Could not include font definition file');
 		end
 
 		i = @fonts.length+1;
-		if (@is_unicode)
-			@fonts[fontkey] = {'i' => i, 'type' => font_desc[:type], 'name' => font_desc[:name], 'desc' => font_desc[:desc], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'enc' => font_desc[:enc], 'file' => font_desc[:file], 'ctg' => font_desc[:ctg], 'cMap' => font_desc[:cMap], 'registry' => font_desc[:registry]}
-			@@fpdf_charwidths[fontkey] = font_desc[:cw];
+		#  register CID font (all styles at once)
+		if font_desc[:type] == 'cidfont0'
+			styles = {'' => '', 'B' => ',Bold', 'I' => ',Italic', 'BI' => ',BoldItalic'}
+			styles.each { |skey, qual|
+				sname = font_desc[:name] + qual
+				sfontkey = family + skey
+				@fonts[sfontkey] = {'i' => i, 'type' => font_desc[:type], 'name' => sname, 'desc' => font_desc[:desc], 'cidinfo' => font_desc[:cidinfo], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc]}
+				i = @fonts.length + 1
+			}
+			file = ''
+		elsif font_desc[:type] == 'core'
+			def_width = font_desc[:cw]['"'.unpack('C')[0]]
+			@fonts[fontkey] = {'i' => i, 'type' => 'core', 'name' => @core_fonts[fontkey], 'up' => -100, 'ut' => 50, 'cw' => font_desc[:cw], 'dw' => def_width}
+		elsif (font_desc[:type] == 'TrueType') or (font_desc[:type] == 'Type1')
+			if file.nil?
+				file = ''
+			end
+			if enc.nil?
+				enc = ''
+			end
+			@fonts[fontkey] = {'i' => i, 'type' => font_desc[:type], 'name' => font_desc[:name], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'file' => font_desc[:file], 'cw' => font_desc[:cw], 'enc' => font_desc[:enc], 'desc' => font_desc[:desc]}
+		elsif font_desc[:type] == 'TrueTypeUnicode'
+			@fonts[fontkey] = {'i' => i, 'type' => font_desc[:type], 'name' => font_desc[:name], 'desc' => font_desc[:desc], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'enc' => font_desc[:enc], 'file' => font_desc[:file], 'ctg' => font_desc[:ctg]}
 		else
-			@fonts[fontkey]={'i' => i, 'type'=>'core', 'name'=>@core_fonts[fontkey], 'up'=>-100, 'ut'=>50, 'cw' => font_desc[:cw]}
-			@@fpdf_charwidths[fontkey] = font_desc[:cw];
+			Error('Unknow font type')
 		end
 
 		if (!font_desc[:diff].nil? and (!font_desc[:diff].empty?))
@@ -2001,12 +2046,13 @@ class TCPDF
 			@fonts[fontkey]['diff'] = d;
 		end
 		if (font_desc[:file] and font_desc[:file].length > 0)
-			if (font_desc[:type] == "TrueType") or (font_desc[:type] == "TrueTypeUnicode")
+			if (font_desc[:type] == 'TrueType') or (font_desc[:type] == 'TrueTypeUnicode')
 				@font_files[font_desc[:file]] = {'length1' => font_desc[:originalsize]}
-			else
+			elsif font_desc[:type] != 'core'
 				@font_files[font_desc[:file]] = {'length1' => font_desc[:size1], 'length2' => font_desc[:size2]}
 			end
 		end
+		return fontdata
 	end
   alias_method :add_font, :AddFont
 
@@ -2016,118 +2062,22 @@ class TCPDF
 	# The method can be called before the first page is created and the font is retained from page to page.
 	# If you just wish to change the current font size, it is simpler to call SetFontSize().
 	# Note: for the standard fonts, the font metric files must be accessible. There are three possibilities for this:<ul><li>They are in the current directory (the one where the running script lies)</li><li>They are in one of the directories defined by the include_path parameter</li><li>They are in the directory defined by the FPDF_FONTPATH constant</li></ul><br />
-	# Example for the last case (note the trailing slash):<br />
-	# <pre>
-	# define('FPDF_FONTPATH','/home/www/font/');
-	# require('tcpdf.rb');
-	#
-	# #Times regular 12
-	# :pdf->SetFont('Times');
-	# #Arial bold 14
-	# :pdf->SetFont('Arial','B',14);
-	# #Removes bold
-	# :pdf->SetFont('');
-	# #Times bold, italic and underlined 14
-	# :pdf->SetFont('Times','BIU');
-	# </pre><br />
-	# If the file corresponding to the requested font is not found, the error "Could not include font metric file" is generated.
-	# @param string :family Family font. It can be either a name defined by AddFont() or one of the standard families (case insensitive):<ul><li>Courier (fixed-width)</li><li>Helvetica or Arial (synonymous; sans serif)</li><li>Times (serif)</li><li>Symbol (symbolic)</li><li>ZapfDingbats (symbolic)</li></ul>It is also possible to pass an empty string. In that case, the current family is retained.
-	# @param string :style Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li></ul>or any combination. The default value is regular. Bold and italic styles do not apply to Symbol and ZapfDingbats
+	# @param string :family Family font. It can be either a name defined by AddFont() or one of the standard Type1 families (case insensitive):<ul><li>times (Times-Roman)</li><li>timesb (Times-Bold)</li><li>timesi (Times-Italic)</li><li>timesbi (Times-BoldItalic)</li><li>helvetica (Helvetica)</li><li>helveticab (Helvetica-Bold)</li><li>helveticai (Helvetica-Oblique)</li><li>helveticabi (Helvetica-BoldOblique)</li><li>courier (Courier)</li><li>courierb (Courier-Bold)</li><li>courieri (Courier-Oblique)</li><li>courierbi (Courier-BoldOblique)</li><li>symbol (Symbol)</li><li>zapfdingbats (ZapfDingbats)</li></ul> It is also possible to pass an empty string. In that case, the current family is retained.
+	# @param string :style Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li></ul> or any combination. The default value is regular. Bold and italic styles do not apply to Symbol and ZapfDingbats basic fonts or other fonts when not defined.
 	# @param float :size Font size in points. The default value is the current size. If no size has been specified since the beginning of the document, the value taken is 12
 	# @since 1.0
 	# @see AddFont(), SetFontSize(), Cell(), MultiCell(), Write()
 	#
 	def SetFont(family, style='', size=0)
-		# save previous values
-		@prevfont_family = @font_family;
-		@prevfont_style = @font_style;
-
-		family=family.downcase;
-		if (family=='')
-			family=@font_family;
+		# Select a font; size given in points
+		if size == 0
+			size = @font_size_pt
 		end
-		if ((!@is_unicode) and (family == 'arial'))
-			family = 'helvetica';
-		elsif ((family=="symbol") or (family=="zapfdingbats"))
-			style='';
-		end
-		
-		style=style.upcase;
-
-		# underline
-		if (style.include?('U'))
-			@underline=true;
-			style= style.gsub('U','');
-		else
-			@underline=false;
-		end
-
-		# line through (deleted)
-		if style.include?('D')
-			@linethrough = true
-			style = style.gsub('D','')
-		else
-			@linethrough = false
-		end
-
-		if (style=='IB')
-			style='BI';
-		end
-		if (size==0)
-			size=@font_size_pt;
-		end
-
 		# try to add font (if not already added)
-		#if @is_unicode # it's bug.
-			AddFont(family, style);
-		#end
-		
-		#Test if font is already selected
-		if ((@font_family == family) and (@font_style == style) and (@font_size_pt == size))
-			return;
-		end
-		
-		fontkey = family + style;
-		style = '' if (@fonts[fontkey].nil? and !@fonts[family].nil?)
-    
-		#Test if used for the first time
-		if (@fonts[fontkey].nil?)
-			#Check if one of the standard fonts
-			if (!@core_fonts[fontkey].nil?)
-				if @@fpdf_charwidths[fontkey].nil?
-					#Load metric file
-					file = family;
-					if ((family!='symbol') and (family!='zapfdingbats'))
-						file += style.downcase;
-					end
-					if (getfontpath(file + '.rb').nil?)
-						# try to load the basic file without styles
-						file = family;
-						fontkey = family;
-					end
-					require(getfontpath(file + '.rb'));
-      		font_desc = TCPDFFontDescriptor.font(file)
-					if ((@is_unicode and ctg.nil?) or ((!@is_unicode) and (@@fpdf_charwidths[fontkey].nil?)) )
-						Error("Could not include font metric file [" + fontkey + "]: " + getfontpath(file + ".rb"));
-					end
-				end
-				i = @fonts.length + 1;
-
-				if (@is_unicode)
-					@fonts[fontkey] = {'i' => i, 'type' => font_desc[:type], 'name' => font_desc[:name], 'desc' => font_desc[:desc], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'enc' => font_desc[:enc], 'file' => font_desc[:file], 'ctg' => font_desc[:ctg]}
-					@@fpdf_charwidths[fontkey] = font_desc[:cw];
-				else
-					@fonts[fontkey] = {'i' => i, 'type'=>'core', 'name'=>@core_fonts[fontkey], 'up'=>-100, 'ut'=>50, 'cw' => font_desc[:cw]}
-					@@fpdf_charwidths[fontkey] = font_desc[:cw];
-				end
-			else
-				Error('Undefined font: ' + family + ' ' + style);
-			end
-		end
-		#Select it
-		@font_family = family;
-		@font_style = style;
-		@current_font = @fonts[fontkey]; # was & may need deep copy?
+		fontdata =  AddFont(family, style)
+		@font_family = fontdata['family']
+		@font_style = fontdata['style']
+		@current_font = @fonts[fontdata['fontkey']]
 		SetFontSize(size)
 	end
   alias_method :set_font, :SetFont
