@@ -284,6 +284,8 @@ class TCPDF
 		@offsets ||= []
 		@orientation_changes ||= []
 		@page ||= 0
+		@htmlvspace ||= 0
+		@tagvspaces ||= []
 		@opencell = true
 		@transfmrk ||= []
 		@pagedim ||= []
@@ -5741,6 +5743,41 @@ class TCPDF
 	end
 	
 	#
+	# Add vertical spaces if needed.
+	# @param int :n number of spaces to add
+	# @param boolean :cell if true add the default cMargin space to each new line (default false).
+	# @param string :h The height of the break. By default, the value equals the height of the last printed cell.
+	# @param boolean :firstorlast if true do not print additional empty lines.
+	# @param string :tag HTML tag to which this space will be applied
+	# @param boolean :closing true if this space will be applied to a closing tag, false otherwise
+	# @access protected
+	#
+	def addHTMLVertSpace(n, cell=false, h='', firstorlast=false, tag='', closing=false)
+		if firstorlast
+			Ln(0, cell)
+			@htmlvspace = 0
+			return
+		end
+		#### no use ###
+		#closing = closing ? 1 : 0
+		#if !@tagvspaces[tag][closing]['n'].nil?
+		#	n = @tagvspaces[tag][closing]['n']
+		#end
+		#if !@tagvspaces[tag][closing]['h'].nil?
+		#	h = @tagvspaces[tag][closing]['h']
+		#end
+		if h.is_a?(String)
+			vsize = n * @lasth
+		else
+			vsize = n * h
+		end
+		if vsize > @htmlvspace
+			Ln(vsize - @htmlvspace, cell)
+			@htmlvspace = vsize
+		end
+	end
+
+	#
 	# Swap the left and right margins.
 	# @param boolean :reverse if true swap left and right margins.
 	# @access protected
@@ -5756,6 +5793,22 @@ class TCPDF
 			@l_margin += deltam
 			@r_margin -= deltam
 		end
+	end
+
+	#
+	# Set the vertical spaces for HTML tags.
+	# The array must have the following structure (example):
+	# :tagvs = {'h1' => {0 => {'h' => '', 'n' => 2}, 1 => {'h' => 1.3, 'n' => 1}}}
+	# The first array level contains the tag names,
+	# the second level contains 0 for opening tags or 1 for closing tags,
+	# the third level contains the vertical space unit (h) and the number spaces to add (n).
+	# If the h parameter is not specified, default values are used.
+	# @param array :tagvs array of tags and relative vertical spaces.
+	# @access public
+	# @since 4.2.001 (2008-10-30)
+	#
+	def setHtmlVSpace(tagvs)
+		@tagvspaces = tagvs
 	end
 
 	#
