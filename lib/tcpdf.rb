@@ -285,9 +285,12 @@ class TCPDF
 		@orientation_changes ||= []
 		@page ||= 0
 		@htmlvspace ||= 0
+		@lisymbol ||= ''
 		@tagvspaces ||= []
 		@opencell = true
 		@transfmrk ||= []
+		@html_link_color_array ||= [0, 0, 255]
+		@html_link_font_style ||= 'U'
 		@pagedim ||= []
 		@page_links ||= {}
 		@pages ||= []
@@ -362,7 +365,7 @@ class TCPDF
 		@b = 0
 		@i = 0
 		@u = 0
-		@href = ''
+		@href ||= {}
 		@fontlist = ["arial", "times", "courier", "helvetica", "symbol"]
 		@default_monospaced_font = 'courier'
 		@issetfont = false
@@ -5471,21 +5474,34 @@ class TCPDF
 		#Opening tag
 		case tag['value']
 		when 'table'
+			cp = 0
+			cs = 0
 			dom[key]['rowspans'] = []
-			if !tag['attribute']['cellpadding'].nil?
-				@old_c_margin = @c_margin
-				@c_margin = pixelsToUnits(tag['attribute']['cellpadding'])
+			if dom[key]['thead']
+				# set table header
+				@thead = dom[key]['thead']
 			end
+			if !tag['attribute']['cellpadding'].nil?
+				cp = getHTMLUnitToUnits(tag['attribute']['cellpadding'], 1, 'px')
+				@old_c_margin = @c_margin
+				@c_margin = cp
+			end
+			if !tag['attribute']['cellspacing'].nil?
+				cs = getHTMLUnitToUnits(tag['attribute']['cellspacing'], 1, 'px')
+			end
+			checkPageBreak((2 * cp) + (2 * cs) + @lasth)
 		when 'tr'
 			# array of columns positions
 			dom[key]['cellpos'] = []
-		when 'td', 'th'
 		when 'hr'
 			Ln('', cell)
+			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
+			@htmlvspace = 0
+			wtmp = @w - @l_margin - @r_margin
 			if !tag['attribute']['width'].nil? and (tag['attribute']['width'] != '')
-				hrWidth = pixelsToUnits(tag['attribute']['width']);
+				hrWidth = getHTMLUnitToUnits(tag['attribute']['width'], wtmp, 'px')
 			else
-				hrWidth = @w - @l_margin - @r_margin
+				hrWidth = wtmp
 			end
 			x = GetX()
 			y = GetY()
@@ -5493,12 +5509,39 @@ class TCPDF
 			Line(x, y, x + hrWidth, y)
 			SetLineWidth(prevlinewidth)
 			Ln('', cell)
-		when 'u'
-			SetStyle('u', true)
-		when 'del'
-			SetStyle('d', true)
+			addHTMLVertSpace(1, cell, '', dom[key + 1].nil?, tag['value'], false)
 		when 'a'
-			@href = tag['attribute']['href']
+			if tag['attribute'].key?('href')
+				@href['url'] = tag['attribute']['href']
+			end
+			@href['color'] = @html_link_color_array
+			@href['style'] = @html_link_font_style
+			if tag['attribute'].key?('style')
+				# get style attributes
+				style_array = tag['attribute']['style'].scan(/([^;:\s]*):([^;]*)/)
+				astyle = {}
+				style_array.each do |name, id|
+					name = name.downcase
+					astyle[name] = id.strip
+				end
+				if !astyle['color'].nil?
+					@href['color'] = convertHTMLColorToDec(astyle['color'])
+				end
+				if !astyle['text-decoration'].nil?
+					@href['style'] = ''
+					decors = astyle['text-decoration'].downcase.split(' ') 
+					decors.each {|dec|
+						dec = dec.strip
+						if dec != ""
+							if dec[0, 1] == 'u'
+								@href['style'] << 'U'
+							elsif dec[0, 1] == 'l'
+								@href['style'] << 'D'
+							end
+						end
+					}
+				end
+			end
 		when 'img'
 			if !tag['attribute']['src'].nil?
 				# replace relative path with real server path
@@ -5512,88 +5555,144 @@ class TCPDF
 				if tag['attribute']['height'].nil?
 					tag['attribute']['height'] = 0
 				end
-				if tag['attribute']['align'].nil?
-					align = 'N'
+				#if tag['attribute']['align'].nil?
+					# the only alignment supported is "bottom"
+					# further development is required for other modes.
+					tag['attribute']['align'] = 'bottom'
+				#end
+				case tag['attribute']['align']
+				when 'top'
+					align = 'T'
+				when 'middle'
+					align = 'M'
+				when 'bottom'
+					align = 'B'
 				else
-					case tag['attribute']['align']
-					when 'top'
-						align = 'T'
-					when 'middle'
-						align = 'M'
-					when 'bottom'
-						align = 'B'
+					align = 'B'
+				end
+				type = File.extname(tag['attribute']['src'])
+				prevy = @y
+				xpos = GetX()
+				if !dom[key - 1].nil? and (dom[key - 1]['value'] == ' ')
+					if @rtl
+						xpos += GetStringWidth(' ')
 					else
-						align = 'N'
+						xpos -= GetStringWidth(' ')
 					end
 				end
-				Image(tag['attribute']['src'], GetX(), GetY(), pixelsToUnits(tag['attribute']['width']), pixelsToUnits(tag['attribute']['height']), '', '', align)
+				imglink = ''
+				if !@href['url'].nil? and !@href['url'].empty?
+					imglink = @href['url']
+					if imglink[0, 1] == '#'
+						# convert url to internal link
+						page = imglink.sub(/^#/, "").to_i
+						imglink = AddLink()
+						SetLink(imglink, 0, page)
+					end
+				end
+				border = 0
+				if !tag['attribute']['border'].nil? and !tag['attribute']['border'].empty?
+					# currently only support 1 (frame) or a combination of 'LTRB'
+					border = tag['attribute']['border']
+				end
+#				if (type == 'eps') or (type == 'ai')
+#					ImageEps(tag['attribute']['src'], xpos, GetY(), pixelsToUnits(tag['attribute']['width']), pixelsToUnits(tag['attribute']['height']), imglink, true, align, '', border)
+#				else
+#					Image(tag['attribute']['src'], xpos, GetY(), pixelsToUnits(tag['attribute']['width']), pixelsToUnits(tag['attribute']['height']), '', imglink, align, false, 300, '', false, false, border)
+					Image(tag['attribute']['src'], xpos, GetY(), pixelsToUnits(tag['attribute']['width']), pixelsToUnits(tag['attribute']['height']), '', imglink, align) # adhok
+#				end
+				case align
+				when 'T'
+					@y = prevy
+				when 'M'
+					@y = (@img_rb_y + prevy - (tag['fontsize'] / @k)) / 2
+				when 'B'
+					@y = @img_rb_y - (tag['fontsize'] / @k)
+				end
 			end
 		when 'dl'
 			@listnum += 1
+			addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], false)
 		when 'dt'
 			Ln('', cell)
+			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
 		when 'dd'
 			if @rtl
 				@r_margin += @listindent
 			else
 				@l_margin += @listindent
 			end
-			Ln('', cell)
+			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
 		when 'ul', 'ol'
+			addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], false)
+			@htmlvspace = 0
 			@listnum += 1
 			if tag['value'] == "ol"
 				@listordered[@listnum] = true
 			else
 				@listordered[@listnum] = false
 			end
-			@listcount[@listnum] = 0
+			if !tag['attribute']['start'].nil?
+				@listcount[@listnum] = tag['attribute']['start'].to_i - 1
+			else 
+				@listcount[@listnum] = 0
+			end
 			if @rtl
 				@r_margin += @listindent
 			else
 				@l_margin += @listindent
 			end
 		when 'li'
-			Ln('', cell)
-			if tag['value'] == 'li'
-				if @listordered[@listnum]
-					if !tag['attribute']['value'].nil?
-						@listcount[@listnum] = tag['attribute']['value'].to_i
-					end
-					@listcount[@listnum] += 1
-					if @rtl
-						@lispacer = "." + @listcount[@listnum].to_s
-					else
-						@lispacer = @listcount[@listnum].to_s + "."
-					end
+			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
+			if @listordered[@listnum]
+				# ordered item
+				if !parent['attribute']['type'].nil? and !parent['attribute']['type'].empty?
+					@lispacer = parent['attribute']['type']
+				elsif !parent['listtype'].nil? and !parent['listtype'].empty?
+					@lispacer = parent['listtype']
+				elsif !@lisymbol.empty?
+					@lispacer = @lisymbol
 				else
-					# unordered list symbol
-					@lispacer = "-"
+					@lispacer = '#'
+				end
+				@listcount[@listnum] += 1
+				if !tag['attribute']['value'].nil?
+					@listcount[@listnum] = tag['attribute']['value'].to_i
 				end
 			else
-				@lispacer = ""
+				# unordered item
+				if !parent['attribute']['type'].nil? and !parent['attribute']['type'].empty?
+					@lispacer = parent['attribute']['type']
+				elsif !parent['listtype'].nil? and !parent['listtype'].empty?
+					@lispacer = parent['listtype']
+				elsif !@lisymbol.empty?
+					@lispacer = @lisymbol
+				else
+					@lispacer = '!'
+				end
 			end
-			tmpx = @x
-			lspace = GetStringWidth(@lispacer + "  ")
+		when 'blockquote'
 			if @rtl
-				@x += lspace
+				@r_margin += @listindent
 			else
-				@x -= lspace
+				@l_margin += @listindent
 			end
-			Write(@lasth, @lispacer, '', false, '', false, 0, false)
-			@x = tmpx
-		when 'blockquote', 'br'
+			addHTMLVertSpace(2, cell, '', firstorlast, tag['value'], false)
+		when 'br'
 			Ln('', cell)
+		when 'div'
+			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
 		when 'p'
-			Ln('', cell)
-			Ln('', cell)
+			addHTMLVertSpace(2, cell, '', firstorlast, tag['value'], false)
+		when 'pre'
+			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
+			@premode = true
 		when 'sup'
-			SetXY(GetX(), GetY() - ((parent['fontsize'] - @font_size_pt) / @k))
+			SetXY(GetX(), GetY() - ((0.7 * @font_size_pt) / @k))
 		when 'sub'
-			SetXY(GetX(), GetY() + ((parent['fontsize'] - (0.5 * @font_size_pt)) / @k))
-		when 'small'
-			SetXY(GetX(), GetY() + ((parent['fontsize'] - @font_size_pt) / @k))
+			SetXY(GetX(), GetY() + ((0.3 * @font_size_pt) / @k))
 		when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
-			Ln((tag['fontsize'] * 1.5) / @k, cell)
+			addHTMLVertSpace(1, cell, (tag['fontsize'] * 1.5) / @k, firstorlast, tag['value'], false)
 		end
 	end
   
@@ -5695,7 +5794,7 @@ class TCPDF
 			when 'del'
 				SetStyle('d', false)
 			when 'a'
-				@href = nil
+				@href = {}
 			when 'sup'
 				SetXY(GetX(), GetY() + ((@font_size_pt - parent['fontsize']) / @k))
 			when 'sub'
