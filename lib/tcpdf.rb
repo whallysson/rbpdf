@@ -1840,6 +1840,23 @@ class TCPDF
 		out(sprintf('%.2f %.2f m %.2f %.2f l S', x1 * @k, (@h - y1) * @k, x2 * @k, (@h - y2) * @k));
 	end
   alias_method :line, :Line
+                
+	#
+	# Draws a rectangle.
+	# @param float :x Abscissa of upper-left corner (or upper-right corner for RTL language).
+	# @param float :y Ordinate of upper-left corner (or upper-right corner for RTL language).
+	# @param float :w Width.
+	# @param float :h Height.
+	# @param string :op options
+	# @access protected
+	# @since 2.1.000 (2008-01-08)
+	#
+	def outRect(x, y, w, h, op)
+		if @rtl
+			x = @w - x - w
+		end
+		out(sprintf('%.2f %.2f %.2f %.2f re %s', x * @k, (@h - y) * @k, w * @k, -h * @k, op))
+	end
 
   def Circle(mid_x, mid_y, radius, style='')
     mid_y = (@h-mid_y)*@k
