@@ -1907,25 +1907,89 @@ class TCPDF
   alias_method :circle, :Circle
 
 	#
-	# Outputs a rectangle. It can be drawn (border only), filled (with no border) or both.
-	# @param float :x Abscissa of upper-left corner
-	# @param float :y Ordinate of upper-left corner
-	# @param float :w Width
-	# @param float :h Height
-	# @param string :style Style of rendering. Possible values are:<ul><li>D or empty string: draw (default)</li><li>F: fill</li><li>DF or FD: draw and fill</li></ul>
+	# Draws a rectangle.
+	# @param float :x Abscissa of upper-left corner (or upper-right corner for RTL language).
+	# @param float :y Ordinate of upper-left corner (or upper-right corner for RTL language).
+	# @param float :w Width.
+	# @param float :h Height.
+	# @param string :style Style of rendering. Possible values are:
+	# <ul>
+	#        <li>D or empty string: Draw (default).</li>
+	#        <li>F: Fill.</li>
+	#        <li>DF or FD: Draw and fill.</li>
+	#        <li>CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).</li>
+	#        <li>CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).</li>
+	# </ul>
+	# @param array :border_style Border style of rectangle. Array with keys among the following:
+	# <ul>
+	#        <li>all: Line style of all borders. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	#        <li>L, T, R, B or combinations: Line style of left, top, right or bottom border. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	# </ul>
+	# If a key is not present or is null, not draws the border. Default value: default line style (empty array).
+	# @param array :border_style Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+	# @access public
 	# @since 1.0
-	# @see SetLineWidth(), SetDrawColor(), SetFillColor()
+	# @see SetLineStyle()
 	#
-	def Rect(x, y, w, h, style='')
-		#Draw a rectangle
-		if (style=='F')
-			op='f';
-		elsif (style=='FD' or style=='DF')
-			op='B';
-		else
-			op='S';
+	def Rect(x, y, w, h, style='', border_style={}, fill_color={})
+		if style.index('F') != nil and !fill_color.nil?
+			SetFillColorArray(fill_color)
 		end
-		out(sprintf('%.2f %.2f %.2f %.2f re %s', x * @k, (@h - y) * @k, w * @k, -h * @k, op));
+		case style
+		when 'F'
+			op = 'f'
+			border_style = {}
+			outRect(x, y, w, h, op)
+		when 'DF', 'FD'
+			if !border_style or !border_style['all'].nil?
+				op = 'B'
+				if !border_style['all'].nil?
+					SetLineStyle(border_style['all'])
+					border_style = {}
+				end
+			else
+				op = 'f'
+			end
+			outRect(x, y, w, h, op)
+		when 'CNZ'
+			op = 'W n'
+			outRect(x, y, w, h, op)
+		when 'CEO'
+			op = 'W* n'
+			outRect(x, y, w, h, op)
+		else
+			op = 'S'
+			if !border_style or !border_style['all'].nil?
+				if !border_style['all'].nil? and border_style['all']
+					SetLineStyle(border_style['all'])
+					border_style = {}
+				end
+				outRect(x, y, w, h, op)
+			end
+		end
+		if border_style
+			border_style2 = {}
+			border_style.each_with_index { |value, line|
+				lenght = line.length
+				0.upto(lenght - 1) do |i|
+					border_style2[line[i]] = value
+				end
+			}
+			border_style = border_style2
+			if !border_style['L'].nil? and border_style['L']
+				Line(x, y, x, y + h, border_style['L'])
+			end
+			if !border_style['T'].nil? and border_style['T']
+				Line(x, y, x + w, y, border_style['T'])
+			end
+			if !border_style['R'].nil? and border_style['R']
+				Line(x + w, y, x + w, y + h, border_style['R'])
+			end
+			if !border_style['B'].nil? and border_style['B']
+				Line(x, y + h, x + w, y + h, border_style['B'])
+			end
+		end
 	end
   alias_method :rect, :Rect
 
