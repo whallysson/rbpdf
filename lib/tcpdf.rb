@@ -287,10 +287,12 @@ class TCPDF
 		@htmlvspace ||= 0
 		@lisymbol ||= ''
 		@epsmarker ||= 'x#!#EPS#!#x'
+		@transfmatrix ||= []
 		@feps ||= 0.001
 		@tagvspaces ||= []
 		@customlistindent ||= -1
 		@opencell = true
+		@embeddedfiles ||= []
 		@transfmrk ||= []
 		@html_link_color_array ||= [0, 0, 255]
 		@html_link_font_style ||= 'U'
@@ -2237,22 +2239,83 @@ class TCPDF
   alias_method :set_link, :SetLink
 
 	#
-	# Puts a link on a rectangular area of the page. Text or image links are generally put via Cell(), Write() or Image(), but this method can be useful for instance to define a clickable area inside an image.
+	# Puts a link on a rectangular area of the page.
+	# Text or image links are generally put via Cell(), Write() or Image(), but this method can be useful for instance to define a clickable area inside an image.
 	# @param float :x Abscissa of the upper-left corner of the rectangle
 	# @param float :y Ordinate of the upper-left corner of the rectangle
 	# @param float :w Width of the rectangle
 	# @param float :h Height of the rectangle
 	# @param mixed :link URL or identifier returned by AddLink()
+	# @param int :spaces number of spaces on the text to link
+	# @access public
 	# @since 1.5
-	# @see AddLink(), Cell(), Write(), Image()
+	# @see AddLink(), Annotation(), Cell(), Write(), Image()
 	#
-	def Link(x, y, w, h, link)
-		#Put a link on the page
-    @page_links ||= Array.new
-    @page_links[@page] ||= Array.new
-    @page_links[@page].push([x * @k, @h_pt - y * @k, w * @k, h*@k, link]);
+	def Link(x, y, w, h, link, spaces=0)
+		Annotation(x, y, w, h, link, {'Subtype'=>'Link'}, spaces)
 	end
   alias_method :link, :Link
+
+	#
+	# Puts a markup annotation on a rectangular area of the page.
+	# !!!!THE ANNOTATION SUPPORT IS NOT YET FULLY IMPLEMENTED !!!!
+	# @param float :x Abscissa of the upper-left corner of the rectangle
+	# @param float :y Ordinate of the upper-left corner of the rectangle
+	# @param float :w Width of the rectangle
+	# @param float :h Height of the rectangle
+	# @param string :text annotation text or alternate content
+	# @param array :opt array of options (see section 8.4 of PDF reference 1.7).
+	# @param int :spaces number of spaces on the text to link
+	# @access public
+	# @since 4.0.018 (2008-08-06)
+	#
+	def Annotation(x, y, w, h, text, opt={'Subtype'=>'Text'}, spaces=0)
+		# recalculate coordinates to account for graphic transformations
+		if !@transfmatrix.nil?
+			maxid = @transfmatrix.length - 1
+			maxid.downto(0) do |i|
+				ctm = @transfmatrix[i]
+				if !ctm['a'].nil?
+					x = x * @k
+					y = (@h - y) * @k
+					w = w * @k
+					h = h * @k
+					# top left
+					xt = x
+					yt = y
+					x1 = (ctm['a'] * xt) + (ctm['c'] * yt) + ctm['e']
+					y1 = (ctm['b'] * xt) + (ctm['d'] * yt) + ctm['f']
+					# top right
+					xt = x + w
+					yt = y
+					x2 = (ctm['a'] * xt) + (ctm['c'] * yt) + ctm['e']
+					y2 = (ctm['b'] * xt) + (ctm['d'] * yt) + ctm['f']
+					# bottom left
+					xt = x
+					yt = y - h
+					x3 = (ctm['a'] * xt) + (ctm['c'] * yt) + ctm['e']
+					y3 = (ctm['b'] * xt) + (ctm['d'] * yt) + ctm['f']
+					# bottom right
+					xt = x + w
+					yt = y - h
+					x4 = (ctm['a'] * xt) + (ctm['c'] * yt) + ctm['e']
+					y4 = (ctm['b'] * xt) + (ctm['d'] * yt) + ctm['f']
+					# new coordinates (rectangle area)
+					x = [x1, x2, x3, x4].min
+					y = [y1, y2, y3, y4].max
+					w = ([x1, x2, x3, x4].max - x) / @k
+					h = (y - [y1, y2, y3, y4].min) / @k
+					x = x / @k
+					y = @h - (y / @k)
+				end
+			end
+		end
+		@page_annots[@page] ||= []
+		@page_annots[@page].push 'x' => x, 'y' => y, 'w' => w, 'h' => h, 'txt' => text, 'opt' => opt, 'numspaces' => spaces
+		if (opt['Subtype'] == 'FileAttachment') and !opt['FS'].empty? and File.exist?(opt['FS']) and @embeddedfiles[File.basename(opt['FS'], ".*")].nil?
+			@embeddedfiles[File.basename(opt['FS'], ".*")] = {'file' => opt['FS'], 'n' => (@n + @embeddedfiles.length + 10000)}
+		end
+	end
 
 	#
 	# Prints a character string. The origin is on the left of the first charcter, on the baseline. This method allows to place a string precisely on the page, but it is usually easier to use Cell(), MultiCell() or Write() which are the standard methods to print text.
@@ -6630,6 +6693,70 @@ class TCPDF
 			retval = value / k
 		end
 		return retval
+	end
+
+	#
+	# Returns the Roman representation of an integer number
+	# @param int :number to convert
+	# @return string roman representation of the specified number
+	# @access public
+	# @since 4.4.004 (2008-12-10)
+	#
+	def intToRoman(number)
+		roman = ''
+		while number >= 1000
+			roman << 'M'
+			number -= 1000
+		end
+		while number >= 900
+			roman << 'CM'
+			number -= 900
+		end
+		while number >= 500
+			roman << 'D'
+			number -= 500
+		end
+		while number >= 400
+			roman << 'CD'
+			number -= 400
+		end
+		while number >= 100
+			roman << 'C'
+			number -= 100
+		end
+		while number >= 90
+			roman << 'XC'
+			number -= 90
+		end
+		while number >= 50
+			roman << 'L'
+			number -= 50
+		end
+		while number >= 40
+			roman << 'XL'
+			number -= 40
+		end
+		while number >= 10
+			roman << 'X'
+			number -= 10
+		end
+		while number >= 9
+			roman << 'IX'
+			number -= 9
+		end
+		while number >= 5
+			roman << 'V'
+			number -= 5
+		end
+		while number >= 4
+			roman << 'IV'
+			number -= 4
+		end
+		while number >= 1
+			roman << 'I'
+			number -= 1
+		end
+		return roman
 	end
 
 	#
