@@ -286,12 +286,16 @@ class TCPDF
 		@page ||= 0
 		@htmlvspace ||= 0
 		@lisymbol ||= ''
+		@epsmarker ||= 'x#!#EPS#!#x'
+		@feps ||= 0.001
 		@tagvspaces ||= []
+		@customlistindent ||= -1
 		@opencell = true
 		@transfmrk ||= []
 		@html_link_color_array ||= [0, 0, 255]
 		@html_link_font_style ||= 'U'
 		@pagedim ||= []
+		@page_annots ||= []
 		@page_links ||= {}
 		@pages ||= []
   	@pdf_version ||= "1.3"
@@ -308,6 +312,8 @@ class TCPDF
 		@intmrk ||= []
 		@footerpos ||= []
 		@footerlen ||= []
+		@newline ||= true
+		@endlinex ||= 0
 		@newpagegroup ||= []
 		@linestyle_width ||= ''
 		@linestyle_cap ||= '0 J'
@@ -4708,6 +4714,7 @@ class TCPDF
 	
 	#
 	# Allows to preserve some HTML formatting (limited support).<br />
+	# IMPORTANT: The HTML must be well formatted - try to clean-up it using an application like HTML-Tidy before submitting.
 	# Supported tags are: a, b, blockquote, br, dd, del, div, dl, dt, em, font, h1, h2, h3, h4, h5, h6, hr, i, img, li, ol, p, small, span, strong, sub, sup, table, td, th, tr, u, ul, 
 	# @param string :html text to display
 	# @param boolean :ln if true add a new line after text (default = true)
@@ -4715,38 +4722,61 @@ class TCPDF
 	# @param boolean :reseth if true reset the last cell height (default false).
 	# @param boolean :cell if true add the default c_margin space to each Write (default false).
 	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
+	# @access public
 	#
 	def writeHTML(html, ln=true, fill=0, reseth=false, cell=false, align='')
+		gvars = getGraphicVars()
 		# store current values
-		prevFontFamily = @font_family
-		prevFontStyle = @font_style
-		prevFontSizePt = @font_size_pt
-		curfontname = prevFontFamily
-		curfontstyle = prevFontStyle
-		curfontsize = prevFontSizePt
-		prevbgcolor = @bgcolor
-		prevfgcolor = @fgcolor
+		prevPage = @page
+		prevlMargin = @l_margin
+		prevrMargin = @r_margin
+		curfontname = @font_family
+		curfontstyle = @font_style
+		curfontsize = @font_size_pt
 		@newline = true
+		minstartliney = @y
+		yshift = 0
 		startlinepage = @page
-		startlinepos = @pages[@page].length
+		newline = true
+		loop = 0
+		curpos = 0
+		opentagpos = nil
+		startlinex = nil
+		startliney = nil
+		blocktags = ['blockquote','br','dd','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','ul']
+		@premode = false
+		if !@page_annots[@page].nil?
+			pask = @page_annots[@page].length
+		else
+			pask = 0
+		end
+		if !@footerlen[@page].nil?
+			@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
+		else
+			@footerpos[@page] = @pagelen[@page]
+		end
+		startlinepos = @footerpos[@page]
 		lalign = align
 		plalign = align
-
-		if cell
-			@y += @c_margin
-			if @rtl
-				@x -= @c_margin
-			else
-				@x += @c_margin
-			end
-		end
 		if @rtl
 			w = @x - @l_margin
 		else
 			w = @w - @r_margin - @x
 		end
 		w -= 2 * @c_margin
-		@listindent = GetStringWidth("0000")
+
+		if cell
+			if @rtl
+				@x -= @c_margin
+			else
+				@x += @c_margin
+			end
+		end
+		if @customlistindent >= 0
+			@listindent = @customlistindent
+		else
+			@listindent = GetStringWidth('0000')
+		end
 		@listnum = 0
 		if !@lasth or reseth
 			#set row height
@@ -4757,18 +4787,96 @@ class TCPDF
 		key = 0
 		while key < maxel
 			if dom[key]['tag'] or (key == 0)
-				if !dom[key]['fontname'].nil? or !dom[key]['fontstyle'].nil? or !dom[key]['fontsize'].nil?
-					fontname  = !dom[key]['fontname'].nil?  ? dom[key]['fontname']  : ''
-					fontstyle = !dom[key]['fontstyle'].nil? ? dom[key]['fontstyle'] : ''
-					fontsize  = !dom[key]['fontsize'].nil?  ? dom[key]['fontsize']  : ''
+				if ((dom[key]['value'] == 'table') or (dom[key]['value'] == 'tr')) and !dom[key]['align'].nil?
+					dom[key]['align'] = @rtl ? 'R' : 'L'
+				end
+				# vertically align image in line
+				if !@newline and (dom[key]['value'] == 'img') and !dom[key]['attribute']['height'].nil? and (dom[key]['attribute']['height'].to_i > 0) and !((@y + getHTMLUnitToUnits(dom[key]['attribute']['height'], @lasth, 'px') > @page_break_trigger) and !@in_footer and AcceptPageBreak())
+					if @page > startlinepage
+						# fix lines splitted over two pages
+						if !@footerlen[startlinepage].nil?
+							curpos = @pagelen[startlinepage] - @footerlen[startlinepage]
+						end
+						# line to be moved one page forward
+						linebeg = getPageBuffer(startlinepage)[startlinepos, curpos - startlinepos]
+						tstart = getPageBuffer(startlinepage)[0, startlinepos]
+						tend = getPageBuffer(startlinepage)[curpos..-1]
+						# remove line start from previous page
+						setPageBuffer(startlinepage, tstart + '' + tend)
+						tstart = getPageBuffer(@page)[0, @intmrk[@page]]
+						tend = getPageBuffer(@page)[@intmrk[@page]..-1]
+						# add line start to current page
+						yshift = minstartliney - @y
+						try = sprintf('1 0 0 1 0 %.3f cm', (yshift * @k))
+						setPageBuffer(@page, tstart + "\nq\n" + try + "\n" + linebeg + "\nQ\n" + tend)
+						# shift the annotations and links
+						if !@page_annots[startlinepage].nil?
+							@page_annots[startlinepage].each_with_index { |pac, pak|
+								if pak >= pask
+									@page_annots[@page].push pac
+									@page_annots[startlinepage].delete_at(pak)
+									npak = @page_annots[@page].length - 1
+									@page_annots[@page][npak]['y'] -= yshift
+								end
+							}
+						end
+					end
+					@y += (curfontsize / @k) - getHTMLUnitToUnits(dom[key]['attribute']['height'], @lasth, 'px')
+					minstartliney = [@y, minstartliney].min
+	 			elsif !dom[key]['fontname'].nil? or !dom[key]['fontstyle'].nil? or !dom[key]['fontsize'].nil?
+					# account for different font size
+					pfontname = curfontname
+					pfontstyle = curfontstyle
+					pfontsize = curfontsize
+					fontname  = !dom[key]['fontname'].nil?  ? dom[key]['fontname']  : curfontname
+					fontstyle = !dom[key]['fontstyle'].nil? ? dom[key]['fontstyle'] : curfontstyle
+					fontsize  = !dom[key]['fontsize'].nil?  ? dom[key]['fontsize']  : curfontsize
 					if (fontname != curfontname) or (fontstyle != curfontstyle) or (fontsize != curfontsize)
 						SetFont(fontname, fontstyle, fontsize)
 						@lasth = @font_size * @@k_cell_height_ratio
+						if (fontsize.is_a? Integer) and (fontsize > 0) and (curfontsize.is_a? Integer) and (curfontsize > 0) and (fontsize != curfontsize) and !@newline and (key < maxel - 1)
+							if !@newline and (@page > startlinepage)
+								# fix lines splitted over two pages
+								if !@footerlen[startlinepage].nil?
+									curpos = @pagelen[startlinepage] - @footerlen[startlinepage]
+								end
+								# line to be moved one page forward
+								linebeg = getPageBuffer(startlinepage)[startlinepos, curpos - startlinepos]
+								tstart = getPageBuffer(startlinepage)[0, startlinepos]
+								tend = getPageBuffer(startlinepage)[curpos..-1]
+								# remove line start from previous page
+								setPageBuffer(startlinepage, tstart + '' + tend)
+								tstart = getPageBuffer(@page)[0, @intmrk[@page]]
+								tend = getPageBuffer(@page)[@intmrk[@page]..-1]
+								# add line start to current page
+								yshift = minstartliney - @y
+								try = sprintf('1 0 0 1 0 %.3f cm', yshift * @k)
+								setPageBuffer(@page, tstart + "\nq\n" + try + "\n" + linebeg + "\nQ\n" + tend)
+								# shift the annotations and links
+								if !@page_annots[startlinepage].nil?
+									@page_annots[startlinepage].each_with_index { |pac, pak|
+										if pak >= pask
+											@page_annots[@page].push = pac
+											@page_annots[startlinepage].delete_at(pak)
+											npak = @page_annots[@page].length - 1
+											@page_annots[@page][npak]['y'] -= yshift
+										end
+									}
+								end
+							end
+							@y += (curfontsize - fontsize) / @k
+							minstartliney = [@y, minstartliney].min
+						end
 						curfontname = fontname
 						curfontstyle = fontstyle
 						curfontsize = fontsize
 					end
 				end
+				if (plalign == 'J') and blocktags.include?(dom[key]['value'])
+					plalign = ''
+				end
+				# get current position on page buffer
+				curpos = @pagelen[startlinepage]
 				if !dom[key]['bgcolor'].nil? and (dom[key]['bgcolor'].length > 0)
 					SetFillColorArray(dom[key]['bgcolor'])
 					wfill = 1
@@ -4787,30 +4895,45 @@ class TCPDF
 			end
 			# align lines
 			if @newline and (dom[key]['value'].length > 0) and (dom[key]['value'] != 'td') and (dom[key]['value'] != 'th')
+				newline = true
 				# we are at the beginning of a new line
-				if defined?(startlinex)
-					if !plalign.nil? and (((plalign == 'C') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl)))
+				if !startlinex.nil?
+					yshift = minstartliney - startliney
+					if (yshift > 0) or (@page > startlinepage)
+						yshift = 0
+					end
+					if (!plalign.nil? and ((plalign == 'C') or (plalign == 'J') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl))) or (yshift < 0)
 						# the last line must be shifted to be aligned as requested
 						linew = (@endlinex - startlinex).abs
 						pstart = @pages[startlinepage][0, startlinepos]
-						if defined?(opentagpos) and !@footerpos[startlinepage].nil?
+						if !opentagpos.nil? and !@footerlen[startlinepage].nil?
+							@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
 							midpos = [opentagpos, @footerpos[startlinepage]].min
-						elsif defined?(opentagpos)
+						elsif !opentagpos.nil?
 							midpos = opentagpos
-						elsif !@footerpos[startlinepage].nil?
+						elsif !@footerlen[startlinepage].nil?
+							@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
 							midpos = @footerpos[startlinepage]
 						else
 							midpos = 0
 						end
 						if midpos > 0
-							pmid = @pages[startlinepage][startlinepos..(midpos - startlinepos + 1)]
-							pend = @pages[startlinepage][midpos..-1]
+							pmid = getPageBuffer(startlinepage)[startlinepos, midpos - startlinepos]
+							pend = getPageBuffer(startlinepage)[midpos..-1]
 						else
-							pmid = @pages[startlinepage][startlinepos..-1]
-							pend = ""
+							pmid = getPageBuffer(startlinepage)[startlinepos..-1]
+							pend = ''
 						end
 						# calculate shifting amount
-						mdiff = (w - linew - @c_margin).abs
+						tw = w
+						if @l_margin != prevlMargin
+							tw += prevlMargin - @l_margin
+						end
+						if @r_margin != prevrMargin
+							tw += prevrMargin - @r_margin
+						end
+						mdiff = (tw - linew).abs
+						t_x = 0
 						if plalign == 'C'
 							if @rtl
 								t_x = -(mdiff / 2)
@@ -4823,34 +4946,216 @@ class TCPDF
 						elsif (plalign == 'L') and @rtl
 							# left alignment on RTL document
 							t_x = -mdiff
+						elsif (plalign == 'J') and (plalign == lalign)
+							# Justification
+							if @rtl or @tmprtl
+								t_x = @l_margin - @endlinex
+							end
+							no = 0
+							ns = 0
+
+							pmidtemp = pmid
+							# escape special characters
+							pmidtemp.gsub!(/[\\][\(]/x, '\\#!#OP#!#')
+							pmidtemp.gsub!(/[\\][\)]/x, '\\#!#CP#!#')
+							# search spaces
+							lnstring = pmidtemp.scan(/\[\(([^\)]*)\)\]/x)
+							if !lnstring.empty?
+								maxkk = lnstring.length - 1
+								# lnstring.each_with_index { |value, kk|
+								0.upto(maxkk) do |kk|
+									# restore special characters
+									lnstring[kk][0].gsub!('#!#OP#!#', '(')
+									lnstring[kk][0].gsub!('#!#CP#!#', ')')
+									if kk == maxkk
+										if @rtl or @tmprtl
+											tvalue = lnstring[kk][0].lstrip
+										else
+											tvalue = lnstring[kk][0].rstrip
+										end
+									else
+										tvalue = lnstring[kk][0]
+									end
+									# count spaces on line
+									no += lnstring[kk][0].count(32.chr)
+									ns += tvalue.count(32.chr)
+								end
+								if @rtl or @tmprtl
+									t_x = @l_margin - @endlinex - ((no - ns - 1) * GetStringWidth(32.chr))
+								end
+								# calculate additional space to add to each space
+								spacewidth = ((tw - linew + ((no - ns) * GetStringWidth(32.chr))) / (ns ? ns : 1)) * @k
+								spacewidthu = (tw - linew + (no * GetStringWidth(32.chr))) / (ns ? ns : 1) / @font_size / @k
+								nsmax = ns
+								ns = 0
+								# reset(lnstring)
+								offset = 0
+								strcount = 0
+								prev_epsposbeg = 0
+								while pmid_offset = pmid.index(/([0-9\.\+\-]*)[\s](Td|cm|m|l|c|re)[\s]/x, offset)
+									pmid_data = $1
+									pmid_mark = $2
+									if @rtl or @tmprtl
+										spacew = spacewidth * (nsmax - ns)
+									else
+										spacew = spacewidth * ns
+									end
+									offset = pmid_offset + $&.length
+									epsposbeg = pmid.index('q' + @epsmarker, offset)
+									epsposbeg = 0 if epsposbeg.nil?
+									epsposend = pmid.index(@epsmarker + 'Q', offset)
+									epsposend = 0 if epsposend.nil?
+									epsposend += (@epsmarker + 'Q').length
+									if ((epsposbeg > 0) and (epsposend > 0) and (offset > epsposbeg) and (offset < epsposend)) or ((epsposbeg === false) and (epsposend > 0) and (offset < epsposend))
+										# shift EPS images
+										trx = sprintf('1 0 0 1 %.3f 0 cm', spacew)
+										epsposbeg = pmid.index('q' + @epsmarker, prev_epsposbeg - 6)
+										pmid_b = pmid[0, epsposbeg]
+										pmid_m = pmid[epsposbeg, epsposend - epsposbeg]
+										pmid_e = pmid[epsposend..-1]
+										pmid = pmid_b + "\nq\n" + trx + "\n" + pmid_m + "\nQ\n" + pmid_e
+										offset = epsposend
+										continue
+									end
+									prev_epsposbeg = epsposbeg
+									currentxpos = 0
+									# shift blocks of code
+									case pmid_mark
+									when 'Td', 'cm', 'm', 'l'
+										# get current X position
+										pmid =~ /([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x
+										currentxpos = $1.to_i
+										if (strcount <= maxkk) and (pmid_mark == 'Td')
+											if strcount == maxkk
+												if @rtl or @tmprtl
+													tvalue = lnstring[strcount][0]
+												else
+													tvalue = lnstring[strcount][0].strip
+												end
+											else
+												tvalue = lnstring[strcount][0]
+											end
+											ns += tvalue.count(32.chr)
+											strcount += 1
+										end
+										if @rtl or @tmprtl
+											spacew = spacewidth * (nsmax - ns)
+										end
+										# justify block
+										pmid.sub!(/([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x, "" + sprintf("%.2f", $1.to_f + spacew) + " " + $2 + " x*#!#*x" + $3 + $4)
+									when 're'
+										# get current X position
+										pmid =~ /([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x
+										currentxpos = $1.to_i
+										# justify block
+										pmid.sub!(/([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x, "" + sprintf("%.2f", $1.to_f + spacew) + " " + $2 + " " + $3 + " " + $4 + " x*#!#*x" + $5 + $6)
+									when 'c'
+										# get current X position
+										pmid =~ /([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x
+										currentxpos = $1.to_i
+										# justify block
+										pmid.sub!(/([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x, "" + sprintf("%.3f", $1.to_f + spacew) + " " + $2 + " " +  sprintf("%.3f", $3.to_f + spacew) + " " + $4 + " " + sprintf("%.3f", $5.to_f + spacew) + " " + $6 + " x*#!#*x" + $7 + $8)
+									end
+									# shift the annotations and links
+									if !@page_annots[@page].nil?
+										@page_annots[@page].each_with_index { |pac, pak|
+											if (pac['y'] >= minstartliney) and (pac['x'] * @k >= currentxpos - @feps) and (pac['x'] * @k <= currentxpos + @feps)
+												@page_annots[@page][pak]['x'] += spacew / @k
+												@page_annots[@page][pak]['w'] += (spacewidth * pac['numspaces']) / @k
+												break
+											end
+										}
+									end
+								end # end of while
+								# remove markers
+								pmid.gsub!('x*#!#*x', '')
+								if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+									# multibyte characters
+									spacew = spacewidthu
+									pmidtemp = pmid
+									# escape special characters
+									pmidtemp.gsub!(/[\\][\(]/x, '\\#!#OP#!#')
+									pmidtemp.gsub!(/[\\][\)]/x, '\\#!#CP#!#')
+									pmidtemp =~ /\[\(([^\)]*)\)\]/x
+									matches1 = $1.gsub("#!#OP#!#", "(")
+									matches1.gsub!("#!#CP#!#", ")")
+									pmid = pmidtemp.sub(/\[\(([^\)]*)\)\]/x,  "[(" + matches1.gsub(0.chr + 32.chr, ") #{-2830 * spacew} (") + ")]")
+									setPageBuffer(startlinepage, pstart + "\n" + pmid + "\n" + pend)
+									endlinepos = (pstart + "\n" + pmid + "\n").length
+								else
+									# non-unicode (single-byte characters)
+									rs = sprintf("%.3f Tw", spacewidth)
+									pmid.gsub!(/\[\(/x, "#{rs} [(")
+									setPageBuffer(startlinepage, pstart + "\n" + pmid + "\nBT 0 Tw ET\n" + pend)
+									endlinepos = (pstart + "\n" + pmid + "\nBT 0 Tw ET\n").length
+								end
+							end
+						end # end of J
+						if (t_x != 0) or (yshift < 0)
+							# shift the line
+							trx = sprintf('1 0 0 1 %.3f %.3f cm', t_x * @k, yshift * @k)
+							setPageBuffer(startlinepage, pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n" + pend)
+							endlinepos = (pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n").length
+							# shift the annotations and links
+							if !@page_annots[@page].nil?
+								@page_annots[@page].each_with_index { |pac, pak|
+									if pak >= pask
+										@page_annots[@page][pak]['x'] += t_x
+										@page_annots[@page][pak]['y'] -= yshift
+									end
+								}
+							end
+							@y -= yshift
 						end
-						# shift the line
-						trx = sprintf('1 0 0 1 %.3f 0 cm', (t_x * @k))
-						@pages[startlinepage] = pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n" + pend
-						endlinepos = (pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n").length
 					end
 				end
-				checkPageBreak(@lasth)
+				@newline = false
+				pbrk = checkPageBreak(@lasth)
 				SetFont(fontname, fontstyle, fontsize)
-				if wfill
+				if wfill == 1
 					SetFillColorArray(@bgcolor)
 				end
 				startlinex = @x
+				startliney = @y
+				minstartliney = @y
 				startlinepage = @page
-				if !endlinepos.nil?
+				if !endlinepos.nil? and !pbrk
 					startlinepos = endlinepos
 					endlinepos = nil
 				else
-					startlinepos = @pages[@page].length
+					if !@footerlen[@page].nil?
+						@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
+					else
+						@footerpos[@page] = @pagelen[@page]
+					end
+					startlinepos = @footerpos[@page]
 				end
 				plalign = lalign
-				@newline = false
+				if !@page_annots[@page].nil?
+					pask = @page_annots[@page].length
+				else
+					pask = 0
+				end
 			end
-			if defined?(opentagpos)
+			if !opentagpos.nil?
 				opentagpos = nil
 			end
 			if dom[key]['tag']
 				if dom[key]['opening']    
+					if dom[key]['value'] == 'table'
+						if @rtl
+							wtmp = @x - @l_margin
+						else
+							wtmp = @w - @r_margin - @x
+						end
+						wtmp -= 2 * @c_margin
+						# calculate cell width
+						if !dom[key]['width'].nil?
+							table_width = getHTMLUnitToUnits(dom[key]['width'], wtmp, 'px')
+						else
+							table_width = wtmp
+						end
+					end
 					# table content is handled in a special way
 					if (dom[key]['value'] == 'td') or (dom[key]['value'] == 'th')
 						trid = dom[key]['parent']
@@ -4858,18 +5163,14 @@ class TCPDF
 						if dom[table_el]['cols'].nil?
 							dom[table_el]['cols'] = trid['cols']
 						end
-						# calculate cell width
-						if !dom[(dom[key]['parent'])]['width'].nil?
-							table_width = pixelsToUnits(dom[(dom[key]['parent'])]['width'])
-						else
-							table_width = w
-						end
 						if !dom[(dom[trid]['parent'])]['attribute']['cellpadding'].nil?
-							currentcmargin = pixelsToUnits(dom[(dom[trid]['parent'])]['attribute']['cellpadding'])
-							@c_margin = currentcmargin
+							currentcmargin = getHTMLUnitToUnits(dom[(dom[trid]['parent'])]['attribute']['cellpadding'], 1, 'px')
+						else
+							currentcmargin = 0
 						end
-						if dom[(dom[trid]['parent'])]['attribute']['cellspacing']
-							cellspacing = pixelsToUnits(dom[(dom[trid]['parent'])]['attribute']['cellspacing'])
+						@c_margin = currentcmargin
+						if !dom[(dom[trid]['parent'])]['attribute']['cellspacing'].nil?
+							cellspacing = getHTMLUnitToUnits(dom[(dom[trid]['parent'])]['attribute']['cellspacing'], 1, 'px')
 						else
 							cellspacing = 0
 						end
@@ -4879,53 +5180,91 @@ class TCPDF
 							cellspacingx = cellspacing
 						end
 						colspan = dom[key]['attribute']['colspan']
+						wtmp = colspan * (table_width / dom[table_el]['cols'])
 						if !dom[key]['width'].nil?
-							cellw = pixelsToUnits(dom[key]['width'])
+							cellw = getHTMLUnitToUnits(dom[key]['width'], wtmp, 'px')
 						else
-							cellw = colspan * (table_width / dom[table_el]['cols'])
+							cellw = wtmp
+						end
+						if !dom[key]['height'].nil?
+							# minimum cell height
+							cellh = getHTMLUnitToUnits(dom[key]['height'], 0, 'px')
+						else
+							cellh = 0
 						end
 						cellw -= cellspacing
-						cell_content = dom[key]['content']
+						if !dom[key]['content'].nil?
+							cell_content = dom[key]['content']
+						else
+							cell_content = '&nbsp;'
+						end
 						tagtype = dom[key]['value']
 						parentid = key
 						while (key < maxel) and !(dom[key]['tag'] and !dom[key]['opening'] and (dom[key]['value'] == tagtype) and (dom[key]['parent'] == parentid))
 							# move :key index forward
 							key += 1
 						end
-						if dom[trid]['startx'].nil?
-							dom[trid]['startx'] = @x
+						if dom[trid]['startpage'].nil?
+							dom[trid]['startpage'] = @page
+						else
+							@page = dom[trid]['startpage']
 						end
 						if dom[trid]['starty'].nil?
 							dom[trid]['starty'] = @y
 						else
 							@y = dom[trid]['starty']
 						end
-						if dom[trid]['startpage'].nil?
-							dom[trid]['startpage'] = @page
-						else
-							@page = dom[trid]['startpage']
+						if dom[trid]['startx'].nil?
+							dom[trid]['startx'] = @x
 						end
 						@x += (cellspacingx / 2)
 						if !dom[parentid]['attribute']['rowspan'].nil?
 							rowspan = dom[parentid]['attribute']['rowspan'].to_i
-							# add rowspan information to table element
-							if rowspan > 1
-								dom[table_el]['rowspans'].push({'rowspan' => rowspan, 'colspan' => colspan, 'startpage' => @page, 'startx' => @x, 'starty' => @y, 'intmrkpos' => @pages[@page].length})
-								trsid = dom[table_el]['rowspans'].size
-							end
 						else
 							rowspan = 1
 						end
-						endrwsp = -1
+						# skip row-spanned cells started on the previous rows
 						if !dom[table_el]['rowspans'].nil?
-							dom[table_el]['rowspans'].each_with_index { |trwsp, k |
-								if  (trwsp['startx'] == @x) and (trwsp['starty'] < @y) and (trwsp['rowspan'] > 1)
-									@x = trwsp['endx'] + cellspacingx
-									dom[table_el]['rowspans'][k]['rowspan'] -= 1
-									endrwsp = k
-									break
+							rsk = 0
+							rskmax = dom[table_el]['rowspans'].length
+							while rsk < rskmax
+								trwsp = dom[table_el]['rowspans'][rsk]
+								rsstartx = trwsp['startx']
+								rsendx = trwsp['endx']
+								# account for margin changes
+								if trwsp['startpage'] < @page
+									if @rtl and (@pagedim[@page]['orm'] != @pagedim[trwsp['startpage']]['orm'])
+										dl = @pagedim[@page]['orm'] - @pagedim[trwsp['startpage']]['orm']
+										rsstartx -= dl
+										rsendx -= dl
+									elsif !@rtl and (@pagedim[@page]['olm'] != @pagedim[trwsp['startpage']]['olm'])
+										dl = @pagedim[@page]['olm'] - @pagedim[trwsp['startpage']]['olm']
+										rsstartx += dl
+										rsendx += dl
+									end
 								end
-							}
+								if  (trwsp['rowspan'] > 0) and (rsstartx > @x - cellspacing - currentcmargin - @feps) and (rsstartx < @x + cellspacing + currentcmargin + @feps) and ((trwsp['starty'] < @y - @feps) or (trwsp['startpage'] < @page))
+									@x = rsendx + cellspacingx
+									if (trwsp['rowspan'] == 1) and !dom[trid]['endy'].nil? and !dom[trid]['endpage'].nil? and (trwsp['endpage'] == dom[trid]['endpage'])
+										dom[table_el]['rowspans'][rsk]['endy'] = [dom[trid]['endy'], trwsp['endy']].max
+										dom[trid]['endy'] = dom[table_el]['rowspans'][rsk]['endy']
+									end
+									rsk = 0
+								else
+									rsk += 1
+								end
+							end
+						end
+						# add rowspan information to table element
+						if rowspan > 1
+							if !@footerlen[@page].nil?
+								@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
+							else
+								@footerpos[@page] = @pagelen[@page]
+							end
+							trintmrkpos = @footerpos[@page]
+							dom[table_el]['rowspans'].push({'trid' => trid, 'rowspan' => rowspan, 'mrowspan' => rowspan, 'colspan' => colspan, 'startpage' => @page, 'startx' => @x, 'starty' => @y, 'intmrkpos' => trintmrkpos})
+							trsid = dom[table_el]['rowspans'].size
 						end
 						dom[trid]['cellpos'].push({'startx' => @x})
 						cellid = dom[trid]['cellpos'].size
@@ -4936,35 +5275,61 @@ class TCPDF
 						if !dom[parentid]['bgcolor'].nil? and (dom[parentid]['bgcolor'].length > 0)
 							dom[trid]['cellpos'][cellid - 1]['bgcolor'] = dom[parentid]['bgcolor'].dup
 						end
-						# write the cell content
-						MultiCell(cellw, 0, cell_content, 0, lalign, false, 2, 0, 0, true, 0, true)
+						prevLastH = @lasth
+						# ****** write the cell content ******
+						MultiCell(cellw, cellh, cell_content, 0, lalign, 0, 2, 0, 0, true, 0, true)
+						@lasth = prevLastH
 						@c_margin = currentcmargin
 						dom[trid]['cellpos'][cellid - 1]['endx'] = @x
-						if rowspan > 1
-							dom[table_el]['rowspans'][trsid - 1]['endx'] = @x
-							dom[table_el]['rowspans'][trsid - 1]['endy'] = [@y, dom[trid]['endy']].max
-							dom[table_el]['rowspans'][trsid - 1]['endpage'] = [@page, dom[trid]['endpage']].max
-						else
-							if dom[trid]['endy'].nil?
+						# update the end of row position
+						if rowspan <= 1
+							if !dom[trid]['endy'].nil?
+								if @page == dom[trid]['endpage']
+									dom[trid]['endy'] = [@y, dom[trid]['endy']].max
+								elsif @page > dom[trid]['endpage']
+									dom[trid]['endy'] = @y
+								end
+							else
 								dom[trid]['endy'] = @y
-							else
-								dom[trid]['endy'] = [@y, dom[trid]['endy']].max
 							end
-							if dom[trid]['endpage'].nil?
-								dom[trid]['endpage'] = @page
-							else
+							if !dom[trid]['endpage'].nil?
 								dom[trid]['endpage'] = [@page, dom[trid]['endpage']].max
+							else
+								dom[trid]['endpage'] = @page
 							end
+						else
+							# account for row-spanned cells
+							dom[table_el]['rowspans'][trsid - 1]['endx'] = @x
+							dom[table_el]['rowspans'][trsid - 1]['endy'] = @y
+							dom[table_el]['rowspans'][trsid - 1]['endpage'] = @page                             
 						end
-						if endrwsp >= 0
-							dom[trid]['endy'] = [dom[table_el]['rowspans'][endrwsp]['endy'], dom[trid]['endy']].max
-							dom[trid]['endpage'] = [dom[table_el]['rowspans'][endrwsp]['endpage'], dom[trid]['endpage']].max
+						if !dom[table_el]['rowspans'].nil?
+							# update endy and endpage on rowspanned cells
+							dom[table_el]['rowspans'].each_with_index { |trwsp, k|
+								if trwsp['rowspan'] > 0
+									if !dom[trid]['endpage'].nil?
+										if trwsp['endpage'] == dom[trid]['endpage']
+											dom[table_el]['rowspans'][k]['endy'] = [dom[trid]['endy'], trwsp['endy']].max
+										elsif trwsp['endpage'] < dom[trid]['endpage']
+											dom[table_el]['rowspans'][k]['endy'] = dom[trid]['endy']
+											dom[table_el]['rowspans'][k]['endpage'] = dom[trid]['endpage']
+										else
+											dom[trid]['endy'] = @pagedim[dom[trid]['endpage']]['hk'] - @pagedim[dom[trid]['endpage']]['bm']
+										end
+									end
+								end
+							}
 						end
 						@x += (cellspacingx / 2)
 					else
 						# opening tag (or self-closing tag)
-						if !defined?(opentagpos) or opentagpos.nil?
-							opentagpos = @pages[@page].length
+						if opentagpos.nil?
+							if !@footerlen[@page].nil?
+								@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
+							else
+								@footerpos[@page] = @pagelen[@page]
+							end
+							opentagpos = @footerpos[@page]
 						end
 						openHTMLTagHandler(dom, key, cell)
 					end
@@ -4973,17 +5338,58 @@ class TCPDF
 					closeHTMLTagHandler(dom, key, cell)
 				end
 			elsif dom[key]['value'].length > 0
+				# print list-item
+				if !@lispacer.empty?
+					SetFont(pfontname, pfontstyle, pfontsize)
+					@lasth = @font_size * @cell_height_ratio
+					minstartliney = @y
+					putHtmlListBullet(@listnum, @lispacer, pfontsize)
+					SetFont(curfontname, curfontstyle, curfontsize)
+					@lasth = @font_size * @cell_height_ratio
+					if (pfontsize.is_a? Integer) and (pfontsize > 0) and (curfontsize.is_a? Integer) and (curfontsize > 0) and (pfontsize != curfontsize)
+						@y += (pfontsize - curfontsize) / @k
+						minstartliney = [@y, minstartliney].min
+					end
+				end
 				# text
-				if @href
+				@htmlvspace = 0
+				if !@premode and (@rtl or @tmprtl)
+					# reverse spaces order
+					len1 = dom[key]['value'].length
+					lsp = len1 - dom[key]['value'].lstrip.length
+					rsp = len1 - dom[key]['value'].rstrip.length
+					tmpstr = ''
+					if rsp > 0
+						tmpstr << dom[key]['value'][-rsp..-1]
+					end
+					tmpstr << (dom[key]['value']).strip
+					if lsp > 0
+						tmpstr << dom[key]['value'][0, lsp]
+					end
+					dom[key]['value'] = tmpstr
+				end
+				if newline
+					if !@premode
+						if @rtl or @tmprtl
+							dom[key]['value'] = dom[key]['value'].rstrip
+						else
+							dom[key]['value'] = dom[key]['value'].lstrip
+						end
+					end
+					newline = false
+					firstblock = true
+				else
+					firstblock = false
+				end
+				strrest = ''
+				if !@href.empty?
 					# HTML <a> Link
-					strrest = addHtmlLink(@href, dom[key]['value'], wfill, true)
+					strrest = addHtmlLink(@href['url'], dom[key]['value'], wfill, true, @href['color'], @href['style'])
 				else
 					ctmpmargin = @c_margin
-					if !cell
-						@c_margin = 0
-					end
-					# write only the first line and get the rest
-					strrest = Write(@lasth, dom[key]['value'], '', wfill, "", false, 0, true)
+					@c_margin = 0
+					# ****** write only until the end of the line and get the rest ******
+					strrest = Write(@lasth, dom[key]['value'], '', wfill, '', false, 0, true, firstblock)
 					@c_margin = ctmpmargin
 				end
 				if !strrest.nil? and strrest.length > 0
@@ -4996,36 +5402,59 @@ class TCPDF
 							@x += @c_margin
 						end
 					end
-					dom[key]['value'] = strrest.strip
-					key -= 1
+					if strrest == dom[key]['value']
+						# used to avoid infinite loop
+						loop += 1
+					else
+						loop = 0
+					end
+					dom[key]['value'] = strrest.lstrip
+					if loop < 3
+						key -= 1
+					end
+				else
+					loop = 0
 				end
 			end
 			key += 1
 		end # end for each :key
 		# align the last line
-		if defined?(startlinex)
-			if !plalign.nil? and (((plalign == 'C') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl)))
+		if !startlinex.nil?
+			yshift = minstartliney - startliney
+			if (yshift > 0) or (@page > startlinepage)
+				yshift = 0
+			end
+			if (!plalign.nil? and (((plalign == 'C') or (plalign == 'J') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl)))) or (yshift < 0)
 				# the last line must be shifted to be aligned as requested
 				linew = (@endlinex - startlinex).abs
-				pstart = @pages[startlinepage][0, startlinepos]
-				if defined?(opentagpos) and !@footerpos[startlinepage].nil?
+				pstart = getPageBuffer(startlinepage)[0, startlinepos]
+				if !opentagpos.nil? and !@footerlen[startlinepage].nil?
+					@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
 					midpos = [opentagpos, @footerpos[startlinepage]].min
-				elsif defined?(opentagpos)
+				elsif !opentagpos.nil?
 					midpos = opentagpos
-				elsif !@footerpos[startlinepage].nil?
+				elsif !@footerlen[startlinepage].nil?
+					@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
 					midpos = @footerpos[startlinepage]
 				else
 					midpos = 0
 				end
 				if midpos > 0
-					pmid = @pages[startlinepage][startlinepos..(midpos - startlinepos + 1)]
-					pend = @pages[startlinepage][midpos..-1]
+					pmid = getPageBuffer(startlinepage)[startlinepos, midpos - startlinepos]
+					pend = getPageBuffer(startlinepage)[midpos..-1]
 				else
-					pmid = @pages[startlinepage][startlinepos..-1]
+					pmid = getPageBuffer(startlinepage)[startlinepos..-1]
 					pend = ""
 				end
 				# calculate shifting amount
-				mdiff = (w - linew - @c_margin).abs
+				tw = w
+				if @l_margin != prevlMargin
+					tw += prevlMargin - @l_margin
+				end
+				if @r_margin != prevrMargin
+					tw += prevrMargin - @r_margin
+				end
+				mdiff = (tw - linew).abs
 				if plalign == 'C'
 					if @rtl
 						t_x = -(mdiff / 2)
@@ -5038,19 +5467,37 @@ class TCPDF
 				elsif (plalign == 'L') and @rtl
 					# left alignment on RTL document
 					t_x = -mdiff
+				else
+					t_x = 0
 				end
-				# shift the line
-				trx = sprintf('1 0 0 1 %.3f 0 cm', t_x * @k)
-				@pages[startlinepage] = pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n" + pend
+				if (t_x != 0) or (yshift < 0)
+					# shift the line
+					trx = sprintf('1 0 0 1 %.3f %.3f cm', t_x * @k, yshift * @k)
+					setPageBuffer(startlinepage, pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n" + pend)
+					endlinepos = (pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n").length
+
+					# shift the annotations and links
+					if !@page_annots[@page].nil?
+						@page_annots[@page].each_with_index { |pac, pak|
+							if pak >= pask
+								@page_annots[@page][pak]['x'] += t_x
+								@page_annots[@page][pak]['y'] -= yshift
+							end
+						}
+					end
+					@y -= yshift
+				end
 			end
 		end
 		if ln and !(cell and (dom[key-1]['value'] == 'table'))
 			Ln(@lasth)
 		end
 		# restore previous values
-		SetFont(prevFontFamily, prevFontStyle, prevFontSizePt)
-		SetFillColorArray(prevbgcolor)
-		SetTextColorArray(prevfgcolor)
+		setGraphicVars(gvars)
+		if @page > prevPage
+			@l_margin = @pagedim[@page]['olm']
+			@r_margin = @pagedim[@page]['orm']
+		end
 		dom = nil
 	end
   alias_method :write_html, :writeHTML
@@ -5704,125 +6151,255 @@ class TCPDF
 	# @access protected
 	#
 	def closeHTMLTagHandler(dom, key, cell=false)
-		tag = dom[key]
-		parent = dom[(dom[key]['parent'])]
+		tag = dom[key].dup
+		parent = dom[(dom[key]['parent'])].dup
+		firstorlast = dom[key + 1].nil? or (dom[key + 2].nil? and (dom[key + 1]['value'] == 'marker'))
 		# Closing tag
 		case (tag['value'])
-			when 'table'
-				if !parent['cellpadding'].nil?
-					@c_margin = @old_c_margin
-				end
-			when 'td','th'
 			when 'tr'
-				# draw borders
-				table_el = dom[(dom[(dom[key]['parent'])]['parent'])]
-				if (!table_el['attribute']['border'].nil? and (table_el['attribute']['border'] > 0)) or (table_el['style']['border'].nil? and (table_el['style']['border'] > 0))
-					border = 1
+				table_el = dom[(dom[key]['parent'])]['parent']
+				if parent['endy'].nil?
+					dom[(dom[key]['parent'])]['endy'] = @y
+					parent['endy'] = @y
 				end
-				@y = parent['starty']
-				restspace = GetPageHeight() - @y - GetBreakMargin()
-				startpage = parent['startpage']
-				endpage = parent['endpage']
-				# for each cell on the row
-				parent['cellpos'].each_with_index { |cellpos, k |
-					if !cellpos['rowspanid'].nil?
-						cellpos['startx'] = table_el['rowspans'][(cellpos['rowspanid'])]['startx']
-						cellpos['endx'] = table_el['rowspans'][(cellpos['rowspanid'])]['endx']
-						endy = table_el['rowspans'][(cellpos['rowspanid'])]['endy']
-						startpage = table_el['rowspans'][(cellpos['rowspanid'])]['startpage']
-						endpage = table_el['rowspans'][(cellpos['rowspanid'])]['endpage']
-					else
-						endy = parent['endy']
-					end
-					if endpage > startpage
-						# design borders around HTML cells.
-						startpage.upto(endpage) do |page|
-							@page = page
-							if page == startpage
-								@y = GetPageHeight() - restspace - GetBreakMargin()
-								ch = restspace
-							elsif page == endpage
-								@y = @t_margin # put cursor at the beginning of text
-								ch = endy - @t_margin
-							else
-								@y = @t_margin # put cursor at the beginning of text
-								ch = GetPageHeight() - @t_margin - GetBreakMargin()
+				if parent['endpage'].nil?
+					dom[(dom[key]['parent'])]['endpage'] = @page
+					parent['endpage'] = @page
+				end
+				# update row-spanned cells
+				if !dom[table_el]['rowspans'].nil?
+					dom[table_el]['rowspans'].each_with_index { |trwsp, k|
+						dom[table_el]['rowspans'][k]['rowspan'] -= 1
+						if dom[table_el]['rowspans'][k]['rowspan'] == 0
+							if dom[table_el]['rowspans'][k]['endpage'] == parent['endpage']
+								dom[(dom[key]['parent'])]['endy'] = [dom[table_el]['rowspans'][k]['endy'], parent['endy']].max
+							elsif dom[table_el]['rowspans'][k]['endpage'] > parent['endpage']
+								dom[(dom[key]['parent'])]['endy'] = dom[table_el]['rowspans'][k]['endy']
+								dom[(dom[key]['parent'])]['endpage'] = dom[table_el]['rowspans'][k]['endpage']
 							end
-
-							if !cellpos['bgcolor'].nil? and (cellpos['bgcolor'] != false )
-								SetFillColorArray(cellpos['bgcolor'])
-								fill = true
-							else
-								fill = false
-							end
-							cw = (cellpos['endx'] - cellpos['startx']).abs
-							@x = cellpos['startx'];
-							# design a cell around the text
-							ccode = @fill_color + "\n" + getCellCode(cw, ch, "", border, 1, '', fill)
-							pstart = substr(@pages[@page], 0, @intmrk[@page])
-							pend = substr(@pages[@page], @intmrk[@page])
-							@pages[@page] = pstart + ccode + "\n" + pend
-							@intmrk[@page] += strlen(ccode + "\n")
 						end
-					else
-						ch = endy - parent['starty']
-						if cellpos['bgcolor'].nil? and (cellpos['bgcolor'] != false)
-							SetFillColorArray(cellpos['bgcolor'])
-							fill = true
-						else
-							fill = false
+					}
+					# report new endy and endpage to the rowspanned cells
+					dom[table_el]['rowspans'].each_with_index { |trwsp, k|
+						if dom[table_el]['rowspans'][k]['rowspan'] == 0
+							dom[table_el]['rowspans'][k]['endpage'] = [dom[table_el]['rowspans'][k]['endpage'], dom[(dom[key]['parent'])]['endpage']].max
+							dom[(dom[key]['parent'])]['endpage'] = dom[table_el]['rowspans'][k]['endpage']
+							dom[table_el]['rowspans'][k]['endy'] = [dom[table_el]['rowspans'][k]['endy'], dom[(dom[key]['parent'])]['endy']].max
+							dom[(dom[key]['parent'])]['endy'] = dom[table_el]['rowspans'][k]['endy']
 						end
-						cw = (cellpos['endx'] - cellpos['startx']).abs
-						@x = cellpos['startx']
-						@y = parent['starty']
-						# design a cell around the text
-						ccode = @fill_color + "\n" + getCellCode(cw, ch, "", border, 1, '', fill)
-						pstart = substr(@pages[@page], 0, @intmrk[@page])
-						pend = substr(@pages[@page], @intmrk[@page])
-						@pages[@page] = pstart + ccode + "\n" + pend
-						@intmrk[@page] += strlen(ccode + "\n")
-					end
-				}                                       
-				if table_el['attribute']['cellspacing']
-					cellspacing = pixelsToUnits(table_el['attribute']['cellspacing'])
+					}
+				end
+				SetPage(parent['endpage'])
+				@y = parent['endy']
+				if !dom[table_el]['attribute']['cellspacing'].nil?
+					cellspacing = getHTMLUnitToUnits(dom[table_el]['attribute']['cellspacing'], 1, 'px')
 					@y += cellspacing
 				end
 				Ln(0, cell)
 				@x = parent['startx']
-			when 'u'
-				SetStyle('u', false)
-			when 'del'
-				SetStyle('d', false)
+				# account for booklet mode
+				if @page > parent['startpage']
+					if @rtl and (@pagedim[@page]['orm'] != @pagedim[parent['startpage']]['orm'])
+						@x += @pagedim[@page]['orm'] - @pagedim[parent['startpage']]['orm']
+					elsif !@rtl and (@pagedim[@page]['olm'] != @pagedim[parent['startpage']]['olm'])
+						@x += @pagedim[@page]['olm'] - @pagedim[parent['startpage']]['olm']
+					end
+				end
+			when 'table'
+				# draw borders
+				table_el = parent
+				if (!table_el['attribute']['border'].nil? and (table_el['attribute']['border'].to_i > 0)) or (!table_el['style'].nil? and !table_el['style']['border'].nil? and (table_el['style']['border'].to_i > 0))
+					border = 1
+				else
+					border = 0
+				end
+
+				startpage = 0
+				end_page = 0
+				# fix bottom line alignment of last line before page break
+				dom[(dom[key]['parent'])]['trids'].each_with_index { |trkey, j|
+					# update row-spanned cells
+					if !dom[(dom[key]['parent'])]['rowspans'].nil?
+						dom[(dom[key]['parent'])]['rowspans'].each_with_index { |trwsp, k|
+							if trwsp['trid'] == trkey
+								dom[(dom[key]['parent'])]['rowspans'][k]['mrowspan'] -= 1
+							end
+							if defined?(prevtrkey) and (trwsp['trid'] == prevtrkey) and (trwsp['mrowspan'] >= 0)
+								dom[(dom[key]['parent'])]['rowspans'][k]['trid'] = trkey
+							end
+						}
+					end
+					if defined?(prevtrkey) and (dom[trkey]['startpage'] > dom[prevtrkey]['endpage'])
+						pgendy = @pagedim[dom[prevtrkey]['endpage']]['hk'] - @pagedim[dom[prevtrkey]['endpage']]['bm']
+						dom[prevtrkey]['endy'] = pgendy
+						# update row-spanned cells
+						if !dom[(dom[key]['parent'])]['rowspans'].nil?
+							dom[(dom[key]['parent'])]['rowspans'].each_with_index { |trwsp, k|
+								if (trwsp['trid'] == trkey) and (trwsp['mrowspan'] == 1) and (trwsp['endpage'] == dom[prevtrkey]['endpage'])
+									dom[(dom[key]['parent'])]['rowspans'][k]['endy'] = pgendy
+									dom[(dom[key]['parent'])]['rowspans'][k]['mrowspan'] = -1
+								end
+							}
+						end
+					end
+					prevtrkey = trkey
+					table_el = dom[(dom[key]['parent'])].dup
+				}
+				# for each row
+				table_el['trids'].each_with_index { |trkey, j|
+					parent = dom[trkey]
+					# for each cell on the row
+					parent['cellpos'].each_with_index { |cellpos, k|
+						if !cellpos['rowspanid'].nil? and (cellpos['rowspanid'] >= 0)
+							cellpos['startx'] = table_el['rowspans'][(cellpos['rowspanid'])]['startx']
+							cellpos['endx'] = table_el['rowspans'][(cellpos['rowspanid'])]['endx']
+							endy = table_el['rowspans'][(cellpos['rowspanid'])]['endy']
+							startpage = table_el['rowspans'][(cellpos['rowspanid'])]['startpage']
+							end_page = table_el['rowspans'][(cellpos['rowspanid'])]['endpage']
+						else
+							endy = parent['endy']
+							startpage = parent['startpage']
+							end_page = parent['endpage']
+						end
+						if end_page > startpage
+							# design borders around HTML cells.
+							startpage.upto(end_page) do |page|
+								SetPage(page)
+								if page == startpage
+									@y = parent['starty'] # put cursor at the beginning of row on the first page
+									ch = GetPageHeight() - parent['starty'] - GetBreakMargin()
+									cborder = getBorderMode(border, position='start')
+								elsif page == end_page
+									@y = @t_margin # put cursor at the beginning of last page
+									ch = endy - @t_margin
+									cborder = getBorderMode(border, position='end')
+								else
+									@y = @t_margin # put cursor at the beginning of the current page
+									ch = GetPageHeight() - @t_margin - GetBreakMargin()
+									cborder = getBorderMode(border, position='middle')
+								end
+								if !cellpos['bgcolor'].nil? and (cellpos['bgcolor'] != false)
+									SetFillColorArray(cellpos['bgcolor'])
+									fill = 1
+								else
+									fill = 0
+								end
+								cw = (cellpos['endx'] - cellpos['startx']).abs
+								@x = cellpos['startx']
+								# account for margin changes
+								if page > startpage
+									if @rtl and (@pagedim[page]['orm'] != @pagedim[startpage]['orm'])
+										@x -= @pagedim[page]['orm'] - @pagedim[startpage]['orm']
+									elsif !@rtl and (@pagedim[page]['lm'] != @pagedim[startpage]['olm'])
+										@x += @pagedim[page]['olm'] - @pagedim[startpage]['olm']
+									end
+								end
+								# design a cell around the text
+								ccode = @fill_color + "\n" + getCellCode(cw, ch, '', cborder, 1, '', fill)
+								if (cborder != 0) or (fill == 1)
+									pstart = getPageBuffer(@page)[0, @intmrk[@page]]
+									pend = getPageBuffer(@page)[@intmrk[@page]..-1]
+									setPageBuffer(@page, pstart + ccode + "\n" + pend)
+									@intmrk[@page] += (ccode + "\n").length
+								end
+							end
+						else
+							SetPage(startpage)
+							ch = endy - parent['starty']
+							if !cellpos['bgcolor'].nil? and (cellpos['bgcolor'] != false)
+								SetFillColorArray(cellpos['bgcolor'])
+								fill = 1
+							else
+								fill = 0
+							end
+							cw = (cellpos['endx'] - cellpos['startx']).abs
+							@x = cellpos['startx']
+							@y = parent['starty']
+							# design a cell around the text
+							ccode = @fill_color + "\n" + getCellCode(cw, ch, '', border, 1, '', fill)
+							if (border != 0) or (fill == 1)
+								if !@transfmrk[@page].nil?
+									pagemark = @transfmrk[@page]
+									@transfmrk[@page] += (ccode + "\n").length
+								elsif @in_footer
+									pagemark = @footerpos[@page]
+									@footerpos[@page] += (ccode + "\n").length
+								else
+									pagemark = @intmrk[@page]
+									@intmrk[@page] += (ccode + "\n").length
+								end
+								pstart = getPageBuffer(@page)[0, pagemark]
+								pend = getPageBuffer(@page)[pagemark..-1]
+								setPageBuffer(@page, pstart + ccode + "\n" + pend)
+							end
+						end
+					}                                       
+					if !table_el['attribute']['cellspacing'].nil?
+						cellspacing = getHTMLUnitToUnits(table_el['attribute']['cellspacing'], 1, 'px')
+						@y += cellspacing
+					end
+					Ln(0, cell)
+					@x = parent['startx']
+					if end_page > startpage
+						if @rtl and (@pagedim[end_page]['orm'] != @pagedim[startpage]['orm'])
+							@x += @pagedim[end_page]['orm'] - @pagedim[startpage]['orm']
+						elsif !@rtl and (@pagedim[end_page]['olm'] != @pagedim[startpage]['olm'])
+							@x += @pagedim[end_page]['olm'] - @pagedim[startpage]['olm']
+						end
+					end
+				}
+				if !parent['cellpadding'].nil?
+					@c_margin = @old_c_margin
+				end
+				@lasth = @font_size * @cell_height_ratio
+				if !table_el['thead'].empty? and !@thead_margin.nil?
+					# reset table header
+					@thead = ''
+					# restore top margin
+					@t_margin = @thead_margin
+					@pagedim[@page]['tm'] = @thead_margin
+					@thead_margin = nil
+				end
 			when 'a'
 				@href = {}
 			when 'sup'
-				SetXY(GetX(), GetY() + ((@font_size_pt - parent['fontsize']) / @k))
+				SetXY(GetX(), GetY() + (0.7 * parent['fontsize'] / @k))
 			when 'sub'
-				SetXY(GetX(), GetY() - ((@font_size_pt - 0.5 * parent['fontsize']) / @k))
-			when 'small'
-				SetXY(GetX(), GetY() - ((@font_size_pt - parent['fontsize']) / @k))
+				SetXY(GetX(), GetY() - (0.3 * parent['fontsize'] / @k))
+			when 'div'
+				addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], true)
+			when 'blockquote'
+				if @rtl
+					@r_margin -= @listindent
+				else
+					@l_margin -= @listindent
+				end
+				addHTMLVertSpace(2, cell, '', firstorlast, tag['value'], true)
 			when 'p'
-				Ln('', cell)
-				Ln('', cell)
+				addHTMLVertSpace(2, cell, '', firstorlast, tag['value'], true)
+			when 'pre'
+				addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], true)
+				@premode = false
 			when 'dl'
 				@listnum -= 1
 				if @listnum <= 0
 					@listnum = 0
-					Ln('', cell)
-					Ln('', cell)
+					addHTMLVertSpace(2, cell, '', firstorlast, tag['value'], true)
 				end
 			when 'dt'
-				@lispacer = ""
+				@lispacer = ''
+				addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], true)
 			when 'dd'
-				@lispacer = ""
+				@lispacer = ''
 				if @rtl
 					@r_margin -= @listindent
 				else
 					@l_margin -= @listindent
 				end
+				addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], true)
 			when 'ul', 'ol'
 				@listnum -= 1
-				@lispacer = ""
+				@lispacer = ''
 				if @rtl
 					@r_margin -= @listindent
 				else
@@ -5830,13 +6407,14 @@ class TCPDF
 				end
 				if @listnum <= 0
 					@listnum = 0
-					Ln('', cell)
-					Ln('', cell)
+					addHTMLVertSpace(2, cell, '', firstorlast, tag['value'], true)
 				end
+				@lasth = @font_size * @cell_height_ratio
 			when 'li'
-				@lispacer = ""
+				@lispacer = ''
+				addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], true)
 			when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
-				Ln((parent['fontsize'] * 1.5) / @k, cell)
+				addHTMLVertSpace(1, cell, (parent['fontsize'] * 1.5) / @k, firstorlast, tag['value'], true)
 		end
 		@tmprtl = false
 	end
