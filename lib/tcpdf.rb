@@ -6550,6 +6550,95 @@ class TCPDF
 	end
 
 	#
+	# Output an HTML list bullet or ordered item symbol
+	# @param int :listdepth list nesting level
+	# @param string :listtype type of list
+	# @param float :size current font size
+	# @access protected
+	# @since 4.4.004 (2008-12-10)
+	#
+	def putHtmlListBullet(listdepth, listtype='', size=10)
+		size /= @k
+		fill = ''
+		color = @fgcolor
+		width = 0
+		textitem = ''
+		tmpx = @x           
+		lspace = GetStringWidth('  ')
+		if listtype == '!'
+			# set default list type for unordered list
+			deftypes = ['disc', 'circle', 'square']
+			listtype = deftypes[(listdepth - 1) % 3]
+		elsif listtype == '#'
+			# set default list type for ordered list
+			listtype = 'decimal'
+		end
+		case listtype
+			# unordered types
+		when 'none'
+		when 'disc', 'circle'
+			fill = 'F' if listtype == 'disc'
+			fill << 'D'
+			r = size / 6
+			lspace += 2 * r
+			if @rtl
+				@x += lspace
+			else
+				@x -= lspace
+			end
+			Circle(@x + r, @y + @lasth / 2, r, 0, 360, fill, {'color'=>color}, color, 8)
+		when 'square'
+			l = size / 3
+			lspace += l
+			if @rtl
+				@x += lspace
+			else
+				@x -= lspace
+			end
+			Rect(@x, @y + (@lasth - l)/ 2, l, l, 'F', {}, color)
+
+		# ordered types
+                                
+		# listcount[@listnum]
+		# textitem
+		when '1', 'decimal'
+			textitem = @listcount[@listnum].to_s
+		when 'decimal-leading-zero'
+			textitem = sprintf("%02d", @listcount[@listnum])
+		when 'i', 'lower-roman'
+			textitem = (intToRoman(@listcount[@listnum])).downcase
+		when 'I', 'upper-roman'
+			textitem = intToRoman(@listcount[@listnum])
+		when 'a', 'lower-alpha', 'lower-latin'
+			textitem = (97 + @listcount[@listnum] - 1).chr
+		when 'A', 'upper-alpha', 'upper-latin'
+			textitem = (65 + @listcount[@listnum] - 1).chr
+		when 'lower-greek'
+			textitem = unichr(945 + @listcount[@listnum] - 1)
+		else
+			textitem = @listcount[@listnum].to_s
+		end
+
+		if !textitem.empty?
+			# print ordered item
+			if @rtl
+				textitem = '.' + textitem
+			else
+				textitem = textitem + '.'
+			end
+			lspace += GetStringWidth(textitem)
+			if @rtl
+				@x += lspace
+			else
+				@x -= lspace
+			end
+			Write(@lasth, textitem, '', false, '', false, 0, false)
+		end
+		@x = tmpx
+		@lispacer = ''
+	end
+
+	#
 	# Returns current graphic variables as array.
 	# @return array graphic variables
 	# @access protected
