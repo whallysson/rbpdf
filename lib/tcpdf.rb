@@ -6766,19 +6766,38 @@ class TCPDF
 	
 	#
 	# Output anchor link.
-	# @param string :url link URL
+	# @param string :url link URL or internal link (i.e.: <a href="#23">link to page 23</a>)
 	# @param string :name link name
 	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
 	# @param boolean :firstline if true prints only the first line and return the remaining string.
+	# @param array :color array of RGB text color
+	# @param string :style font style (U, D, B, I)
 	# @return the number of cells used or the remaining text if :firstline = true
 	# @access public
 	#
-	def addHtmlLink(url, name, fill=0, firstline=false)
+	def addHtmlLink(url, name, fill=0, firstline=false, color='', style=-1)
+		if !url.empty? and (url[0, 1] == '#')
+			# convert url to internal link
+			page = url.sub(/^#/, "").to_i
+			url = AddLink()
+			SetLink(url, 0, page)
+		end
+		# store current settings
 		prevcolor = @fgcolor
-		SetTextColor(0, 0, 255)
-		SetStyle('u', true);
+		prevstyle = @font_style
+		if color.empty?
+			SetTextColorArray(@html_link_color_array)
+		else
+			SetTextColorArray(color)
+		end
+		if style == -1
+			SetFont('', @font_style + @html_link_font_style)
+		else
+			SetFont('', @font_style + style)
+		end
 		ret = Write(@lasth, name, url, fill, '', false, 0, firstline)
-		SetStyle('u', false);
+		# restore settings
+		SetFont('', prevstyle)
 		SetTextColorArray(prevcolor)
 		return ret
 	end
