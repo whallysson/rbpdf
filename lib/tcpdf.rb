@@ -501,6 +501,7 @@ class TCPDF
 	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
 	# @param boolean :autopagebreak Boolean indicating if auto-page-break mode should be on or off.
 	# @param float :bottommargin bottom margin of the page.
+	# @access public
 	# @since 3.0.015 (2008-06-06)
 	#
 	def setPageOrientation(orientation, autopagebreak='', bottommargin='')
@@ -518,7 +519,6 @@ class TCPDF
 		end
 		@w = @w_pt / @k
 		@h = @h_pt / @k
-		@pagedim[@page] = [@w_pt, @h_pt]
 		if autopagebreak == ''
 			unless @auto_page_break.nil?
 				autopagebreak = @auto_page_break
@@ -535,6 +535,8 @@ class TCPDF
 			end
 		end
 		SetAutoPageBreak(autopagebreak, bottommargin)
+		# store page dimensions
+		@pagedim[@page] = {'w' => @w_pt, 'h' => @h_pt, 'wk' => @w, 'hk' => @h, 'tm' => @t_margin, 'bm' => bottommargin, 'lm' => @l_margin, 'rm' => @r_margin, 'pb' => autopagebreak, 'or' => @cur_orientation, 'olm' => @original_l_margin, 'orm' => @original_r_margin}
 	end
 
 	#
@@ -3651,7 +3653,7 @@ class TCPDF
 			newobj
 			out('<</Type /Page')
 			out('/Parent 1 0 R')
-			out(sprintf('/MediaBox [0 0 %.2f %.2f]', @pagedim[n][0], @pagedim[n][1]))
+			out(sprintf('/MediaBox [0 0 %.2f %.2f]', @pagedim[n]['w'], @pagedim[n]['h']))
 			out('/Resources 2 0 R')
 			if @page_links[n]
 				#Links
@@ -3663,7 +3665,7 @@ class TCPDF
 						annots<<'/A <</S /URI /URI (' + escape(pl[4]) + ')>>>>';
 					else
 						l=@links[pl[4]];
-						h = @pagedim[l[0]][1]
+						h = @pagedim[l[0]]['h']
 						annots<<sprintf('/Dest [%d 0 R /XYZ 0 %.2f null]>>',1+2*l[0], h-l[1]*@k);
 					end
 				end
@@ -3688,7 +3690,7 @@ class TCPDF
 		end
 		out(kids + ']');
 		out('/Count ' + nb.to_s);
-		# out(sprintf('/MediaBox [0 0 %.2f %.2f]', @pagedim[0][0], @pagedim[0][1]))
+		# out(sprintf('/MediaBox [0 0 %.2f %.2f]', @pagedim[0]['w'], @pagedim[0]['h']))
 		out('>>');
 		out('endobj');
 	end
