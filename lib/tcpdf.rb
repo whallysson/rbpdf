@@ -4958,6 +4958,35 @@ class TCPDF
 	end
 
 	#
+	# Converts UTF-8 strings to Latin1 when using the standard 14 core fonts.<br>
+	# @param string :str string to process.
+	# @return string
+	# @author Andrew Whitehead, Nicola Asuni
+	# @access protected
+	# @since 3.2.000 (2008-06-23)
+	#
+	def UTF8ToLatin1(str)
+		if !@is_unicode
+			return str # string is not in unicode
+		end
+		outstr = '' # string to be returned
+		unicode = UTF8StringToArray(str) # array containing UTF-8 unicode values
+		unicode.each {|char|
+			if char < 256
+				outstr << char.chr
+			elsif @@utf8tolatin.key?(char)
+				# map from UTF-8
+				outstr << @@utf8tolatin[char].chr
+			elsif char == 0xFFFD
+				# skip
+			else
+				outstr << '?'
+			end
+		}
+		return outstr
+	end
+
+	#
 	# Converts array of UTF-8 characters to UTF16-BE string.<br>
 	# Based on: http://www.faqs.org/rfcs/rfc2781.html
  	# <pre>
