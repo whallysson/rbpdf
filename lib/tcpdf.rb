@@ -1676,25 +1676,42 @@ class TCPDF
 	# Returns the length of a string in user unit. A font must be selected.<br>
 	# Support UTF-8 Unicode [Nicola Asuni, 2005-01-02]
 	# @param string :s The string whose length is to be computed
+	# @param string :fontname Family font. It can be either a name defined by AddFont() or one of the standard families. It is also possible to pass an empty string, in that case, the current family is retained.
+	# @param string :fontstyle Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li></ul> or any combination. The default value is regular.
+	# @param float :fontsize Font size in points. The default value is the current size.
 	# @return int
 	# @since 1.2
 	#
-	def GetStringWidth(s)
-		return GetArrStringWidth(utf8Bidi(UTF8StringToArray(s), @tmprtl))
+	def GetStringWidth(s, fontname='', fontstyle='', fontsize=0)
+		return GetArrStringWidth(utf8Bidi(UTF8StringToArray(s), @tmprtl), fontname, fontstyle, fontsize)
 	end
   alias_method :get_string_width, :GetStringWidth
 
 	#
 	# Returns the string length of an array of chars in user unit. A font must be selected.<br>
 	# @param string :arr The array of chars whose total length is to be computed
+	# @param string :fontname Family font. It can be either a name defined by AddFont() or one of the standard families. It is also possible to pass an empty string, in that case, the current family is retained.
+	# @param string :fontstyle Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li></ul> or any combination. The default value is regular.
+	# @param float :fontsize Font size in points. The default value is the current size.
 	# @return int string length
 	# @author Nicola Asuni
 	# @since 2.4.000 (2008-03-06)
 	#
-	def GetArrStringWidth(sa)
+	def GetArrStringWidth(sa, fontname='', fontstyle='', fontsize=0)
+		# store current values
+		if !fontname.empty?
+			prev_FontFamily = @font_family
+			prev_FontStyle = @font_style
+			prev_FontSizePt = @font_size_pt
+			SetFont(fontname, fontstyle, fontsize)
+		end
 		w = 0
 		sa.each do |char|
 			w += GetCharWidth(char)
+		end
+		# restore previous values
+		if !fontname.empty?
+			SetFont(prev_FontFamily, prev_FontStyle, prev_FontSizePt)
 		end
 		return w
 	end
@@ -1704,21 +1721,25 @@ class TCPDF
 	# @param string :char The char whose length is to be returned
 	# @return int char width
 	# @author Nicola Asuni
+	# @access public
 	# @since 2.4.000 (2008-03-06)
 	#
 	def GetCharWidth(char)
+		if char == 173
+			# SHY character will not be printed
+			return 0
+		end
 		cw = @current_font['cw']
 		if !cw[char].nil?
 			w = cw[char]
-		# This should not happen. UTF8StringToArray should guarentee the array is ascii values.
-		#elsif !cw[char[0]].nil?
-		#	w = cw[char[0]]
-		#elsif !cw[char.chr].nil?
-		#	w = cw[char.chr]
-		elsif !@current_font['desc'].nil? and !@current_font['desc']['MissingWidth'].nil?
-			w = @current_font['desc']['MissingWidth'] # set default size
+		elsif !@current_font['dw'].nil?
+			# default width
+			w = @current_font['dw']
+		elsif !cw[32].nil?
+			# default width
+			w = cw[32]
 		else
-			w = 500
+			w = 600
 		end
 		return (w * @font_size / 1000.0)
 	end
