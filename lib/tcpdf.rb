@@ -4666,8 +4666,23 @@ class TCPDF
     return a[0]
 	end
 
+ 	#
+	# Format a date string for meta information
+	# @param string :s date string to escape.
+	# @return string escaped string.
+	# @access protected
 	#
-	# Format a text string
+	def datastring(s)
+		#if @encrypted
+		#	s = RC4(@objectkey(@n), s)
+		#end
+		return '(' + escape(s) + ')'
+	end
+
+	#
+	# Format a text string for meta information
+	# @param string :s string to escape.
+	# @return string escaped string.
 	# @access protected
 	#
 	def textstring(s)
@@ -4675,7 +4690,7 @@ class TCPDF
 			#Convert string to UTF-16BE
 			s = UTF8ToUTF16BE(s, true);
 		end
-		return '(' +  escape(s) + ')';
+		return datastring(s)
 	end
 
 	#
