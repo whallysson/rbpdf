@@ -3759,6 +3759,267 @@ class TCPDF
 	end
 
 	#
+	# Output Page Annotations.
+	# !!! THIS FUNCTION IS NOT YET COMPLETED !!!
+	# See section 8.4 of PDF reference.
+	# @param int :n page number
+	# @access protected
+	# @author Nicola Asuni
+	# @since 4.0.018 (2008-08-06)
+	#
+	def putannots(n)
+		if !@page_annots[n].nil?
+			annots = '/Annots ['
+			@page_annots[n].each_with_index { |pl, key|
+				pl['opt'] = pl['opt'].inject({}) do |pl_opt, keys|
+					pl_opt[keys[0].downcase] = keys[1]
+					pl_opt
+				end
+				a = pl['x'] * @k
+				b = @pagedim[n]['h'] - (pl['y']  * @k)
+				c = pl['w'] * @k
+				d = pl['h'] * @k
+				rect = sprintf('%.2f %.2f %.2f %.2f', a, b, a + c, b - d)
+				annots << "\n"
+				annots << '<</Type /Annot'
+				annots << ' /Subtype /' + pl['opt']['subtype']
+				annots << ' /Rect [' + rect + ']'
+				annots << ' /Contents ' + textstring(pl['txt'])
+				# annots << ' /P '
+				annots << ' /NM ' + textstring(sprintf('%04u-%04u', n, key))
+				annots << ' /M ' + datastring('D:' + Time.now.strftime('%Y%m%d%H%M%S'))
+				if !pl['opt']['f'].nil?
+					val = 0
+					if pl['opt']['f'].is_a?(Array)
+						pl['opt']['f'].each {|f|
+							case f.downcase
+							when 'invisible'
+								val += 1 << 0
+							when 'hidden'
+								val += 1 << 1
+							when 'print'
+								val += 1 << 2
+							when 'nozoom'
+								val += 1 << 3
+							when 'norotate'
+								val += 1 << 4
+							when 'noview'
+								val += 1 << 5
+							when 'readonly'
+								val += 1 << 6
+							when 'locked'
+								val += 1 << 8
+							when 'togglenoview'
+								val += 1 << 9
+							when 'lockedcontents'
+								val += 1 << 10
+							end
+						}
+					end
+					annots << ' /F ' + val.to_i
+				end
+				# annots << ' /AP '
+				# annots << ' /AS '
+				annots << ' /Border ['
+				if !pl['opt']['border'].nil? and (pl['opt']['border'].length >= 3)
+					annots << pl['opt']['border'][0].to_i + ' '
+					annots << pl['opt']['border'][1].to_i + ' '
+					annots << pl['opt']['border'][2].to_i
+					if pl['opt']['border'][3].nil? and pl['opt']['border'][3].is_a?(Array)
+						annots << ' ['
+						pl['opt']['border'][3].each {|dash|
+							annots << dash.to_i + ' '
+						}
+						annots << ']'
+					end
+				else
+					annots << '0 0 0'
+				end
+				annots << ']'
+				if !pl['opt']['bs'].nil? and pl['opt']['bs'].is_a?(Hash)
+					annots << ' /BS <<Type /Border'
+					if !pl['opt']['bs']['w'].nil?
+						annots << ' /W '.sprintf("%.4f", pl['opt']['bs']['w'].to_f)
+					end
+					bstyles = ['S', 'D', 'B', 'I', 'U']
+					if !pl['opt']['bs']['s'].nil? and bstyles.include?(pl['opt']['bs']['s'])
+						annots << ' /S /' + pl['opt']['bs']['s']
+					end
+					if !pl['opt']['bs']['d'].nil? and pl['opt']['bs']['d'].is_a?(Array)
+						annots << ' /D ['
+						pl['opt']['bs']['d'].each {|cord|
+							cord = cord.to_f
+							annots << sprintf(" %.4f", cord)
+						}
+						annots << ']'
+					end
+					annots << '>> '
+				end
+				if !pl['opt']['be'].nil? and pl['opt']['be'].is_a?(Hash)
+					annots << ' /BE <<'
+					bstyles = ['S', 'C']
+					if !pl['opt']['be']['s'].nil? and markups.include?(pl['opt']['be']['s'])
+						annots << ' /S /' + pl['opt']['bs']['s']
+					else
+						annots << ' /S /S'
+					end
+					if !pl['opt']['be']['i'].nil? and (pl['opt']['be']['i'] >= 0) and (pl['opt']['be']['i'] <= 2)
+						annots << ' /I ' + sprintf(" %.4f", pl['opt']['be']['i'])
+					end
+					annots << '>>'
+				end
+				annots << ' /C ['
+				if !pl['opt']['c'].nil? and pl['opt']['c'].is_a?(Array)
+					pl['opt']['c'].each {|col|
+						col = col.to_i
+						color = col <= 0 ? 0 : (col >= 255 ? 1 : col / 255)
+						annots << sprintf(" %.4f", color)
+					}
+				end
+				annots << ']'
+				# annots << ' /StructParent '
+				# annots << ' /OC '
+				markups = ['text', 'freetext', 'line', 'square', 'circle', 'polygon', 'polyline', 'highlight',  'underline', 'squiggly', 'strikeout', 'stamp', 'caret', 'ink', 'fileattachment', 'sound']
+				if markups.include?(pl['opt']['subtype'].downcase)
+					# this is a markup type
+					if !pl['opt']['t'].nil? and pl['opt']['t'].is_a?(String)
+						annots << ' /T ' + textstring(pl['opt']['t'])
+					end
+					# annots .= ' /Popup '
+					if !pl['opt']['ca'].nil?
+						annots << ' /CA ' + sprintf("%.4f", pl['opt']['ca'].to_f)
+					end
+					if !pl['opt']['rc'].nil?
+						annots << ' /RC ' + textstring(pl['opt']['rc'])
+					end
+					annots << ' /CreationDate ' + datastring('D:' + Time.now.strftime('%Y%m%d%H%M%S'))
+					# annots << ' /IRT '
+					if !pl['opt']['subj'].nil?
+						annots << ' /Subj ' + textstring(pl['opt']['subj'])
+					end
+					# annots << ' /RT '
+					# annots << ' /IT '
+					# annots << ' /ExData '
+				end
+				case pl['opt']['subtype'].downcase
+				when 'text'
+					if !pl['opt']['open'].nil?
+						annots << ' /Open ' + (pl['opt']['open'].downcase == 'true' ? 'true' : 'false')
+					end
+					iconsapp = ['Comment', 'Help', 'Insert', 'Key', 'NewParagraph', 'Note', 'Paragraph']
+					if !pl['opt']['name'].nil? and iconsapp.include?(pl['opt']['name'])
+						annots << ' /Name /' + pl['opt']['name']
+					else
+						annots << ' /Name /Note'
+					end
+					statemodels = ['Marked', 'Review']
+					if !pl['opt']['statemodel'].nil? and statemodels.include?(pl['opt']['statemodel'])
+						annots << ' /StateModel /' + pl['opt']['statemodel']
+					else
+						pl['opt']['statemodel'] = 'Marked'
+						annots << ' /StateModel /' + pl['opt']['statemodel']
+					end
+					if pl['opt']['statemodel'] == 'Marked'
+						states = ['Accepted', 'Unmarked']
+					else
+						states = ['Accepted', 'Rejected', 'Cancelled', 'Completed', 'None']
+					end
+					if !pl['opt']['state'].nil? and states.include?(pl['opt']['state'])
+						annots << ' /State /' + pl['opt']['state']
+					else
+						if pl['opt']['statemodel'] == 'Marked'
+							annots << ' /State /Unmarked'
+						else
+							annots << ' /State /None'
+						end
+					end
+				when 'link'
+					if pl['txt'].is_a?(String)
+						# external URI link
+						annots << ' /A <</S /URI /URI ' + datastring(pl['txt']) + '>>'
+					else
+						# internal link
+						l = @links[pl['txt']]
+						annots << sprintf(' /Dest [%d 0 R /XYZ 0 %.2f null]', 1 + (2 * l[0]), @pagedim[l[0]]['h'] - (l[1] * @k))
+					end
+					hmodes = ['N', 'I', 'O', 'P']
+					if !pl['opt']['h'].nil? and hmodes.include?(pl['opt']['h'])
+						annots << ' /H /' + pl['opt']['h']
+					else
+						annots << ' /H /I'
+					end
+					# annots << ' /PA '
+					# annots << ' /Quadpoints '
+				when 'freetext'
+					annots << ' /DA ' + textstring(pl['txt'])
+					if !pl['opt']['q'].nil? and (pl['opt']['q'] >= 0) and (pl['opt']['q'] <= 2)
+						annots << ' /Q ' + pl['opt']['q'].to_i
+					end
+					if !pl['opt']['rc'].nil?
+						annots << ' /RC ' + textstring(pl['opt']['rc'])
+					end
+					if !pl['opt']['ds'].nil?
+						annots << ' /DS ' + textstring(pl['opt']['ds'])
+					end
+					if !['opt']['cl'].nil? and pl['opt']['cl'].is_a?(Array)
+						annots << ' /CL ['
+						pl['opt']['cl'].each {|cl|
+							annots << sprintf("%.4f ", cl * @k)
+						}
+						annots << ']'
+					end
+					tfit = ['FreeTextCallout', 'FreeTextTypeWriter']
+					if !pl['opt']['it'].nil? and tfit.include?(pl['opt']['it'])
+						annots << ' /IT ' + pl['opt']['it']
+					end
+					if !pl['opt']['rd'].nil? and pl['opt']['rd'].is_a?(Array)
+						l = pl['opt']['rd'][0] * @k
+						r = pl['opt']['rd'][1] * @k
+						t = pl['opt']['rd'][2] * @k
+						b = pl['opt']['rd'][3] * @k
+						annots << ' /RD [' + sprintf('%.2f %.2f %.2f %.2f', l, r, t, b) + ']'
+					end
+					# annots << ' /LE '
+				# ... to be completed ...
+				when 'fileattachment'
+					if pl['opt']['fs'].nil?
+						break
+					end
+					filename = File.basename(pl['opt']['fs'], ".*")
+					if !@embeddedfiles[filename]['n'].nil?
+						annots << ' /FS <</Type /Filespec /F ' + datastring(filename) + ' /EF <</F ' + @embeddedfiles[filename]['n'] + ' 0 R>> >>'
+						iconsapp = ['Graph', 'Paperclip', 'PushPin', 'Tag']
+						if !pl['opt']['name'].nil? and iconsapp.include?(pl['opt']['name'])
+							annots << ' /Name /' + pl['opt']['name']
+						else
+							annots << ' /Name /PushPin'
+						end	
+					end	
+				when 'sound'
+					if pl['opt']['sound'].nil?
+						break
+					end
+					filename = File.basename(pl['opt']['sound'], ".*")
+					if !@embeddedfiles[filename]['n'].nil?
+						# to be completed...
+						iconsapp = ['Speaker', 'Mic']
+						if !pl['opt']['name'].nil? and iconsapp.include?(pl['opt']['name'])
+							annots << ' /Name /' + pl['opt']['name']
+						else
+							annots << ' /Name /Speaker'
+						end
+					end
+				else
+				end
+
+				annots << '>>'
+			}
+			annots << "\n]"
+			out(annots)
+		end
+	end
+
+	#
 	# Adds fonts
 	# putfonts
 	# @access protected
