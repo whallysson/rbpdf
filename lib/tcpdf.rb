@@ -179,8 +179,6 @@ class TCPDF
 	
 	attr_accessor :page
 	
-	attr_accessor :page_links
-	
 	attr_accessor :pages
 	
 	attr_accessor :pdf_version
@@ -298,7 +296,6 @@ class TCPDF
 		@html_link_font_style ||= 'U'
 		@pagedim ||= []
 		@page_annots ||= []
-		@page_links ||= {}
 		@pages ||= []
   	@pdf_version ||= "1.3"
   	@print_header ||= false
@@ -3702,46 +3699,125 @@ class TCPDF
 	# @access protected
 	#
 	def putpages()
-		nb = GetNumPages()
-		if (@alias_nb_pages)
-			nbstr = UTF8ToUTF16BE(nb.to_s, false)
-			#Replace number of pages
-			1.upto(nb) do |n|
-				@pages[n].gsub!(@alias_nb_pages, nbstr)
+		nb = @numpages
+		if @alias_nb_pages
+			nbs = formatPageNumber(nb)
+			nbu = UTF8ToUTF16BE(nbs, false) # replacement for unicode font
+			alias_a = escape(@alias_nb_pages)
+			alias_au = escape('{' + @alias_nb_pages + '}')
+			if @is_unicode
+				alias_b = escape(UTF8ToLatin1(@alias_nb_pages))
+				alias_bu = escape(UTF8ToLatin1('{' + @alias_nb_pages + '}'))
+				alias_c = escape(utf8StrRev(@alias_nb_pages, false, @tmprtl))
+				alias_cu = escape(utf8StrRev('{' + @alias_nb_pages + '}', false, @tmprtl))
 			end
 		end
+		if @alias_num_page
+			alias_pa = escape(@alias_num_page)
+			alias_pau = escape('{' + @alias_num_page + '}')
+			if @is_unicode
+				alias_pb = escape(UTF8ToLatin1(@alias_num_page))
+				alias_pbu = escape(UTF8ToLatin1('{' + @alias_num_page + '}'))
+				alias_pc = escape(utf8StrRev(@alias_num_page, false, @tmprtl))
+				alias_pcu = escape(utf8StrRev('{' + @alias_num_page + '}', false, @tmprtl))
+			end
+		end
+		pagegroupnum = 0
 		filter=(@compress) ? '/Filter /FlateDecode ' : ''
 		1.upto(nb) do |n|
+			temppage = getPageBuffer(n)
+			if !@pagegroups.empty?
+				if !@newpagegroup[n].nil?
+					pagegroupnum = 0
+				end
+				pagegroupnum += 1
+				@pagegroups.each_with_index { |v, k|
+					# replace total pages group numbers
+					vs = formatPageNumber(v)
+					vu = UTF8ToUTF16BE(vs, false)
+					alias_ga = escape(k)
+					alias_gau = escape('{' + k + '}')
+					if @is_unicode
+						alias_gb = escape(UTF8ToLatin1(k))
+						alias_gbu = escape(UTF8ToLatin1('{' + k + '}'))
+						alias_gc = escape(utf8StrRev(k, false, @tmprtl))
+						alias_gcu = escape(utf8StrRev('{' + k + '}', false, @tmprtl))
+					end
+					temppage = temppage.gsub(alias_gau, vu)
+					if @is_unicode
+						temppage = temppage.gsub(alias_gbu, vu)
+						temppage = temppage.gsub(alias_gcu, vu)
+						temppage = temppage.gsub(alias_gb, vs)
+						temppage = temppage.gsub(alias_gc, vs)
+					end
+					temppage = temppage.gsub(alias_ga, vs)
+					# replace page group numbers
+					pvs = formatPageNumber(pagegroupnum)
+					pvu = UTF8ToUTF16BE(pvs, false)
+					pk = k.gsub('{nb', '{pnb')
+					alias_pga = escape(pk)
+					alias_pgau = escape('{' + pk + '}')
+					if @is_unicode
+						alias_pgb = escape(UTF8ToLatin1(pk))
+						alias_pgbu = escape(UTF8ToLatin1('{' + pk + '}'))
+						alias_pgc = escape(utf8StrRev(pk, false, @tmprtl))
+						alias_pgcu = escape(utf8StrRev('{' + pk + '}', false, @tmprtl))
+					end
+					temppage = temppage.gsub(alias_pgau, pvu)
+					if @is_unicode
+						temppage = temppage.gsub(alias_pgbu, pvu)
+						temppage = temppage.gsub(alias_pgcu, pvu)
+						temppage = temppage.gsub(alias_pgb, pvs)
+						temppage = temppage.gsub(alias_pgc, pvs)
+					end
+					temppage = temppage.gsub(alias_pga, pvs)
+				}
+			end
+			if @alias_nb_pages
+				# replace total pages number
+				temppage = temppage.gsub(alias_au, nbu)
+				if @is_unicode
+					temppage = temppage.gsub(alias_bu, nbu)
+					temppage = temppage.gsub(alias_cu, nbu)
+					temppage = temppage.gsub(alias_b, nbs)
+					temppage = temppage.gsub(alias_c, nbs)
+				end
+				temppage = temppage.gsub(alias_a, nbs)
+			end
+			if @alias_num_page
+				# replace page number
+				pnbs = formatPageNumber(n)
+				pnbu = UTF8ToUTF16BE(pnbs, false) # replacement for unicode font
+				temppage = temppage.gsub(alias_pau, pnbu)
+				if @is_unicode
+					temppage = temppage.gsub(alias_pbu, pnbu)
+					temppage = temppage.gsub(alias_pcu, pnbu)
+					temppage = temppage.gsub(alias_pb, pnbs)
+					temppage = temppage.gsub(alias_pc, pnbs)
+				end
+				temppage = temppage.gsub(alias_pa, pnbs)
+			end
+			temppage = temppage.gsub(@epsmarker, '')
+			# setPageBuffer(n, temppage)
 			#Page
 			newobj
 			out('<</Type /Page')
 			out('/Parent 1 0 R')
 			out(sprintf('/MediaBox [0 0 %.2f %.2f]', @pagedim[n]['w'], @pagedim[n]['h']))
 			out('/Resources 2 0 R')
-			if @page_links[n]
-				#Links
-				annots='/Annots ['
-				@page_links[n].each do |pl|
-					rect=sprintf('%.2f %.2f %.2f %.2f', pl[0], pl[1], pl[0]+pl[2], pl[1]-pl[3]);
-					annots<<'<</Type /Annot /Subtype /Link /Rect [' + rect + '] /Border [0 0 0] ';
-					if (pl[4].is_a?(String))
-						annots<<'/A <</S /URI /URI (' + escape(pl[4]) + ')>>>>';
-					else
-						l=@links[pl[4]];
-						h = @pagedim[l[0]]['h']
-						annots<<sprintf('/Dest [%d 0 R /XYZ 0 %.2f null]>>',1+2*l[0], h-l[1]*@k);
-					end
-				end
-				out(annots + ']');
-			end
+			putannots(n)
 			out('/Contents ' + (@n+1).to_s + ' 0 R>>');
 			out('endobj');
 			#Page content
-			p=(@compress) ? gzcompress(@pages[n]) : @pages[n];
+			p=(@compress) ? gzcompress(temppage) : temppage
 			newobj();
 			out('<<' + filter + '/Length '+ p.length.to_s + '>>');
 			putstream(p);
 			out('endobj');
+			#if @diskcache
+			#	# remove temporary files
+			#	unlink(@pages[n])
+			#end
 		end
 		#Pages root
 		@offsets[1]=@buffer.length;
