@@ -8071,6 +8071,37 @@ class TCPDF
 		out('endobj')
 	end
 
+	#
+	# Return the current page in the group.
+	# @return current page in the group
+	# @access public
+	# @since 3.0.000 (2008-03-27)
+	#
+	def getGroupPageNo()
+		return @pagegroups[@currpagegroup]
+	end
+
+	#
+	# Returns the current group page number formatted as a string.
+	# @access public
+	# @since 4.3.003 (2008-11-18)
+	# @see PaneNo(), formatPageNumber()
+	#
+	def getGroupPageNoFormatted()
+		return formatPageNumber(getGroupPageNo())
+	end
+
+	#
+	# Format the page numbers.
+	# This method can be overriden for custom formats.
+	# @param int :num page number
+	# @access protected
+	# @since 4.2.005 (2008-11-06)
+	#
+	def formatPageNumber(num)
+		return number_with_delimiter(num, :delimiter => ",")
+	end
+
 end # END OF TCPDF CLASS
 
 #TODO 2007-05-25 (EJM) Level=0 - 
