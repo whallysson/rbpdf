@@ -7420,9 +7420,11 @@ class TCPDF
 	# hexadecimal color representation (i.e. #3FE5AA or #7FF).
 	# @param string :color html color 
 	# @return array
-	# @access protected
+	# @access public
 	#
 	def convertHTMLColorToDec(color = "#000000")
+		color = color.gsub(/[\s]*/, '') # remove extra spaces
+		color = color.downcase
 		# set default color to be returned in case of error
 		returncolor = ActiveSupport::OrderedHash.new
 		returncolor['R'] = 0
@@ -7431,9 +7433,18 @@ class TCPDF
 		if !color
 			return returncolor
 		end
+		if color[0,3] == 'rgb' 
+			codes = color.sub(/^rgb\(/, "")
+			codes = codes.gsub(')', '')
+			returncolor = codes.split(',', 3)
+			returncolor[0] = returncolor[0].to_i
+			returncolor[1] = returncolor[1].to_i
+			returncolor[2] = returncolor[2].to_i
+			return returncolor
+		end
 		if color[0].chr != "#"
 			# decode color name
-			color_code = @@webcolor[color.downcase]
+			color_code = @@webcolor[color]
 			if color_code.nil?
 				return returncolor
 			end
