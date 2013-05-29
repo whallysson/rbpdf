@@ -6063,11 +6063,14 @@ class TCPDF
 # Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
 	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
 	# @param boolean :reseth if true reset the last cell height (default true).
+	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
+	# @param boolean :autopadding if true, uses internal padding and automatically adjust it to account for line width.
+	# @access public
 	# @uses MultiCell()
 	# @see Multicell(), writeHTML(), Cell()
 	#
-	def writeHTMLCell(w, h, x, y, html='', border=0, ln=0, fill=0, reseth=true)
-		return MultiCell(w, h, html, border, '', fill, ln, x, y, reseth, 0, true)
+	def writeHTMLCell(w, h, x, y, html='', border=0, ln=0, fill=0, reseth=true, align='', autopadding=true)
+		return MultiCell(w, h, html, border, align, fill, ln, x, y, reseth, 0, true, autopadding, 0)
 	end
   alias_method :write_html_cell, :writeHTMLCell
 
