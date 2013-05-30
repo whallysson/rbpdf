@@ -272,6 +272,8 @@ class TCPDF
 		@images ||= {}
   	@img_scale ||= 1
 		@in_footer ||= false
+		@alias_nb_pages = '{nb}'
+		@alias_num_page = '{pnb}'
 		@is_unicode = unicode
 		@lasth ||= 0
 		@links ||= []
@@ -856,9 +858,83 @@ class TCPDF
 	# @since 1.4
 	# @see PageNo(), Footer()
 	#
-	def alias_nb_pages(alias_nb ='{nb}')
+	def AliasNbPages(alias_nb ='{nb}')
 		#Define an alias for total number of pages
 		@alias_nb_pages = escapetext(alias_nb)
+	end
+  alias_method :alias_nb_pages, :AliasNbPages
+
+	#
+	# Returns the string alias used for the total number of pages.
+	# If the current font is unicode type, the returned string is surrounded by additional curly braces.
+	# @return string
+	# @access public
+	# @since 4.0.018 (2008-08-08)
+	# @see AliasNbPages(), PageNo(), Footer()
+	#
+	def GetAliasNbPages()
+		if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+			return '{' + @alias_nb_pages + '}'
+		end
+		return @alias_nb_pages
+	end
+
+	#
+	# Defines an alias for the page number.
+	# It will be substituted as the document is closed.
+	# @param string :alias The alias.
+	# @access public
+	# @since 4.5.000 (2009-01-02)
+	# @see getAliasNbPages(), PageNo(), Footer()
+	#
+	def AliasNumPage(alias_num='{pnb}')
+		# Define an alias for total number of pages
+		@alias_num_page = alias_num
+	end
+                
+	#
+	# Returns the string alias used for the page number.
+	# If the current font is unicode type, the returned string is surrounded by additional curly braces.
+	# @return string
+	# @access public
+	# @since 4.5.000 (2009-01-02)
+	# @see AliasNbPages(), PageNo(), Footer()
+	#
+	def GetAliasNumPage()
+			if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+			return '{' + @alias_num_page + '}'
+		end
+		return @alias_num_page
+	end
+
+	#
+	# Return the alias of the current page group
+	# If the current font is unicode type, the returned string is surrounded by additional curly braces.
+	# (will be replaced by the total number of pages in this group).
+	# @return alias of the current page group
+	# @access public
+	# @since 3.0.000 (2008-03-27)
+	#
+	def GetPageGroupAlias()
+		if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont1')
+			return '{' + @currpagegroup + '}'
+		end
+		return @currpagegroup
+	end
+
+	#
+	# Return the alias for the page number on the current page group
+	# If the current font is unicode type, the returned string is surrounded by additional curly braces.
+	# (will be replaced by the total number of pages in this group).
+	# @return alias of the current page group
+	# @access public
+	# @since 4.5.000 (2009-01-02)
+	#
+	def GetPageNumGroupAlias()
+		if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+			return '{' + @currpagegroup.gsub('{nb', '{pnb') +'}'
+		end
+		return @currpagegroup.gsub('{nb', '{pnb')
 	end
 
 	#
@@ -1173,12 +1249,24 @@ class TCPDF
  	# Set footer margin.
 	# (minimum distance between footer and bottom page margin)
 	# @param int :fm distance in millimeters
+	# @access public
 	#
 	def SetFooterMargin(fm=10)
 		@footer_margin = fm;
 	end
 	  alias_method :set_footer_margin, :SetFooterMargin
 	
+	#
+	# Returns footer margin in user units.
+	# @return float
+	# @since 4.0.012 (2008-07-24)
+	# @access public
+	#
+	def GetFooterMargin()
+		return @footer_margin
+	end
+	  alias_method :get_footer_margin, :GetFooterMargin
+
 	#
  	# Set a flag to print page header.
 	# @param boolean :val set to true to print the page header (default), false otherwise. 
@@ -5163,9 +5251,20 @@ class TCPDF
 	#
  	# Set document barcode.
 	# @param string :bc barcode
+	# @access public
 	#
 	def SetBarcode(bc="")
 		@barcode = bc;
+	end
+	
+	#
+	# Get current barcode.
+	# @return string
+	# @access public
+	# @since 4.0.012 (2008-07-24)
+	#
+	def GetBarcode()
+		return @barcode
 	end
 	
 	#
