@@ -1194,13 +1194,17 @@ class TCPDF
   end
     alias_method :rotate, :Rotate
   
-  #
+	#
 	# Starts a 2D tranformation saving current graphic state.
 	# This function must be called before scaling, mirroring, translation, rotation and skewing.
 	# Use StartTransform() before, and StopTransform() after the transformations to restore the normal behavior.
+	# @access public
+	# @since 2.1.000 (2008-01-07)
+	# @see StartTransform(), StopTransform()
 	#
 	def StartTransform
 		out('q');
+		@transfmrk[@page] = @pagelen[@page]
 	end
 	  alias_method :start_transform, :StartTransform
 	
@@ -1208,19 +1212,32 @@ class TCPDF
 	# Stops a 2D tranformation restoring previous graphic state.
 	# This function must be called after scaling, mirroring, translation, rotation and skewing.
 	# Use StartTransform() before, and StopTransform() after the transformations to restore the normal behavior.
+	# @access public
+	# @since 2.1.000 (2008-01-07)
+	# @see StartTransform(), StopTransform()
 	#
 	def StopTransform
 		out('Q');
+		if !@transfmatrix.nil?
+			@transfmatrix.pop
+		end
+		@transfmrk[@page] = nil
 	end
 	  alias_method :stop_transform, :StopTransform
 	
-  #
+	#
 	# Apply graphic transformations.
 	# @since 2.1.000 (2008-01-07)
 	# @see StartTransform(), StopTransform()
 	#
 	def Transform(tm)
-		x = out(sprintf('%.3f %.3f %.3f %.3f %.3f %.3f cm', tm[0], tm[1], tm[2], tm[3], tm[4], tm[5]));
+		out(sprintf('%.3f %.3f %.3f %.3f %.3f %.3f cm', tm[0], tm[1], tm[2], tm[3], tm[4], tm[5]))
+		# transformation matrix
+		@transfmatrix.push 'a' => tm[0], 'b' => tm[1], 'c' => tm[2], 'd' => tm[3], 'e' => tm[4], 'f' => tm[5]
+		# update tranformation mark
+		if !@transfmrk[@page].nil?
+			@transfmrk[@page] = @pagelen[@page]
+		end
 	end
 	  alias_method :transform, :Transform
 		
