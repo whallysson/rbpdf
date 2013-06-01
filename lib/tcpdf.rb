@@ -1354,67 +1354,33 @@ class TCPDF
  	# It is automatically called by AddPage() and could be overwritten in your own inherited class.
 	#
 	def Footer()
-		if (@print_footer)
-			
-			if (@original_l_margin.nil?)
-				@original_l_margin = @l_margin;
-			end
-			if (@original_r_margin.nil?)
-				@original_r_margin = @r_margin;
-			end
-			
-			# reset original header margins
-			@r_margin = @original_r_margin
-			@l_margin = @original_l_margin
-
-			# save current font values
-			font_family =  @font_family
-			font_style = @font_style
-			font_size = @font_size_pt
-
-			SetTextColor(0, 0, 0)
-
-			#set font
-			SetFont(@footer_font[0], @footer_font[1] , @footer_font[2]);
-			#set style for cell border
-			prevlinewidth = GetLineWidth()
-			line_width = 0.3;
-			SetLineWidth(line_width);
-			SetDrawColorArray([0, 0, 0])
-			
-			footer_height = ((@@k_cell_height_ratio * @footer_font[2]) / @k).round; #footer height, was , 2)
-			#get footer y position
-			footer_y = @h - @footer_margin - footer_height;
-			#set current position
-			if @rtl
-				SetXY(@original_r_margin, footer_y)
-			else
-				SetXY(@original_l_margin, footer_y)
-			end
-			
-			#print document barcode
-			if (@barcode)
-				Ln();
-				barcode_width = ((@w - @original_l_margin - @original_r_margin)/3).round #max width
-				writeBarcode(GetX(), footer_y + line_width, barcode_width, footer_height - line_width, "C128B", false, false, 2, @barcode)
-			end
-			
-			pagenumtxt = @l['w_page'] + " " + PageNo().to_s + ' / {nb}'
-			SetY(footer_y)
-
-			#Print page number
-			if @rtl
-				SetX(@original_r_margin) 
-				Cell(0, footer_height, pagenumtxt, 'T', 0, 'L')
-			else
-				SetX(@original_l_margin) 
-				Cell(0, footer_height, pagenumtxt, 'T', 0, 'R')
-			end
-			# restore line width
-			SetLineWidth(prevlinewidth)
-
-			# restore font values
-			SetFont(font_family, font_style, font_size)
+		cur_y = GetY()
+		ormargins = GetOriginalMargins()
+		SetTextColor(0, 0, 0)
+		# set style for cell border
+		line_width = 0.85 / GetScaleFactor()
+		SetLineStyle({'width' => line_width, 'cap' => 'butt', 'join' => 'miter', 'dash' => 0, 'color' => [0, 0, 0]})
+		# print document barcode
+		#barcode = GetBarcode()
+		#if !barcode.empty?
+		#	Ln(line_width)
+		#	barcode_width = ((GetPageWidth() - ormargins['left'] - ormargins['right']) / 3).round
+		#	write1DBarcode(barcode, 'C128B', GetX(), cur_y + line_width, barcode_width, ((GetFooterMargin() / 3) - line_width), 0.3, '', '')
+		#end
+		w_page = (@l.nil? or @l['w_page'].nil?) ? '' : @l['w_page']
+		if @pagegroups.empty?
+			pagenumtxt = w_page + ' ' + GetAliasNumPage() + ' / ' + GetAliasNbPages()
+		else
+			pagenumtxt = w_page + ' ' + GetPageNumGroupAlias() + ' / ' + GetPageGroupAlias()
+		end
+		SetY(cur_y)
+		# Print page number
+		if GetRTL()
+			SetX(ormargins['right'])
+			Cell(0, 0, pagenumtxt, 'T', 0, 'L')
+		else
+			SetX(ormargins['left'])
+			Cell(0, 0, pagenumtxt, 'T', 0, 'R')
 		end
 	end
 	  alias_method :footer, :Footer
