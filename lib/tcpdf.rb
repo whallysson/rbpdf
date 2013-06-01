@@ -2594,6 +2594,33 @@ class TCPDF
   alias_method :cell, :Cell
 
 	#
+	# Removes SHY characters from text.
+	# @param string :txt input string
+	# @return string without SHY characters.
+	# @access public
+	# @since (4.5.019) 2009-02-28
+	#
+	def removeSHY(txt='')
+		# Unicode Data
+		# Name : SOFT HYPHEN, commonly abbreviated as SHY
+		# HTML Entity (decimal): &#173;
+		# HTML Entity (hex): &#xad;
+		# HTML Entity (named): &shy;
+		# How to type in Microsoft Windows: [Alt +00AD] or [Alt 0173]
+		# UTF-8 (hex): 0xC2 0xAD (c2ad)
+		# UTF-8 character: chr(194).chr(173)
+
+		txt.force_encoding('ASCII-8BIT') if txt.respond_to?(:force_encoding)
+		txt.gsub!(/([\xc2]{1}[\xad]{1})/, '')
+		if !@is_unicode
+			txt.gsub!(/([\xad]{1})/, '')
+			return txt
+		end
+		txt.force_encoding('UTF-8') if txt.respond_to?(:force_encoding)
+		return txt
+	end
+
+	#
 	# Returns the PDF string code to print a cell (rectangular area) with optional borders, background color and character string. The upper-left corner of the cell corresponds to the current position. The text can be aligned or centered. After the call, the current position moves to the right or to the next line. It is possible to put a link on the text.<br />
 	# If automatic page breaking is enabled and the cell goes beyond the limit, a page break is done before outputting.
 	# @param float :w Cell width. If 0, the cell extends up to the right margin.
@@ -2605,11 +2632,13 @@ class TCPDF
 	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
 	# @param mixed :link URL or identifier returned by AddLink().
 	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
+	# @access protected
 	# @since 1.0
 	# @see Cell()
 	#
 	def getCellCode(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0)
 		rs = "" # string to be returned
+		txt = removeSHY(txt)
 		min_cell_height = @font_size * @@k_cell_height_ratio
 		if h < min_cell_height
 			h = min_cell_height
@@ -2638,6 +2667,7 @@ class TCPDF
 			s << sprintf('%.2f %.2f %.2f %.2f re %s ', xk, (@h - @y) * k, w * k, -h * k, op)
 		end
 		if (border.is_a?(String))
+			lm = @line_width / 2
 			x=@x;
 			y=@y;
 			if (border.include?('L'))
@@ -2646,15 +2676,15 @@ class TCPDF
 				else
 					xk = x * k
 				end
-				s << sprintf('%.2f %.2f m %.2f %.2f l S ', xk,(@h-y)*k, xk,(@h-(y+h))*k)
+				s << sprintf('%.2f %.2f m %.2f %.2f l S ', xk, (@h - y + lm) * k, xk, (@h - (y + h + lm)) * k)
 			end
 			if (border.include?('T'))
 				if @rtl
-					xk = (x - w) * k
-					xwk = x * k
+					xk = (x - w + lm) * k
+					xwk = (x - lm) * k
 				else
-					xk = x * k
-					xwk = (x + w) * k
+					xk = (x - lm) * k
+					xwk = (x + w + lm) * k
 				end
 				s << sprintf('%.2f %.2f m %.2f %.2f l S ', xk,(@h-y)*k,xwk,(@h-y)*k)
 			end
@@ -2664,15 +2694,15 @@ class TCPDF
 				else
 					xk = (x + w) * k
 				end
-				s << sprintf('%.2f %.2f m %.2f %.2f l S ',xk,(@h-y)*k,xk,(@h-(y+h))*k)
+				s << sprintf('%.2f %.2f m %.2f %.2f l S ', xk, (@h - y + lm) * k, xk, (@h - (y + h + lm)) * k)
 			end
 			if (border.include?('B'))
 				if @rtl
-					xk = (x - w) * k
-					xwk = x * k
+					xk = (x - w + lm) * k
+					xwk = (x - lm) * k
 				else
-					xk = x * k
-					xwk = (x + w) * k
+					xk = (x - lm) * k
+					xwk = (x + w + lm) * k
 				end
 				s << sprintf('%.2f %.2f m %.2f %.2f l S ', xk,(@h-(y+h))*k,xwk,(@h-(y+h))*k)
 			end
@@ -2776,7 +2806,7 @@ class TCPDF
 				s<<' Q';
 			end
 			if link && !link.empty?
-				Link(xdx, @y + ((h - @font_size) / 2), width, @font_size, link)
+				Link(xdx, @y + ((h - @font_size) / 2), width, @font_size, link, txt.count(32.chr))
 			end
 		end
 
@@ -2795,7 +2825,7 @@ class TCPDF
 		end
 
 		# reset word spacing
-		if !@is_unicode and (align == 'J')
+		if !((@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')) and (align == 'J')
 			rs << ' BT 0 Tw ET'
 		end
 
@@ -2819,6 +2849,8 @@ class TCPDF
 				@x += w
 			end
 		end
+		gstyles = '' + @linestyle_width + ' ' + @linestyle_cap + ' ' + @linestyle_join + ' ' + @linestyle_dash + ' ' + @draw_color + ' ' + @fill_color + "\n"
+		rs = gstyles + rs
 		return rs
 	end
 
