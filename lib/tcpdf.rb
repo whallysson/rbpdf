@@ -995,14 +995,47 @@ class TCPDF
 	end
 
 	#
-	# Move pointer to the apecified document page.
+	# Move pointer at the specified document page and update page dimensions.
 	# @param int :pnum page number
+	# @param boolean :resetmargins if true reset left, right, top margins and Y position.
+	# @access public
 	# @since 2.1.000 (2008-01-07)
 	# @see getPage(), lastpage(), getNumPages()
 	#
-	def SetPage(pnum)
-		if(pnum > 0) and (pnum <= @pages.size - 1)
+	def SetPage(pnum, resetmargins=false)
+		if (pnum > 0) and (pnum <= @numpages)
+			@state = 2
+			# save current graphic settings
+			gvars = getGraphicVars()
+			oldpage = @page
 			@page = pnum
+			@w_pt = @pagedim[@page]['w']
+			@h_pt = @pagedim[@page]['h']
+			@w = @w_pt / @k
+			@h = @h_pt / @k
+			@t_margin = @pagedim[@page]['tm']
+			@b_margin = @pagedim[@page]['bm']
+			@original_l_margin = @pagedim[@page]['olm']
+			@original_r_margin = @pagedim[@page]['orm']
+			@auto_page_break = @pagedim[@page]['pb']
+			@cur_orientation = @pagedim[@page]['or']
+			SetAutoPageBreak(@auto_page_break, @b_margin)
+			# restore graphic settings
+			setGraphicVars(gvars)
+			if resetmargins
+				@l_margin = @pagedim[@page]['olm']
+				@r_margin = @pagedim[@page]['orm']
+				SetY(@t_margin)
+			else
+				# account for booklet mode
+				if @pagedim[@page]['olm'] != @pagedim[oldpage]['olm']
+					deltam = @pagedim[@page]['olm'] - @pagedim[@page]['orm']
+					@l_margin += deltam
+					@r_margin -= deltam
+				end
+			end
+		else
+			Error('Wrong page number on setPage() function.')
 		end
 	end
 
