@@ -322,6 +322,7 @@ class TCPDF
 		@linestyle_dash ||= '[] 0 d'
 		@numpages ||= 0
 		@pagelen ||= []
+		@bufferlen ||= 0
 		@fontkeys ||= []
 		@pageopen ||= []
 		@cell_height_ratio = @@k_cell_height_ratio
@@ -4882,15 +4883,23 @@ class TCPDF
 	end
 
 	#
-	# Add a line to the document
+	# Output a string to the document.
+	# @param string :s string to output.
 	# @access protected
 	#
 	def out(s)
 		s.force_encoding('ASCII-8BIT') if s.respond_to?(:force_encoding)
 		if (@state==2)
-			@pages[@page] << s.to_s + "\n";
+			if !@in_footer and !@footerlen[@page].nil? and (@footerlen[@page] > 0)
+				# puts data before page footer
+				page = (getPageBuffer(@page))[0..(-@footerlen[@page]-1)]
+				footer = (getPageBuffer(@page))[-@footerlen[@page]..-1]
+				setPageBuffer(@page, page + ' ' + s.to_s + "\n" + footer)
+			else
+				setPageBuffer(@page, s.to_s + "\n", true)
+			end
 		else
-			@buffer << s.to_s + "\n";
+			setBuffer(s.to_s + "\n")
 		end
 	end
 
@@ -7461,6 +7470,24 @@ class TCPDF
 		unless @font_family.empty?
 			SetFont(@font_family, @font_style, @font_size_pt)
 		end
+	end
+
+	#
+	# Set buffer content (always append data).
+	# @param string :data data
+	# @access protected
+	# @since 4.5.000 (2009-01-02)
+	#
+	def setBuffer(data)
+		@bufferlen += data.length
+		#if @diskcache
+		#	if @buffer.nil? or @buffer.empty?
+		#		@buffer = getObjFilename('buffer')
+		#	end
+		#	writeDiskCache(@buffer, data, true)
+		#else
+			@buffer << data
+		#end
 	end
 
 	#
