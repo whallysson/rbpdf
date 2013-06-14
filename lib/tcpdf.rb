@@ -5018,6 +5018,69 @@ class TCPDF
 		out('endobj');
 	end
 
+	#
+	# Output CID-0 fonts.
+	# @param array :font font data
+	# @access protected
+	# @author Andrew Whitehead, Nicola Asuni, Yukihiro Nakadaira
+	# @since 3.2.000 (2008-06-23)
+	#
+	def putcidfont0(font)
+		cidoffset = 31
+		if font['cidinfo']['uni2cid']
+			# convert unicode to cid.
+			uni2cid = font['cidinfo']['uni2cid']
+			cw = {}
+			font['cw'].each { |uni, width|
+				if uni2cid[uni]
+					cw[(uni2cid[uni] + cidoffset)] = width
+				elsif uni < 256
+					cw[uni] = width
+				end # else unknown character
+			}
+			font = font.merge({'cw' => cw})
+		end
+		name = font['name']
+		enc = font['enc']
+		if enc
+			longname = name + '-' + enc
+		else
+			longname = name
+		end
+		newobj()
+		out('<</Type /Font')
+		out('/BaseFont /' + longname)
+		out('/Subtype /Type0')
+		if enc
+			out('/Encoding /' + enc)
+		end
+		out('/DescendantFonts [' + (@n + 1).to_s + ' 0 R]')
+		out('>>')
+		out('endobj')
+		newobj()
+		out('<</Type /Font')
+		out('/BaseFont /' + name)
+		out('/Subtype /CIDFontType0')
+		cidinfo = '/Registry ' + datastring(font['cidinfo']['Registry'])
+		cidinfo << ' /Ordering ' + datastring(font['cidinfo']['Ordering'])
+		cidinfo << ' /Supplement ' + font['cidinfo']['Supplement'].to_s
+		out('/CIDSystemInfo <<' + cidinfo + '>>')
+		out('/FontDescriptor ' + (@n + 1).to_s + ' 0 R')
+		out('/DW ' + font['dw'].to_s)
+		putfontwidths(font, cidoffset)
+		out('>>')
+		out('endobj')
+		newobj()
+		s = '<</Type /FontDescriptor /FontName /' + name
+		font['desc'].each {|k, v|
+			if k != 'Style'
+				s << ' /' + k + ' ' + v.to_s + ''
+			end
+		}
+		out(s + '>>')
+		out('endobj')
+	end
+
 	 #
 	# Converts UTF-8 strings to codepoints array.<br>
 	# Invalid byte sequences will be replaced with 0xFFFD (replacement character)<br>
