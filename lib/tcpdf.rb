@@ -4369,6 +4369,105 @@ class TCPDF
 		end
 	end
 
+	#
+	# Outputs font widths
+	# @parameter array :font font data
+	# @parameter int :cidoffset offset for CID values
+	# @author Nicola Asuni
+	# @access protected
+	# @since 4.4.000 (2008-12-07)
+	#
+	def putfontwidths(font, cidoffset=0)
+		font_cw = font['cw'].sort
+		rangeid = 0
+		range = []
+		prevcid = -2
+		prevwidth = -1
+		interval = false
+		range_interval = []
+		# for each character
+		font_cw.each {|cid, width|
+			cid -= cidoffset
+			if width != font['dw']
+				if cid == prevcid + 1
+					# consecutive CID
+					if width == prevwidth
+						if width == range[rangeid][0]
+							range[rangeid].push width
+						else
+							range[rangeid].pop
+							# new range
+							rangeid = prevcid
+							range[rangeid] = []
+							range[rangeid].push prevwidth
+							range[rangeid].push width
+						end
+						interval = true
+						range_interval[rangeid] = true
+					else
+						if interval
+							# new range
+							rangeid = cid
+							range[rangeid] = []
+							range[rangeid].push width
+						else
+							range[rangeid].push width
+						end
+						interval = false
+					end
+				else
+					# new range
+					rangeid = cid
+					range[rangeid] = []
+					range[rangeid].push width
+					interval = false
+				end
+				prevcid = cid
+				prevwidth = width
+			end
+		}
+		# optimize ranges
+		prevk = -1
+		nextk = -1
+		prevint = false
+		range.each_with_index {|ws, k|
+			cws = ws ? ws.length : 0
+			if (k == nextk) and !prevint and (range_interval[k].nil? or (cws < 4))
+				if !range_interval[k].nil?
+					range_interval[k] = nil
+				end
+				range[prevk] = range[prevk].concat(range[k]) if range[k]
+				range[k] = nil
+			else
+				prevk = k
+			end
+			nextk = k + cws
+			if !range_interval[k].nil?
+				if cws > 3
+					prevint = true
+				else
+					prevint = false
+				end
+				range_interval[k] = nil
+				nextk -= 1
+			else
+				prevint = false
+			end
+		}
+		# output data
+		w = ''
+		range.each_with_index {|ws, k|
+			if ws and ws.uniq.length == 1
+				# interval mode is more compact
+				w << ' ' + k.to_s + ' ' + (k + ws.length - 1).to_s + ' ' + ws[0].to_s
+			elsif ws
+				# range mode
+				w << ' ' + k.to_s + ' [ ' + ws.join(' ') + ' ]'
+			end
+		}
+		out('/W [' + w + ' ]')
+	end
+
   def putType0(font)
   	#Type0
   	newobj();
