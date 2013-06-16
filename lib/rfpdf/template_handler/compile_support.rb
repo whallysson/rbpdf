@@ -2,8 +2,6 @@ module RFPDF
   module TemplateHandler
 
     class CompileSupport
-      extend ActiveSupport::Memoizable
-      
       attr_reader :options
 
       def initialize(controller)
@@ -25,16 +23,14 @@ module RFPDF
 
       # TODO: kept around from railspdf-- maybe not needed anymore? should check.
       def ie_request?
-        @controller.request.env['HTTP_USER_AGENT'] =~ /msie/i
+        @ie_request ||= @controller.request.env['HTTP_USER_AGENT'] =~ /msie/i
       end
-      memoize :ie_request?
 
       # added to make ie happy with ssl pdf's (per naisayer)
       def ssl_request?
         # @controller.request.env['SERVER_PROTOCOL'].downcase == "https"
-        @controller.request.ssl?
+        @ssl_request ||= @controller.request.ssl?
       end
-      memoize :ssl_request?
 
       # TODO: kept around from railspdf-- maybe not needed anymore? should check.
       def set_pragma
