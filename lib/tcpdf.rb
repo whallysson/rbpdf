@@ -1853,10 +1853,11 @@ class TCPDF
 	# Returns the numbero of characters in a string.
 	# @param string :s The input string.
 	# @return int number of characters
+	# @access public
 	# @since 2.0.0001 (2008-01-07)
 	#
 	def GetNumChars(s)
-		if @is_unicode
+		if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
 			return UTF8StringToArray(s).length
 		end 
 		return s.length
