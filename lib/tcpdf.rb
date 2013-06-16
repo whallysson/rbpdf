@@ -2328,6 +2328,16 @@ class TCPDF
   alias_method :set_font_size, :SetFontSize
 
 	#
+	# Defines the default monospaced font.
+	# @param string :font Font name.
+	# @access public
+	# @since 4.5.025
+	#
+	def SetDefaultMonospacedFont(font)
+		@default_monospaced_font = font
+	end
+
+	#
 	# Creates a new internal link and returns its identifier. An internal link is a clickable area which directs to another place within the document.<br />
 	# The identifier can then be passed to Cell(), Write(), Image() or Link(). The destination is defined with SetLink().
 	# @since 1.5
