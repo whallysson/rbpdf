@@ -328,6 +328,9 @@ class TCPDF
 		@cell_height_ratio = @@k_cell_height_ratio
 		@thead ||= ''
 		@thead_margin = nil
+		@cache_utf8_string_to_array = {}
+		@cache_maxsize_utf8_string_to_array = 8
+		@cache_size_utf8_string_to_array = 0
 		
 		#Standard Unicode fonts
 		@core_fonts = {
@@ -404,7 +407,7 @@ class TCPDF
 		@jpeg_quality = 75;
 
 		# initialize some settings
-#		utf8Bidi([""]);
+#		utf8Bidi([''], '');
 	end
 	
 	#
@@ -1788,7 +1791,7 @@ class TCPDF
 	# @since 1.2
 	#
 	def GetStringWidth(s, fontname='', fontstyle='', fontsize=0)
-		return GetArrStringWidth(utf8Bidi(UTF8StringToArray(s), @tmprtl), fontname, fontstyle, fontsize)
+		return GetArrStringWidth(utf8Bidi(UTF8StringToArray(s), s, @tmprtl), fontname, fontstyle, fontsize)
 	end
   alias_method :get_string_width, :GetStringWidth
 
@@ -2471,7 +2474,7 @@ class TCPDF
 		#Output a string
 		if @rtl
 			# bidirectional algorithm (some chars may be changed affecting the line length)
-			s = utf8Bidi(UTF8StringToArray(txt), @tmprtl)
+			s = utf8Bidi(UTF8StringToArray(txt), txt, @tmprtl)
 			#l = GetArrStringWidth(s) # This should not happen. not use.
 			xr = @w - x - GetArrStringWidth(s)
 		else
@@ -3159,10 +3162,19 @@ class TCPDF
 			arabic = false
 		end
 
+		# check if string contains RTL text
+		if arabic or @tmprtl or (txt =~ @@k_re_pattern_rtl)
+			rtlmode = true
+		else
+			rtlmode = false
+		end
+
 		# get a char width
 		chrwidth = GetCharWidth('.')
-		# get array of chars
+		# get array of unicode values
 		chars = UTF8StringToArray(s)
+		# get array of chars
+		uchars = UTF8ArrayToUniArray(chars)
 
 		# get the number of characters
 		nb = chars.size
@@ -3225,9 +3237,14 @@ class TCPDF
 				else
 					talign = align
 				end
+				tmpstr = UniArrSubString(uchars, j, i)
 				if firstline
 					startx = @x
-					linew = GetArrStringWidth(utf8Bidi(chars[j, i], @tmprtl))
+					tmparr = chars[j, i]
+					if rtlmode
+						tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
+					end
+					linew = GetArrStringWidth(tmparr)
 					if @rtl
 						@endlinex = startx - linew
 					else
@@ -3239,10 +3256,11 @@ class TCPDF
 						@c_margin = 0
 					end
 				end
-				Cell(w, h, UTF8ArrSubString(chars, j, i), 0, 1, talign, fill, link, stretch)
+				Cell(w, h, tmpstr, 0, 1, talign, fill, link, stretch)
+				tmpstr = ''
 				if firstline
 					@c_margin = tmpcmargin
-					return UTF8ArrSubString(chars, i)
+					return UniArrSubString(uchars, i)
 				end
 				nl += 1
 				j = i + 1
@@ -3273,7 +3291,7 @@ class TCPDF
 				if ((@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')) and arabic
 					# with bidirectional algorithm some chars may be changed affecting the line length
 					# *** very slow ***
-					l = GetArrStringWidth(utf8Bidi(chars[j..i], @tmprtl))
+					l = GetArrStringWidth(utf8Bidi(chars[j..i], '', @tmprtl))
 				else
 					l += GetCharWidth(c)
 				end
@@ -3287,13 +3305,19 @@ class TCPDF
 							Cell(w, h, '', 0, 1)
 							linebreak = true
 							if firstline
-								return UTF8ArrSubString(chars, j)
+								return UniArrSubString(uchars, j)
 							end
 						else
 							# truncate the word because do not fit on column
+							tmpstr = UniArrSubString(uchars, j, i)
 							if firstline
 								startx = @x
-								linew = GetArrStringWidth(utf8Bidi(chars[j, i], @tmprtl))
+								tmparr = chars[j, i]
+								if rtlmode
+									tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
+								end
+								linew = GetArrStringWidth(tmparr)
+								tmparr = ''
 								if @rtl
 									@endlinex = startx - linew
 								else
@@ -3305,10 +3329,11 @@ class TCPDF
 									@c_margin = 0
 								end
 							end
-							Cell(w, h, UTF8ArrSubString(chars, j, i), 0, 1, align, fill, link, stretch)
+							Cell(w, h, tmpstr, 0, 1, align, fill, link, stretch)
+							tmpstr = ''
 							if firstline
 								@c_margin = tmpcmargin
-								return UTF8ArrSubString(chars, i)
+								return UniArrSubString(uchars, i)
 							end
 							j = i
 							i -= 1
@@ -3335,9 +3360,15 @@ class TCPDF
 							shy_char_left = ''
 							shy_char_right = ''
 						end
+						tmpstr = UniArrSubString(uchars, j, sep + endspace)
 						if firstline
 							startx = @x
-							linew = GetArrStringWidth(utf8Bidi(chars[j, sep + endspace], @tmprtl))
+							tmparr = chars[j, sep + endspace]
+							if rtlmode
+								tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
+							end
+							linew = GetArrStringWidth(tmparr)
+							tmparr = ''
 							if @rtl
 								@endlinex = startx - linew - shy_width
 							else
@@ -3350,11 +3381,11 @@ class TCPDF
 							end
 						end
 						# print the line
-						Cell(w, h, shy_char_left + UTF8ArrSubString(chars, j, (sep + endspace)) + shy_char_right, 0, 1, align, fill, link, stretch)
+						Cell(w, h, shy_char_left + tmpstr + shy_char_right, 0, 1, align, fill, link, stretch)
 						if firstline
 							# return the remaining text
 							@c_margin = tmpcmargin
-							return UTF8ArrSubString(chars, sep + endspace)
+							return UniArrSubString(uchars, sep + endspace)
 						end
 						i = sep
 						sep = -1
@@ -3399,9 +3430,15 @@ class TCPDF
 			else
 				w = l
 			end
+			tmpstr = UniArrSubString(uchars, j, nb)
 			if firstline
 				startx = @x
-				linew = GetArrStringWidth(utf8Bidi(chars[j, nb], @tmprtl))
+				tmparr = chars[j, nb]
+				if rtlmode
+					tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
+				end
+				linew = GetArrStringWidth(tmparr)
+				tmparr = ''
 				if @rtl
 					@endlinex = startx - linew
 				else
@@ -3413,10 +3450,10 @@ class TCPDF
 					@c_margin = 0
 				end
 			end
-			Cell(w, h, UTF8ArrSubString(chars, j, nb), 0, (ln ? 1 : 0), align, fill, link, stretch)
+			Cell(w, h, tmpstr, 0, (ln ? 1 : 0), align, fill, link, stretch)
 			if firstline
 				@c_margin = tmpcmargin
-				return UTF8ArrSubString(chars, nb)
+				return UniArrSubString(uchars, nb)
 			end
 			nl += 1
 		end
@@ -3448,13 +3485,42 @@ class TCPDF
 	# @param int :last first element that will not be returned.
 	# @return Return part of a string (UTF-8)
 	#
-	def UTF8ArrSubString(strarr, start=0, last=nil)
-		if last.nil?
-			last = strarr.size
-		end
+	def UTF8ArrSubString(strarr, start=0, last=strarr.size)
 		string = ""
-		start.upto(last-1) do |i|
+		start.upto(last - 1) do |i|
 			string << unichr(strarr[i])
+		end
+		return string
+	end
+
+	#
+	# Extract a slice of the :uniarr array and return it as string.
+	# @param string :uniarr The input array of characters. (UTF-8)
+	# @param int :start the starting element of :strarr.
+	# @param int :last first element that will not be returned.
+	# @return Return part of a string (UTF-8)
+	# @access public
+	# @since 4.5.037 (2009-04-07)
+	#
+	def UniArrSubString(uniarr, start=0, last=uniarr.length)
+		string = ''
+		start.upto(last - 1) do |i|
+			string << uniarr[i]
+		end
+		return string
+	end
+
+	#
+	# Convert an array of UTF8 values to array of unicode characters
+	# @param string :ta The input array of UTF8 values. (UCS4)
+	# @return Return array of unicode characters (UTF-8)
+	# @access public
+	# @since 4.5.037 (2009-04-07)
+	#
+	def UTF8ArrayToUniArray(ta)
+		string = []
+		ta.each do |i|
+			string << unichr(i)
 		end
 		return string
 	end
@@ -5232,6 +5298,16 @@ class TCPDF
 	# @since 1.53.0.TC005 (2005-01-05)
 	#
 	def UTF8StringToArray(str)
+		if @cache_utf8_string_to_array[str]
+			# return cached value
+			return @cache_utf8_string_to_array[str]
+		end
+		# check cache size
+		if @cache_size_utf8_string_to_array >= @cache_maxsize_utf8_string_to_array
+			# remove first element
+			@cache_utf8_string_to_array.shift
+		end
+		@cache_size_utf8_string_to_array += 1
 		if !@is_unicode
 			# split string into array of chars
 			strarr = str.split(//)
@@ -5239,6 +5315,8 @@ class TCPDF
 			strarr.each_with_index do |char, pos| # was while(list(pos,char)=each(strarr))
 				strarr[pos] = char.unpack('C')[0]
 			end
+			# insert new value on cache
+			@cache_utf8_string_to_array[str] = strarr
 			return strarr
 		end
 
@@ -5296,6 +5374,8 @@ class TCPDF
 				numbytes = 1;
 			end
 		end
+		# insert new value on cache
+		@cache_utf8_string_to_array[str] = unicode
 		return unicode;
 	end
 	
@@ -7861,25 +7941,28 @@ class TCPDF
 	# @author Nicola Asuni
 	# @since 2.1.000 (2008-01-08)
 	def utf8StrRev(str, setbom=false, forcertl=false)
-		return arrUTF8ToUTF16BE(utf8Bidi(UTF8StringToArray(str), forcertl), setbom)
+		return arrUTF8ToUTF16BE(utf8Bidi(UTF8StringToArray(str), str, forcertl), setbom)
 	end
 
 	#
 	# Reverse the RLT substrings using the Bidirectional Algorithm (http://unicode.org/reports/tr9/).
 	# @param array :ta array of characters composing the string. (UCS4)
+	# @param string :str string to process
 	# @param bool :forcertl if 'R' forces RTL, if 'L' forces LTR
 	# @return array of unicode chars (UCS4)
 	# @author Nicola Asuni
 	# @since 2.4.000 (2008-03-06)
 	#
-	def utf8Bidi(ta, forcertl=false)
+	def utf8Bidi(ta, str='', forcertl=false)
 		# paragraph embedding level
 		pel = 0
 		# max level
 		maxlevel = 0
 
-		# create string from array
-		str = UTF8ArrSubString(ta)
+		if str == ''
+			# create string from array
+			str = UTF8ArrSubString(ta)
+		end
 			
 		# check if string contains arabic text
 		if str =~ @@k_re_pattern_arabic
@@ -8004,7 +8087,11 @@ class TCPDF
 				if dos != 'N'
 					chardir = dos
 				else
-					chardir = @@unicode[ta[i]]
+					if !@@unicode[ta[i]].nil?
+						chardir = @@unicode[ta[i]]
+					else
+						chardir = 'L'
+					end
 				end
 				# stores string characters and other information
 				chardata.push :char => ta[i], :level => cel, :type => chardir, :sor => sor, :eor => eor
@@ -8363,7 +8450,7 @@ class TCPDF
 			end # end for each char
 
 			# 
-			# Combining characters that can occur with Shadda (0651 HEX, 1617 DEC) are placed in UE586-UE594. 
+			# Combining characters that can occur with Arabic Shadda (0651 HEX, 1617 DEC) are replaced.
 			# Putting the combining mark and shadda in the same glyph allows us to avoid the two marks overlapping each other in an illegible manner.
 			#
 			cw = @current_font['cw']
