@@ -842,29 +842,15 @@ class TCPDF
   alias_method :set_creator, :SetCreator
 
 	#
-	# Defines an alias for the total number of pages. It will be substituted as the document is closed.<br />
-	# <b>Example:</b><br />
-	# <pre>
-	# class PDF extends TCPDF {
-	# 	def Footer()
-	# 		#Go to 1.5 cm from bottom
-	# 		SetY(-15);
-	# 		#Select Arial italic 8
-	# 		SetFont('Arial','I',8);
-	# 		#Print current and total page numbers
-	# 		Cell(0,10,'Page '.PageNo().'/{nb}',0,0,'C');
-	# 	end
-	# }
-	# :pdf=new PDF();
-	# :pdf->alias_nb_pages();
-	# </pre>
-	# @param string :alias The alias. Default valuenb}.
+	# Defines an alias for the total number of pages.
+	# It will be substituted as the document is closed.
+	# @param string :alias The alias.
+	# @access public
 	# @since 1.4
-	# @see PageNo(), Footer()
+	# @see GetAliasNbPages(), PageNo(), Footer()
 	#
 	def AliasNbPages(alias_nb ='{nb}')
-		#Define an alias for total number of pages
-		@alias_nb_pages = escapetext(alias_nb)
+		@alias_nb_pages = alias_nb
 	end
   alias_method :alias_nb_pages, :AliasNbPages
 
@@ -5148,12 +5134,18 @@ class TCPDF
 
 	#
 	# Format a text string
+	# @param string :s string to escape.
+	# @return string escaped string.
 	# @access protected
 	#
 	def escapetext(s)
 		if (@is_unicode)
-			# Convert string to UTF-16BE and reverse RTL language
-			s = utf8StrRev(s, false, @tmprtl)
+			if (@current_font['type'] == 'core') or (@current_font['type'] == 'TrueType') or (@current_font['type'] == 'Type1')
+				s = UTF8ToLatin1(s)
+			else
+				# Convert string to UTF-16BE and reverse RTL language
+				s = utf8StrRev(s, false, @tmprtl)
+			end
 		end
 		return escape(s);
 	end
