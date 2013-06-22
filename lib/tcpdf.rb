@@ -1963,15 +1963,49 @@ class TCPDF
 	# @param float :y1 Ordinate of first point
 	# @param float :x2 Abscissa of second point
 	# @param float :y2 Ordinate of second point
+	# @param array :style Line style. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @access public
 	# @since 1.0
-	# @see SetLineWidth(), SetDrawColor()
+	# @see SetLineWidth(), SetDrawColor(), SetLineStyle()
 	#
-	def Line(x1, y1, x2, y2)
-		#Draw a line
-		out(sprintf('%.2f %.2f m %.2f %.2f l S', x1 * @k, (@h - y1) * @k, x2 * @k, (@h - y2) * @k));
+	def Line(x1, y1, x2, y2, style=nil)
+		if style
+			SetLineStyle(style)
+		end
+		outPoint(x1, y1)
+		outLine(x2, y2)
+		out(' S')
 	end
   alias_method :line, :Line
                 
+	#
+	# Set a draw point.
+	# @param float :x Abscissa of point.
+	# @param float :y Ordinate of point.
+	# @access protected
+	# @since 2.1.000 (2008-01-08)
+	#
+	def outPoint(x, y)
+		if @rtl
+			x = @w - x
+		end
+		out(sprintf("%.2f %.2f m", x * @k, (@h - y) * @k))
+	end
+
+	#
+	# Draws a line from last draw point.
+	# @param float :x Abscissa of end point.
+	# @param float :y Ordinate of end point.
+	# @access protected
+	# @since 2.1.000 (2008-01-08)
+	#
+	def outLine(x, y)
+		if @rtl
+			x = @w - x
+		end
+		out(sprintf("%.2f %.2f l", x * @k, (@h - y) * @k))
+	end
+
 	#
 	# Draws a rectangle.
 	# @param float :x Abscissa of upper-left corner (or upper-right corner for RTL language).
@@ -1989,70 +2023,26 @@ class TCPDF
 		out(sprintf('%.2f %.2f %.2f %.2f re %s', x * @k, (@h - y) * @k, w * @k, -h * @k, op))
 	end
 
-  def Circle(mid_x, mid_y, radius, style='')
-    mid_y = (@h-mid_y)*@k
-    out(sprintf("q\n")) # postscript content in pdf
-    # init line type etc. with /GSD gs G g (grey) RG rg (RGB) w=line witdh etc. 
-    out(sprintf("1 j\n")) # line join
-    # translate ("move") circle to mid_y, mid_y
-    out(sprintf("1 0 0 1 %f %f cm", mid_x, mid_y))
-    kappa = 0.5522847498307933984022516322796
-    # Quadrant 1 
-    x_s = 0.0 # 12 o'clock 
-    y_s = 0.0 + radius
-    x_e = 0.0 + radius # 3 o'clock 
-    y_e = 0.0
-    out(sprintf("%f %f m\n", x_s, y_s)) # move to 12 o'clock 
-    # cubic bezier control point 1, start height and kappa * radius to the right 
-    bx_e1 = x_s + (radius * kappa)
-    by_e1 = y_s
-    # cubic bezier control point 2, end and kappa * radius above 
-    bx_e2 = x_e
-    by_e2 = y_e + (radius * kappa)
-    # draw cubic bezier from current point to x_e/y_e with bx_e1/by_e1 and bx_e2/by_e2 as bezier control points
-    out(sprintf("%f %f %f %f %f %f c\n", bx_e1, by_e1, bx_e2, by_e2, x_e, y_e))
-    # Quadrant 2 
-    x_s = x_e 
-    y_s = y_e # 3 o'clock 
-    x_e = 0.0 
-    y_e = 0.0 - radius # 6 o'clock 
-    bx_e1 = x_s # cubic bezier point 1 
-    by_e1 = y_s - (radius * kappa)
-    bx_e2 = x_e + (radius * kappa) # cubic bezier point 2 
-    by_e2 = y_e
-    out(sprintf("%f %f %f %f %f %f c\n", bx_e1, by_e1, bx_e2, by_e2, x_e, y_e))
-    # Quadrant 3 
-    x_s = x_e 
-    y_s = y_e # 6 o'clock 
-    x_e = 0.0 - radius
-    y_e = 0.0 # 9 o'clock 
-    bx_e1 = x_s - (radius * kappa) # cubic bezier point 1 
-    by_e1 = y_s
-    bx_e2 = x_e # cubic bezier point 2 
-    by_e2 = y_e - (radius * kappa)
-    out(sprintf("%f %f %f %f %f %f c\n", bx_e1, by_e1, bx_e2, by_e2, x_e, y_e))
-    # Quadrant 4 
-    x_s = x_e 
-    y_s = y_e # 9 o'clock 
-    x_e = 0.0 
-    y_e = 0.0 + radius # 12 o'clock 
-    bx_e1 = x_s # cubic bezier point 1 
-    by_e1 = y_s + (radius * kappa)
-    bx_e2 = x_e - (radius * kappa) # cubic bezier point 2 
-    by_e2 = y_e
-    out(sprintf("%f %f %f %f %f %f c\n", bx_e1, by_e1, bx_e2, by_e2, x_e, y_e))
-    if style=='F'
-        op='f'
-    elsif style=='FD' or style=='DF'
-        op='b'
-    else
-        op='s'
-    end
-    out(sprintf("#{op}\n")) # stroke circle, do not fill and close path 
-    # for filling etc. b, b*, f, f*
-    out(sprintf("Q\n")) # finish postscript in PDF
-  end
-  alias_method :circle, :Circle
+	#
+	# Draws a Bezier curve from last draw point.
+	# The Bezier curve is a tangent to the line between the control points at either end of the curve.
+	# @param float :x1 Abscissa of control point 1.
+	# @param float :y1 Ordinate of control point 1.
+	# @param float :x2 Abscissa of control point 2.
+	# @param float :y2 Ordinate of control point 2.
+	# @param float :x3 Abscissa of end point.
+	# @param float :y3 Ordinate of end point.
+	# @access protected
+	# @since 2.1.000 (2008-01-08)
+	#
+	def outCurve(x1, y1, x2, y2, x3, y3)
+		if @rtl
+			x1 = @w - x1
+			x2 = @w - x2
+			x3 = @w - x3
+		end
+		out(sprintf("%.2f %.2f %.2f %.2f %.2f %.2f c", x1 * @k, (@h - y1) * @k, x2 * @k, (@h - y2) * @k, x3 * @k, (@h - y3) * @k))
+	end
 
 	#
 	# Draws a rectangle.
@@ -2140,6 +2130,129 @@ class TCPDF
 		end
 	end
   alias_method :rect, :Rect
+
+	#
+	# Draws an ellipse.
+	# An ellipse is formed from n Bezier curves.
+	# @param float :x0 Abscissa of center point.
+	# @param float :y0 Ordinate of center point.
+	# @param float :rx Horizontal radius.
+	# @param float :ry Vertical radius (if ry = 0 then is a circle, see {@link Circle Circle}). Default value: 0.
+	# @param float :angle: Angle oriented (anti-clockwise). Default value: 0.
+	# @param float :astart: Angle start of draw line. Default value: 0.
+	# @param float :afinish: Angle finish of draw line. Default value: 360.
+	# @param string :style Style of rendering. Possible values are:
+	# <ul>
+	#   <li>D or empty string: Draw (default).</li>
+	#   <li>F: Fill.</li>
+	#   <li>DF or FD: Draw and fill.</li>
+	#   <li>C: Draw close.</li>
+	#   <li>CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).</li>
+	#   <li>CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).</li>
+	# </ul>
+	# @param array :line_style Line style of ellipse. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+	# @param integer :nc Number of curves used in ellipse. Default value: 8.
+	# @access public
+	# @since 2.1.000 (2008-01-08)
+	#
+	def Ellipse(x0, y0, rx, ry=0, angle=0, astart=0, afinish=360, style='', line_style=nil, fill_color=nil, nc=8)
+		if angle != 0
+			StartTransform()
+			Rotate(angle, x0, y0)
+			Ellipse(x0, y0, rx, ry, 0, astart, afinish, style, line_style, fill_color, nc)
+			StopTransform()
+			return
+		end
+		if rx
+			if (false != style.index('F')) and fill_color
+				SetFillColorArray(fill_color)
+			end
+			case style
+			when 'F':
+				op = 'f'
+				line_style = nil
+			when 'FD', 'DF'
+				op = 'B'
+			when 'C'
+				op = 's' # Small 's' signifies closing the path as well
+			when 'CNZ'
+				op = 'W n'
+			when 'CEO'
+				op = 'W* n'
+			else
+				op = 'S'
+			end
+
+			if line_style
+				SetLineStyle(line_style)
+			end
+
+			if ry == 0
+				ry = rx
+			end
+			rx *= @k
+			ry *= @k
+			if nc < 2
+				nc = 2
+			end
+			astart *= ::Math::PI / 180 
+			afinish *= ::Math::PI / 180
+			total_angle = afinish - astart
+			dt = total_angle / nc
+			dtm = dt / 3
+			x0 *= @k
+			y0 = (@h - y0) * @k
+			t1 = astart
+			a0 = x0 + rx * ::Math.cos(t1)
+			b0 = y0 + ry * ::Math.sin(t1)
+			c0 = -rx * ::Math.sin(t1)
+			d0 = ry * ::Math.cos(t1)
+			outPoint(a0 / @k, @h - (b0 / @k))
+			1.upto(nc) do |i|
+				# Draw this bit of the total curve
+				t1 = i * dt + astart
+				a1 = x0 + rx * ::Math.cos(t1)
+				b1 = y0 + ry * ::Math.sin(t1)
+				c1 = -rx * ::Math.sin(t1)
+				d1 = ry * ::Math.cos(t1)
+				outCurve((a0 + c0 * dtm) / @k, @h - ((b0 + d0 * dtm) / @k), (a1 - c1 * dtm) / @k, @h - ((b1 - d1 * dtm) / @k), a1 / @k, @h - (b1 / @k))
+				a0 = a1
+				b0 = b1
+				c0 = c1
+				d0 = d1
+			end
+			out(op)
+		end
+	end
+
+	#
+	# Draws a circle.
+	# A circle is formed from n Bezier curves.
+	# @param float :x0 Abscissa of center point.
+	# @param float :y0 Ordinate of center point.
+	# @param float :r Radius.
+	# @param float :astart: Angle start of draw line. Default value: 0.
+	# @param float :afinish: Angle finish of draw line. Default value: 360.
+	# @param string :style Style of rendering. Possible values are:
+	# <ul>
+	#   <li>D or empty string: Draw (default).</li>
+	#   <li>F: Fill.</li>
+	#   <li>DF or FD: Draw and fill.</li>
+	#   <li>C: Draw close.</li>
+	#   <li>CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).</li>
+	#   <li>CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).</li>
+	# </ul>
+	# @param array :line_style Line style of circle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(red, green, blue). Default value: default color (empty array).
+	# @param integer :nc Number of curves used in circle. Default value: 8.
+	# @access public
+	# @since 2.1.000 (2008-01-08)
+	#
+	def Circle(x0, y0, r, astart=0, afinish=360, style='', line_style=nil, fill_color=nil, nc=8)
+		Ellipse(x0, y0, r, 0, 0, astart, afinish, style, line_style, fill_color, nc)
+	end
+	alias_method :circle, :Circle
 
 	#
 	# Imports a TrueType, Type1, core, or CID0 font and makes it available.
