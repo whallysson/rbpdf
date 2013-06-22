@@ -6667,6 +6667,7 @@ class TCPDF
 
 		dom[key]['align'] = ''
 		dom[key]['listtype'] = ''
+		dom[key]['attribute'] = {} # reset attribute array
 		thead = false # true when we are inside the THEAD tag
 		key += 1
 		level = []
@@ -6697,19 +6698,21 @@ class TCPDF
 					# closing html tag
 					dom[key]['opening'] = false
 					dom[key]['parent'] = level[-1]
-					level.pop
-					dom[key]['fontname'] = dom[(dom[(dom[key]['parent'])]['parent'])]['fontname'].dup
-					dom[key]['fontstyle'] = dom[(dom[(dom[key]['parent'])]['parent'])]['fontstyle'].dup
-					dom[key]['fontsize'] = dom[(dom[(dom[key]['parent'])]['parent'])]['fontsize']
-					dom[key]['bgcolor'] = dom[(dom[(dom[key]['parent'])]['parent'])]['bgcolor'].dup
-					dom[key]['fgcolor'] = dom[(dom[(dom[key]['parent'])]['parent'])]['fgcolor'].dup
-					dom[key]['align'] = dom[(dom[(dom[key]['parent'])]['parent'])]['align'].dup
-					if !dom[(dom[(dom[key]['parent'])]['parent'])]['listtype'].nil?
-						dom[key]['listtype'] = dom[(dom[(dom[key]['parent'])]['parent'])]['listtype'].dup
+					level.pop if level.length > 1
+
+					grandparent = dom[(dom[key]['parent'])]['parent']
+					dom[key]['fontname'] = dom[grandparent]['fontname'].dup
+					dom[key]['fontstyle'] = dom[grandparent]['fontstyle'].dup
+					dom[key]['fontsize'] = dom[grandparent]['fontsize']
+					dom[key]['bgcolor'] = dom[grandparent]['bgcolor'].dup
+					dom[key]['fgcolor'] = dom[grandparent]['fgcolor'].dup
+					dom[key]['align'] = dom[grandparent]['align'].dup
+					if !dom[grandparent]['listtype'].nil?
+						dom[key]['listtype'] = dom[grandparent]['listtype'].dup
 					end
 					# set the number of columns in table tag
-					if (dom[key]['value'] == 'tr') and dom[(dom[(dom[key]['parent'])]['parent'])]['cols'].nil?
-						dom[(dom[(dom[key]['parent'])]['parent'])]['cols'] = dom[(dom[key]['parent'])]['cols']
+					if (dom[key]['value'] == 'tr') and dom[grandparent]['cols'].nil?
+						dom[grandparent]['cols'] = dom[(dom[key]['parent'])]['cols']
 					end
 					if (dom[key]['value'] == 'td') or (dom[key]['value'] == 'th')
 						dom[(dom[key]['parent'])]['content'] = ''
@@ -6719,11 +6722,11 @@ class TCPDF
 					end
 					# store header rows on a new table
 					if (dom[key]['value'] == 'tr') and (dom[(dom[key]['parent'])]['thead'] == true)
-						if dom[(dom[(dom[key]['parent'])]['parent'])]['thead'].length.nil? or dom[(dom[(dom[key]['parent'])]['parent'])]['thead'].length == 0
-							dom[(dom[(dom[key]['parent'])]['parent'])]['thead'] = a[dom[(dom[(dom[key]['parent'])]['parent'])]['elkey']].dup
+						if dom[grandparent]['thead'].length.nil? or dom[grandparent]['thead'].length == 0
+							dom[grandparent]['thead'] = a[dom[grandparent]['elkey']].dup
 						end
 						dom[key]['parent'].upto(key) do |i|
-							dom[(dom[(dom[key]['parent'])]['parent'])]['thead'] << a[dom[i]['elkey']]
+							dom[grandparent]['thead'] << a[dom[i]['elkey']]
 						end
 					end
 					if (dom[key]['value'] == 'table') and dom[(dom[key]['parent'])]['thead'] and (dom[(dom[key]['parent'])]['thead'].length > 0)
@@ -6847,7 +6850,7 @@ class TCPDF
 						end
 						# check for width attribute
 						if !dom[key]['style']['width'].nil?
-							dom[key]['width'] = dom[key]['style']['width']
+							dom[key]['width'] = dom[key]['style']['width'].to_i
 						end
 						# check for height attribute
 						if !dom[key]['style']['height'].nil?
@@ -6957,7 +6960,7 @@ class TCPDF
 					end
 					# check for width attribute
 					if !dom[key]['attribute']['width'].nil?
-						dom[key]['width'] = dom[key]['attribute']['width']
+						dom[key]['width'] = dom[key]['attribute']['width'].to_i
 					end
 					# check for height attribute
 					if !dom[key]['attribute']['height'].nil?
