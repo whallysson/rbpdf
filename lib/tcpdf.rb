@@ -6603,7 +6603,7 @@ class TCPDF
 	#
 	def getHtmlDomArray(html)
 		# remove all unsupported tags (the line below lists all supported tags)
-		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table td th thead tr tt u ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir))
+		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir))
 		html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
 		# replace some blank characters
 		html.gsub!(/@(\r\n|\r)@/, "\n")
@@ -6902,7 +6902,7 @@ class TCPDF
 					if (dom[key]['value'] == 'em') or (dom[key]['value'] == 'i')
 						dom[key]['fontstyle'] << 'I'
 					end
-					if dom[key]['value'] == 'u'
+					if dom[key]['value'] == 'u' or dom[key]['value'] == 'ins'
 						dom[key]['fontstyle'] << 'U'
 					end
 					if dom[key]['value'] == 'del'
@@ -7902,25 +7902,6 @@ class TCPDF
 		return false
 	end
 
-	#
-	# Sets font style.
-	# @param string :tag tag name in lowercase. Supported tags are:<ul>
-	# <li>b : bold text</li>
-	# <li>i : italic</li>
-	# <li>u : underlined</li>
-	# <li>lt : line-through</li></ul>
-	# @param boolean :enable
-	# @access protected
-	#
-	def SetStyle(tag, enable)
-		#Modify style and select corresponding font
-		style='';
-		['b', 'i', 'u', 'd'].each do |s|
-				style << s if tag.downcase == s and enable
-		end
-		SetFont('', style);
-	end
-	
 	#
 	# Output anchor link.
 	# @param string :url link URL or internal link (i.e.: <a href="#23">link to page 23</a>)
