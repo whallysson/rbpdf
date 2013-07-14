@@ -6595,6 +6595,244 @@ class TCPDF
   alias_method :write_html_cell, :writeHTMLCell
 
 	#
+	# Extracts the CSS properties from a CSS string.
+	# @param string :cssdata string containing CSS definitions.
+	# @return A hash where the keys are the CSS selectors and the values are the CSS properties.
+	# @author Nicola Asuni
+	# @since 5.1.000 (2010-05-25)
+	# @access protected
+	#
+	def extractCSSproperties(cssdata)
+		if cssdata.empty?
+			return {}
+		end
+		# remove comments
+		cssdata.gsub!(/\/\*[^\*]*\*\//, '')
+		# remove newlines and multiple spaces
+		cssdata.gsub!(/[\s]+/, ' ')
+		# remove some spaces
+		cssdata.gsub!(/[\s]*([;:\{\}]{1})[\s]*/, '\\1')
+		# remove empty blocks
+		cssdata.gsub!(/([^\}\{]+)\{\}/, '')
+		# replace media type parenthesis
+		cssdata.gsub!(/@media[\s]+([^\{]*)\{/i, '@media \\1§')
+		cssdata.gsub!(/\}\}/mi, '}§')
+		# trim string
+		cssdata = cssdata.strip
+		# find media blocks (all, braille, embossed, handheld, print, projection, screen, speech, tty, tv)
+		cssblocks = {}
+		matches = cssdata.scan(/@media[\s]+([^\§]*)§([^§]*)§/i)
+		unless matches.empty?
+			matches.each { |type|
+				cssblocks[type[0]] = type[1]
+			}
+			# remove media blocks
+			cssdata.gsub!(/@media[\s]+([^\§]*)§([^§]*)§/i, '')
+		end
+		# keep 'all' and 'print' media, other media types are discarded
+		if cssblocks['all'] and !cssblocks['all'].empty?
+			cssdata << cssblocks['all']
+		end
+		if cssblocks['print'] and !cssblocks['print'].empty?
+			cssdata << cssblocks['print']
+		end
+		# reset css blocks array
+		cssblocks = []
+		# explode css data string into array
+		if cssdata[-1, 1] == '}'
+			# remove last parethesis
+			cssdata = cssdata.chop
+		end
+		matches = cssdata.split('}')
+		matches.each_with_index { |block, key|
+			# index 0 contains the CSS selector, index 1 contains CSS properties
+			cssblocks[key] = block.split('{')
+		}
+		# split groups of selectors (comma-separated list of selectors)
+		cssblocks.each_with_index { |block, key|
+			# index 0 contains the CSS selector, index 1 contains CSS properties
+			if block[0].index(',')
+				selectors = block[0].split(',')
+				selectors.each {|sel|
+					cssblocks.push [sel.strip, block[1]]
+				}
+				cssblocks.delete_at(key)
+			end
+		}
+		# covert array to selector => properties
+		cssdata = {}
+		cssblocks.each { |block|
+			selector = block[0]
+			# calculate selector's specificity
+			a = 0 # the declaration is not from is a 'style' attribute
+			b = selector.scan(/[\#]/).size # number of ID attributes
+			c = selector.scan(/[\[\.]/).size # number of other attributes
+			c += selector.scan(/[\:]link|visited|hover|active|focus|target|lang|enabled|disabled|checked|indeterminate|root|nth|first|last|only|empty|contains|not/i).size # number of pseudo-classes
+			d = (' ' + selector).scan(/[\>\+\~\s]{1}[a-zA-Z0-9\*]+/).size # number of element names
+			d += selector.scan(/[\:][\:]/).size # number of pseudo-elements
+			specificity = a.to_s + b.to_s + c.to_s + d.to_s
+			# add specificity to the beginning of the selector
+			cssdata[specificity + ' ' + selector] = block[1]
+		}
+		# sort selectors alphabetically to account for specificity
+		# ksort(cssdata, SORT_STRING)
+		# return array
+		return cssdata
+	end
+
+	#
+	# Returns true if the CSS selector is valid for the selected HTML tag
+	# @param array :dom array of HTML tags and properties
+	# @param int :key key of the current HTML tag
+	# @param string :selector CSS selector string
+	# @return true if the selector is valid, false otherwise
+	# @access protected
+	# @since 5.1.000 (2010-05-25)
+	#
+	def isValidCSSSelectorForTag(dom, key, selector)
+		valid = false; # value to be returned
+		tag = dom[key]['value']
+		selector_class = ''
+		if dom[key]['attribute']['class'] and !dom[key]['attribute']['class'].empty?
+			selector_class = dom[key]['attribute']['class'].downcase
+		end
+		id = ''
+		if dom[key]['attribute']['id'] and !dom[key]['attribute']['id'].empty?
+			selector_id = dom[key]['attribute']['id'].downcase
+		end
+
+		selector_offset = 0
+		offset = nil
+		operator = ''
+		lasttag = ''
+		attrib = ''
+		while selector_offset = selector.index(/([\>\+\~\s]{1})([a-zA-Z0-9\*]+)([^\>\+\~\s]*)/mi, selector_offset)
+			offset = selector_offset
+			selector_offset += $&.length
+			operator = $1
+			lasttag = $2.strip.downcase
+			attrib = $3.strip.downcase
+		end
+		if offset
+			if (lasttag == '*') or (lasttag == tag)
+				# the last element on selector is our tag or 'any tag'
+				if !attrib.empty?
+					# check if matches class, id, attribute, pseudo-class or pseudo-element
+					case attrib[0, 1]
+					when '.'  # class
+						valid = true  if attrib.sub(/^./, "") == selector_class
+					when '#'  # ID
+						valid = true  if attrib.sub(/^#/, "") == selector_id
+					when '['  # attribute
+						attrmatch = attrib.scan(/\[([a-zA-Z0-9]*)[\s]*([\~\^\$\*\|\=]*)[\s]*["]?([^"\]]*)["]?\]/i)
+						if !attrmatch.empty?
+							att = attrmatch[0].downcase
+							val = attrmatch[2]
+							if dom[key]['attribute'][att]
+								case attrmatch[1]
+								when '='
+									valid = true  if dom[key]['attribute'][att] == val
+								when '~='
+									valid = true  if in_array(val, dom[key]['attribute'][att].split(' '))
+								when '^='
+									valid = true  if val == substr(dom[key]['attribute'][att], 0, val.length)
+								when '$='
+									valid = true  if val == substr(dom[key]['attribute'][att], -val.length)
+								when '*='
+									valid = true  if dom[key]['attribute'][att].index(val) != false
+								when '|='
+									if dom[key]['attribute'][att] == val
+										valid = true
+									elsif ! dom[key]['attribute'][att].scan(/#{val}[\-]{1}/i).empty?
+										valid = true
+									end
+								else
+									valid = true
+								end
+							end
+						end
+					when ':'  # pseudo-class or pseudo-element
+						if attrib{1} == ':'  # pseudo-element
+							# pseudo-elements are not supported!
+							# (::first-line, ::first-letter, ::before, ::after)
+						else # pseudo-class
+							# pseudo-classes are not supported!
+							# (:root, :nth-child(n), :nth-last-child(n), :nth-of-type(n), :nth-last-of-type(n), :first-child, :last-child, :first-of-type, :last-of-type, :only-child, :only-of-type, :empty, :link, :visited, :active, :hover, :focus, :target, :lang(fr), :enabled, :disabled, :checked)
+						end
+					end # end of switch
+				else
+					valid = true
+				end
+
+				if valid and (offset > 0)
+					valid = false
+					# check remaining selector part
+					selector = selector[0, offset]
+					case operator
+					when ' '  # descendant of an element
+						while dom[key]['parent'] > 0
+							if isValidCSSSelectorForTag(dom, dom[key]['parent'], selector)
+								valid = true
+								break
+							else
+								key = dom[key]['parent']
+							end
+						end
+					when '>'  # child of an element
+						valid = isValidCSSSelectorForTag(dom, dom[key]['parent'], selector)
+					when '+'  # immediately preceded by an element
+						(key - 1).downto(dom[key]['parent'] + 1) do |i|
+							if dom[i]['tag'] and dom[i]['opening']
+								valid = isValidCSSSelectorForTag(dom, i, selector)
+								break
+							end
+						end
+					when '~'  # preceded by an element
+						(key - 1).downto(dom[key]['parent'] + 1) do |i|
+							if dom[i]['tag'] and dom[i]['opening']
+								if isValidCSSSelectorForTag(dom, i, selector)
+									break
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+		return valid
+	end
+
+	#
+	# Returns the styles that apply for the selected HTML tag.
+	# @param array :dom array of HTML tags and properties
+	# @param int :key key of the current HTML tag
+	# @param hash :css array of CSS properties
+	# @return string containing CSS properties
+	# @access protected
+	# @since 5.1.000 (2010-05-25)
+	#
+	def getTagStyleFromCSS(dom, key, css)
+		tagstyle = '' # style to be returned
+		# get all styles that apply
+		css.each { |selector, style|
+			# remove specificity
+			selector = selector[selector.index(' ')..-1]
+			# check if this selector apply to current tag
+			if isValidCSSSelectorForTag(dom, key, selector)
+				# apply style
+				tagstyle << ';' + style
+			end
+		}
+		if dom[key]['attribute']['style']
+			# attach inline style (latest properties have high priority)
+			tagstyle << ';' + dom[key]['attribute']['style']
+		end
+		# remove multiple semicolons
+		tagstyle.gsub!(/[;]+/, ';')
+		return tagstyle
+	end
+
+	#
 	# Returns the HTML DOM array.
 	# <ul><li>dom[key]['tag'] = true if tag, false otherwise;</li><li>dom[key]['value'] = tag name or text;</li><li>dom[key]['opening'] = true if opening tag, false otherwise;</li><li>dom[key]['attribute'] = array of attributes (attribute name is the key);</li><li>dom[key]['style'] = array of style attributes (attribute name is the key);</li><li>dom[key]['parent'] = id of parent element;</li><li>dom[key]['fontname'] = font family name;</li><li>dom[key]['fontstyle'] = font style;</li><li>dom[key]['fontsize'] = font size in points;</li><li>dom[key]['bgcolor'] = RGB array of background color;</li><li>dom[key]['fgcolor'] = RGB array of foreground color;</li><li>dom[key]['width'] = width in pixels;</li><li>dom[key]['height'] = height in pixels;</li><li>dom[key]['align'] = text alignment;</li><li>dom[key]['cols'] = number of colums in table;</li><li>dom[key]['rows'] = number of rows in table;</li></ul>
 	# @param string :html html code
@@ -6602,8 +6840,68 @@ class TCPDF
 	# @since 3.2.000 (2008-06-20)
 	#
 	def getHtmlDomArray(html)
+		# array of CSS styles ( selector => properties).
+		css = {}
+		# extract external CSS files
+		matches = html.scan(/<link([^\>]*?)>/mi)
+		unless matches.empty?
+			matches.each { |link|
+				type = link[0].scan(/type[\s]*=[\s]*"text\/css"/)
+				next if type.empty?
+
+				type = link[0].scan(/media[\s]*=[\s]*"([^"]*)"/)
+				# get 'all' and 'print' media, other media types are discarded
+				# (all, braille, embossed, handheld, print, projection, screen, speech, tty, tv)
+				if type.empty? or (type[0][0] and ((type[0][0] == 'all') or (type[0][0] == 'print')))
+					type = link[0].scan(/href[\s]*=[\s]*"([^"]*)"/)
+					next if type.empty?
+
+					# read CSS data file
+					uri = type[0][0].strip
+					if uri =~ %r{^/}
+						uri_path = Rails.root.join('public')
+						uri.sub!(%r{^/}, '')
+						uri.split('/').each {|path|
+							uri_path = uri_path.join(path)
+						}
+						cssdata = ''
+						next unless File.exists?(uri_path)
+
+						open(uri_path) do |f|
+							cssdata << f.read
+						end
+					else
+						uri = URI(uri)
+						next if !uri.scheme or !uri.host
+
+						res = Net::HTTP.get_response(uri)
+						cssdata = res.body
+					end
+					css = css.merge(extractCSSproperties(cssdata))
+				end
+			}
+		end
+		# extract style tags
+		matches = html.scan(/<style([^\>]*?)>([^\<]*?)<\/style>/mi)
+		unless matches.empty?
+			matches.each { |media|
+				type = media[0].scan(/media[\s]*=[\s]*"([^"]*)"/)
+				# get 'all' and 'print' media, other media types are discarded
+				# (all, braille, embossed, handheld, print, projection, screen, speech, tty, tv)
+				if type.empty? or (type[0] and ((type[0] == 'all') or (type[0] == 'print')))
+					cssdata = media[1]
+					css = css.merge(extractCSSproperties(cssdata))
+				end
+			}
+		end
+		# remove heade and style blocks
+		html.gsub!(/<head([^\>]*?)>(.*)<\/head>/mi, '')
+		html.gsub!(/<style([^\>]*?)>([^\<]*?)<\/style>/mi, '')
+		# remove comments
+		html.gsub!(/<!--(.|\s)*?-->/m, '')
+
 		# remove all unsupported tags (the line below lists all supported tags)
-		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir))
+		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id))
 		html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
 		# replace some blank characters
 		html.gsub!(/@(\r\n|\r)@/, "\n")
@@ -6748,10 +7046,14 @@ class TCPDF
 						dom[key]['listtype'] = dom[parentkey]['listtype'].dup
 					end
 					# get attributes
-					attr_array = element.scan(/([^=\s]*)=["\']?([^"\']*)["\']?/)
+					attr_array = element.scan(/([^=\s]*)[\s]*=[\s]*"([^"]*)"/)
 					dom[key]['attribute'] = {} # reset attribute array
 					attr_array.each do |name, value|
 						dom[key]['attribute'][name.downcase] = value
+					end
+					if !css.empty?
+						# merge eternal CSS style to current style
+						dom[key]['attribute']['style'] = getTagStyleFromCSS(dom, key, css)
 					end
 					# split style attributes
 					if !dom[key]['attribute']['style'].nil?
@@ -6759,6 +7061,7 @@ class TCPDF
 						style_array = dom[key]['attribute']['style'].scan(/([^;:\s]*):([^;]*)/)
 						dom[key]['style'] = {} # reset style attribute array
 						style_array.each do |name, value|
+							# in case of duplicate attribute the last replace the previous
 							dom[key]['style'][name.downcase] = value.strip
 						end
 						# --- get some style attributes ---
