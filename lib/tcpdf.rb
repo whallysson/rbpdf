@@ -2700,16 +2700,17 @@ class TCPDF
 	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
 	# @param mixed :link URL or identifier returned by AddLink().
 	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
+	# @param boolean :ignore_min_height if true ignore automatic minimum height value.
 	# @since 1.0
 	# @see SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), AddLink(), Ln(), MultiCell(), Write(), SetAutoPageBreak()
 	#
-	def Cell(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0)
+	def Cell(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false)
 		min_cell_height = @font_size * @@k_cell_height_ratio
 		if h < min_cell_height
 			h = min_cell_height
 		end
 		checkPageBreak(h)
-		out(getCellCode(w, h, txt, border, ln, align, fill, link, stretch))
+		out(getCellCode(w, h, txt, border, ln, align, fill, link, stretch, ignore_min_height))
 	end
   alias_method :cell, :Cell
 
@@ -2752,16 +2753,19 @@ class TCPDF
 	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
 	# @param mixed :link URL or identifier returned by AddLink().
 	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
+	# @param boolean :ignore_min_height if true ignore automatic minimum height value.
 	# @access protected
 	# @since 1.0
 	# @see Cell()
 	#
-	def getCellCode(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0)
+	def getCellCode(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false)
 		rs = "" # string to be returned
 		txt = removeSHY(txt)
-		min_cell_height = @font_size * @@k_cell_height_ratio
-		if h < min_cell_height
-			h = min_cell_height
+		if !ignore_min_height
+			min_cell_height = @font_size * @@k_cell_height_ratio
+			if h < min_cell_height
+				h = min_cell_height
+			end
 		end
 		k = @k
 		if !w or (w <= 0)
@@ -3105,7 +3109,7 @@ class TCPDF
 					end
 				end
 				SetX(nx)
-				ccode = getCellCode(w, h, '', cborder, 1, '', fill)
+				ccode = getCellCode(w, h, '', cborder, 1, '', fill, '', 0, false)
 				if (cborder != 0) or (fill == 1)
 					pstart = (getPageBuffer(@page))[0, @intmrk[@page]]
 					pend = (getPageBuffer(@page))[@intmrk[@page]..-1]
@@ -3119,7 +3123,7 @@ class TCPDF
 			SetY(y)
 			SetX(x)
 			# design a cell around the text
-			ccode = getCellCode(w, h, '', border, 1, '', fill)
+			ccode = getCellCode(w, h, '', border, 1, '', fill, '', 0, true)
 			if (border != 0) or (fill == 1)
 				if !@transfmrk[@page].nil?
 					pagemark = @transfmrk[@page]
@@ -5181,7 +5185,7 @@ class TCPDF
 				# puts data before page footer
 				page = (getPageBuffer(@page))[0..(-@footerlen[@page]-1)]
 				footer = (getPageBuffer(@page))[-@footerlen[@page]..-1]
-				setPageBuffer(@page, page + ' ' + s.to_s + "\n" + footer)
+				setPageBuffer(@page, page + s.to_s + "\n" + footer)
 			else
 				setPageBuffer(@page, s.to_s + "\n", true)
 			end
@@ -6312,8 +6316,10 @@ class TCPDF
 									end
 								end
 								if  (trwsp['rowspan'] > 0) and (rsstartx > @x - cellspacing - currentcmargin - @feps) and (rsstartx < @x + cellspacing + currentcmargin + @feps) and ((trwsp['starty'] < @y - @feps) or (trwsp['startpage'] < @page))
+									# set the starting X position of the current cell
 									@x = rsendx + cellspacingx
 									if (trwsp['rowspan'] == 1) and !dom[trid]['endy'].nil? and !dom[trid]['endpage'].nil? and (trwsp['endpage'] == dom[trid]['endpage'])
+										# set ending Y position for row
 										dom[table_el]['rowspans'][rsk]['endy'] = [dom[trid]['endy'], trwsp['endy']].max
 										dom[trid]['endy'] = dom[table_el]['rowspans'][rsk]['endy']
 									end
@@ -7566,9 +7572,16 @@ class TCPDF
 							dom[(dom[key]['parent'])]['endy'] = dom[table_el]['rowspans'][k]['endy']
 						end
 					}
+					# update remaining rowspanned cells
+					dom[table_el]['rowspans'].each_with_index { |trwsp, k|
+						if dom[table_el]['rowspans'][k]['rowspan'] == 0
+							dom[table_el]['rowspans'][k]['endpage'] = dom[(dom[key]['parent'])]['endpage']
+							dom[table_el]['rowspans'][k]['endy'] = dom[(dom[key]['parent'])]['endy']
+						end
+					}
 				end
-				SetPage(parent['endpage'])
-				@y = parent['endy']
+				SetPage(dom[(dom[key]['parent'])]['endpage']);
+				@y = dom[(dom[key]['parent'])]['endy']
 				if !dom[table_el]['attribute']['cellspacing'].nil?
 					cellspacing = getHTMLUnitToUnits(dom[table_el]['attribute']['cellspacing'], 1, 'px')
 					@y += cellspacing
@@ -7673,7 +7686,7 @@ class TCPDF
 									end
 								end
 								# design a cell around the text
-								ccode = @fill_color + "\n" + getCellCode(cw, ch, '', cborder, 1, '', fill)
+								ccode = @fill_color + "\n" + getCellCode(cw, ch, '', cborder, 1, '', fill, '', 0, true)
 								if (cborder != 0) or (fill == 1)
 									pstart = getPageBuffer(@page)[0, @intmrk[@page]]
 									pend = getPageBuffer(@page)[@intmrk[@page]..-1]
@@ -7683,18 +7696,18 @@ class TCPDF
 							end
 						else
 							SetPage(startpage)
-							ch = endy - parent['starty']
 							if !cellpos['bgcolor'].nil? and (cellpos['bgcolor'] != false)
 								SetFillColorArray(cellpos['bgcolor'])
 								fill = 1
 							else
 								fill = 0
 							end
-							cw = (cellpos['endx'] - cellpos['startx']).abs
 							@x = cellpos['startx']
 							@y = parent['starty']
+							cw = (cellpos['endx'] - cellpos['startx']).abs
+							ch = endy - parent['starty']
 							# design a cell around the text
-							ccode = @fill_color + "\n" + getCellCode(cw, ch, '', border, 1, '', fill)
+							ccode = @fill_color + "\n" + getCellCode(cw, ch, '', border, 1, '', fill, '', 0, true)
 							if (border != 0) or (fill == 1)
 								if !@transfmrk[@page].nil?
 									pagemark = @transfmrk[@page]
