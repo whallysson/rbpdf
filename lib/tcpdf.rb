@@ -3314,6 +3314,10 @@ class TCPDF
     
 		# max column width
 		wmax = w - (2 * @c_margin)
+		if chrwidth > wmax
+			# a single character do not fit on column
+			return ''
+		end
 
 		i = 0    # character position
 		j = 0    # current starting position
@@ -5787,7 +5791,7 @@ class TCPDF
 	#
 	# Allows to preserve some HTML formatting (limited support).<br />
 	# IMPORTANT: The HTML must be well formatted - try to clean-up it using an application like HTML-Tidy before submitting.
-	# Supported tags are: a, b, blockquote, br, dd, del, div, dl, dt, em, font, h1, h2, h3, h4, h5, h6, hr, i, img, li, ol, p, small, span, strong, sub, sup, table, td, th, tr, u, ul, 
+	# Supported tags are: a, b, blockquote, br, dd, del, div, dl, dt, em, font, h1, h2, h3, h4, h5, h6, hr, i, img, li, ol, p, pre, small, span, strong, sub, sup, table, td, th, thead, tr, tt, u, ul
 	# @param string :html text to display
 	# @param boolean :ln if true add a new line after text (default = true)
 	# @param int :fill Indicates if the background must be painted (1:true) or transparent (0:false).
@@ -8037,7 +8041,7 @@ class TCPDF
 			r = size / 6
 			lspace += 2 * r
 			if @rtl
-				@x += lspace
+				@x = @w - @x - lspace
 			else
 				@x -= lspace
 			end
@@ -8046,7 +8050,7 @@ class TCPDF
 			l = size / 3
 			lspace += l
 			if @rtl
-				@x += lspace
+				@x = @w - @x - lspace
 			else
 				@x -= lspace
 			end
