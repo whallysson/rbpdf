@@ -8956,15 +8956,31 @@ class TCPDF
 	# @param string :txt bookmark description.
 	# @param int :level bookmark level.
 	# @param float :y Ordinate of the boorkmark position (default = -1 = current position).
+	# @param int :page target page number (leave empty for current page).
 	# @access public
 	# @author Olivier Plathey, Nicola Asuni
 	# @since 2.1.002 (2008-02-12)
 	#
-	def Bookmark(txt, level=0, y=-1)
+	def Bookmark(txt, level=0, y=-1, page='')
+		if level < 0
+			level = 0
+		end
+		if @outlines[0]
+			lastoutline = @outlines[-1]
+			maxlevel = lastoutline[:l] + 1
+		else
+			maxlevel = 0
+		end
+		if level > maxlevel
+			level = maxlevel
+		end
 		if y == -1
 			y = GetY()
 		end
-		@outlines.push :t => txt, :l => level, :y => y, :p => PageNo()
+		if page.empty?
+			page = PageNo()
+		end
+		@outlines.push :t => txt, :l => level, :y => y, :p => page
 	end
 
 	#
@@ -9012,7 +9028,7 @@ class TCPDF
 			out('/Next ' + (n + o[:next]).to_s + ' 0 R') if !o[:next].nil?
 			out('/First ' + (n + o[:first]).to_s + ' 0 R') if !o[:first].nil?
 			out('/Last ' + (n + o[:last]).to_s + ' 0 R') if !o[:last].nil?
-			out('/Dest [%d 0 R /XYZ 0 %.2f null]' % [1 + 2 * o[:p], (@h - o[:y]) * @k])
+			out('/Dest [%d 0 R /XYZ 0 %.2f null]' % [1 + 2 * o[:p], @pagedim[o[:p]]['h'] - o[:y] * @k])
 			out('/Count 0>>')
 			out('endobj')
 		end
