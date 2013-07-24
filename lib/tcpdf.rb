@@ -233,6 +233,9 @@ class TCPDF
 		@rtl = false
 		@tmprtl = false
 
+		@x ||= 0 
+		@y ||= 0 
+
 		# bookmark
 		@outlines ||= []
 
@@ -547,12 +550,16 @@ class TCPDF
 	#
 	# Enable or disable Right-To-Left language mode
 	# @param Boolean :enable if true enable Right-To-Left language mode.
+	# @param Boolean :resetx if true reset the X position on direction change.
 	# @access public
 	# @since 2.0.000 (2008-01-03)
 	#
-	def SetRTL(enable)
-		@rtl    = enable ? true : false
+	def SetRTL(enable, resetx=true)
+		enable = enable ? true : false
+		resetx = resetx and (enable != @rtl)
+		@rtl = enable
 		@tmprtl = false
+		Ln(0) if resetx
 	end
   alias_method :set_rtl, :SetRTL
 
@@ -574,9 +581,26 @@ class TCPDF
 	# @since 2.1.000 (2008-01-09)
 	#
 	def SetTempRTL(mode)
-		@tmprtl = mode
+		newmode = false
+		case mode
+		when 'ltr', 'LTR', 'L'
+			newmode = 'L' if @rtl
+		when 'rtl', 'RTL', 'R'
+			newmode = 'R' if !@rtl
+		end
+		@tmprtl = newmode
 	end
   alias_method :set_temp_rtl, :SetTempRTL
+
+	#
+	# Return the current temporary RTL status
+	# @return boolean
+	# @access public
+	# @since 4.8.014 (2009-11-04)
+	#
+	def isRTLTextDir()
+		return (@rtl or (@tmprtl == 'R'))
+	end
 
 	#
 	# Set the last cell height.
@@ -3266,7 +3290,7 @@ class TCPDF
 		end
 
 		# check if string contains RTL text
-		if arabic or @tmprtl or (txt =~ @@k_re_pattern_rtl)
+		if arabic or (@tmprtl == 'R') or (txt =~ @@k_re_pattern_rtl)
 			rtlmode = true
 		else
 			rtlmode = false
@@ -6024,7 +6048,7 @@ class TCPDF
 							t_x = -mdiff
 						elsif (plalign == 'J') and (plalign == lalign)
 							# Justification
-							if @rtl or @tmprtl
+							if isRTLTextDir()
 								t_x = @l_margin - @endlinex
 							end
 							no = 0
@@ -6044,7 +6068,7 @@ class TCPDF
 									lnstring[kk][0].gsub!('#!#OP#!#', '(')
 									lnstring[kk][0].gsub!('#!#CP#!#', ')')
 									if kk == maxkk
-										if @rtl or @tmprtl
+										if isRTLTextDir()
 											tvalue = lnstring[kk][0].lstrip
 										else
 											tvalue = lnstring[kk][0].rstrip
@@ -6056,7 +6080,7 @@ class TCPDF
 									no += lnstring[kk][0].count(32.chr)
 									ns += tvalue.count(32.chr)
 								end
-								if @rtl or @tmprtl
+								if isRTLTextDir()
 									t_x = @l_margin - @endlinex - ((no - ns - 1) * GetStringWidth(32.chr))
 								end
 								# calculate additional space to add to each space
@@ -6071,7 +6095,7 @@ class TCPDF
 								while pmid_offset = pmid.index(/([0-9\.\+\-]*)[\s](Td|cm|m|l|c|re)[\s]/x, offset)
 									pmid_data = $1
 									pmid_mark = $2
-									if @rtl or @tmprtl
+									if isRTLTextDir()
 										spacew = spacewidth * (nsmax - ns)
 									else
 										spacew = spacewidth * ns
@@ -6103,7 +6127,7 @@ class TCPDF
 										currentxpos = $1.to_i
 										if (strcount <= maxkk) and (pmid_mark == 'Td')
 											if strcount == maxkk
-												if @rtl or @tmprtl
+												if isRTLTextDir()
 													tvalue = lnstring[strcount][0]
 												else
 													tvalue = lnstring[strcount][0].strip
@@ -6114,7 +6138,7 @@ class TCPDF
 											ns += tvalue.count(32.chr)
 											strcount += 1
 										end
-										if @rtl or @tmprtl
+										if isRTLTextDir()
 											spacew = spacewidth * (nsmax - ns)
 										end
 										# justify block
@@ -6431,7 +6455,7 @@ class TCPDF
 				end
 				# text
 				@htmlvspace = 0
-				if !@premode and (@rtl or @tmprtl)
+				if !@premode and isRTLTextDir()
 					# reverse spaces order
 					len1 = dom[key]['value'].length
 					lsp = len1 - dom[key]['value'].lstrip.length
@@ -6448,7 +6472,7 @@ class TCPDF
 				end
 				if newline
 					if !@premode
-						if @rtl or @tmprtl
+						if isRTLTextDir()
 							dom[key]['value'] = dom[key]['value'].rstrip
 						else
 							dom[key]['value'] = dom[key]['value'].lstrip
@@ -7301,7 +7325,7 @@ class TCPDF
 		firstorlast = (key == 1)
 		# check for text direction attribute
 		if !tag['attribute']['dir'].nil?
-			@tmprtl = tag['attribute']['dir'] == 'rtl' ? 'R' : 'L'
+			SetTempRTL(tag['attribute']['dir'])
 		else
 			@tmprtl = false
 		end
@@ -7595,7 +7619,7 @@ class TCPDF
 				# account for booklet mode
 				if @page > parent['startpage']
 					if @rtl and (@pagedim[@page]['orm'] != @pagedim[parent['startpage']]['orm'])
-						@x += @pagedim[@page]['orm'] - @pagedim[parent['startpage']]['orm']
+						@x -= @pagedim[@page]['orm'] - @pagedim[parent['startpage']]['orm']
 					elsif !@rtl and (@pagedim[@page]['olm'] != @pagedim[parent['startpage']]['olm'])
 						@x += @pagedim[@page]['olm'] - @pagedim[parent['startpage']]['olm']
 					end
