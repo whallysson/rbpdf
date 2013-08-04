@@ -25,9 +25,26 @@ module RFPDF
 
   # http://uk2.php.net/getimagesize
   def getimagesize(filename)
+    out = Hash.new
+    unless Object.const_defined?(:Magick)
+      type = File::extname(filename)
+      return false if type != '.png'
+
+      open(filename,'rb') do |f|
+        # Check signature
+        return false if (f.read(8)!=137.chr + 'PNG' + 13.chr + 10.chr + 26.chr + 10.chr)
+        # Read header chunk
+        f.read(4)
+        return false if (f.read(4)!='IHDR')
+        out[0] = freadint(f)
+        out[1] = freadint(f)
+      end
+
+      return out
+    end
+
     image = Magick::ImageList.new(filename)
     
-    out = Hash.new
     out[0] = image.columns
     out[1] = image.rows
     

@@ -45,6 +45,8 @@
 #
 #============================================================+
 
+require 'core/rmagick'
+
 #
 # TCPDF Class.
 # @package com.tecnick.tcpdf
@@ -406,8 +408,8 @@ class TCPDF
 		@ur_form = "/Add/Delete/FillIn/Import/Export/SubmitStandalone/SpawnTemplate";
 		@ur_signature = "/Modify";
 
-		#/ set default JPEG quality
-		@jpeg_quality = 75;
+		# set default JPEG quality
+		@jpeg_quality ||= 75
 
 		# initialize some settings
 #		utf8Bidi([''], '');
@@ -3684,8 +3686,13 @@ class TCPDF
 	end
 
 	#
-	# Puts an image in the page. The upper-left corner must be given. The dimensions can be specified in different ways:<ul><li>explicit width and height (expressed in user unit)</li><li>one explicit dimension, the other being calculated automatically in order to keep the original proportions</li><li>no explicit dimension, in which case the image is put at 72 dpi</li></ul>
-	# Supported formats are JPEG and PNG.
+	# Puts an image in the page. 
+	# The upper-left corner must be given. 
+	# The dimensions can be specified in different ways:<ul>
+	# <li>explicit width and height (expressed in user unit)</li>
+	# <li>one explicit dimension, the other being calculated automatically in order to keep the original proportions</li>
+	# <li>no explicit dimension, in which case the image is put at 72 dpi</li></ul>
+	# Supported formats are PNG images whitout RMagick library and JPEG and GIF images supported by RMagick.
 	# For JPEG, all flavors are allowed:<ul><li>gray scales</li><li>true colors (24 bits)</li><li>CMYK (32 bits)</li></ul>
 	# For PNG, are allowed:<ul><li>gray scales on at most 8 bits (256 levels)</li><li>indexed colors</li><li>true colors (24 bits)</li></ul>
 	# If a transparent color is defined, it will be taken into account (but will be only interpreted by Acrobat 4 and above).<br />
@@ -3700,27 +3707,62 @@ class TCPDF
 	# @param string :type Image format. Possible values are (case insensitive): JPG, JPEG, PNG. If not specified, the type is inferred from the file extension.
 	# @param mixed :link URL or identifier returned by AddLink().
 	# @param string :align Indicates the alignment of the pointer next to image insertion relative to image height. The value can be:<ul><li>T: top-right for LTR or top-left for RTL</li><li>M: middle-right for LTR or middle-left for RTL</li><li>B: bottom-right for LTR or bottom-left for RTL</li><li>N: next line</li></ul>
+	# @param boolean :resize If true resize (reduce) the image to fit :w and :h (requires RMagick library).
+	# @param int :dpi dot-per-inch resolution used on resize
+	# @param string :palign Allows to center or align the image on the current line. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
+	# @param boolean :ismask true if this image is a mask, false otherwise
+	# @param mixed :imgmask image object returned by this function or false
+	# @param mixed :border Indicates if borders must be drawn around the image. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
+	# @return image information
+	# @access public
 	# @since 1.1
-	# @see AddLink()
 	#
-	def Image(file, x, y, w=0, h=0, type='', link=nil, align='')
-		#Put an image on the page
+	def Image(file, x=nil, y=nil, w=0, h=0, type='', link=nil, align='', resize=false, dpi=300, palign='', ismask=false, imgmask=false, border=0)
+		x = @x if x == nil
+		y = @y if y == nil
+
+		# get image dimensions
+		size_info = getimagesize(file)
+		return false if size_info == false
+
+                pixw = size_info[0]
+                pixh = size_info[1]
+
+		# calculate image width and height on document
+		if (w <= 0) and (h <= 0)
+			# convert image size to document unit
+			w = pixw / (@img_scale * @k)
+			h = pixh / (@img_scale * @k)
+		elsif w <= 0
+			w = h * pixw / pixh
+		elsif h <= 0
+			h = w * pixh / pixw
+		end
+		# calculate new minimum dimensions in pixels
+		neww = (w * @k * dpi / @dpi).round
+		newh = (h * @k * dpi / @dpi).round
+		# check if resize is necessary (resize is used only to reduce the image)
+		if (neww * newh) >= (pixw * pixh)
+			resize = false
+		end
+
+		# check if image has been already added on document
 		if (@images[file].nil?)
 			#First use of image, get info
 			if (type == '')
-				pos = file.rindex('.');
-				if (pos == 0)
-					Error('Image file has no extension and no type was specified: ' + file);
-				end
-				type = file[pos+1..-1];
+				type = File::extname(file)
+				Error('Image file has no extension and no type was specified: ' + file) if type == ''
+				type = type.sub(/^\./, '')
 			end
 			type.downcase!
 			if (type == 'jpg' or type == 'jpeg')
-				info=parsejpg(file);
-#			elsif type == 'gif'
-#				info=parsegif(file)
+				info=parsejpeg(file)
 			elsif (type == 'png')
 				info=parsepng(file);
+			elsif (type == 'gif')
+				tmpFile = imageToPNG(file)
+				info=parsepng(tmpFile.path)
+                                tmpFile.delete
 			else
 				#Allow for additional formats
 				mtd='parse' + type;
@@ -3729,55 +3771,110 @@ class TCPDF
 				end
 				info=send(mtd, file);
 			end
+
+			## not use ##
+			#type = 'jpeg' if type == 'jpg'
+			## Specific image handlers
+			#mtd = 'parse' + type
+			#info = false
+			#if !self.respond_to?(mtd)
+			#	# TCPDF image functions
+			#	info = send(mtd, file)
+			#end
+
+			if !info
+				if Object.const_defined?(:Magick)
+					# RMagick library
+					img = Magick::ImageList.new(file)
+					if resize
+						img.resize(neww,newh)
+					end
+					img.format = 'JPEG'
+					tmpname = Tempfile.new(File::basename(file), @@k_path_cache)
+					tmpname.binmode
+					jpeg_quality = @jpeg_quality
+					tmpname.print img.to_blob { self.quality = jpeg_quality }
+                			tmpname.close
+
+					info = parsejpeg(tmpname.path)
+					tmpname.delete
+				else
+					return false
+				end
+			end
+
 			if info == false
 				# If false, we cannot process image
-				return
+				return false
+			end
+			if ismask
+				# force grayscale
+				info['cs'] = 'DeviceGray'
 			end
 			info['i']=@images.length+1;
+			if imgmask != false
+				info['masked'] = imgmask
+			end
+			# add image to document
 			@images[file] = info;
 		else
 			info=@images[file];
 		end
-		#Automatic width and height calculation if needed
-		if ((w == 0) and (h == 0))
-			#Put image at 72 dpi
-			# 2004-06-14 :: Nicola Asuni, scale factor where added
-			w = info['w'] / (@img_scale * @k);
-			h = info['h'] / (@img_scale * @k);
-		end
-		if (w == 0)
-			w = h * info['w'] / info['h'];
-		end
-		if (h == 0)
-			h = w * info['h'] / info['w'];
-		end
 
-		# 2007-10-19 Warren Sherliker
 		# Check whether we need a new page first as this does not fit
-		# Copied from Cell()
-		if((@y + h) > @page_break_trigger) and !@in_footer and AcceptPageBreak()
+		if (y + h > @page_break_trigger) and !@in_footer and AcceptPageBreak()
 			# Automatic page break
 			AddPage(@cur_orientation)
-			# Reset coordinates to top fo next page
-			x = GetX()
-			y = GetY()
+			# Reset Y coordinate to the top of next page
+			y = GetY() + @c_margin
 		end
-		# 2007-10-19 Warren Sherliker: End Edit
-
-		#2002-07-31 - Nicola Asuni
 		# set bottomcoordinates
 		@img_rb_y = y + h;
+		# set alignment
 		if @rtl
-			ximg = @w - x - w
-			# set left side coordinate
-			@img_rb_x = ximg
+			if palign == 'L'
+				ximg = @l_margin
+				# set right side coordinate
+				@img_rb_x = ximg + w
+			elsif palign == 'C'
+				ximg = (@w - x - w) / 2
+				# set right side coordinate
+				@img_rb_x = ximg + w
+			else
+				ximg = @w - x - w
+				# set left side coordinate
+				@img_rb_x = ximg
+			end
 		else
-			ximg = x
-			# set right side coordinate
-			@img_rb_x = ximg + w
+			if palign == 'R'
+				ximg = @w - @r_margin - w
+				# set left side coordinate
+				@img_rb_x = ximg
+			elsif palign == 'C'
+				ximg = (@w - x - w) / 2
+				# set right side coordinate
+				@img_rb_x = ximg + w
+			else
+				ximg = x
+				# set right side coordinate
+				@img_rb_x = ximg + w
+			end
 		end
 		xkimg = ximg * @k
 		out(sprintf('q %.2f 0 0 %.2f %.2f %.2f cm /I%d Do Q', w * @k, h * @k, xkimg, (@h -(y + h)) * @k, info['i']))
+
+		if border != 0
+			bx = x
+			by = y
+			@x = ximg
+			if @rtl
+				@x += w
+			end
+			@y = y
+			Cell(w, h, '', border, 0, '', 0, '', 0)
+			@x = bx
+			@y = by
+		end
 
 		if link
 			Link(ximg, y, w, h, link)
@@ -3797,6 +3894,8 @@ class TCPDF
 		when 'N'
 			SetY(@img_rb_y)
 		end
+		@endlinex = @img_rb_x
+		return info['i']
 	end
   alias_method :image, :Image
 
@@ -4736,8 +4835,11 @@ class TCPDF
 			out('/Subtype /Image');
 			out('/Width ' + info['w'].to_s);
 			out('/Height ' + info['h'].to_s);
+			if info['masked']
+				out('/SMask ' + (@n - 1).to_s + ' 0 R')
+			end
 			if (info['cs']=='Indexed')
-				out('/ColorSpace [/Indexed /DeviceRGB ' + (info['pal'].length/3-1) + ' ' + (@n+1) + ' 0 R]');
+				out('/ColorSpace [/Indexed /DeviceRGB ' + (info['pal'].length / 3 - 1).to_s + ' ' + (@n + 1).to_s + ' 0 R]')
 			else
 				out('/ColorSpace /' + info['cs']);
 				if (info['cs']=='DeviceCMYK')
@@ -4765,7 +4867,7 @@ class TCPDF
 			#Palette
 			if (info['cs']=='Indexed')
 				newobj();
-				pal=(@compress) ? gzcompress(info['pal']) : :info['pal'];
+				pal = @compress ? gzcompress(info['pal']) : info['pal']
 				out('<<' + filter + '/Length ' + pal.length.to_s + '>>');
 				putstream(pal);
 				out('endobj');
@@ -5019,7 +5121,7 @@ class TCPDF
 	# Extract info from a JPEG file
 	# @access protected
 	#
-	def parsejpg(file)
+	def parsejpeg(file)
 		a=getimagesize(file);
 		if (a.empty?)
 			Error('Missing or incorrect image file: ' + file);
@@ -5043,6 +5145,20 @@ class TCPDF
 		return {'w' => a[0],'h' => a[1],'cs' => colspace,'bpc' => bpc,'f'=>'DCTDecode','data' => data}
 	end
 
+	def imageToPNG(file)
+		img = Magick::ImageList.new(file)
+		img.format = 'PNG'       # convert to PNG from gif 
+		img.opacity = 0          # PNG alpha channel delete
+
+		#use a temporary file....
+		tmpFile = Tempfile.new(['', '_' + File::basename(file) + '.png'], @@k_path_cache);
+		tmpFile.binmode
+		tmpFile.print img.to_blob
+		tmpFile
+	ensure
+		tmpFile.close
+	end
+
 	#
 	# Extract info from a PNG file
 	# @access protected
@@ -5062,7 +5178,8 @@ class TCPDF
 		h=freadint(f);
 		bpc=f.read(1).unpack('C')[0]
 		if (bpc>8)
-			Error('16-bit depth not supported: ' + file);
+			# Error('16-bit depth not supported: ' + file)
+			return false
 		end
 		ct=f.read(1).unpack('C')[0]
 		if (ct==0)
@@ -5072,16 +5189,20 @@ class TCPDF
 		elsif (ct==3)
 			colspace='Indexed';
 		else
-			Error('Alpha channel not supported: ' + file);
+			# Error('Alpha channel not supported: ' + file)
+			return false
 		end
 		if (f.read(1).unpack('C')[0] != 0)
-			Error('Unknown compression method: ' + file);
+			# Error('Unknown compression method: ' + file)
+			return false
 		end
 		if (f.read(1).unpack('C')[0]!=0)
-			Error('Unknown filter method: ' + file);
+			# Error('Unknown filter method: ' + file)
+			return false
 		end
 		if (f.read(1).unpack('C')[0]!=0)
-			Error('Interlacing not supported: ' + file);
+			# Error('Interlacing not supported: ' + file)
+			return false
 		end
 		f.read(4);
 		parms='/DecodeParms <</Predictor 15 /Colors ' + (ct==2 ? 3 : 1).to_s + ' /BitsPerComponent ' + bpc.to_s + ' /Columns ' + w.to_s + '>>';
@@ -5121,10 +5242,12 @@ class TCPDF
 			end
 		end while(n)
 		if (colspace=='Indexed' and pal.empty?)
-			Error('Missing palette in ' + file);
+			# Error('Missing palette in ' + file)
+			return false
 		end
-		f.close
 		return {'w' => w, 'h' => h, 'cs' => colspace, 'bpc' => bpc, 'f'=>'FlateDecode', 'parms' => parms, 'pal' => pal, 'trns' => trns, 'data' => data}
+	ensure
+		f.close
 	end
 
 	#
@@ -7453,20 +7576,30 @@ class TCPDF
 				if !tag['attribute']['border'].nil? and !tag['attribute']['border'].empty?
 					# currently only support 1 (frame) or a combination of 'LTRB'
 					border = tag['attribute']['border']
+					case tag['attribute']['border']
+					when '0'
+						border = 0
+					when '1'
+						border = 1
+					else
+						border = tag['attribute']['border']
+					end
 				end
+
 #				if (type == 'eps') or (type == 'ai')
 #					ImageEps(tag['attribute']['src'], xpos, GetY(), pixelsToUnits(tag['attribute']['width']), pixelsToUnits(tag['attribute']['height']), imglink, true, align, '', border)
 #				else
-#					Image(tag['attribute']['src'], xpos, GetY(), pixelsToUnits(tag['attribute']['width']), pixelsToUnits(tag['attribute']['height']), '', imglink, align, false, 300, '', false, false, border)
-					Image(tag['attribute']['src'], xpos, GetY(), pixelsToUnits(tag['attribute']['width']), pixelsToUnits(tag['attribute']['height']), '', imglink, align) # adhok
+					result_img = Image(tag['attribute']['src'], xpos, GetY(), pixelsToUnits(tag['attribute']['width']), pixelsToUnits(tag['attribute']['height']), '', imglink, align, false, 300, '', false, false, border)
 #				end
-				case align
-				when 'T'
-					@y = prevy
-				when 'M'
-					@y = (@img_rb_y + prevy - (tag['fontsize'] / @k)) / 2
-				when 'B'
-					@y = @img_rb_y - (tag['fontsize'] / @k)
+				if result_img != false
+					case align
+					when 'T'
+						@y = prevy
+					when 'M'
+						@y = (@img_rb_y + prevy - (tag['fontsize'] / @k)) / 2
+					when 'B'
+						@y = @img_rb_y - (tag['fontsize'] / @k)
+					end
 				end
 			end
 		when 'dl'
