@@ -305,8 +305,12 @@ class TCPDF
 		@page_annots ||= []
 		@pages ||= []
   	@pdf_version ||= "1.3"
-  	@print_header ||= false
-  	@print_footer ||= false
+	@header_margin ||= 10
+	@footer_margin ||= 10
+	@r_margin ||= 0
+	@l_margin ||= 0
+  	@print_header ||= true
+  	@print_footer ||= true
 		@state ||= 0
   	@tdfill ||= 0
   	@tempfontsize ||= 10
@@ -1002,13 +1006,9 @@ class TCPDF
 		if (@page==0)
 			AddPage();
 		end
-		#Page footer
-		@in_footer=true;
-		Footer();
-		@in_footer=false;
-		#Close page
-		endpage();
-		#Close document
+		# close page
+		endPage()
+		# close document
 		enddoc();
 	end
   # alias_method :close, :Close

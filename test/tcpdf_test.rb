@@ -80,6 +80,7 @@ class TcpdfTest < ActiveSupport::TestCase
     pdf = TCPDF.new
     width = pdf.GetPageWidth
 
+    pdf.SetPrintHeader(false)
     pdf.AddPage
     x     = pdf.GetX
     abs_x = pdf.GetAbsX
@@ -90,6 +91,7 @@ class TcpdfTest < ActiveSupport::TestCase
 
     pdf.SetRTL(true) # Right to Left
 
+    pdf.SetPrintFooter(false)
     pdf.AddPage
     x     = pdf.GetX
     abs_x = pdf.GetAbsX
@@ -118,12 +120,14 @@ class TcpdfTest < ActiveSupport::TestCase
     pages = pdf.GetNumPages
     assert_equal 0, pages
 
+    pdf.SetPrintHeader(false)
     pdf.AddPage
     page = pdf.GetPage
     assert_equal 1, page
     pages = pdf.GetNumPages
     assert_equal 1, pages
 
+    pdf.SetPrintFooter(false)
     pdf.AddPage
     page = pdf.GetPage
     assert_equal 2, page

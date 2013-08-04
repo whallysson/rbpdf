@@ -10,6 +10,7 @@ class TcpdfPageTest < ActiveSupport::TestCase
 
     width = pdf.GetPageWidth
 
+    pdf.SetPrintHeader(false)
     pdf.AddPage
     page = pdf.GetPage
     assert_equal 1, page
@@ -58,6 +59,7 @@ class TcpdfPageTest < ActiveSupport::TestCase
   test "Circle content" do
     pdf = TCPDF.new
 
+    pdf.SetPrintHeader(false)
     pdf.AddPage
     pdf.Circle(100, 200, 50)
     content = pdf.getPageBuffer(1)
