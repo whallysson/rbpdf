@@ -608,12 +608,24 @@ class TCPDF
 	# Set the last cell height.
 	# @param float :h cell height.
 	# @author Nicola Asuni
+	# @access public
 	# @since 1.53.0.TC034
 	#
 	def SetLastH(h)
 		@lasth = h
 	end
   alias_method :set_last_h, :SetLastH
+
+	#
+	# Get the last cell height.
+	# @return last cell height
+	# @access public
+	# @since 4.0.017 (2008-08-05)
+	#
+	def GetLastH()
+		return @lasth
+	end
+  alias_method :get_last_h, :GetLastH
 
 	#
 	# Set the image scale.
@@ -2681,28 +2693,33 @@ class TCPDF
 	#
 	# Add page if needed.
 	# @param float :h Cell height. Default value: 0.
+	# @return boolean true in case of page break, false otherwise.
 	# @since 3.2.000 (2008-07-01)
 	# @access protected
 	#
 	def checkPageBreak(h)
 		if (@y + h > @page_break_trigger) and !@in_footer and AcceptPageBreak()
-			rs = ""
 			# Automatic page break
 			x = @x
-			ws = @ws
-			if ws > 0
-				@ws = 0
-				rs << '0 Tw'
-			end
 			AddPage(@cur_orientation)
-			if ws > 0
-				@ws = ws
-				rs << sprintf('%.3f Tw', ws * k)
-			end
-			out(rs)
 			@y = @t_margin
-			@x = x
+			oldpage = @page - 1
+			if @rtl
+				if @pagedim[@page]['orm'] != @pagedim[oldpage]['orm']
+					@x = x - (@pagedim[@page]['orm'] - @pagedim[oldpage]['orm'])
+				else
+					@x = x
+				end
+			else
+				if @pagedim[@page]['olm'] != @pagedim[oldpage]['olm']
+					@x = x + (@pagedim[@page]['olm'] - @pagedim[oldpage]['olm'])
+				else
+					@x = x
+				end
+			end
+			return true
 		end
+		return false
 	end
 
   def BreakThePage?(h)
