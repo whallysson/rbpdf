@@ -221,8 +221,10 @@ class TCPDF
 	# @param mixed :format The format used for pages. It can be either one of the following values (case insensitive) or a custom format in the form of a two-element array containing the width and the height (expressed in the unit given by unit).<ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
 	# @param boolean :unicode TRUE means that the input text is unicode (default = true)
 	# @param String :encoding charset encoding; default is UTF-8
+	# @param boolean :diskcache if TRUE reduce the RAM memory usage by caching temporary data on filesystem (slower).
+	# @access public
 	#
-	def initialize(orientation = 'P',  unit = 'mm', format = 'A4', unicode = true, encoding = "UTF-8")
+	def initialize(orientation = 'P',  unit = 'mm', format = 'A4', unicode = true, encoding = "UTF-8", diskcache = false)
 		
 		# Set internal character encoding to ASCII#
 		#FIXME 2007-05-25 (EJM) Level=0 - 
@@ -230,7 +232,10 @@ class TCPDF
 		# 	@internal_encoding = mb_internal_encoding();
 		# 	mb_internal_encoding("ASCII");
 		# }
-			
+
+		# set disk caching
+		@diskcache = diskcache
+
 		# set language direction
 		@rtl = false
 		@tmprtl = false
@@ -252,7 +257,11 @@ class TCPDF
 		
 		#Initialization of properties
   	@barcode ||= false
-		@buffer ||= ''
+		if @diskcache
+			@buffer ||= nil
+		else
+			@buffer ||= ''
+		end
 		@diffs ||= []
 		@color_flag ||= false
   	@default_table_columns ||= 4
@@ -297,7 +306,7 @@ class TCPDF
 		@tagvspaces ||= []
 		@customlistindent ||= -1
 		@opencell = true
-		@embeddedfiles ||= []
+		@embeddedfiles ||= {}
 		@transfmrk ||= []
 		@html_link_color_array ||= [0, 0, 255]
 		@html_link_font_style ||= 'U'
@@ -335,6 +344,7 @@ class TCPDF
 		@fontkeys ||= []
 		@pageopen ||= []
 		@cell_height_ratio = @@k_cell_height_ratio
+		@cache_file_length = {}
 		@thead ||= ''
 		@thead_margin = nil
 		@cache_utf8_string_to_array = {}
@@ -973,9 +983,11 @@ class TCPDF
 	# This method is automatically called in case of fatal error; it simply outputs the message and halts the execution. An inherited class may override it to customize the error handling but should always halt the script, or the resulting document would probably be invalid.
 	# 2004-06-11 :: Nicola Asuni : changed bold tag with strong
 	# @param string :msg The error message
+	# @access public
 	# @since 1.0
 	#
 	def Error(msg)
+		destroy(true)
 		#Fatal error
 		raise ("TCPDF error: #{msg}")
 	end
@@ -4047,10 +4059,12 @@ class TCPDF
   alias_method :set_xy, :SetXY
 
 	#
-	# Send the document to a given destination: string, local file or browser. In the last case, the plug-in may be used (if present) or a download ("Save as" dialog box) may be forced.<br />
+	# Send the document to a given destination: string, local file or browser.
+	# In the last case, the plug-in may be used (if present) or a download ("Save as" dialog box) may be forced.<br />
 	# The method first calls Close() if necessary to terminate the document.
-	# @param string :name The name of the file. If not given, the document will be sent to the browser (destination I) with the name doc.pdf.
-	# @param string :dest Destination where to send the document. It can take one of the following values:<ul><li>I: send the file inline to the browser. The plug-in is used if available. The name given by name is used when one selects the "Save as" option on the link generating the PDF.</li><li>D: send to the browser and force a file download with the name given by name.</li><li>F: save to a local file with the name given by name.</li><li>S: return the document as a string. name is ignored.</li></ul>If the parameter is not specified but a name is given, destination is F. If no parameter is specified at all, destination is I.<br />
+	# @param string :name The name of the file when saved. Note that special characters are removed and blanks characters are replaced with the underscore character.
+	# @param string :dest Destination where to send the document. It can take one of the following values:<ul><li>I: send the file inline to the browser (default). The plug-in is used if available. The name given by name is used when one selects the "Save as" option on the link generating the PDF.</li><li>D: send to the browser and force a file download with the name given by name.</li><li>F: save to a local file with the name given by name.</li><li>S: return the document as a string. name is ignored.</li></ul>
+	# @access public
 	# @since 1.0
 	# @see Close()
 	#
@@ -4090,8 +4104,7 @@ class TCPDF
 				# 	header('Content-Length: ' + @buffer.length);
 				# 	header('Content-disposition: inline; filename="' + name + '"');
 				# end
-				return @buffer;
-				
+				return getBuffer
 			when 'D'
 			  # PHP specific
 				#Download file
@@ -4108,31 +4121,49 @@ class TCPDF
 				# end
 				# header('Content-Length: '+ @buffer.length);
 				# header('Content-disposition: attachment; filename="' + name + '"');
-				return @buffer;
-				
+				return getBuffer
 			when 'F'
-        open(name,'wb') do |f|
-          f.write(@buffer)
-        end
-			   # PHP code
-			   # 				#Save to local file
-			   # 				f=open(name,'wb');
-			   # 				if (!f)
-			   # 					Error('Unable to create output file: ' + name);
-			   # 				end
-			   # 				fwrite(f,@buffer,@buffer.length);
-			   # 				f.close
-				
+				# Save PDF to a local file
+				if @diskcache
+					FileUtils.copy(@buffer.path, name)
+				else
+					open(name,'wb') do |f|
+						f.write(@buffer)
+					end
+				end
 			when 'S'
-				#Return as a string
-				return @buffer;
+				# Returns PDF as a string
+				return getBuffer
 			else
 				Error('Incorrect output destination: ' + dest);
 			
 		end
 		return '';
+	ensure
+		destroy(true)
 	end
   alias_method :output, :Output
+
+	#
+	# Unset all class variables except the following critical variables: internal_encoding, state, bufferlen, buffer and diskcache.
+	# @param boolean :destroyall if true destroys all class variables, otherwise preserves critical variables.
+	# @param boolean :preserve_objcopy if true preserves the objcopy variable
+	# @access public
+	#
+	def destroy(destroyall=false, preserve_objcopy=false)
+		if destroyall and @diskcache and !preserve_objcopy and !@buffer.path.empty?
+			# remove buffer file from cache
+			File.delete(@buffer.path)
+		end
+		# This is PHP specific code
+		#foreach (array_keys(get_object_vars($this)) as $val) {
+		#	if destroyall or ((val != 'internal_encoding') and (val != 'state') and (val != 'bufferlen') and (val != 'buffer') and (val != 'diskcache'))
+		#		if !preserve_objcopy or (val != 'objcopy')
+		#			unset(val)
+		#		end
+		#	end
+		#}
+	end
 
 	# Protected methods
 
@@ -4302,13 +4333,13 @@ class TCPDF
 			out('<<' + filter + '/Length '+ p.length.to_s + '>>');
 			putstream(p);
 			out('endobj');
-			#if @diskcache
-			#	# remove temporary files
-			#	unlink(@pages[n])
-			#end
+			if @diskcache
+				# remove temporary files
+				File.delete(@pages[n].path)
+			end
 		end
 		#Pages root
-		@offsets[1]=@buffer.length;
+		@offsets[1]=@bufferlen
 		out('1 0 obj');
 		out('<</Type /Pages');
 		kids='/Kids [';
@@ -4926,7 +4957,7 @@ class TCPDF
 		putfonts();
 		putimages();
 		#Resource dictionary
-		@offsets[2]=@buffer.length;
+		@offsets[2]=@bufferlen
 		out('2 0 obj');
 		out('<<');
 		putresourcedict();
@@ -5014,6 +5045,7 @@ class TCPDF
 	# @access protected
 	#
 	def enddoc()
+		@state = 1
 		putheader();
 		putpages();
 		putresources();
@@ -5030,13 +5062,16 @@ class TCPDF
 		out('>>');
 		out('endobj');
 		#Cross-ref
-		o=@buffer.length;
+		o=@bufferlen
 		out('xref');
 		out('0 ' + (@n+1).to_s);
 		out('0000000000 65535 f ');
 		1.upto(@n) do |i|
 			out(sprintf('%010d 00000 n ',@offsets[i]));
 		end
+		@embeddedfiles.each { |filename, filedata|
+			out(sprintf('%010d 00000 n ', @offsets[filedata['n']]))
+		}
 		#Trailer
 		out('trailer');
 		out('<<');
@@ -5045,7 +5080,18 @@ class TCPDF
 		out('startxref');
 		out(o);
 		out('%%EOF');
-		@state=3;
+		@state=3 # end-of-doc
+		#if @diskcache
+		#	# remove temporary files used for images
+		#	foreach (@imagekeys as $key) {
+		#		# remove temporary files
+		#		unlink(@images[key])
+		#	}
+		#	foreach (@fontkeys as $key) {
+		#		# remove temporary files
+		#		unlink(@fonts[key])
+		#	}
+		#end
 	end
 
 	#
@@ -5102,7 +5148,7 @@ class TCPDF
 	#
 	def newobj()
 		@n += 1;
-		@offsets[@n]=@buffer.length;
+		@offsets[@n]=@bufferlen
 		out(@n.to_s + ' 0 obj');
 	end
 
@@ -6145,7 +6191,7 @@ class TCPDF
 					if (!plalign.nil? and ((plalign == 'C') or (plalign == 'J') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl))) or (yshift < 0)
 						# the last line must be shifted to be aligned as requested
 						linew = (@endlinex - startlinex).abs
-						pstart = @pages[startlinepage][0, startlinepos]
+						pstart = getPageBuffer(startlinepage)[0, startlinepos]
 						if !opentagpos.nil? and !@footerlen[startlinepage].nil?
 							@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
 							midpos = [opentagpos, @footerpos[startlinepage]].min
@@ -8335,6 +8381,68 @@ class TCPDF
 	end
 
 	#
+	# Returns a temporary filename for caching object on filesystem.
+	# @param string :name prefix to add to filename
+	# return string filename.
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def getObjFilename(name)
+                tmpFile = Tempfile.new(name + '_', @@k_path_cache)
+                tmpFile.binmode
+		tmpFile
+	ensure
+		tmpFile.close
+	end
+
+	#
+	# Writes data to a temporary file on filesystem.
+	# @param string :filename file name
+	# @param mixed :data data to write on file
+	# @param boolean :append if true append data, false replace.
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def writeDiskCache(filename, data, append=false)
+		filename = filename.path
+		if append
+			fmode = 'a+b'
+		else
+			fmode = 'w+b'
+		end
+		f = open(filename, fmode)
+		if !f
+			Error('Unable to write cache file: ' + filename)
+		else
+			f.write(data)
+			f.close
+		end
+
+		# update file length (needed for transactions)
+		if @cache_file_length[filename].nil?
+			@cache_file_length[filename] = data.length
+		else
+			@cache_file_length[filename] += data.length
+		end
+	end
+
+	#
+	# Read data from a temporary file on filesystem.
+	# @param string :filename file name
+	# @return mixed retrieved data
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def readDiskCache(filename)
+		filename = filename.path
+		data = ''
+		open( filename,'rb') do |f|
+			data << f.read()
+		end
+		return data
+	end
+
+	#
 	# Set buffer content (always append data).
 	# @param string :data data
 	# @access protected
@@ -8342,14 +8450,28 @@ class TCPDF
 	#
 	def setBuffer(data)
 		@bufferlen += data.length
-		#if @diskcache
-		#	if @buffer.nil? or @buffer.empty?
-		#		@buffer = getObjFilename('buffer')
-		#	end
-		#	writeDiskCache(@buffer, data, true)
-		#else
+		if @diskcache
+			if @buffer.nil? or @buffer.path.empty?
+				@buffer = getObjFilename('buffer')
+			end
+			writeDiskCache(@buffer, data, true)
+		else
 			@buffer << data
-		#end
+		end
+	end
+
+	#
+	# Get buffer content.
+	# @return string buffer content
+	# @access protected
+	# @since 4.5.000 (2009-01-02)
+	#
+	def getBuffer
+		if @diskcache
+			return readDiskCache(@buffer)
+		else
+			return @buffer
+		end
 	end
 
 	#
@@ -8361,18 +8483,18 @@ class TCPDF
 	# @since 4.5.000 (2008-12-31)
 	#
 	def setPageBuffer(page, data, append=false)
-		#if @diskcache
-		#	if @pages[page].nil?
-		#		@pages[page] = getObjFilename('page' + page)
-		#	end
-		#	writeDiskCache(@pages[page], data, append)
-		#else
+		if @diskcache
+			if @pages[page].nil?
+				@pages[page] = getObjFilename('page' + page.to_s)
+			end
+			writeDiskCache(@pages[page], data, append)
+		else
 			if append
 				@pages[page] << data
 			else
 				@pages[page] = data
 			end
-		#end
+		end
 		if append and !@pagelen[page].nil?
 			@pagelen[page] += data.length
 		else
@@ -8388,11 +8510,11 @@ class TCPDF
 	# @since 4.5.000 (2008-12-31)
 	#
 	def getPageBuffer(page)
-		#if @diskcache
-		#	return readDiskCache(@pages[page])
-		#elsif !@pages[page].nil?
+		if @diskcache
+			return readDiskCache(@pages[page])
+		elsif !@pages[page].nil?
 			return @pages[page]
-		#end
+		end
 		return false
 	end
 
