@@ -4187,20 +4187,20 @@ class TCPDF
 	# @access protected
 	#
 	def getfontpath(file)
-    # Is it in the @@font_path?
-    if @@font_path
-  		fpath = File.join @@font_path, file
-  	  if File.exists?(fpath)
-  	    return fpath
-      end
-    end
-    # Is it in this plugin's font folder?
+		# Is it in the @@font_path?
+		if @@font_path
+			fpath = File.join @@font_path, file
+			if File.exists?(fpath)
+				return fpath
+			end
+		end
+		# Is it in this plugin's font folder?
 		fpath = File.join File.dirname(__FILE__), 'fonts', file
-	  if File.exists?(fpath)
-	    return fpath
-    end
-    # Could not find it.
-    nil
+		if File.exists?(fpath)
+			return fpath
+		end
+		# Could not find it.
+		nil
 	end
 
 	#
