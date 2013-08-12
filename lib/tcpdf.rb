@@ -4628,38 +4628,43 @@ class TCPDF
 			out('endobj');
 		end
 		@font_files.each do |file, info|
-			#Font file embedding
-			newobj();
-			@font_files[file]['n']=@n;
-			font='';
-			open(getfontpath(file),'rb') do |f|
-				font = f.read();
+			# search and get font file to embedd
+			filepath = ''
+			if File.exists?(file)
+				filepath = file
+			elsif filepath = getfontpath(file)
 			end
-			compressed=(file[-2,2]=='.z');
-			if (!compressed && !info['length2'].nil?)
-				header=((font[0][0])==128);
-				if (header)
-					#Strip first binary header
-					font=font[6];
+			if !filepath.nil? and !filepath.empty?
+				font = ''
+				open(filepath,'rb') do |f|
+					font = f.read()
 				end
-				if header && (font[info['length1']][0] == 128)
-					#Strip second binary header
-					font=font[0..info['length1']] + font[info['length1']+6];
+				compressed = (file[-2,2] == '.z')
+				if !compressed && !info['length2'].nil?
+					header = (font[0][0] == 128)
+					if header
+						# Strip first binary header
+						font = font[6]
+					end
+					if header && (font[info['length1']][0] == 128)
+						# Strip second binary header
+						font = font[0..info['length1']] + font[info['length1'] + 6]
+					end
 				end
+				newobj()
+				@font_files[file]['n'] = @n
+				out('<</Length '+ font.length.to_s)
+				if compressed
+					out('/Filter /FlateDecode')
+				end
+				out('/Length1 ' + info['length1'].to_s)
+				if !info['length2'].nil?
+					out('/Length2 ' + info['length2'].to_s + ' /Length3 0')
+				end
+				out('>>')
+				putstream(font)
+				out('endobj')
 			end
-			out('<</Length '+ font.length.to_s);
-			if (compressed)
-				out('/Filter /FlateDecode');
-			end
-			out('/Length1 ' + info['length1'].to_s);
-			if (!info['length2'].nil?)
-				out('/Length2 ' + info['length2'].to_s + ' /Length3 0');
-			end
-			out('>>');
-			open(getfontpath(file),'rb') do |f|
-        putstream(font)
-      end
-			out('endobj');
 		end
 		@fonts.each do |k, font|
 			#Font objects
@@ -4672,13 +4677,13 @@ class TCPDF
 				out('<</Type /Font');
 				out('/BaseFont /' + name);
 				out('/Subtype /Type1');
-				if (name!='Symbol' && name!='ZapfDingbats')
+				if (name != 'symbol' && name != 'zapfdingbats')
 					out('/Encoding /WinAnsiEncoding');
 				end
 				out('>>');
 				out('endobj');
-    	elsif type == 'Type0'
-    		putType0(font)
+			elsif type == 'Type0'
+				putType0(font)
 			elsif (type=='Type1' || type=='TrueType')
 				#Additional Type1 or TrueType font
 				newobj();
@@ -4710,11 +4715,10 @@ class TCPDF
 				newobj();
 				s='<</Type /FontDescriptor /FontName /' + name;
 				font['desc'].each do |k, v|
-					s<<' /' + k + ' ' + v;
+					s << ' /' + k + ' ' + v + ''
 				end
-				file = font['file'];
-				if (file)
-					s<<' /FontFile' + (type=='Type1' ? '' : '2') + ' ' + @font_files[file]['n'] + ' 0 R';
+				if !font['file'].empty?
+					s << ' /FontFile' + (type=='Type1' ? '' : '2') + ' ' + @font_files[font['file']]['n'] + ' 0 R'
 				end
 				out(s + '>>');
 				out('endobj');
