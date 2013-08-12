@@ -5423,8 +5423,8 @@ class TCPDF
 		out('/Subtype /Type0');
 		out('/BaseFont /' + font['name'] + '');
 		out('/Encoding /Identity-H'); #The horizontal identity mapping for 2-byte CIDs; may be used with CIDFonts using any Registry, Ordering, and Supplement values.
+		out('/ToUnicode /Identity-H')
 		out('/DescendantFonts [' + (@n + 1).to_s + ' 0 R]');
-		out('/ToUnicode ' + (@n + 2).to_s + ' 0 R');
 		out('>>');
 		out('endobj');
 		
@@ -5434,54 +5434,23 @@ class TCPDF
 		out('<</Type /Font');
 		out('/Subtype /CIDFontType2');
 		out('/BaseFont /' + font['name'] + '');
-		out('/CIDSystemInfo ' + (@n + 2).to_s + ' 0 R'); 
-		out('/FontDescriptor ' + (@n + 3).to_s + ' 0 R');
-		if (!font['desc']['MissingWidth'].nil?)
-			out('/DW ' + font['desc']['MissingWidth'].to_s + ''); # The default width for glyphs in the CIDFont MissingWidth
-		end
+		out('/CIDSystemInfo ' + (@n + 1).to_s + ' 0 R')
+		out('/FontDescriptor ' + (@n + 2).to_s + ' 0 R')
+		out('/DW ' + font['dw'].to_s + '') # default width
 		w = "";
 		font['cw'].each do |cid, width|
 			w << '' + cid.to_s + ' [' + width.to_s + '] '; # define a specific width for each individual CID
 		end
 		out('/W [' + w + ']'); # A description of the widths for the glyphs in the CIDFont
-		out('/CIDToGIDMap ' + (@n + 4).to_s + ' 0 R');
+		out('/CIDToGIDMap ' + (@n + 3).to_s + ' 0 R')
 		out('>>');
-		out('endobj');
-		
-		# ToUnicode
-		# is a stream object that contains the definition of the CMap
-		# (PDF Reference 1.3 chap. 5.9)
-		newobj();
-		out('<</Length 383>>');
-		out('stream');
-		out('/CIDInit /ProcSet findresource begin');
-		out('12 dict begin');
-		out('begincmap');
-		out('/CIDSystemInfo');
-		out('<</Registry (Adobe)');
-		out('/Ordering (UCS)');
-		out('/Supplement 0');
-		out('>> def');
-		out('/CMapName /Adobe-Identity-UCS def');
-		out('/CMapType 2 def');
-		out('1 begincodespacerange');
-		out('<0000> <FFFF>');
-		out('endcodespacerange');
-		out('1 beginbfrange');
-		out('<0000> <FFFF> <0000>');
-		out('endbfrange');
-		out('endcmap');
-		out('CMapName currentdict /CMap defineresource pop');
-		out('end');
-		out('end');
-		out('endstream');
 		out('endobj');
 		
 		# CIDSystemInfo dictionary
 		# A dictionary containing entries that define the character collection of the CIDFont.
 		newobj();
-		out('<</Registry (Adobe)'); # A string identifying an issuer of character collections
-		out('/Ordering (UCS)'); # A string that uniquely names a character collection issued by a specific registry
+		out('<</Registry ' + datastring('Adobe')) # A string identifying an issuer of character collections
+		out('/Ordering ' + datastring('Identity')) # was 'UCS'
 		out('/Supplement 0'); # The supplement number of the character collection.
 		out('>>');
 		out('endobj');
@@ -5495,31 +5464,37 @@ class TCPDF
 			out('/' + key.to_s + ' ' + value.to_s);
 		end
 		if (font['file'])
-			# A stream containing a TrueType font program
+			# A stream containing a TrueType font
 			out('/FontFile2 ' + @font_files[font['file']]['n'].to_s + ' 0 R');
 		end
 		out('>>');
 		out('endobj');
 
-		# Embed CIDToGIDMap
-		# A specification of the mapping from CIDs to glyph indices
 		newobj();
-		ctgfile = getfontpath(font['ctg'])
-		if (!ctgfile)
-			Error('Font file not found: ' + ctgfile);
+		if !font['ctg'].nil? and !font['ctg'].empty?
+			# Embed CIDToGIDMap
+			# A specification of the mapping from CIDs to glyph indices
+			# search and get CTG font file to embedd
+			ctgfile = font['ctg'].downcase
+			if !File.exists?(ctgfile)
+				ctgfile = getfontpath(font['ctg'])
+			end
+			if (!ctgfile)
+				Error('Font file not found: ' + ctgfile)
+			end
+			size = File.size(ctgfile)
+			out('<</Length ' + size.to_s + '')
+			if (ctgfile[-2,2] == '.z') # check file extension
+				# Decompresses data encoded using the public-domain 
+				# zlib/deflate compression method, reproducing the 
+				# original text or binary data
+				out('/Filter /FlateDecode')
+			end
+			out('>>')
+			open(ctgfile, "rb") do |f|
+				putstream(f.read())
+			end
 		end
-		size = File.size(ctgfile);
-		out('<</Length ' + size.to_s + '');
-		if (ctgfile[-2,2] == '.z') # check file extension
-			# Decompresses data encoded using the public-domain 
-			# zlib/deflate compression method, reproducing the 
-			# original text or binary data#
-			out('/Filter /FlateDecode');
-		end
-		out('>>');
-    open(ctgfile, "rb") do |f|
-      putstream(f.read())
-    end
 		out('endobj');
 	end
 
