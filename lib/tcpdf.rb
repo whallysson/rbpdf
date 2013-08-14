@@ -341,6 +341,7 @@ class TCPDF
 		@numpages ||= 0
 		@pagelen ||= []
 		@bufferlen ||= 0
+		@numfonts ||= 0
 		@fontkeys ||= []
 		@pageopen ||= []
 		@cell_height_ratio = @@k_cell_height_ratio
@@ -2304,6 +2305,7 @@ class TCPDF
 	# @param string :style Font style. Possible values are (case insensitive):<ul><li>empty string: regular (default)</li><li>B: bold</li><li>I: italic</li><li>BI or IB: bold italic</li></ul>
 	# @param string :fontfile The font definition file. By default, the name is built from the family and style, in lower case with no space.
 	# @return array containing the font data, or false in case of error.
+	# @access public
 	# @since 1.5
 	# @see SetFont()
 	#
@@ -2346,33 +2348,63 @@ class TCPDF
 		if tempstyle.index('I') != nil
 			style << 'I';
 		end
+		bistyle = style
 		fontkey = family + style;
 		font_style = style + (@underline ? 'U' : '') + (@linethrough ? 'D' : '')
 		fontdata = {'fontkey' => fontkey, 'family' => family, 'style' => font_style}
 		# check if the font has been already added
-		if !@fonts[fontkey].nil?
+		if getFontBuffer(fontkey) != false
 			return fontdata
+		end
+
+		# get specified font directory (if any)
+		fontdir = '';
+		if !fontfile.empty?
+			fontdir = File.dirname(fontfile)
+			if fontdir.empty? or (fontdir == '.')
+				fontdir = ''
+			else
+				fontdir << '/'
+			end
 		end
 
 		# search and include font file
 		if (fontfile=='')
-			# build a standard filename
-			fontfile = family.gsub(' ', '') + style.downcase + '.rb';
+			# build a standard filenames for specified font
+			fontfile1 = family.gsub(' ', '') + style.downcase + '.rb'
+			fontfile2 = family.gsub(' ', '') + '.rb'
+			# search files on various directories
+			if File.exists?(fontdir + fontfile1)
+				fontfile = fontdir + fontfile1
+				fontname = fontfile1
+			elsif fontfile = getfontpath(fontfile1)
+				fontname = fontfile1
+			elsif File.exists?(fontfile1)
+				fontfile = fontfile1
+				fontname = fontfile1
+			elsif File.exists?(fontdir + fontfile2)
+				fontfile = fontdir + fontfile2
+				fontname = fontfile2
+			elsif fontfile = getfontpath(fontfile2)
+				fontname = fontfile2
+			else
+				fontfile = fontfile2
+				fontname = fontfile2
+			end
 		end
-		font_file_name = getfontpath(fontfile)
-		if (font_file_name.nil?)
-			# try a new filename without style suffix
-			fontfile = family.gsub(' ', '') + '.rb';
-			font_file_name = getfontpath(fontfile)
-		end
-		if font_file_name.nil?
-			Error("Could not find font #{fontfile}.")
-		end
-		require(getfontpath(fontfile))
-		font_desc = TCPDFFontDescriptor.font(fontfile)
 
-		if font_desc[:type].nil? or font_desc[:cw].nil?
+		# include font file
+		if File.exists?(fontfile)
+			require(fontfile)
+		else
 			Error('Could not include font definition file: ' + family + '')
+		end
+
+		font_desc = TCPDFFontDescriptor.font(fontname)
+
+		# check font parameters
+		if font_desc[:type].nil? or font_desc[:cw].nil?
+			Error('The font definition file has a bad format: ' + fontfile + '')
 		end
 		file = ''
 		enc = ''
@@ -2380,28 +2412,29 @@ class TCPDF
 			# set default width
 			if !font_desc[:desc]['MissingWidth'].nil? and (font_desc[:desc]['MissingWidth'] > 0)
 				font_desc[:dw] = font_desc[:desc]['MissingWidth']
+			elsif font_desc[:cw][32]
+				font_desc[:dw] = font_desc[:cw][32]
 			else
-				font_desc[:dw] = font_desc[:cw]['"'.unpack('C')[0]]
+				font_desc[:dw] = 600
 			end
 		end
 
-		i = @fonts.length+1;
+		@numfonts += 1
 		#  register CID font (all styles at once)
 		if font_desc[:type] == 'cidfont0'
 			file = '' # not embedded
 			styles = {'' => '', 'B' => ',Bold', 'I' => ',Italic', 'BI' => ',BoldItalic'}
-			styles.each { |skey, qual|
-				sname = font_desc[:name] + qual
-				sfontkey = family + skey
-				@fonts[sfontkey] = {'i' => i, 'type' => font_desc[:type], 'name' => sname, 'desc' => font_desc[:desc], 'cidinfo' => font_desc[:cidinfo], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc]}
-				i += 1
-			}
+			sname = font_desc[:name] + styles[bistyle]
+			if (bistyle.index('B') != nil) and font_desc[:desc]['StemV'] and (font_desc[:desc]['StemV'] == 70)
+				font_desc[:desc]['StemV'] = 120
+			end
+			setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => sname, 'desc' => font_desc[:desc], 'cidinfo' => font_desc[:cidinfo], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc]})
 		elsif font_desc[:type] == 'core'
-			@fonts[fontkey] = {'i' => i, 'type' => 'core', 'name' => @core_fonts[fontkey], 'up' => -100, 'ut' => 50, 'cw' => font_desc[:cw], 'dw' => font_desc[:dw]}
+			setFontBuffer(fontkey, {'i' => @numfonts, 'type' => 'core', 'name' => @core_fonts[fontkey], 'up' => -100, 'ut' => 50, 'cw' => font_desc[:cw], 'dw' => font_desc[:dw]})
 		elsif (font_desc[:type] == 'TrueType') or (font_desc[:type] == 'Type1')
-			@fonts[fontkey] = {'i' => i, 'type' => font_desc[:type], 'name' => font_desc[:name], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'file' => font_desc[:file], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc], 'desc' => font_desc[:desc]}
+			setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => font_desc[:name], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'file' => font_desc[:file], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc], 'desc' => font_desc[:desc]})
 		elsif font_desc[:type] == 'TrueTypeUnicode'
-			@fonts[fontkey] = {'i' => i, 'type' => font_desc[:type], 'name' => font_desc[:name], 'desc' => font_desc[:desc], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc], 'file' => font_desc[:file], 'ctg' => font_desc[:ctg]}
+			setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => font_desc[:name], 'desc' => font_desc[:desc], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc], 'file' => font_desc[:file], 'ctg' => font_desc[:ctg]})
 		else
 			Error('Unknow font type: ' + type + '')
 		end
@@ -2420,13 +2453,13 @@ class TCPDF
 				d = nb+1;
 				@diffs[d] = font_desc[:diff];
 			end
-			@fonts[fontkey]['diff'] = d;
+			setFontSubBuffer(fontkey, 'diff', d)
 		end
 		if (font_desc[:file] and font_desc[:file].length > 0)
 			if (font_desc[:type] == 'TrueType') or (font_desc[:type] == 'TrueTypeUnicode')
-				@font_files[font_desc[:file]] = {'length1' => font_desc[:originalsize]}
+				@font_files[font_desc[:file]] = {'length1' => font_desc[:originalsize], 'fontdir' => fontdir}
 			elsif font_desc[:type] != 'core'
-				@font_files[font_desc[:file]] = {'length1' => font_desc[:size1], 'length2' => font_desc[:size2]}
+				@font_files[font_desc[:file]] = {'length1' => font_desc[:size1], 'length2' => font_desc[:size2], 'fontdir' => fontdir}
 			end
 		end
 		return fontdata
@@ -2434,7 +2467,7 @@ class TCPDF
   alias_method :add_font, :AddFont
 
 	#
-	# Sets the font used to print character strings. It is mandatory to call this method at least once before printing text or the resulting document would not be valid.
+	# Sets the font used to print character strings.
 	# The font can be either a standard one or a font added via the AddFont() method. Standard fonts use Windows encoding cp1252 (Western Europe).
 	# The method can be called before the first page is created and the font is retained from page to page.
 	# If you just wish to change the current font size, it is simpler to call SetFontSize().
@@ -2443,8 +2476,9 @@ class TCPDF
 	# @param string :style Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li></ul> or any combination. The default value is regular. Bold and italic styles do not apply to Symbol and ZapfDingbats basic fonts or other fonts when not defined.
 	# @param float :size Font size in points. The default value is the current size. If no size has been specified since the beginning of the document, the value taken is 12
 	# @param string :fontfile The font definition file. By default, the name is built from the family and style, in lower case with no spaces.
+	# @access public
 	# @since 1.0
-	# @see AddFont(), SetFontSize(), Cell(), MultiCell(), Write()
+	# @see AddFont(), SetFontSize()
 	#
 	def SetFont(family, style='', size=0, fontfile='')
 		# Select a font; size given in points
@@ -2455,7 +2489,7 @@ class TCPDF
 		fontdata =  AddFont(family, style, fontfile)
 		@font_family = fontdata['family']
 		@font_style = fontdata['style']
-		@current_font = @fonts[fontdata['fontkey']]
+		@current_font = getFontBuffer(fontdata['fontkey'])
 		SetFontSize(size)
 	end
   alias_method :set_font, :SetFont
@@ -4615,8 +4649,7 @@ class TCPDF
 	end
 
 	#
-	# Adds fonts
-	# putfonts
+	# Output fonts.
 	# @access protected
 	#
 	def putfonts()
@@ -4629,14 +4662,21 @@ class TCPDF
 		end
 		@font_files.each do |file, info|
 			# search and get font file to embedd
-			filepath = ''
-			if File.exists?(file)
-				filepath = file
-			elsif filepath = getfontpath(file)
+			fontdir = info['fontdir']
+
+			file = file.downcase
+			fontfile = ''
+			# search files on various directories
+			if File.exist?(fontdir + file)
+				fontfile = fontdir + file
+			elsif fontfile = getfontpath(file)
+			elsif File.exist?(file)
+				fontfile = file
 			end
-			if !filepath.nil? and !filepath.empty?
+
+			if !fontfile.nil? and !fontfile.empty?
 				font = ''
-				open(filepath,'rb') do |f|
+				open(fontfile,'rb') do |f|
 					font = f.read()
 				end
 				compressed = (file[-2,2] == '.z')
@@ -4666,9 +4706,10 @@ class TCPDF
 				out('endobj')
 			end
 		end
-		@fonts.each do |k, font|
+		@fontkeys.each do |k|
 			#Font objects
-			@fonts[k]['n']=@n+1;
+			setFontSubBuffer(k, 'n', @n + 1)
+			font = getFontBuffer(k)
 			type = font['type'];
 			name = font['name'];
 			if (type=='core')
@@ -4944,7 +4985,8 @@ class TCPDF
 	def putresourcedict()
 		out('/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]');
 		out('/Font <<');
-		@fonts.each_value do |font|
+		@fontkeys.each do |fontkey|
+			font = getFontBuffer(fontkey)
 			out('/F' + font['i'].to_s + ' ' + font['n'].to_s + ' 0 R');
 		end
 		out('>>');
@@ -5085,17 +5127,17 @@ class TCPDF
 		out(o);
 		out('%%EOF');
 		@state=3 # end-of-doc
-		#if @diskcache
-		#	# remove temporary files used for images
-		#	foreach (@imagekeys as $key) {
-		#		# remove temporary files
-		#		unlink(@images[key])
-		#	}
-		#	foreach (@fontkeys as $key) {
-		#		# remove temporary files
-		#		unlink(@fonts[key])
-		#	}
-		#end
+		if @diskcache
+			# remove temporary files used for images
+			#@imagekeys.each do |key|
+			#	# remove temporary files
+			#	File.delete(@images[key])
+			#end
+			@fontkeys.each do |key|
+				# remove temporary files
+				File.delete(@fonts[key].path)
+			end
+		end
 	end
 
 	#
@@ -5415,6 +5457,7 @@ class TCPDF
 	#
 	# Adds unicode fonts.<br>
 	# Based on PDF Reference 1.3 (section 5)
+	# @parameter array :font font data
 	# @access protected
 	# @author Nicola Asuni
 	# @since 1.52.0.TC005 (2005-01-05)
@@ -5438,24 +5481,19 @@ class TCPDF
 		out('<</Type /Font');
 		out('/Subtype /CIDFontType2');
 		out('/BaseFont /' + font['name'] + '');
-		out('/CIDSystemInfo ' + (@n + 1).to_s + ' 0 R')
-		out('/FontDescriptor ' + (@n + 2).to_s + ' 0 R')
-		out('/DW ' + font['dw'].to_s + '') # default width
-		w = "";
-		font['cw'].each do |cid, width|
-			w << '' + cid.to_s + ' [' + width.to_s + '] '; # define a specific width for each individual CID
-		end
-		out('/W [' + w + ']'); # A description of the widths for the glyphs in the CIDFont
-		out('/CIDToGIDMap ' + (@n + 3).to_s + ' 0 R')
-		out('>>');
-		out('endobj');
 		
-		# CIDSystemInfo dictionary
 		# A dictionary containing entries that define the character collection of the CIDFont.
-		newobj();
-		out('<</Registry ' + datastring('Adobe')) # A string identifying an issuer of character collections
-		out('/Ordering ' + datastring('Identity')) # was 'UCS'
-		out('/Supplement 0'); # The supplement number of the character collection.
+
+		cidinfo = '/Registry ' + datastring('Adobe')
+		cidinfo << ' /Ordering ' + datastring('Identity')
+		cidinfo << ' /Supplement 0'
+
+		out('/CIDSystemInfo <<' + cidinfo + '>>')
+		out('/FontDescriptor ' + (@n + 1).to_s + ' 0 R')
+		out('/DW ' + font['dw'].to_s + '') # default width
+		putfontwidths(font, 0)
+		out('/CIDToGIDMap ' + (@n + 2).to_s + ' 0 R')
+
 		out('>>');
 		out('endobj');
 		
@@ -5467,35 +5505,45 @@ class TCPDF
 		font['desc'].each do |key, value|
 			out('/' + key.to_s + ' ' + value.to_s);
 		end
+		fontdir = ''
 		if (font['file'])
 			# A stream containing a TrueType font
 			out('/FontFile2 ' + @font_files[font['file']]['n'].to_s + ' 0 R');
+			fontdir = @font_files[font['file']]['fontdir']
 		end
 		out('>>');
 		out('endobj');
-
 		newobj();
-		if !font['ctg'].nil? and !font['ctg'].empty?
+
+		if font['ctg'] and !font['ctg'].empty?
 			# Embed CIDToGIDMap
 			# A specification of the mapping from CIDs to glyph indices
 			# search and get CTG font file to embedd
 			ctgfile = font['ctg'].downcase
-			if !File.exists?(ctgfile)
-				ctgfile = getfontpath(font['ctg'])
+
+			# search and get ctg font file to embedd
+			fontfile = ''
+			# search files on various directories
+			if File.exists?(fontdir + ctgfile)
+				fontfile = fontdir + ctgfile
+			elsif fontfile = getfontpath(ctgfile)
+			elsif File.exists?(ctgfile)
+				fontfile = ctgfile
 			end
-			if (!ctgfile)
+
+			if fontfile.nil? or fontfile.empty?
 				Error('Font file not found: ' + ctgfile)
 			end
-			size = File.size(ctgfile)
+			size = File.size(fontfile)
 			out('<</Length ' + size.to_s + '')
-			if (ctgfile[-2,2] == '.z') # check file extension
+			if (fontfile[-2,2] == '.z') # check file extension
 				# Decompresses data encoded using the public-domain 
 				# zlib/deflate compression method, reproducing the 
 				# original text or binary data
 				out('/Filter /FlateDecode')
 			end
 			out('>>')
-			open(ctgfile, "rb") do |f|
+			open(fontfile, 'rb') do |f|
 				putstream(f.read())
 			end
 		end
@@ -8493,6 +8541,64 @@ class TCPDF
 			return readDiskCache(@pages[page])
 		elsif !@pages[page].nil?
 			return @pages[page]
+		end
+		return false
+	end
+
+	#
+	# Set font buffer content.
+	# @param string :font font key
+	# @param hash :data font data
+	# @access protected
+	# @since 4.5.000 (2009-01-02)
+	#
+	def setFontBuffer(font, data)
+		if @diskcache
+			if @fonts[font].nil?
+				@fonts[font] = getObjFilename('font')
+			end
+			writeDiskCache(@fonts[font], Marshal.dump(data))
+		else
+			@fonts[font] = data
+		end
+		if !@fontkeys.include?(font)
+			@fontkeys.push font
+		end
+	end
+
+	#
+	# Set font buffer content.
+	# @param string :font font key
+	# @param string :key font sub-key
+	# @param array :data font data
+	# @access protected
+	# @since 4.5.000 (2009-01-02)
+	#
+	def setFontSubBuffer(font, key, data)
+		if @fonts[font].nil?
+			setFontBuffer(font, {})
+		end
+		if @diskcache
+			tmpfont = getFontBuffer(font)
+			tmpfont[key] = data
+			writeDiskCache(@fonts[font], Marshal.dump(tmpfont))
+		else
+			@fonts[font][key] = data
+		end
+	end
+
+	#
+	# Get font buffer content.
+	# @param string :font font key
+	# @return string font buffer content or false in case of error
+	# @access protected
+	# @since 4.5.000 (2009-01-02)
+	#
+	def getFontBuffer(font)
+		if @diskcache and !@fonts[font].nil?
+			return Marshal.load(readDiskCache(@fonts[font]))
+		elsif !@fonts[font].nil?
+			return @fonts[font]
 		end
 		return false
 	end
