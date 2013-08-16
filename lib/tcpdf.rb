@@ -4383,7 +4383,7 @@ class TCPDF
 		out('1 0 obj');
 		out('<</Type /Pages');
 		kids='/Kids [';
-		0.upto(nb) do |i|
+		0.upto(nb - 1) do |i|
 			kids<<(3+2*i).to_s + ' 0 R ';
 		end
 		out(kids + ']');
