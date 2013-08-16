@@ -271,7 +271,7 @@ class TCPDF
   	@encoding ||= "UTF-8"
 		@fill_color ||= '0 g'
 		@fonts ||= {}
-		@font_family ||= ''
+		@font_family ||= 'helvetica'
 		@font_files ||= {}
 		@font_style ||= ''
 		@font_ascent ||= ''
@@ -428,6 +428,8 @@ class TCPDF
 
 		# initialize some settings
 #		utf8Bidi([''], '');
+		# set default font
+		SetFont(@font_family, @font_style, @font_size_pt)
 	end
 	
 	#
