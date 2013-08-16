@@ -1029,21 +1029,12 @@ class TCPDF
   # alias_method :close, :Close
 
 	#
-	# Reset pointer to the last document page.
-	# @since 2.0.000 (2008-01-04)
-	# @see setPage(), getPage(), getNumPages()
-	#
-	def LastPage()
-		@page = @pages.size == 0 ? 0 : @pages.size - 1
-	end
-
-	#
 	# Move pointer at the specified document page and update page dimensions.
 	# @param int :pnum page number
 	# @param boolean :resetmargins if true reset left, right, top margins and Y position.
 	# @access public
 	# @since 2.1.000 (2008-01-07)
-	# @see getPage(), lastpage(), getNumPages()
+	# @see GetPage(), LastPage(), GetNumPages()
 	#
 	def SetPage(pnum, resetmargins=false)
 		if (pnum > 0) and (pnum <= @numpages)
@@ -1083,10 +1074,22 @@ class TCPDF
 	end
 
 	#
+	# Reset pointer to the last document page.
+	# @param boolean :resetmargins if true reset left, right, top margins and Y position.
+	# @access public
+	# @since 2.0.000 (2008-01-04)
+	# @see SetPage(), GetPage(), GetNumPages()
+	#
+	def LastPage(resetmargins=false)
+		SetPage(GetNumPages(), resetmargins)
+	end
+
+	#
 	# Get current document page number.
 	# @return int page number
+	# @access public
 	# @since 2.1.000 (2008-01-07)
-	# @see setPage(), lastpage(), getNumPages()
+	# @see SetPage(), LastPage(), GetNumPages()
 	#
 	def GetPage()
 		return @page
@@ -1095,11 +1098,12 @@ class TCPDF
 	#
 	# Get the total number of insered pages.
 	# @return int number of pages
+	# @access public
 	# @since 2.1.000 (2008-01-07)
-	# @see setPage(), getPage(), lastpage()
+	# @see SetPage(), GetPage(), LastPage()
 	#
 	def GetNumPages()
-		return @pages.size == 0 ? 0 : @pages.size - 1
+		return @numpages
 	end
 
 	#
