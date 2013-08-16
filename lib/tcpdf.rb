@@ -2644,9 +2644,35 @@ class TCPDF
 		end
 		@page_annots[@page] ||= []
 		@page_annots[@page].push 'x' => x, 'y' => y, 'w' => w, 'h' => h, 'txt' => text, 'opt' => opt, 'numspaces' => spaces
-		if (opt['Subtype'] == 'FileAttachment') and !opt['FS'].empty? and File.exist?(opt['FS']) and @embeddedfiles[File.basename(opt['FS'], ".*")].nil?
-			@embeddedfiles[File.basename(opt['FS'], ".*")] = {'file' => opt['FS'], 'n' => (@n + @embeddedfiles.length + 10000)}
+		if (opt['Subtype'] == 'FileAttachment') and !opt['FS'].empty? and File.exist?(opt['FS']) and @embeddedfiles[File.basename(opt['FS'])].nil?
+			@embeddedfiles[File.basename(opt['FS'])] = {'file' => opt['FS'], 'n' => (@embeddedfiles.length + 100000)}
 		end
+	end
+
+	#
+	# Embedd the attached files.
+	# @since 4.4.000 (2008-12-07)
+	# @access protected
+	# @see Annotation()
+	#
+	def putEmbeddedFiles()
+		# reset(@embeddedfiles)
+		@embeddedfiles.each { |filename, filedata|
+			data = ''
+			open(filedata['file'],'rb') do |f|
+				data = f.read()
+			end
+			filter = ''
+			if @compress
+				data = gzcompress(data)
+				filter = ' /Filter /FlateDecode'
+			end
+			@offsets[filedata['n']] = @bufferlen
+			out(filedata['n'].to_s + ' 0 obj')
+			out('<</Type /EmbeddedFile' + filter + ' /Length ' + data.length.to_s + ' >>')
+			putstream(data)
+			out('endobj')
+		}
 	end
 
 	#
@@ -4620,9 +4646,9 @@ class TCPDF
 					if pl['opt']['fs'].nil?
 						break
 					end
-					filename = File.basename(pl['opt']['fs'], ".*")
+					filename = File.basename(pl['opt']['fs'])
 					if !@embeddedfiles[filename]['n'].nil?
-						annots << ' /FS <</Type /Filespec /F ' + datastring(filename) + ' /EF <</F ' + @embeddedfiles[filename]['n'] + ' 0 R>> >>'
+						annots << ' /FS <</Type /Filespec /F ' + datastring(filename) + ' /EF <</F ' + @embeddedfiles[filename]['n'].to_s + ' 0 R>> >>'
 						iconsapp = ['Graph', 'Paperclip', 'PushPin', 'Tag']
 						if !pl['opt']['name'].nil? and iconsapp.include?(pl['opt']['name'])
 							annots << ' /Name /' + pl['opt']['name']
@@ -4634,7 +4660,7 @@ class TCPDF
 					if pl['opt']['sound'].nil?
 						break
 					end
-					filename = File.basename(pl['opt']['sound'], ".*")
+					filename = File.basename(pl['opt']['sound'])
 					if !@embeddedfiles[filename]['n'].nil?
 						# to be completed...
 						iconsapp = ['Speaker', 'Mic']
@@ -5002,7 +5028,7 @@ class TCPDF
 	end
 
 	#
-	# putresources
+	# Output Resources.
 	# @access protected
 	#
 	def putresources()
@@ -5016,6 +5042,7 @@ class TCPDF
 		out('>>');
 		out('endobj');
 		putbookmarks()
+		putEmbeddedFiles()
 	end
 	
 	#
@@ -5121,9 +5148,12 @@ class TCPDF
 		1.upto(@n) do |i|
 			out(sprintf('%010d 00000 n ',@offsets[i]));
 		end
-		@embeddedfiles.each { |filename, filedata|
-			out(sprintf('%010d 00000 n ', @offsets[filedata['n']]))
-		}
+		if !@embeddedfiles.nil? and (@embeddedfiles.length > 0)
+			out('100000 ' + @embeddedfiles.length.to_s)
+			@embeddedfiles.each { |filename, filedata|
+				out(sprintf('%010d 00000 n ', @offsets[filedata['n']]))
+			}
+		end
 		#Trailer
 		out('trailer');
 		out('<<');
