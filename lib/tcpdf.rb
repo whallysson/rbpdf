@@ -340,6 +340,8 @@ class TCPDF
 		@linestyle_dash ||= '[] 0 d'
 		@numpages ||= 0
 		@pagelen ||= []
+		@numimages ||= 0
+		@imagekeys ||= []
 		@bufferlen ||= 0
 		@numfonts ||= 0
 		@fontkeys ||= []
@@ -3842,7 +3844,7 @@ class TCPDF
 		end
 
 		# check if image has been already added on document
-		if (@images[file].nil?)
+		if !@imagekeys.include?(file)
 			#First use of image, get info
 			if (type == '')
 				type = File::extname(file)
@@ -3906,14 +3908,14 @@ class TCPDF
 				# force grayscale
 				info['cs'] = 'DeviceGray'
 			end
-			info['i']=@images.length+1;
+			info['i'] = @numimages + 1
 			if imgmask != false
 				info['masked'] = imgmask
 			end
 			# add image to document
-			@images[file] = info;
+			setImageBuffer(file, info)
 		else
-			info=@images[file];
+			info = getImageBuffer(file)
 		end
 
 		# Check whether we need a new page first as this does not fit
@@ -4948,14 +4950,15 @@ class TCPDF
   end
 
 	#
-	# putimages
+	# Output images.
 	# @access protected
 	#
 	def putimages()
 		filter=(@compress) ? '/Filter /FlateDecode ' : '';
-		@images.each do |file, info| # was while(list(file, info)=each(@images))
+		@imagekeys.each do |file|
+			info = getImageBuffer(file)
 			newobj();
-			@images[file]['n']=@n;
+			setImageSubBuffer(file, 'n', @n)
 			out('<</Type /XObject');
 			out('/Subtype /Image');
 			out('/Width ' + info['w'].to_s);
@@ -4980,14 +4983,14 @@ class TCPDF
 			end
 			if (!info['trns'].nil? and info['trns'].kind_of?(Array))
 				trns='';
-				0.upto(info['trns'].length) do |i|
+				count_info = info['trns'].length
+				0.upto(count_info) do |i|
 					trns << info['trns'][i] + ' ' + info['trns'][i] + ' ';
 				end
 				out('/Mask [' + trns + ']');
 			end
 			out('/Length ' + info['data'].length.to_s + '>>');
 			putstream(info['data']);
-      @images[file]['data']=nil
 			out('endobj');
 			#Palette
 			if (info['cs']=='Indexed')
@@ -5001,12 +5004,13 @@ class TCPDF
 	end
 
 	#
-	# putxobjectdict
+	# Output object dictionary for images.
 	# @access protected
 	#
 	def putxobjectdict()
-		@images.each_value do |image|
-			out('/I' + image['i'].to_s + ' ' + image['n'].to_s + ' 0 R');
+		@imagekeys.each do |file|
+			info = getImageBuffer(file)
+			out('/I' + info['i'].to_s + ' ' + info['n'].to_s + ' 0 R')
 		end
 	end
 
@@ -5120,7 +5124,7 @@ class TCPDF
 	end
 
 	#
-	# enddoc
+	# Output end of document (EOF).
 	# @access protected
 	#
 	def enddoc()
@@ -5165,10 +5169,10 @@ class TCPDF
 		@state=3 # end-of-doc
 		if @diskcache
 			# remove temporary files used for images
-			#@imagekeys.each do |key|
-			#	# remove temporary files
-			#	File.delete(@images[key])
-			#end
+			@imagekeys.each do |key|
+				# remove temporary files
+				File.delete(@images[key].path)
+			end
 			@fontkeys.each do |key|
 				# remove temporary files
 				File.delete(@fonts[key].path)
@@ -8585,6 +8589,65 @@ class TCPDF
 			return readDiskCache(@pages[page])
 		elsif !@pages[page].nil?
 			return @pages[page]
+		end
+		return false
+	end
+
+	#
+	# Set image buffer content.
+	# @param string :image image key
+	# @param array :data image data
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def setImageBuffer(image, data)
+		if @diskcache
+			if @images[image].nil?
+				@images[image] = getObjFilename('image' + File::basename(image))
+			end
+			writeDiskCache(@images[image], Marshal.dump(data))
+		else
+			@images[image] = data
+		end
+		if !@imagekeys.include?(image)
+			@imagekeys.push image
+		end
+		@numimages += 1
+	end
+
+	#
+	# Set image buffer content.
+	# @param string :image image key
+	# @param string :key image sub-key
+	# @param hash :data image data
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def setImageSubBuffer(image, key, data)
+		if @images[image].nil?
+				setImageBuffer(image, {})
+		end
+		if @diskcache
+			tmpimg = getImageBuffer(image)
+			tmpimg[key] = data
+			writeDiskCache(@images[image], Marshal.dump(tmpimg))
+		else
+			@images[image][key] = data
+		end
+	end
+                
+	#
+	# Get page buffer content.
+	# @param string :image image key
+	# @return string image buffer content or false in case of error
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def getImageBuffer(image)
+		if @diskcache and !@images[image].nil?
+			return Marshal.load(readDiskCache(@images[image]))
+		elsif !@images[image].nil?
+			return @images[image]
 		end
 		return false
 	end
