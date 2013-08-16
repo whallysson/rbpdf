@@ -7562,6 +7562,14 @@ class TCPDF
 	end
 
 	#
+	# Convert to accessible file path
+	# @param string :attrname image file name
+	#
+	def getImageFilename( attrname )
+		attrname = attrname.gsub(@@k_path_url, @@k_path_main)
+	end
+
+	#
 	# Process opening tags.
 	# @param array :dom html dom array 
 	# @param int :key current element id
@@ -7656,7 +7664,7 @@ class TCPDF
 				#if tag['attribute']['src'][0] == '/'
 				#	tag['attribute']['src'] = Rails.root.join('public') + tag['attribute']['src']
 				#end
-				tag['attribute']['src'] = tag['attribute']['src'].gsub(@@k_path_url, @@k_path_main)
+				tag['attribute']['src'] = getImageFilename(tag['attribute']['src'])
 				if tag['attribute']['width'].nil?
 					tag['attribute']['width'] = 0
 				end
