@@ -6546,6 +6546,7 @@ class TCPDF
 						if dom[table_el]['cols'].nil?
 							dom[table_el]['cols'] = trid['cols']
 						end
+						oldmargin = @c_margin
 						if !dom[(dom[trid]['parent'])]['attribute']['cellpadding'].nil?
 							currentcmargin = getHTMLUnitToUnits(dom[(dom[trid]['parent'])]['attribute']['cellpadding'], 1, 'px')
 						else
@@ -6664,7 +6665,7 @@ class TCPDF
 						# ****** write the cell content ******
 						MultiCell(cellw, cellh, cell_content, 0, lalign, 0, 2, '', '', true, 0, true)
 						@lasth = prevLastH
-						@c_margin = currentcmargin
+						@c_margin = oldmargin
 						dom[trid]['cellpos'][cellid - 1]['endx'] = @x
 						# update the end of row position
 						if rowspan <= 1
@@ -7231,27 +7232,19 @@ class TCPDF
 			html = html.gsub(/<pre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi, "<pre\\1>\\2<br />\\3</pre>")
 		end
 		html.gsub!(/[\n]/, " ")
-		# remove extra spaces from tables
-		html.gsub!(/[\s]*<\/table>[\s]*/, '</table>')
-		html.gsub!(/[\s]*<\/tr>[\s]*/, '</tr>')
-		html.gsub!(/[\s]*<tr/, '<tr')
-		html.gsub!(/[\s]*<\/th>[\s]*/, '</th>')
-		html.gsub!(/[\s]*<th/, '<th')
-		html.gsub!(/[\s]*<\/td>[\s]*/, '</td>')
-		html.gsub!(/[\s]*<td/, '<td')
+		# remove extra spaces from code
+		html.gsub!(/[\s]+<\/(table|tr|td|th|ul|ol|li)>/, '</\\1>')
+		html.gsub!(/[\s]+<(tr|td|th|ul|ol|li|br)/, '<\\1')
+		html.gsub!(/<\/(table|tr|td|th|blockquote|dd|div|dt|h1|h2|h3|h4|h5|h6|hr|li|ol|p|ul)>[\s]+</, '</\\1><')
 
-		html.gsub!(/<\/th>/, '<marker style="font-size:0"/></th>')
-		html.gsub!(/<\/td>/, '<marker style="font-size:0"/></td>')
+		html.gsub!(/<\/(td|th)>/, '<marker style="font-size:0"/></\\1>')
 		html.gsub!(/<\/table>([\s]*)<marker style="font-size:0"\/>/, '</table>')
 		html.gsub!(/<img/, ' <img')
 		html.gsub!(/<img([^\>]*)>/xi, '<img\\1><span></span>')
-		html.gsub!(/[\s]+<ul/, '<ul')
-		html.gsub!(/[\s]+<ol/, '<ol')
-		html.gsub!(/[\s]+<li/, '<li')
-		html.gsub!(/[\s]*<\/li>[\s]*/, '</li>')
-		html.gsub!(/[\s]*<\/ul>[\s]*/, '</ul>')
-		html.gsub!(/[\s]*<\/ol>[\s]*/, '</ol>')
-		html.gsub!(/[\s]+<br/, '<br')
+
+		# trim string
+		html.gsub!(/^[\s]+/, '')
+		html.gsub!(/[\s]+$/, '')
 
 		# pattern for generic tag
 		tagpattern = /(<[^>]+>)/
