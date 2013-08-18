@@ -548,14 +548,14 @@ class TCPDF
 		end
 		@w = @w_pt / @k
 		@h = @h_pt / @k
-		if autopagebreak == ''
+		if empty_string(autopagebreak)
 			unless @auto_page_break.nil?
 				autopagebreak = @auto_page_break
 			else
 				autopagebreak = true
 			end
 		end
-		if bottommargin == ''
+		if empty_string(bottommargin)
 			unless @b_margin.nil?
 				bottommargin = @b_margin
 			else
@@ -1039,10 +1039,13 @@ class TCPDF
 	# @see GetPage(), LastPage(), GetNumPages()
 	#
 	def SetPage(pnum, resetmargins=false)
+		if pnum == @page
+			return
+		end
 		if (pnum > 0) and (pnum <= @numpages)
 			@state = 2
 			# save current graphic settings
-			gvars = getGraphicVars()
+			# gvars = getGraphicVars()
 			oldpage = @page
 			@page = pnum
 			@w_pt = @pagedim[@page]['w']
@@ -1057,7 +1060,7 @@ class TCPDF
 			@cur_orientation = @pagedim[@page]['or']
 			SetAutoPageBreak(@auto_page_break, @b_margin)
 			# restore graphic settings
-			setGraphicVars(gvars)
+			# setGraphicVars(gvars)
 			if resetmargins
 				@l_margin = @pagedim[@page]['olm']
 				@r_margin = @pagedim[@page]['orm']
@@ -1433,7 +1436,7 @@ class TCPDF
 		# header string
 		SetFont(headerfont[0], headerfont[1], headerfont[2])
 		SetX(header_x)
-		MultiCell(0, cell_height, headerdata['string'], 0, '', 0, 1, 0, 0, true, 0, false)
+		MultiCell(0, cell_height, headerdata['string'], 0, '', 0, 1, '', '', true, 0, false)
 
 		# print an ending header line
 		SetLineStyle({'width' => 0.85 / GetScaleFactor(), 'cap' => 'butt', 'join' => 'miter', 'dash' => 0, 'color' => [0, 0, 0]})
@@ -1554,7 +1557,7 @@ class TCPDF
 		# restore graphic settings
 		setGraphicVars(gvars)
 		# calculate footer lenght
-		@footerlen[@page] = @pagelen[@page] - @footerpos[@page]
+		@footerlen[@page] = @pagelen[@page] - @footerpos[@page] + 1
 	end
 
 	#
@@ -1563,7 +1566,7 @@ class TCPDF
 	# @since 4.5.030 (2009-03-25)
 	#
 	def setTableHeader()
-		if !@thead_margin.nil?
+		if !empty_string(@thead_margin)
 			# restore the original top-margin
 			@t_margin = @thead_margin
 			@pagedim[@page]['tm'] = @thead_margin
@@ -1573,7 +1576,7 @@ class TCPDF
 			# print table header
 			writeHTML(@thead, false, false, false, false, '')
 			# set new top margin to skip the table headers
-			if @thead_margin.nil?
+			if empty_string(@thead_margin)
 				@thead_margin = @t_margin
 			end
 			@t_margin = @y
@@ -1852,7 +1855,7 @@ class TCPDF
 	#
 	def GetArrStringWidth(sa, fontname='', fontstyle='', fontsize=0)
 		# store current values
-		if !fontname.empty?
+		if !empty_string(fontname)
 			prev_FontFamily = @font_family
 			prev_FontStyle = @font_style
 			prev_FontSizePt = @font_size_pt
@@ -1863,7 +1866,7 @@ class TCPDF
 			w += GetCharWidth(char)
 		end
 		# restore previous values
-		if !fontname.empty?
+		if !empty_string(fontname)
 			SetFont(prev_FontFamily, prev_FontStyle, prev_FontSizePt)
 		end
 		return w
@@ -2318,8 +2321,8 @@ class TCPDF
 	# @see SetFont()
 	#
 	def AddFont(family, style='', fontfile='')
-		if (family.empty?)
-			if !@font_family.empty?
+		if empty_string(family)
+			if !empty_string(@font_family)
 				family = @font_family
 			else
 				Error('Empty font family')
@@ -2367,9 +2370,9 @@ class TCPDF
 
 		# get specified font directory (if any)
 		fontdir = '';
-		if !fontfile.empty?
+		if !empty_string(fontfile)
 			fontdir = File.dirname(fontfile)
-			if fontdir.empty? or (fontdir == '.')
+			if empty_string(fontdir) or (fontdir == '.')
 				fontdir = ''
 			else
 				fontdir << '/'
@@ -2377,7 +2380,7 @@ class TCPDF
 		end
 
 		# search and include font file
-		if (fontfile=='')
+		if empty_string(fontfile)
 			# build a standard filenames for specified font
 			fontfile1 = family.gsub(' ', '') + style.downcase + '.rb'
 			fontfile2 = family.gsub(' ', '') + '.rb'
@@ -2463,7 +2466,7 @@ class TCPDF
 			end
 			setFontSubBuffer(fontkey, 'diff', d)
 		end
-		if (font_desc[:file] and font_desc[:file].length > 0)
+		if !empty_string(font_desc[:file])
 			if (font_desc[:type] == 'TrueType') or (font_desc[:type] == 'TrueTypeUnicode')
 				@font_files[font_desc[:file]] = {'length1' => font_desc[:originalsize], 'fontdir' => fontdir}
 			elsif font_desc[:type] != 'core'
@@ -2646,7 +2649,7 @@ class TCPDF
 		end
 		@page_annots[@page] ||= []
 		@page_annots[@page].push 'x' => x, 'y' => y, 'w' => w, 'h' => h, 'txt' => text, 'opt' => opt, 'numspaces' => spaces
-		if (opt['Subtype'] == 'FileAttachment') and !opt['FS'].empty? and File.exist?(opt['FS']) and @embeddedfiles[File.basename(opt['FS'])].nil?
+		if (opt['Subtype'] == 'FileAttachment') and !empty_string(opt['FS']) and File.exist?(opt['FS']) and @embeddedfiles[File.basename(opt['FS'])].nil?
 			@embeddedfiles[File.basename(opt['FS'])] = {'file' => opt['FS'], 'n' => (@embeddedfiles.length + 100000)}
 		end
 	end
@@ -2891,7 +2894,7 @@ class TCPDF
 			end
 		end
 		k = @k
-		if !w or (w <= 0)
+		if empty_string(w) or (w <= 0)
 			if @rtl
 				w = @x - @l_margin
 			else
@@ -3124,13 +3127,13 @@ class TCPDF
 	# @since 1.3
 	# @see SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), Cell(), Write(), SetAutoPageBreak()
 	#
-	def MultiCell(w, h, txt, border=0, align='J', fill=0, ln=1, x=0, y=0, reseth=true, stretch=0, ishtml=false, autopadding=true, maxh=0)
-		if !@lasth or reseth
+	def MultiCell(w, h, txt, border=0, align='J', fill=0, ln=1, x='', y='', reseth=true, stretch=0, ishtml=false, autopadding=true, maxh=0)
+		if empty_string(@lasth) or reseth
 			# set row height
 			@lasth = @font_size * @@k_cell_height_ratio
 		end
 		 
-		if y != 0
+		if !empty_string(y)
 			SetY(y)
 		else
 			y = GetY()
@@ -3141,13 +3144,13 @@ class TCPDF
 		# get current page number
 		startpage = @page
 
-		if x != 0
+		if !empty_string(x)
 			SetX(x)
 		else
 			x = GetX()
 		end
 
-		if !w or (w <= 0)
+		if empty_string(w) or (w <= 0)
 			if @rtl
 				w = @x - @l_margin
 			else
@@ -3234,8 +3237,9 @@ class TCPDF
 				SetX(nx)
 				ccode = getCellCode(w, h, '', cborder, 1, '', fill, '', 0, false)
 				if (cborder != 0) or (fill == 1)
-					pstart = (getPageBuffer(@page))[0, @intmrk[@page]]
-					pend = (getPageBuffer(@page))[@intmrk[@page]..-1]
+					pagebuff = getPageBuffer(@page)
+					pstart = pagebuff[0, @intmrk[@page]]
+					pend = pagebuff[@intmrk[@page]..-1]
 					setPageBuffer(@page, pstart + ccode + "\n" + pend)
 					@intmrk[@page] += (ccode + "\n").length
 				end
@@ -3258,8 +3262,9 @@ class TCPDF
 					pagemark = @intmrk[@page]
 					@intmrk[@page] += (ccode + "\n").length
 				end
-				pstart = (getPageBuffer(@page))[0, pagemark]
-				pend = (getPageBuffer(@page))[pagemark..-1]
+				pagebuff = getPageBuffer(@page)
+				pstart = pagebuff[0, pagemark]
+				pend = pagebuff[pagemark..-1]
 				setPageBuffer(@page, pstart + ccode + "\n" + pend)
 			end
 		end
@@ -4219,7 +4224,7 @@ class TCPDF
 	# @access public
 	#
 	def destroy(destroyall=false, preserve_objcopy=false)
-		if destroyall and @diskcache and !preserve_objcopy and !@buffer.path.empty?
+		if destroyall and @diskcache and !preserve_objcopy and !empty_string(@buffer.path)
 			# remove buffer file from cache
 			File.delete(@buffer.path)
 		end
@@ -4708,7 +4713,7 @@ class TCPDF
 				fontfile = file
 			end
 
-			if !fontfile.nil? and !fontfile.empty?
+			if !empty_string(fontfile)
 				font = ''
 				open(fontfile,'rb') do |f|
 					font = f.read()
@@ -4792,7 +4797,7 @@ class TCPDF
 				font['desc'].each do |k, v|
 					s << ' /' + k + ' ' + v + ''
 				end
-				if !font['file'].empty?
+				if !empty_string(font['file'])
 					s << ' /FontFile' + (type=='Type1' ? '' : '2') + ' ' + @font_files[font['file']]['n'] + ' 0 R'
 				end
 				out(s + '>>');
@@ -5050,27 +5055,29 @@ class TCPDF
 	end
 	
 	#
-	# putinfo
+	# Adds some Metadata information
+	# (see Chapter 10.2 of PDF Reference)
 	# @access protected
 	#
 	def putinfo()
-		out('/Producer ' + textstring(PDF_PRODUCER));
-		if (!@title.nil?)
+		if !empty_string(@title)
 			out('/Title ' + textstring(@title));
 		end
-		if (!@subject.nil?)
+		if !empty_string(@subject)
 			out('/Subject ' + textstring(@subject));
 		end
-		if (!@author.nil?)
+		if !empty_string(@author)
 			out('/Author ' + textstring(@author));
 		end
-		if (!@keywords.nil?)
+		if !empty_string(@keywords)
 			out('/Keywords ' + textstring(@keywords));
 		end
-		if (!@creator.nil?)
+		if !empty_string(@creator)
 			out('/Creator ' + textstring(@creator));
 		end
-		out('/CreationDate ' + textstring('D:' + Time.now.strftime('%Y%m%d%H%M%S')));
+		out('/Producer ' + textstring(PDF_PRODUCER))
+		out('/CreationDate ' + datastring('D:' + Time.now.strftime('%Y%m%d%H%M%S')))
+		out('/ModDate ' + datastring('D:' + Time.now.strftime('%Y%m%d%H%M%S')))
 	end
 
 	#
@@ -5191,17 +5198,17 @@ class TCPDF
 		setPageBuffer(@page, '')
 		# initialize array for graphics tranformation positions inside a page buffer
 		@state=2;
-		if orientation == ''
+		if empty_string(orientation)
 			unless @cur_orientation.nil?
 				orientation = @cur_orientation
 			else
 				orientation = 'P'
 			end
 		end
-		if format != ''
-			setPageFormat(format, orientation)
-		else
+		if empty_string(format)
 			setPageOrientation(orientation)
+		else
+			setPageFormat(format, orientation)
 		end
 		if @rtl
 			@x = @w - @r_margin
@@ -5483,9 +5490,12 @@ class TCPDF
 		if (@state==2)
 			if !@in_footer and !@footerlen[@page].nil? and (@footerlen[@page] > 0)
 				# puts data before page footer
-				page = (getPageBuffer(@page))[0..(-@footerlen[@page]-1)]
-				footer = (getPageBuffer(@page))[-@footerlen[@page]..-1]
+				pagebuff = getPageBuffer(@page)
+				page = pagebuff[0..(-@footerlen[@page]-1)]
+				footer = pagebuff[-@footerlen[@page]..-1]
 				setPageBuffer(@page, page + s.to_s + "\n" + footer)
+				# update footer position
+				@footerpos[@page] += (s.to_s + "\n").length
 			else
 				setPageBuffer(@page, s.to_s + "\n", true)
 			end
@@ -5546,7 +5556,7 @@ class TCPDF
 			out('/' + key.to_s + ' ' + value.to_s);
 		end
 		fontdir = ''
-		if (font['file'])
+		if !empty_string(font['file'])
 			# A stream containing a TrueType font
 			out('/FontFile2 ' + @font_files[font['file']]['n'].to_s + ' 0 R');
 			fontdir = @font_files[font['file']]['fontdir']
@@ -5555,7 +5565,7 @@ class TCPDF
 		out('endobj');
 		newobj();
 
-		if font['ctg'] and !font['ctg'].empty?
+		if font['ctg'] and !empty_string(font['ctg'])
 			# Embed CIDToGIDMap
 			# A specification of the mapping from CIDs to glyph indices
 			# search and get CTG font file to embedd
@@ -5571,7 +5581,7 @@ class TCPDF
 				fontfile = ctgfile
 			end
 
-			if fontfile.nil? or fontfile.empty?
+			if empty_string(fontfile)
 				Error('Font file not found: ' + ctgfile)
 			end
 			size = File.size(fontfile)
@@ -6131,7 +6141,7 @@ class TCPDF
 			@listindent = GetStringWidth('0000')
 		end
 		@listnum = 0
-		if !@lasth or reseth
+		if empty_string(@lasth) or reseth
 			#set row height
 			@lasth = @font_size * @@k_cell_height_ratio
 		end
@@ -6151,13 +6161,15 @@ class TCPDF
 							curpos = @pagelen[startlinepage] - @footerlen[startlinepage]
 						end
 						# line to be moved one page forward
-						linebeg = getPageBuffer(startlinepage)[startlinepos, curpos - startlinepos]
-						tstart = getPageBuffer(startlinepage)[0, startlinepos]
-						tend = getPageBuffer(startlinepage)[curpos..-1]
+						pagebuff = getPageBuffer(startlinepage)
+						linebeg = pagebuff[startlinepos, curpos - startlinepos]
+						tstart = pagebuff[0, startlinepos]
+						tend = pagebuff[curpos..-1]
 						# remove line start from previous page
 						setPageBuffer(startlinepage, tstart + '' + tend)
-						tstart = getPageBuffer(@page)[0, @intmrk[@page]]
-						tend = getPageBuffer(@page)[@intmrk[@page]..-1]
+						pagebuff = getPageBuffer(@page)
+						tstart = pagebuff[0, @intmrk[@page]]
+						tend = pagebuff[@intmrk[@page]..-1]
 						# add line start to current page
 						yshift = minstartliney - @y
 						try = sprintf('1 0 0 1 0 %.3f cm', (yshift * @k))
@@ -6194,13 +6206,15 @@ class TCPDF
 									curpos = @pagelen[startlinepage] - @footerlen[startlinepage]
 								end
 								# line to be moved one page forward
-								linebeg = getPageBuffer(startlinepage)[startlinepos, curpos - startlinepos]
-								tstart = getPageBuffer(startlinepage)[0, startlinepos]
-								tend = getPageBuffer(startlinepage)[curpos..-1]
+								pagebuff = getPageBuffer(startlinepage)
+								linebeg = pagebuff[startlinepos, curpos - startlinepos]
+								tstart = pagebuff[0, startlinepos]
+								tend = pagebuff[curpos..-1]
 								# remove line start from previous page
 								setPageBuffer(startlinepage, tstart + '' + tend)
-								tstart = getPageBuffer(@page)[0, @intmrk[@page]]
-								tend = getPageBuffer(@page)[@intmrk[@page]..-1]
+								pagebuff = getPageBuffer(@page)
+								tstart = pagebuff[0, @intmrk[@page]]
+								tend = pagebuff[@intmrk[@page]..-1]
 								# add line start to current page
 								yshift = minstartliney - @y
 								try = sprintf('1 0 0 1 0 %.3f cm', yshift * @k)
@@ -6242,7 +6256,7 @@ class TCPDF
 				if !dom[key]['align'].nil?
 					lalign = dom[key]['align']
 				end
-				if lalign.empty?
+				if empty_string(lalign)
 					lalign = align
 				end
 			end
@@ -6632,7 +6646,7 @@ class TCPDF
 						end
 						prevLastH = @lasth
 						# ****** write the cell content ******
-						MultiCell(cellw, cellh, cell_content, 0, lalign, 0, 2, 0, 0, true, 0, true)
+						MultiCell(cellw, cellh, cell_content, 0, lalign, 0, 2, '', '', true, 0, true)
 						@lasth = prevLastH
 						@c_margin = currentcmargin
 						dom[trid]['cellpos'][cellid - 1]['endx'] = @x
@@ -6679,10 +6693,12 @@ class TCPDF
 					else
 						# opening tag (or self-closing tag)
 						if opentagpos.nil?
-							if !@footerlen[@page].nil?
-								@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
-							else
-								@footerpos[@page] = @pagelen[@page]
+							if !@in_footer
+								if !@footerlen[@page].nil?
+									@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
+								else
+									@footerpos[@page] = @pagelen[@page]
+								end
 							end
 							opentagpos = @footerpos[@page]
 						end
@@ -6694,7 +6710,7 @@ class TCPDF
 				end
 			elsif dom[key]['value'].length > 0
 				# print list-item
-				if !@lispacer.empty?
+				if !empty_string(@lispacer)
 					SetFont(pfontname, pfontstyle, pfontsize)
 					@lasth = @font_size * @cell_height_ratio
 					minstartliney = @y
@@ -7299,14 +7315,14 @@ class TCPDF
 					end
 					# store header rows on a new table
 					if (dom[key]['value'] == 'tr') and (dom[(dom[key]['parent'])]['thead'] == true)
-						if dom[grandparent]['thead'].length.nil? or dom[grandparent]['thead'].length == 0
+						if empty_string(dom[grandparent]['thead'])
 							dom[grandparent]['thead'] = a[dom[grandparent]['elkey']].dup
 						end
 						dom[key]['parent'].upto(key) do |i|
 							dom[grandparent]['thead'] << a[dom[i]['elkey']]
 						end
 					end
-					if (dom[key]['value'] == 'table') and dom[(dom[key]['parent'])]['thead'] and (dom[(dom[key]['parent'])]['thead'].length > 0)
+					if (dom[key]['value'] == 'table') and !empty_string(dom[(dom[key]['parent'])]['thead'])
 						dom[(dom[key]['parent'])]['thead'] << '</table>'
 					end
 				else
@@ -7409,11 +7425,11 @@ class TCPDF
 							dom[key]['fontstyle'] << 'I'
 						end
 						# font color
-						if !dom[key]['style']['color'].nil? and (dom[key]['style']['color'].length > 0)
+						if !empty_string(dom[key]['style']['color'])
 							dom[key]['fgcolor'] = convertHTMLColorToDec(dom[key]['style']['color'])
 						end
 						# background color
-						if !dom[key]['style']['background-color'].nil? and (dom[key]['style']['background-color'].length > 0)
+						if !empty_string(dom[key]['style']['background-color'])
 							dom[key]['bgcolor'] = convertHTMLColorToDec(dom[key]['style']['background-color'])
 						end
 						# text-decoration
@@ -7421,7 +7437,7 @@ class TCPDF
 							decors = dom[key]['style']['text-decoration'].downcase.split(' ')
 							decors.each {|dec|
 								dec = dec.strip
-								unless dec.empty?
+								unless empty_string(dec)
 									if dec[0,1] == 'u'
 										dom[key]['fontstyle'] << 'U'
 									elsif dec[0,1] == 'l'
@@ -7476,7 +7492,7 @@ class TCPDF
 						end
 					end
 					# force natural alignment for lists
-					if (dom[key]['value'] == 'ul') or (dom[key]['value'] == 'ol') or (dom[key]['value'] == 'dl') and (dom[key]['align'].nil? or dom[key]['align'].empty? or (dom[key]['align'] != 'J'))
+					if (dom[key]['value'] == 'ul') or (dom[key]['value'] == 'ol') or (dom[key]['value'] == 'dl') and (empty_string(dom[key]['align']) or (dom[key]['align'] != 'J'))
 						if @rtl
 							dom[key]['align'] = 'R'
 						else
@@ -7533,11 +7549,11 @@ class TCPDF
 						dom[(dom[key]['parent'])]['cols'] += colspan
 					end
 					# set foreground color attribute
-					if !dom[key]['attribute']['color'].nil? and (dom[key]['attribute']['color'].length > 0)
+					if !empty_string(dom[key]['attribute']['color'])
 						dom[key]['fgcolor'] = convertHTMLColorToDec(dom[key]['attribute']['color'])
 					end
 					# set background color attribute
-					if !dom[key]['attribute']['bgcolor'].nil? and (dom[key]['attribute']['bgcolor'].length > 0)
+					if !empty_string(dom[key]['attribute']['bgcolor'])
 						dom[key]['bgcolor'] = convertHTMLColorToDec(dom[key]['attribute']['bgcolor'])
 					end
 					# check for width attribute
@@ -7549,7 +7565,7 @@ class TCPDF
 						dom[key]['height'] = dom[key]['attribute']['height']
 					end
 					# check for text alignment
-					if !dom[key]['attribute']['align'].nil? and (dom[key]['attribute']['align'].length > 0) and (dom[key]['value'] != 'img')
+					if !empty_string(dom[key]['attribute']['align']) and (dom[key]['value'] != 'img')
 						dom[key]['align'] = dom[key]['attribute']['align'][0,1].upcase
 					end
 				end # end opening tag
@@ -7597,7 +7613,7 @@ class TCPDF
 			cp = 0
 			cs = 0
 			dom[key]['rowspans'] = []
-			if dom[key]['thead']
+			if !empty_string(dom[key]['thead'])
 				# set table header
 				@thead = dom[key]['thead']
 			end
@@ -7652,7 +7668,7 @@ class TCPDF
 					decors = astyle['text-decoration'].downcase.split(' ') 
 					decors.each {|dec|
 						dec = dec.strip
-						if dec != ""
+						if !empty_string(dec)
 							if dec[0, 1] == 'u'
 								@href['style'] << 'U'
 							elsif dec[0, 1] == 'l'
@@ -7701,7 +7717,7 @@ class TCPDF
 					end
 				end
 				imglink = ''
-				if !@href['url'].nil? and !@href['url'].empty?
+				if !@href['url'].nil? and !empty_string(@href['url'])
 					imglink = @href['url']
 					if imglink[0, 1] == '#'
 						# convert url to internal link
@@ -7776,11 +7792,11 @@ class TCPDF
 			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
 			if @listordered[@listnum]
 				# ordered item
-				if !parent['attribute']['type'].nil? and !parent['attribute']['type'].empty?
+				if !empty_string(parent['attribute']['type'])
 					@lispacer = parent['attribute']['type']
-				elsif !parent['listtype'].nil? and !parent['listtype'].empty?
+				elsif !empty_string(parent['listtype'])
 					@lispacer = parent['listtype']
-				elsif !@lisymbol.empty?
+				elsif !empty_string(@lisymbol)
 					@lispacer = @lisymbol
 				else
 					@lispacer = '#'
@@ -7791,11 +7807,11 @@ class TCPDF
 				end
 			else
 				# unordered item
-				if !parent['attribute']['type'].nil? and !parent['attribute']['type'].empty?
+				if !empty_string(parent['attribute']['type'])
 					@lispacer = parent['attribute']['type']
-				elsif !parent['listtype'].nil? and !parent['listtype'].empty?
+				elsif !empty_string(parent['listtype'])
 					@lispacer = parent['listtype']
-				elsif !@lisymbol.empty?
+				elsif !empty_string(@lisymbol)
 					@lispacer = @lisymbol
 				else
 					@lispacer = '!'
@@ -7987,8 +8003,9 @@ class TCPDF
 								# design a cell around the text
 								ccode = @fill_color + "\n" + getCellCode(cw, ch, '', cborder, 1, '', fill, '', 0, true)
 								if (cborder != 0) or (fill == 1)
-									pstart = getPageBuffer(@page)[0, @intmrk[@page]]
-									pend = getPageBuffer(@page)[@intmrk[@page]..-1]
+									pagebuff = getPageBuffer(@page)
+									pstart = pagebuff[0, @intmrk[@page]]
+									pend = pagebuff[@intmrk[@page]..-1]
 									setPageBuffer(@page, pstart + ccode + "\n" + pend)
 									@intmrk[@page] += (ccode + "\n").length
 								end
@@ -8018,8 +8035,9 @@ class TCPDF
 									pagemark = @intmrk[@page]
 									@intmrk[@page] += (ccode + "\n").length
 								end
-								pstart = getPageBuffer(@page)[0, pagemark]
-								pend = getPageBuffer(@page)[pagemark..-1]
+								pagebuff = getPageBuffer(@page)
+								pstart = pagebuff[0, pagemark]
+								pend = pagebuff[pagemark..-1]
 								setPageBuffer(@page, pstart + ccode + "\n" + pend)
 							end
 						end
@@ -8042,7 +8060,7 @@ class TCPDF
 					@c_margin = @old_c_margin
 				end
 				@lasth = @font_size * @cell_height_ratio
-				if !table_el['thead'].empty? and !@thead_margin.nil?
+				if !empty_string(table_el['thead']) and !empty_string(@thead_margin)
 					# reset table header
 					@thead = ''
 					# restore top margin
@@ -8373,7 +8391,7 @@ class TCPDF
 			textitem = @listcount[@listnum].to_s
 		end
 
-		if !textitem.empty?
+		if !empty_string(textitem)
 			# print ordered item
 			if @rtl
 				textitem = '.' + textitem
@@ -8450,7 +8468,7 @@ class TCPDF
 		@htmlvspace = gvars['htmlvspace']
 		#@lasth = gvars['lasth']
 		out('' + @linestyle_width + ' ' + @linestyle_cap + ' ' + @linestyle_join + ' ' + @linestyle_dash + ' ' + @draw_color + ' ' + @fill_color + '')
-		unless @font_family.empty?
+		unless empty_string(@font_family)
 			SetFont(@font_family, @font_style, @font_size_pt)
 		end
 	end
@@ -8526,7 +8544,7 @@ class TCPDF
 	def setBuffer(data)
 		@bufferlen += data.length
 		if @diskcache
-			if @buffer.nil? or @buffer.path.empty?
+			if @buffer.nil? or empty_string(@buffer.path)
 				@buffer = getObjFilename('buffer')
 			end
 			writeDiskCache(@buffer, data, true)
@@ -8710,6 +8728,16 @@ class TCPDF
 		return false
 	end
 
+ 	# Determine whether a string is empty.
+ 	# @param string :str string to be checked
+ 	# @return boolean true if string is empty
+ 	# @access public
+ 	# @since 4.5.044 (2009-04-16)
+ 	#
+ 	def empty_string(str)
+ 		return (str.nil? or (str.is_a?(String) and (str.length == 0)))
+ 	end
+
 	#
 	# Output anchor link.
 	# @param string :url link URL or internal link (i.e.: <a href="#23">link to page 23</a>)
@@ -8722,7 +8750,7 @@ class TCPDF
 	# @access public
 	#
 	def addHtmlLink(url, name, fill=0, firstline=false, color='', style=-1)
-		if !url.empty? and (url[0, 1] == '#')
+		if !empty_string(url) and (url[0, 1] == '#')
 			# convert url to internal link
 			page = url.sub(/^#/, "").to_i
 			url = AddLink()
@@ -8856,7 +8884,7 @@ class TCPDF
 		# max level
 		maxlevel = 0
 
-		if str == ''
+		if empty_string(str)
 			# create string from array
 			str = UTF8ArrSubString(ta)
 		end
