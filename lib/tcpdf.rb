@@ -2417,9 +2417,20 @@ class TCPDF
 		if font_desc[:type].nil? or font_desc[:cw].nil?
 			Error('The font definition file has a bad format: ' + fontfile + '')
 		end
-		file = ''
-		enc = ''
-		if font_desc[:dw].nil?
+
+		# SET default parameters
+		font_desc[:file] ||= ''
+		font_desc[:enc] ||= ''
+		if font_desc[:cidinfo].nil?
+			font_desc[:cidinfo] = {'Registry'=>'Adobe', 'Ordering'=>'Identity', 'Supplement'=>0}
+			font_desc[:cidinfo]['uni2cid'] = {}
+		end
+		font_desc[:ctg] ||= ''
+		font_desc[:desc] ||= {}
+		font_desc[:up] ||= -100
+		font_desc[:ut] ||= 50
+		font_desc[:cw] ||= {}
+		if empty_string(font_desc[:dw])
 			# set default width
 			if !font_desc[:desc]['MissingWidth'].nil? and (font_desc[:desc]['MissingWidth'] > 0)
 				font_desc[:dw] = font_desc[:desc]['MissingWidth']
@@ -2431,9 +2442,8 @@ class TCPDF
 		end
 
 		@numfonts += 1
-		#  register CID font (all styles at once)
 		if font_desc[:type] == 'cidfont0'
-			file = '' # not embedded
+			#  register CID font (all styles at once)
 			styles = {'' => '', 'B' => ',Bold', 'I' => ',Italic', 'BI' => ',BoldItalic'}
 			sname = font_desc[:name] + styles[bistyle]
 			if (bistyle.index('B') != nil) and font_desc[:desc]['StemV'] and (font_desc[:desc]['StemV'] == 70)
@@ -2441,14 +2451,15 @@ class TCPDF
 			end
 			setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => sname, 'desc' => font_desc[:desc], 'cidinfo' => font_desc[:cidinfo], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc]})
 		elsif font_desc[:type] == 'core'
-			setFontBuffer(fontkey, {'i' => @numfonts, 'type' => 'core', 'name' => @core_fonts[fontkey], 'up' => -100, 'ut' => 50, 'cw' => font_desc[:cw], 'dw' => font_desc[:dw]})
+			font_desc[:name] = @core_fonts[fontkey]
 		elsif (font_desc[:type] == 'TrueType') or (font_desc[:type] == 'Type1')
-			setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => font_desc[:name], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'file' => font_desc[:file], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc], 'desc' => font_desc[:desc]})
+			# ...
 		elsif font_desc[:type] == 'TrueTypeUnicode'
-			setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => font_desc[:name], 'desc' => font_desc[:desc], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc], 'file' => font_desc[:file], 'ctg' => font_desc[:ctg]})
+			font_desc[:enc] = 'Identity-H'
 		else
 			Error('Unknow font type: ' + type + '')
 		end
+		setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => font_desc[:name], 'desc' => font_desc[:desc], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc], 'cidinfo' => font_desc[:cidinfo], 'file' => font_desc[:file], 'ctg' => font_desc[:ctg]})
 
 		if (!font_desc[:diff].nil? and (!font_desc[:diff].empty?))
 			#Search existing encodings
@@ -4755,8 +4766,9 @@ class TCPDF
 				#Standard font
 				newobj();
 				out('<</Type /Font');
-				out('/BaseFont /' + name);
 				out('/Subtype /Type1');
+				out('/BaseFont /' + name)
+				out('/Name /F' + font['i'].to_s)
 				if (name != 'symbol' && name != 'zapfdingbats')
 					out('/Encoding /WinAnsiEncoding');
 				end
@@ -4768,8 +4780,9 @@ class TCPDF
 				#Additional Type1 or TrueType font
 				newobj();
 				out('<</Type /Font');
-				out('/BaseFont /' + name);
 				out('/Subtype /' + type);
+				out('/BaseFont /' + name)
+				out('/Name /F' + font['i'].to_s)
 				out('/FirstChar 32 /LastChar 255');
 				out('/Widths ' + (@n+1).to_s + ' 0 R');
 				out('/FontDescriptor ' + (@n+2).to_s + ' 0 R');
@@ -5519,7 +5532,8 @@ class TCPDF
 		out('<</Type /Font');
 		out('/Subtype /Type0');
 		out('/BaseFont /' + font['name'] + '');
-		out('/Encoding /Identity-H'); #The horizontal identity mapping for 2-byte CIDs; may be used with CIDFonts using any Registry, Ordering, and Supplement values.
+		out('/Name /F' + font['i'].to_s)
+		out('/Encoding /' + font['enc'])
 		out('/ToUnicode /Identity-H')
 		out('/DescendantFonts [' + (@n + 1).to_s + ' 0 R]');
 		out('>>');
@@ -5534,9 +5548,9 @@ class TCPDF
 		
 		# A dictionary containing entries that define the character collection of the CIDFont.
 
-		cidinfo = '/Registry ' + datastring('Adobe')
-		cidinfo << ' /Ordering ' + datastring('Identity')
-		cidinfo << ' /Supplement 0'
+		cidinfo = '/Registry ' + datastring(font['cidinfo']['Registry'])
+		cidinfo << ' /Ordering ' + datastring(font['cidinfo']['Ordering'])
+		cidinfo << ' /Supplement ' + font['cidinfo']['Supplement'].to_s
 
 		out('/CIDSystemInfo <<' + cidinfo + '>>')
 		out('/FontDescriptor ' + (@n + 1).to_s + ' 0 R')
@@ -5602,6 +5616,7 @@ class TCPDF
 
 	#
 	# Output CID-0 fonts.
+	# A Type 0 CIDFont contains glyph descriptions based on the Adobe Type 1 font format
 	# @param array :font font data
 	# @access protected
 	# @author Andrew Whitehead, Nicola Asuni, Yukihiro Nakadaira
@@ -5631,8 +5646,9 @@ class TCPDF
 		end
 		newobj()
 		out('<</Type /Font')
-		out('/BaseFont /' + longname)
 		out('/Subtype /Type0')
+		out('/BaseFont /' + longname)
+		out('/Name /F' + font['i'].to_s)
 		if enc
 			out('/Encoding /' + enc)
 		end
@@ -5641,8 +5657,8 @@ class TCPDF
 		out('endobj')
 		newobj()
 		out('<</Type /Font')
-		out('/BaseFont /' + name)
 		out('/Subtype /CIDFontType0')
+		out('/BaseFont /' + name)
 		cidinfo = '/Registry ' + datastring(font['cidinfo']['Registry'])
 		cidinfo << ' /Ordering ' + datastring(font['cidinfo']['Ordering'])
 		cidinfo << ' /Supplement ' + font['cidinfo']['Supplement'].to_s
