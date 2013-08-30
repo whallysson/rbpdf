@@ -647,8 +647,8 @@ class TCPDF
   alias_method :get_last_h, :GetLastH
 
 	#
-	# Set the image scale.
-	# @param float :scale image scale.
+	# Set the adjusting factor to convert pixels to user units.
+	# @param float :scale adjusting factor to convert pixels to user units.
 	# @author Nicola Asuni
 	# @since 1.5.2
 	#
@@ -658,8 +658,8 @@ class TCPDF
   alias_method :set_image_scale, :SetImageScale
 	
 	#
-	# Returns the image scale.
-	# @return float image scale.
+	# Returns the adjusting factor to convert pixels to user units.
+	# @return float adjusting factor to convert pixels to user units.
 	# @author Nicola Asuni
 	# @since 1.5.2
 	#
@@ -3844,8 +3844,8 @@ class TCPDF
 		# calculate image width and height on document
 		if (w <= 0) and (h <= 0)
 			# convert image size to document unit
-			w = pixw / (@img_scale * @k)
-			h = pixh / (@img_scale * @k)
+			w = pixelsToUnits(pixw)
+			h = pixelsToUnits(pixh)
 		elsif w <= 0
 			w = h * pixw / pixh
 		elsif h <= 0
@@ -7748,11 +7748,17 @@ class TCPDF
 						border = tag['attribute']['border']
 					end
 				end
+				if !tag['attribute']['width'].nil?
+					iw = getHTMLUnitToUnits(tag['attribute']['width'], 1, 'px', false)
+				end
+				if !tag['attribute']['height'].nil?
+					ih = getHTMLUnitToUnits(tag['attribute']['height'], 1, 'px', false)
+				end
 
 #				if (type == 'eps') or (type == 'ai')
-#					ImageEps(tag['attribute']['src'], xpos, GetY(), pixelsToUnits(tag['attribute']['width']), pixelsToUnits(tag['attribute']['height']), imglink, true, align, '', border)
+#					ImageEps(tag['attribute']['src'], xpos, GetY(), iw, ih, imglink, true, align, '', border)
 #				else
-					result_img = Image(tag['attribute']['src'], xpos, GetY(), pixelsToUnits(tag['attribute']['width']), pixelsToUnits(tag['attribute']['height']), '', imglink, align, false, 300, '', false, false, border)
+					result_img = Image(tag['attribute']['src'], xpos, GetY(), iw, ih, '', imglink, align, false, 300, '', false, false, border)
 #				end
 				if result_img != false
 					case align
@@ -8230,13 +8236,13 @@ class TCPDF
 		if htmlval.is_a? Integer
 			value = htmlval.to_f
 		else
-			mnum = htmlval.scan(/([0-9\.]+)/)
+			mnum = htmlval.scan(/[0-9\.]+/)
 			unless mnum.empty?
-				value = mnum[1].to_f
+				value = mnum[0].to_f
 				munit = htmlval.scan(/([a-z%]+)/)
 				unless munit.empty?
-					if supportedunits.include?(munit[1])
-						unit = munit[1]
+					if supportedunits.include?(munit[0])
+						unit = munit[0]
 					end
 				end
 			end
@@ -8260,8 +8266,10 @@ class TCPDF
 		when 'pc'
 			# one pica is 12 points
 			retval = (value * 12) / k
-		when 'px', 'pt'
+		when 'pt'
 			retval = value / k
+		when 'px'
+			retval = pixelsToUnits(value)
 		end
 		return retval
 	end
@@ -8845,9 +8853,10 @@ class TCPDF
 	# @param int :px pixels
 	# @return float millimeters
 	# @access public
+	# @see setImageScale(), getImageScale()
 	#
 	def pixelsToUnits(px)
-		return px.to_f / @k
+		return (px.to_f / (@img_scale * @k))
 	end
 		
 	#
