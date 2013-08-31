@@ -3825,17 +3825,18 @@ class TCPDF
 	# @param string :type Image format. Possible values are (case insensitive): JPG, JPEG, PNG. If not specified, the type is inferred from the file extension.
 	# @param mixed :link URL or identifier returned by AddLink().
 	# @param string :align Indicates the alignment of the pointer next to image insertion relative to image height. The value can be:<ul><li>T: top-right for LTR or top-left for RTL</li><li>M: middle-right for LTR or middle-left for RTL</li><li>B: bottom-right for LTR or bottom-left for RTL</li><li>N: next line</li></ul>
-	# @param mixed :resize If false do not resize, if true resize (reduce) the image to fit :w and :h (requires RMagick library), if null scale image dimensions to fit within the (:w,:h) box proportionally.
+	# @param boolean :resize If true resize (reduce) the image to fit :w and :h (requires RMagick library).
 	# @param int :dpi dot-per-inch resolution used on resize
 	# @param string :palign Allows to center or align the image on the current line. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
 	# @param boolean :ismask true if this image is a mask, false otherwise
 	# @param mixed :imgmask image object returned by this function or false
 	# @param mixed :border Indicates if borders must be drawn around the image. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
+	# @param boolean :fitbox If true scale image dimensions proportionally to fit within the ($w, $h) box.
 	# @return image information
 	# @access public
 	# @since 1.1
 	#
-	def Image(file, x=nil, y=nil, w=0, h=0, type='', link=nil, align='', resize=false, dpi=300, palign='', ismask=false, imgmask=false, border=0)
+	def Image(file, x=nil, y=nil, w=0, h=0, type='', link=nil, align='', resize=false, dpi=300, palign='', ismask=false, imgmask=false, border=0, fitbox=false)
 		x = @x if x == nil
 		y = @y if y == nil
 
@@ -3855,14 +3856,13 @@ class TCPDF
 			w = h * pixw / pixh
 		elsif h <= 0
 			h = w * pixh / pixw
-		elsif (w > 0) and (h > 0) and resize.nil?
-			# scale image dimensions to fit within the (:w, :h) box proportionally without resampling the image
-			if pixw >= pixh
+		elsif fitbox and (w > 0) and (h > 0)
+			# scale image dimensions proportionally to fit within the (:w, :h) box
+			if ((w * pixh) / (h * pixw)) < 1
 				h = w * pixh / pixw
 			else
 				w = h * pixw / pixh
 			end
-			resize = false
 		end
 		# calculate new minimum dimensions in pixels
 		neww = (w * @k * dpi / @dpi).round
