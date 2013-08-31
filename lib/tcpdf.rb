@@ -3989,7 +3989,7 @@ class TCPDF
 			@y = by
 		end
 
-		if link
+		if link and !link.empty?
 			Link(ximg, y, w, h, link)
 		end
 
@@ -6770,7 +6770,7 @@ class TCPDF
 					firstblock = false
 				end
 				strrest = ''
-				if !@href.empty?
+				if !@href.empty? and @href['url']
 					# HTML <a> Link
 					strrest = addHtmlLink(@href['url'], dom[key]['value'], wfill, true, @href['color'], @href['style'])
 				else
