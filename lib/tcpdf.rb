@@ -2787,12 +2787,17 @@ class TCPDF
 	#
 	# Add page if needed.
 	# @param float :h Cell height. Default value: 0.
+	# @param mixed :y starting y position, leave empty for current position.
 	# @return boolean true in case of page break, false otherwise.
 	# @since 3.2.000 (2008-07-01)
 	# @access protected
 	#
-	def checkPageBreak(h)
-		if (@y + h > @page_break_trigger) and !@in_footer and AcceptPageBreak()
+	def checkPageBreak(h=0, y='')
+		if empty_string(y)
+			y = @y
+		end
+
+		if (y + h > @page_break_trigger) and !@in_footer and AcceptPageBreak()
 			# Automatic page break
 			x = @x
 			AddPage(@cur_orientation)
@@ -3820,7 +3825,7 @@ class TCPDF
 	# @param string :type Image format. Possible values are (case insensitive): JPG, JPEG, PNG. If not specified, the type is inferred from the file extension.
 	# @param mixed :link URL or identifier returned by AddLink().
 	# @param string :align Indicates the alignment of the pointer next to image insertion relative to image height. The value can be:<ul><li>T: top-right for LTR or top-left for RTL</li><li>M: middle-right for LTR or middle-left for RTL</li><li>B: bottom-right for LTR or bottom-left for RTL</li><li>N: next line</li></ul>
-	# @param boolean :resize If true resize (reduce) the image to fit :w and :h (requires RMagick library).
+	# @param mixed :resize If false do not resize, if true resize (reduce) the image to fit :w and :h (requires RMagick library), if null scale image dimensions to fit within the (:w,:h) box proportionally.
 	# @param int :dpi dot-per-inch resolution used on resize
 	# @param string :palign Allows to center or align the image on the current line. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
 	# @param boolean :ismask true if this image is a mask, false otherwise
@@ -3850,6 +3855,14 @@ class TCPDF
 			w = h * pixw / pixh
 		elsif h <= 0
 			h = w * pixh / pixw
+		elsif (w > 0) and (h > 0) and resize.nil?
+			# scale image dimensions to fit within the (:w, :h) box proportionally without resampling the image
+			if pixw >= pixh
+				h = w * pixh / pixw
+			else
+				w = h * pixw / pixh
+			end
+			resize = false
 		end
 		# calculate new minimum dimensions in pixels
 		neww = (w * @k * dpi / @dpi).round
@@ -3935,10 +3948,7 @@ class TCPDF
 		end
 
 		# Check whether we need a new page first as this does not fit
-		if (y + h > @page_break_trigger) and !@in_footer and AcceptPageBreak()
-			# Automatic page break
-			AddPage(@cur_orientation)
-			# Reset Y coordinate to the top of next page
+		if checkPageBreak(h, y)
 			y = GetY() + @c_margin
 		end
 		# set bottomcoordinates
@@ -6170,7 +6180,13 @@ class TCPDF
 					dom[key]['align'] = @rtl ? 'R' : 'L'
 				end
 				# vertically align image in line
-				if !@newline and (dom[key]['value'] == 'img') and !dom[key]['attribute']['height'].nil? and (dom[key]['attribute']['height'].to_i > 0) and !((@y + getHTMLUnitToUnits(dom[key]['attribute']['height'], @lasth, 'px') > @page_break_trigger) and !@in_footer and AcceptPageBreak())
+				if !@newline and (dom[key]['value'] == 'img') and !dom[key]['attribute']['height'].nil? and (dom[key]['attribute']['height'].to_i > 0)
+					# get image height
+					imgh = getHTMLUnitToUnits(dom[key]['attribute']['height'], @lasth, 'px')
+					if !@in_footer
+						# check for page break
+						checkPageBreak(imgh)
+					end
 					if @page > startlinepage
 						# fix lines splitted over two pages
 						if !@footerlen[startlinepage].nil?
@@ -6201,8 +6217,11 @@ class TCPDF
 								end
 							}
 						end
+						startlinepos = @intmrk[@page]
+						startlinepage = @page
+						startliney = @y
 					end
-					@y += (curfontsize / @k) - getHTMLUnitToUnits(dom[key]['attribute']['height'], @lasth, 'px')
+					@y += (curfontsize / @k) - imgh
 					minstartliney = [@y, minstartliney].min
 	 			elsif !dom[key]['fontname'].nil? or !dom[key]['fontstyle'].nil? or !dom[key]['fontsize'].nil?
 					# account for different font size
@@ -7750,9 +7769,11 @@ class TCPDF
 						border = tag['attribute']['border']
 					end
 				end
+				iw = 0
 				if !tag['attribute']['width'].nil?
 					iw = getHTMLUnitToUnits(tag['attribute']['width'], 1, 'px', false)
 				end
+				ih = 0
 				if !tag['attribute']['height'].nil?
 					ih = getHTMLUnitToUnits(tag['attribute']['height'], 1, 'px', false)
 				end
