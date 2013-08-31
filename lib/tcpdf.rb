@@ -6289,12 +6289,12 @@ class TCPDF
 						# the last line must be shifted to be aligned as requested
 						linew = (@endlinex - startlinex).abs
 						pstart = getPageBuffer(startlinepage)[0, startlinepos]
-						if !opentagpos.nil? and !@footerlen[startlinepage].nil?
+						if !opentagpos.nil? and !@footerlen[startlinepage].nil? and !@in_footer
 							@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
 							midpos = [opentagpos, @footerpos[startlinepage]].min
 						elsif !opentagpos.nil?
 							midpos = opentagpos
-						elsif !@footerlen[startlinepage].nil?
+						elsif !@footerlen[startlinepage].nil? and !@in_footer
 							@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
 							midpos = @footerpos[startlinepage]
 						else
@@ -6345,7 +6345,6 @@ class TCPDF
 							lnstring = pmidtemp.scan(/\[\(([^\)]*)\)\]/x)
 							if !lnstring.empty?
 								maxkk = lnstring.length - 1
-								# lnstring.each_with_index { |value, kk|
 								0.upto(maxkk) do |kk|
 									# restore special characters
 									lnstring[kk][0].gsub!('#!#OP#!#', '(')
@@ -6716,8 +6715,8 @@ class TCPDF
 								else
 									@footerpos[@page] = @pagelen[@page]
 								end
+								opentagpos = @footerpos[@page]
 							end
-							opentagpos = @footerpos[@page]
 						end
 						openHTMLTagHandler(dom, key, cell)
 					end
@@ -6816,12 +6815,12 @@ class TCPDF
 				# the last line must be shifted to be aligned as requested
 				linew = (@endlinex - startlinex).abs
 				pstart = getPageBuffer(startlinepage)[0, startlinepos]
-				if !opentagpos.nil? and !@footerlen[startlinepage].nil?
+				if !opentagpos.nil? and !@footerlen[startlinepage].nil? and !@in_footer
 					@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
 					midpos = [opentagpos, @footerpos[startlinepage]].min
 				elsif !opentagpos.nil?
 					midpos = opentagpos
-				elsif !@footerlen[startlinepage].nil?
+				elsif !@footerlen[startlinepage].nil? and !@in_footer
 					@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
 					midpos = @footerpos[startlinepage]
 				else
@@ -7224,23 +7223,26 @@ class TCPDF
 		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id))
 		html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
 		# replace some blank characters
+		html.gsub!(/<pre/, '<xre') # preserve pre tag
+		html.gsub!(/<(table|tr|td|th|blockquote|dd|div|dt|h1|h2|h3|h4|h5|h6|br|hr|li|ol|ul|p)([^\>]*)>[\n\r\t]+/, '<\\1\\2>')
 		html.gsub!(/@(\r\n|\r)@/, "\n")
 		html.gsub!(/[\t\0\x0B]/, " ")
 		html.gsub!(/\\/, "\\\\\\")
-		while html =~ /<pre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi
+		while html =~ /<xre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi
 			# preserve newlines on <pre> tag
-			html = html.gsub(/<pre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi, "<pre\\1>\\2<br />\\3</pre>")
+			html = html.gsub(/<xre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi, "<xre\\1>\\2<br />\\3</pre>")
 		end
 		html.gsub!(/[\n]/, " ")
 		# remove extra spaces from code
 		html.gsub!(/[\s]+<\/(table|tr|td|th|ul|ol|li)>/, '</\\1>')
 		html.gsub!(/[\s]+<(tr|td|th|ul|ol|li|br)/, '<\\1')
-		html.gsub!(/<\/(table|tr|td|th|blockquote|dd|div|dt|h1|h2|h3|h4|h5|h6|hr|li|ol|p|ul)>[\s]+</, '</\\1><')
+		html.gsub!(/<\/(table|tr|td|th|blockquote|dd|div|dt|h1|h2|h3|h4|h5|h6|hr|li|ol|ul|p)>[\s]+</, '</\\1><')
 
 		html.gsub!(/<\/(td|th)>/, '<marker style="font-size:0"/></\\1>')
 		html.gsub!(/<\/table>([\s]*)<marker style="font-size:0"\/>/, '</table>')
 		html.gsub!(/<img/, ' <img')
 		html.gsub!(/<img([^\>]*)>/xi, '<img\\1><span></span>')
+		html.gsub!(/<xre/, '<pre') # restore pre tag
 
 		# trim string
 		html.gsub!(/^[\s]+/, '')
@@ -8075,14 +8077,14 @@ class TCPDF
 					@c_margin = @old_c_margin
 				end
 				@lasth = @font_size * @cell_height_ratio
-				if !empty_string(table_el['thead']) and !empty_string(@thead_margin)
-					# reset table header
-					@thead = ''
+				if !empty_string(@thead_margin)
 					# restore top margin
 					@t_margin = @thead_margin
 					@pagedim[@page]['tm'] = @thead_margin
-					@thead_margin = nil
 				end
+				# reset table header
+				@thead = ''
+				@thead_margin = nil
 			when 'a'
 				@href = {}
 			when 'sup'
