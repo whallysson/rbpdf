@@ -2537,7 +2537,7 @@ class TCPDF
 			@font_descent = 0.2 * @font_size
 		end
 		if (@page > 0) and !@current_font['i'].nil?
-			out(sprintf('BT /F%d %.2f Tf ET', @current_font['i'], @font_size_pt));
+			out(sprintf('BT /F%d %.2f Tf ET ', @current_font['i'], @font_size_pt));
 		end
 	end
   alias_method :set_font_size, :SetFontSize
@@ -2852,7 +2852,7 @@ class TCPDF
 			h = min_cell_height
 		end
 		checkPageBreak(h)
-		out(getCellCode(w, h, txt, border, ln, align, fill, link, stretch, ignore_min_height))
+		out(getCellCode(w, h, txt, border, ln, align, fill, link, stretch, ignore_min_height) + ' ')
 	end
   alias_method :cell, :Cell
 

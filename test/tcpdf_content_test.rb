@@ -21,9 +21,9 @@ class TcpdfPageTest < ActiveSupport::TestCase
 
     assert_equal content.length,  4
     assert_equal content[0],  " 0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg"
-    assert_equal content[1],  "BT /F1 12.00 Tf ET"
+    assert_equal content[1],  "BT /F1 12.00 Tf ET "
     assert_equal content[2],  " 0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg"
-    assert_equal content[3],  "BT /F1 12.00 Tf ET"
+    assert_equal content[3],  "BT /F1 12.00 Tf ET "
 
     ############################################
     #  0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg # AddPage,startPage,setGraphicVars(SetFillColor)
@@ -49,7 +49,7 @@ class TcpdfPageTest < ActiveSupport::TestCase
     contents.each_line {|line| content.push line.chomp }
 
     assert_equal content.length,  5
-    assert_equal content[4],  "BT /F2 18.00 Tf ET"
+    assert_equal content[4],  "BT /F2 18.00 Tf ET "
 
     ########################
     # BT                   # Begin Text.
@@ -62,7 +62,7 @@ class TcpdfPageTest < ActiveSupport::TestCase
     contents.each_line {|line| content.push line.chomp }
 
     assert_equal content.length,  6
-    assert_equal content[5],  "BT /F3 20.00 Tf ET"
+    assert_equal content[5],  "BT /F3 20.00 Tf ET "
 
     pdf.Cell(0, 10, 'Chapter', 0, 1, 'L')
     content = []
@@ -71,7 +71,7 @@ class TcpdfPageTest < ActiveSupport::TestCase
 
     assert_equal content.length,  8
     assert_equal content[6],  " 0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg"
-    assert_equal content[7],  "q 0.000 0.000 0.000 rg BT 31.19 792.70 Td [(\000C\000h\000a\000p\000t\000e\000r)] TJ ET Q"
+    assert_equal content[7],  "q 0.000 0.000 0.000 rg BT 31.19 792.70 Td [(\000C\000h\000a\000p\000t\000e\000r)] TJ ET Q "
 
     #################################################
     # 0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg       # getCellCode
