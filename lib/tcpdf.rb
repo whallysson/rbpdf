@@ -349,7 +349,7 @@ class TCPDF
 		@cell_height_ratio = @@k_cell_height_ratio
 		@cache_file_length = {}
 		@thead ||= ''
-		@thead_margin = nil
+		@thead_margins ||= {}
 		@cache_utf8_string_to_array = {}
 		@cache_maxsize_utf8_string_to_array = 8
 		@cache_size_utf8_string_to_array = 0
@@ -692,12 +692,18 @@ class TCPDF
   
 	#
 	# Returns the page break margin.
+	# @param int :pagenum page number (empty = current page)
 	# @return int page break margin.
 	# @author Nicola Asuni
+	# @access public
 	# @since 1.5.2
+	# @see getPageDimensions()
 	#
-	def GetBreakMargin()
-		return @b_margin;
+	def GetBreakMargin(pagenum='')
+		if pagenum.empty?
+			return @b_margin
+		end
+		return @pagedim[pagenum]['bm']
 	end
   alias_method :get_break_margin, :GetBreakMargin
 
@@ -1566,21 +1572,30 @@ class TCPDF
 	# @since 4.5.030 (2009-03-25)
 	#
 	def setTableHeader()
-		if !empty_string(@thead_margin)
+		if !@thead_margins['top'].nil?
 			# restore the original top-margin
-			@t_margin = @thead_margin
-			@pagedim[@page]['tm'] = @thead_margin
-			@y = @thead_margin
+			@t_margin = @thead_margins['top']
+			@pagedim[@page]['tm'] = @t_margin
+			@y = @t_margin
 		end
-		if !@thead.empty?
+		if !empty_string(@thead)
+			# set margins
+			prev_lMargin = @l_margin
+			prev_rMargin = @r_margin
+			@l_margin = @pagedim[@page]['olm']
+			@r_margin = @pagedim[@page]['orm']
+			@c_margin = @thead_margins['cmargin']
 			# print table header
 			writeHTML(@thead, false, false, false, false, '')
 			# set new top margin to skip the table headers
-			if empty_string(@thead_margin)
-				@thead_margin = @t_margin
+			if @thead_margins['top'].nil?
+				@thead_margins['top'] = @t_margin
 			end
 			@t_margin = @y
 			@pagedim[@page]['tm'] = @t_margin
+			@lasth = 0
+			@l_margin = prev_lMargin
+			@r_margin = prev_rMargin
 		end
 	end
 
@@ -3458,7 +3473,7 @@ class TCPDF
     
 		# max column width
 		wmax = w - (2 * @c_margin)
-		if chrwidth > wmax
+		if chrwidth > wmax or (GetCharWidth(chars[0]) > wmax)
 			# a single character do not fit on column
 			return ''
 		end
@@ -7239,7 +7254,7 @@ class TCPDF
 		html.gsub!(/<!--(.|\s)*?-->/m, '')
 
 		# remove all unsupported tags (the line below lists all supported tags)
-		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id))
+		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id))
 		html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
 		# replace some blank characters
 		html.gsub!(/<pre/, '<xre') # preserve pre tag
@@ -7247,9 +7262,17 @@ class TCPDF
 		html.gsub!(/@(\r\n|\r)@/, "\n")
 		html.gsub!(/[\t\0\x0B]/, " ")
 		html.gsub!(/\\/, "\\\\\\")
-		while html =~ /<xre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi
-			# preserve newlines on <pre> tag
-			html = html.gsub(/<xre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi, "<xre\\1>\\2<br />\\3</pre>")
+
+		offset = 0
+		while (offset < html.length) and ((pos = html.index('</pre>', offset)) != nil)
+			html_a = html[0, offset]
+			html_b = html[offset, pos - offset + 6]
+			while html_b =~ /<xre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi
+				# preserve newlines on <pre> tag
+				html_b = html_b.gsub(/<xre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi, "<xre\\1>\\2<br />\\3</pre>")
+			end
+			html = html_a + html_b + html[(pos + 6)..-1]
+			offset = (html_a + html_b).length
 		end
 		html.gsub!(/[\n]/, " ")
 		# remove extra spaces from code
@@ -7353,7 +7376,7 @@ class TCPDF
 						end
 					end
 					if (dom[key]['value'] == 'table') and !empty_string(dom[(dom[key]['parent'])]['thead'])
-						dom[(dom[key]['parent'])]['thead'] << '</table>'
+						dom[(dom[key]['parent'])]['thead'] << '</tablehead>'
 					end
 				else
 					# opening html tag
@@ -7646,6 +7669,10 @@ class TCPDF
 			if !empty_string(dom[key]['thead'])
 				# set table header
 				@thead = dom[key]['thead']
+				if @thead_margins.nil? or @thead_margins.empty?
+					@thead_margins ||= {}
+					@thead_margins['cmargin'] = @c_margin
+				end
 			end
 			if !tag['attribute']['cellpadding'].nil?
 				cp = getHTMLUnitToUnits(tag['attribute']['cellpadding'], 1, 'px')
@@ -7891,6 +7918,7 @@ class TCPDF
 		tag = dom[key].dup
 		parent = dom[(dom[key]['parent'])].dup
 		firstorlast = dom[key + 1].nil? or (dom[key + 2].nil? and (dom[key + 1]['value'] == 'marker'))
+		in_table_head = false
 		# Closing tag
 		case (tag['value'])
 			when 'tr'
@@ -7949,7 +7977,12 @@ class TCPDF
 						@x += @pagedim[@page]['olm'] - @pagedim[parent['startpage']]['olm']
 					end
 				end
-			when 'table'
+			when 'table', 'tablehead'
+				if tag['value'] == 'tablehead'
+					# closing tag used for the thead part
+					in_table_head = true
+				end
+
 				# draw borders
 				table_el = parent
 				if (!table_el['attribute']['border'].nil? and (table_el['attribute']['border'].to_i > 0)) or (!table_el['style'].nil? and !table_el['style']['border'].nil? and (table_el['style']['border'].to_i > 0))
@@ -8094,18 +8127,21 @@ class TCPDF
 						end
 					end
 				}
-				if !parent['cellpadding'].nil?
-					@c_margin = @old_c_margin
+				if !in_table_head
+					# we are not inside a thead section
+					if !parent['cellpadding'].nil?
+						@c_margin = @old_c_margin
+					end
+					@lasth = @font_size * @cell_height_ratio
+					if !@thead_margins['top'].nil?
+						# restore top margin
+						@t_margin = @thead_margins['top']
+						@pagedim[@page]['tm'] = @t_margin
+					end
+					# reset table header
+					@thead = ''
+					@thead_margins = {}
 				end
-				@lasth = @font_size * @cell_height_ratio
-				if !empty_string(@thead_margin)
-					# restore top margin
-					@t_margin = @thead_margin
-					@pagedim[@page]['tm'] = @thead_margin
-				end
-				# reset table header
-				@thead = ''
-				@thead_margin = nil
 			when 'a'
 				@href = {}
 			when 'sup'
