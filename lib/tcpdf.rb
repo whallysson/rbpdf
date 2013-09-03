@@ -2803,32 +2803,35 @@ class TCPDF
 	# Add page if needed.
 	# @param float :h Cell height. Default value: 0.
 	# @param mixed :y starting y position, leave empty for current position.
+	# @param boolean :addpage if true add a page, otherwise only return the true/false state
 	# @return boolean true in case of page break, false otherwise.
 	# @since 3.2.000 (2008-07-01)
 	# @access protected
 	#
-	def checkPageBreak(h=0, y='')
+	def checkPageBreak(h=0, y='', addpage=true)
 		if empty_string(y)
 			y = @y
 		end
 
 		if (y + h > @page_break_trigger) and !@in_footer and AcceptPageBreak()
-			# Automatic page break
-			x = @x
-			AddPage(@cur_orientation)
-			@y = @t_margin
-			oldpage = @page - 1
-			if @rtl
-				if @pagedim[@page]['orm'] != @pagedim[oldpage]['orm']
-					@x = x - (@pagedim[@page]['orm'] - @pagedim[oldpage]['orm'])
+			if addpage
+				# Automatic page break
+				x = @x
+				AddPage(@cur_orientation)
+				@y = @t_margin
+				oldpage = @page - 1
+				if @rtl
+					if @pagedim[@page]['orm'] != @pagedim[oldpage]['orm']
+						@x = x - (@pagedim[@page]['orm'] - @pagedim[oldpage]['orm'])
+					else
+						@x = x
+					end
 				else
-					@x = x
-				end
-			else
-				if @pagedim[@page]['olm'] != @pagedim[oldpage]['olm']
-					@x = x + (@pagedim[@page]['olm'] - @pagedim[oldpage]['olm'])
-				else
-					@x = x
+					if @pagedim[@page]['olm'] != @pagedim[oldpage]['olm']
+						@x = x + (@pagedim[@page]['olm'] - @pagedim[oldpage]['olm'])
+					else
+						@x = x
+					end
 				end
 			end
 			return true
@@ -3146,8 +3149,8 @@ class TCPDF
 	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L or empty string: left align</li><li>C: center</li><li>R: right align</li><li>J: justification (default value when :ishtml=false)</li></ul>
 	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
 	# @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right</li><li>1: to the beginning of the next line [DEFAULT]</li><li>2: below</li></ul>
-	# @param int :x x position in user units
-	# @param int :y y position in user units
+	# @param float :x x position in user units
+	# @param float :y y position in user units
 	# @param boolean :reseth if true reset the last cell height (default true).
 	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
 	# @param boolean :ishtml set to true if :txt is HTML content (default = false).
