@@ -302,7 +302,7 @@ class TCPDF
 		@lisymbol ||= ''
 		@epsmarker ||= 'x#!#EPS#!#x'
 		@transfmatrix ||= []
-		@feps ||= 0.001
+		@feps ||= 0.005
 		@tagvspaces ||= []
 		@customlistindent ||= -1
 		@opencell = true
@@ -329,6 +329,7 @@ class TCPDF
 		@dpi = 72
 		@pagegroups ||= {}
 		@intmrk ||= []
+		@cntmrk ||= []
 		@footerpos ||= []
 		@footerlen ||= []
 		@newline ||= true
@@ -1212,6 +1213,24 @@ class TCPDF
 	#
 	def SetPageMark()
 		@intmrk[@page] = @pagelen[@page]
+		setContentMark()
+	end
+
+	#
+	# Set start-writing mark on selected page.
+	# @param int :page page number (default is the current page)
+	# @access protected
+	# @since 4.6.021 (2009-07-20)
+	#
+	def setContentMark(page=0)
+		if page <= 0
+			page = @page
+		end
+		if @footerlen[page]
+			@cntmrk[page] = @pagelen[page] - @footerlen[page]
+		else
+			@cntmrk[page] = @pagelen[page]
+		end
 	end
 
   #
@@ -3323,6 +3342,7 @@ class TCPDF
 			SetX(x + w)
 		end
 
+		setContentMark()
 		return nl
 	end
   alias_method :multi_cell, :MultiCell
@@ -4643,7 +4663,7 @@ class TCPDF
 				when 'link'
 					if pl['txt'].is_a?(String)
 						# external URI link
-						annots << ' /A <</S /URI /URI ' + datastring(pl['txt']) + '>>'
+						annots << ' /A <</S /URI /URI ' + datastring(unhtmlentities(pl['txt'])) + '>>'
 					else
 						# internal link
 						l = @links[pl['txt']]
@@ -5985,7 +6005,11 @@ class TCPDF
 	#
 	def SetLanguageArray(language)
 		@l = language;
-		@rtl = @l['a_meta_dir'] == 'rtl' ? true : false
+		if @l['a_meta_dir']
+			@rtl = (@l['a_meta_dir'] == 'rtl') ? true : false
+		else
+			@rtl = false
+		end
 	end
 	alias_method :set_language_array, :SetLanguageArray
 
@@ -6206,7 +6230,7 @@ class TCPDF
 						checkPageBreak(imgh)
 					end
 					if @page > startlinepage
-						# fix lines splitted over two pages
+						# fix line splitted over two pages
 						if !@footerlen[startlinepage].nil?
 							curpos = @pagelen[startlinepage] - @footerlen[startlinepage]
 						end
@@ -6215,16 +6239,21 @@ class TCPDF
 						linebeg = pagebuff[startlinepos, curpos - startlinepos]
 						tstart = pagebuff[0, startlinepos]
 						tend = pagebuff[curpos..-1]
-						# remove line start from previous page
+						# remove line from previous page
 						setPageBuffer(startlinepage, tstart + '' + tend)
 						pagebuff = getPageBuffer(@page)
-						tstart = pagebuff[0, @intmrk[@page]]
-						tend = pagebuff[@intmrk[@page]..-1]
+						tstart = pagebuff[0, @cntmrk[@page]]
+						tend = pagebuff[@cntmrk[@page]..-1]
 						# add line start to current page
 						yshift = minstartliney - @y
 						try = sprintf('1 0 0 1 0 %.3f cm', (yshift * @k))
 						setPageBuffer(@page, tstart + "\nq\n" + try + "\n" + linebeg + "\nQ\n" + tend)
 						# shift the annotations and links
+						if @page_annots[@page]
+							next_pask = @page_annots[@page].length
+						else
+							next_pask = 0
+						end
 						if !@page_annots[startlinepage].nil?
 							@page_annots[startlinepage].each_with_index { |pac, pak|
 								if pak >= pask
@@ -6235,7 +6264,8 @@ class TCPDF
 								end
 							}
 						end
-						startlinepos = @intmrk[@page]
+						pask = next_pask
+						startlinepos = @cntmrk[@page]
 						startlinepage = @page
 						startliney = @y
 					end
@@ -6263,16 +6293,21 @@ class TCPDF
 								linebeg = pagebuff[startlinepos, curpos - startlinepos]
 								tstart = pagebuff[0, startlinepos]
 								tend = pagebuff[curpos..-1]
-								# remove line start from previous page
+								# remove line from previous page
 								setPageBuffer(startlinepage, tstart + '' + tend)
 								pagebuff = getPageBuffer(@page)
-								tstart = pagebuff[0, @intmrk[@page]]
-								tend = pagebuff[@intmrk[@page]..-1]
+								tstart = pagebuff[0, @cntmrk[@page]]
+								tend = pagebuff[@cntmrk[@page]..-1]
 								# add line start to current page
 								yshift = minstartliney - @y
 								try = sprintf('1 0 0 1 0 %.3f cm', yshift * @k)
 								setPageBuffer(@page, tstart + "\nq\n" + try + "\n" + linebeg + "\nQ\n" + tend)
 								# shift the annotations and links
+								if @page_annots[@page]
+									next_pask = @page_annots[@page].length
+								else
+									next_pask = 0
+								end
 								if !@page_annots[startlinepage].nil?
 									@page_annots[startlinepage].each_with_index { |pac, pak|
 										if pak >= pask
@@ -6283,6 +6318,7 @@ class TCPDF
 										end
 									}
 								end
+								pask = next_pask
 							end
 							@y += (curfontsize - fontsize) / @k
 							minstartliney = [@y, minstartliney].min
