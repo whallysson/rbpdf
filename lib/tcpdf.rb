@@ -2692,8 +2692,13 @@ class TCPDF
 				end
 			end
 		end
-		@page_annots[@page] ||= []
-		@page_annots[@page].push 'x' => x, 'y' => y, 'w' => w, 'h' => h, 'txt' => text, 'opt' => opt, 'numspaces' => spaces
+		if @page <= 0
+			page = 1
+		else
+			page = @page
+		end
+		@page_annots[page] ||= []
+		@page_annots[page].push 'x' => x, 'y' => y, 'w' => w, 'h' => h, 'txt' => text, 'opt' => opt, 'numspaces' => spaces
 		if (opt['Subtype'] == 'FileAttachment') and !empty_string(opt['FS']) and File.exist?(opt['FS']) and @embeddedfiles[File.basename(opt['FS'])].nil?
 			@embeddedfiles[File.basename(opt['FS'])] = {'file' => opt['FS'], 'n' => (@embeddedfiles.length + 100000)}
 		end
@@ -3496,7 +3501,7 @@ class TCPDF
     
 		# max column width
 		wmax = w - (2 * @c_margin)
-		if chrwidth > wmax or (GetCharWidth(chars[0]) > wmax)
+		if !firstline and (chrwidth > wmax or (GetCharWidth(chars[0]) > wmax))
 			# a single character do not fit on column
 			return ''
 		end
@@ -5297,13 +5302,16 @@ class TCPDF
 	end
 
 	#
-	# Begin a new object
+	# Begin a new object and return the object number
+	# @return int object number
 	# @access protected
 	#
 	def newobj()
 		@n += 1;
 		@offsets[@n]=@bufferlen
 		out(@n.to_s + ' 0 obj');
+
+		return @n
 	end
 
 	#
