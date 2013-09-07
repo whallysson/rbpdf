@@ -1,5 +1,5 @@
 #============================================================+
-# File name   : htmlcolors.php
+# File name   : htmlcolors.rb
 # Begin       : 2002-04-09
 # Last Update : 2010-04-20
 # Version     : 1.0.004

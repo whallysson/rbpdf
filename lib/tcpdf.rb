@@ -426,6 +426,7 @@ class TCPDF
 		@embedded_start_obj_id ||= 100000
 		@annots_start_obj_id ||= 200000
 		@annot_obj_id ||= 200000
+		@form_obj_id ||= []
 
 		# user's rights
 		@ur = false;
@@ -2666,6 +2667,9 @@ class TCPDF
 	# @since 4.0.018 (2008-08-06)
 	#
 	def Annotation(x, y, w, h, text, opt={'Subtype'=>'Text'}, spaces=0)
+		x = @x if x == ''
+		y = @y if y == ''
+
 		# recalculate coordinates to account for graphic transformations
 		if !@transfmatrix.nil?
 			maxid = @transfmatrix.length - 1
@@ -2715,6 +2719,16 @@ class TCPDF
 		@page_annots[page].push 'x' => x, 'y' => y, 'w' => w, 'h' => h, 'txt' => text, 'opt' => opt, 'numspaces' => spaces
 		if (opt['Subtype'] == 'FileAttachment') and !empty_string(opt['FS']) and File.exist?(opt['FS']) and @embeddedfiles[File.basename(opt['FS'])].nil?
 			@embeddedfiles[File.basename(opt['FS'])] = {'file' => opt['FS'], 'n' => (@embeddedfiles.length + @embedded_start_obj_id)}
+		end
+		# Add widgets annotation's icons
+		if opt['mk'] and opt['mk']['i'] and File.exist?(opt['mk']['i'])
+			Image(opt['mk']['i'], '', '', 10, 10, '', '', '', false, 300, '', false, false, 0, false, true)
+		end
+		if opt['mk'] and opt['mk']['ri'] and File.exist?(opt['mk']['ri'])
+			Image(opt['mk']['ri'], '', '', 0, 0, '', '', '', false, 300, '', false, false, 0, false, true)
+		end
+		if opt['mk'] and opt['mk']['ix'] and File.exist?(opt['mk']['ix'])
+			Image(opt['mk']['ix'], '', '', 0, 0, '', '', '', false, 300, '', false, false, 0, false, true)
 		end
 	end
 
@@ -3889,13 +3903,14 @@ class TCPDF
 	# @param mixed :imgmask image object returned by this function or false
 	# @param mixed :border Indicates if borders must be drawn around the image. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
 	# @param boolean :fitbox If true scale image dimensions proportionally to fit within the ($w, $h) box.
+	# @param boolean :hidden if true do not display the image.
 	# @return image information
 	# @access public
 	# @since 1.1
 	#
-	def Image(file, x=nil, y=nil, w=0, h=0, type='', link=nil, align='', resize=false, dpi=300, palign='', ismask=false, imgmask=false, border=0, fitbox=false)
-		x = @x if x == nil
-		y = @y if y == nil
+	def Image(file, x='', y='', w=0, h=0, type='', link=nil, align='', resize=false, dpi=300, palign='', ismask=false, imgmask=false, border=0, fitbox=false, hidden=false)
+		x = @x if x == ''
+		y = @y if y == ''
 
 		# get image dimensions
 		size_info = getimagesize(file)
@@ -4040,12 +4055,11 @@ class TCPDF
 				@img_rb_x = ximg + w
 			end
 		end
-		if ismask
-			# embed hidden, ouside the canvas
-			xkimg = 10 * @pagedim[@page]['w']
-		else
-			xkimg = ximg * @k
+		if ismask or hidden
+			# image is not displayed
+			return info['i']
 		end
+		xkimg = ximg * @k
 		out(sprintf('q %.2f 0 0 %.2f %.2f %.2f cm /I%d Do Q', w * @k, h * @k, xkimg, (@h -(y + h)) * @k, info['i']))
 
 		if border != 0
@@ -4536,7 +4550,7 @@ class TCPDF
 	#
 	# Output annotations objects for all pages.
 	# !!! THIS FUNCTION IS NOT YET COMPLETED !!!
-	# See section 8.4 of PDF reference.
+	# See section 12.5 of PDF 32000_2008 reference.
 	# @access protected
 	# @author Nicola Asuni
 	# @since 4.0.018 (2008-08-06)
@@ -4548,22 +4562,28 @@ class TCPDF
 			if !@page_annots[n].nil?
 				# set page annotations
 				@page_annots[n].each_with_index { |pl, key|
+					formfield = false
 					pl['opt'] = pl['opt'].inject({}) do |pl_opt, keys|
 						pl_opt[keys[0].downcase] = keys[1]
 						pl_opt
 					end
 					a = pl['x'] * @k
-					b = @pagedim[n]['h'] - (pl['y']  * @k)
+					b = @pagedim[n]['h'] - ((pl['y'] + pl['h'])  * @k)
 					c = pl['w'] * @k
 					d = pl['h'] * @k
-					rect = sprintf('%.2f %.2f %.2f %.2f', a, b, a + c, b - d)
+					rect = sprintf('%.2f %.2f %.2f %.2f', a, b, a + c, b + d)
 					# create new annotation object
 					annots = '<</Type /Annot'
 					annots << ' /Subtype /' + pl['opt']['subtype']
 					annots << ' /Rect [' + rect + ']'
+					ft = ['Btn', 'Tx', 'Ch', 'Sig']
+					if pl['opt']['ft'] and ft.include?(pl['opt']['ft'])
+						annots << ' /FT /' + pl['opt']['ft']
+						formfield = true
+					end
 					annots << ' /Contents ' + textstring(pl['txt'])
-					# annots << ' /P '
-					annots << ' /NM ' + textstring(sprintf('%04u-%04u', n, key))
+					annots << ' /P ' + @page_obj_id[n].to_s + ' 0 R'
+					annots << ' /NM ' + datastring(sprintf('%04u-%04u', n, key))
 					annots << ' /M ' + datestring()
 					if !pl['opt']['f'].nil?
 						val = 0
@@ -4592,31 +4612,37 @@ class TCPDF
 									val += 1 << 10
 								end
 							}
+						else
+							val = pl['opt']['f'].to_i
 						end
 						annots << ' /F ' + val.to_i
 					end
 					# annots << ' /AP '
 					# annots << ' /AS '
-					annots << ' /Border ['
-					if !pl['opt']['border'].nil? and (pl['opt']['border'].length >= 3)
-						annots << pl['opt']['border'][0].to_i + ' '
-						annots << pl['opt']['border'][1].to_i + ' '
-						annots << pl['opt']['border'][2].to_i
-						if pl['opt']['border'][3].nil? and pl['opt']['border'][3].is_a?(Array)
-							annots << ' ['
-							pl['opt']['border'][3].each {|dash|
-								annots << dash.to_i + ' '
-							}
-							annots << ']'
-						end
-					else
-						annots << '0 0 0'
+					if pl['opt']['as'] and pl['opt']['as'].is_a?(String)
+						annots << ' /AS /' + pl['opt']['as']
 					end
-					annots << ']'
+					if pl['opt']['ap'] and pl['opt']['ap'].is_a?(String)
+						annots << ' /AP << ' + pl['opt']['ap'] + ' >>'
+					elsif pl['opt']['ft'] and ft.include?(pl['opt']['ft'])
+						annots << ' /AP <<'
+						annots << ' /N <<'
+						annots << ' /Type /XObject'
+						annots << ' /Subtype /Form'
+						annots << ' /FormType 1'
+						rect = sprintf('%.2f %.2f', c, d)
+						annots << ' /BBox [0 0 ' + rect + ']'
+						annots << ' /Matrix [1 0 0 1 0 0]'
+						annots << ' /Resources << /ProcSet [/PDF] >>'
+						annots << ' /Length 0'
+						annots << ' >>'
+						annots << ' >>'
+					end
 					if !pl['opt']['bs'].nil? and pl['opt']['bs'].is_a?(Hash)
-						annots << ' /BS <<Type /Border'
+						annots << ' /BS <<'
+						annots << ' /Type /Border'
 						if !pl['opt']['bs']['w'].nil?
-							annots << ' /W '.sprintf("%.4f", pl['opt']['bs']['w'].to_f)
+							annots << ' /W ' + pl['opt']['bs']['w'].to_i
 						end
 						bstyles = ['S', 'D', 'B', 'I', 'U']
 						if !pl['opt']['bs']['s'].nil? and bstyles.include?(pl['opt']['bs']['s'])
@@ -4625,12 +4651,28 @@ class TCPDF
 						if !pl['opt']['bs']['d'].nil? and pl['opt']['bs']['d'].is_a?(Array)
 							annots << ' /D ['
 							pl['opt']['bs']['d'].each {|cord|
-								cord = cord.to_f
-								annots << sprintf(" %.4f", cord)
+								annots << ' ' + cord.to_i.to_s
 							}
 							annots << ']'
 						end
-						annots << '>> '
+						annots << ' >>'
+					else
+						annots << ' /Border ['
+						if !pl['opt']['border'].nil? and (pl['opt']['border'].length >= 3)
+							annots << pl['opt']['border'][0].to_i + ' '
+							annots << pl['opt']['border'][1].to_i + ' '
+							annots << pl['opt']['border'][2].to_i
+							if pl['opt']['border'][3].nil? and pl['opt']['border'][3].is_a?(Array)
+								annots << ' ['
+								pl['opt']['border'][3].each {|dash|
+									annots << dash.to_i + ' '
+								}
+								annots << ']'
+							end
+						else
+							annots << '0 0 0'
+						end
+						annots << ']'
 					end
 					if !pl['opt']['be'].nil? and pl['opt']['be'].is_a?(Hash)
 						annots << ' /BE <<'
@@ -4645,15 +4687,15 @@ class TCPDF
 						end
 						annots << '>>'
 					end
-					annots << ' /C ['
-					if !pl['opt']['c'].nil? and pl['opt']['c'].is_a?(Array)
+					if !pl['opt']['c'].nil? and pl['opt']['c'].is_a?(Array) and !pl['opt']['c'].empty?
+						annots << ' /C ['
 						pl['opt']['c'].each {|col|
 							col = col.to_i
 							color = col <= 0 ? 0 : (col >= 255 ? 1 : col / 255)
 							annots << sprintf(" %.4f", color)
 						}
+						annots << ']'
 					end
-					annots << ']'
 					# annots << ' /StructParent '
 					# annots << ' /OC '
 					markups = ['text', 'freetext', 'line', 'square', 'circle', 'polygon', 'polyline', 'highlight',  'underline', 'squiggly', 'strikeout', 'stamp', 'caret', 'ink', 'fileattachment', 'sound']
@@ -4679,6 +4721,7 @@ class TCPDF
 						# annots << ' /ExData '
 					end
 
+					lineendings = ['Square', 'Circle', 'Diamond', 'OpenArrow', 'ClosedArrow', 'None', 'Butt', 'ROpenArrow', 'RClosedArrow', 'Slash']
 					case pl['opt']['subtype'].downcase
 					when 'text'
 						if !pl['opt']['open'].nil?
@@ -4746,7 +4789,7 @@ class TCPDF
 							}
 							annots << ']'
 						end
-						tfit = ['FreeTextCallout', 'FreeTextTypeWriter']
+						tfit = ['FreeText', 'FreeTextCallout', 'FreeTextTypeWriter']
 						if !pl['opt']['it'].nil? and tfit.include?(pl['opt']['it'])
 							annots << ' /IT ' + pl['opt']['it']
 						end
@@ -4757,7 +4800,9 @@ class TCPDF
 							b = pl['opt']['rd'][3] * @k
 							annots << ' /RD [' + sprintf('%.2f %.2f %.2f %.2f', l, r, t, b) + ']'
 						end
-						# annots << ' /LE '
+						if pl['opt']['le'] and lineendings.include?(pl['opt']['le'])
+							annots << ' /LE /' + pl['opt']['le']
+						end
 					# ... to be completed ...
 					when 'fileattachment'
 						if pl['opt']['fs'].nil?
@@ -4779,7 +4824,10 @@ class TCPDF
 						end
 						filename = File.basename(pl['opt']['sound'])
 						if !@embeddedfiles[filename]['n'].nil?
+							annots << ' /Sound <</Type /Sound'
 							# ... TO BE COMPLETED ...
+							# /R /C /B /E /CO /CP
+							# annots << ' /F ' + datastring(filename) + ' /EF <</F ' + @embeddedfiles[filename]['n'] + ' 0 R>> >>'
 							iconsapp = ['Speaker', 'Mic']
 							if !pl['opt']['name'].nil? and iconsapp.include?(pl['opt']['name'])
 								annots << ' /Name /' + pl['opt']['name']
@@ -4788,25 +4836,194 @@ class TCPDF
 							end
 						end
 					when 'widget'
-						# PDF32000_2008.pdf page 408 (... TO BE COMPLETED ...)
 						hmode = ['N', 'I', 'O', 'P', 'T']
 						if pl['opt']['h'] and hmode.include?(pl['opt']['h'])
 							annots << ' /H /' + pl['opt']['h']
 						end
-						if pl['opt']['mk'] and pl['opt']['mk'].is_a? Hash
+						if pl['opt']['mk'] and pl['opt']['mk'].is_a?(Hash) and !pl['opt']['mk'].empty?
 							annots << ' /MK <<'
-							# ... TO BE COMPLETED ...
+							if pl['opt']['mk']['r']
+								annots << ' /R ' + pl['opt']['mk']['r']
+							end
+							if pl['opt']['mk']['bc'] and (pl['opt']['mk']['bc'] != false)
+								annots << ' /BC ['
+								pl['opt']['mk']['bc'].each {|col|
+									col = col.to_i
+									color = col <= 0 ? 0 : (col >= 255 ? 1 : col / 255)
+									annots << ' ' + color
+								}
+								annots << ']'
+							end
+							if pl['opt']['mk']['bg'] and (pl['opt']['mk']['bg'] != false)
+								annots << ' /BG ['
+								pl['opt']['mk']['bg'].each {|col|
+									col = col.to_i
+									color = col <= 0 ? 0 : (col >= 255 ? 1 : col / 255)
+									annots << ' ' + color
+								}
+								annots << ']'
+							end
+							if pl['opt']['mk']['ca']
+								annots << ' /CA ' + textstring(pl['opt']['mk']['ca'])
+							elsif pl['opt']['t'] and pl['opt']['t'].is_a?(String)
+								annots << ' /CA ' + textstring(pl['opt']['t'])
+							end
+							if pl['opt']['mk']['rc']
+								annots << ' /RC ' + textstring(pl['opt']['mk']['rc'])
+							elsif pl['opt']['t'] and pl['opt']['t'].is_a?(String)
+								annots << ' /RC ' + textstring(pl['opt']['t'])
+							end
+							if pl['opt']['mk']['ac']
+								annots << ' /AC ' + textstring(pl['opt']['mk']['ac'])
+							elsif pl['opt']['t'] and pl['opt']['t'].is_a?(String)
+								annots << ' /AC ' + textstring(pl['opt']['t'])
+							end
+							if pl['opt']['mk']['i']
+								info = getImageBuffer(pl['opt']['mk']['i'])
+								if info != false
+									annots << ' /I ' + info['n'] + ' 0 R'
+								end
+							end
+							if pl['opt']['mk']['ri']
+								info = getImageBuffer(pl['opt']['mk']['ri'])
+								if info != false
+									annots << ' /RI ' + info['n'] + ' 0 R'
+								end
+							end
+							if pl['opt']['mk']['ix']
+								info = getImageBuffer(pl['opt']['mk']['ix'])
+								if info != false
+									annots << ' /IX ' + info['n'] + ' 0 R'
+								end
+							end
+							if pl['opt']['mk']['if'] and pl['opt']['mk']['if'].is_a?(Hash) and !pl['opt']['mk']['if'].empty?
+								annots << ' /IF <<'
+								if_sw = ['A', 'B', 'S', 'N']
+								if pl['opt']['mk']['if']['sw'] and if_sw.include?(pl['opt']['mk']['if']['sw'])
+									annots << ' /SW /' + pl['opt']['mk']['if']['sw']
+								end
+								if_s = ['A', 'P']
+								if pl['opt']['mk']['if']['s'] and if_s.include?(pl['opt']['mk']['if']['s']) 
+									annots << ' /S /' + pl['opt']['mk']['if']['s']
+								end
+								if pl['opt']['mk']['if']['a'] and pl['opt']['mk']['if']['a'].is_a?(Array) and !pl['opt']['mk']['if']['a'].empty?
+									annots << ' /A [' + pl['opt']['mk']['if']['a'][0] + ' ' + pl['opt']['mk']['if']['a'][1] + ']'
+								end
+								if pl['opt']['mk']['if']['fb'] and pl['opt']['mk']['if']['fb']
+									annots << ' /FB true'
+								end
+								annots << '>>'
+							end
+							if pl['opt']['mk']['tp'] and (pl['opt']['mk']['tp'] >= 0) and (pl['opt']['mk']['tp'] <= 6)
+								annots << ' /TP ' + pl['opt']['mk']['tp']
+							else
+								annots << ' /TP 0'
+							end
 							annots << '>>'
+						end # end MK
+
+						# --- Entries for field dictionaries ---
+						# /Parent
+						# /Kids
+						if pl['opt']['t'] and pl['opt']['t'].is_a?(String)
+							annots << ' /T ' + datastring(pl['opt']['t'])
+						end
+						if pl['opt']['tu'] and pl['opt']['tu'].is_a?(String)
+							annots << ' /TU ' + datastring(pl['opt']['tu'])
+						end
+						if pl['opt']['tm'] and pl['opt']['tm'].is_a?(String)
+							annots << ' /TM ' + datastring(pl['opt']['tm'])
+						end
+						if pl['opt']['ff']
+							if pl['opt']['ff'].is_a?(Array)
+								# array of bit settings
+								flag = 0
+								pl['opt']['ff'].each {|val|
+									flag += 1 << (val - 1)
+								}
+							else
+								flag = pl['opt']['ff'].to_i
+							end
+							annots << ' /Ff ' + flag
+						end
+						if pl['opt']['maxlen']
+							annots << ' /MaxLen ' + pl['opt']['maxlen'].to_i.to_s
+						end
+						if pl['opt']['v']
+							annots << ' /V'
+							if pl['opt']['v'].is_a?(Array)
+								pl['opt']['v'].each { |optval|
+									annots << ' ' + optval
+								}
+							else
+								annots << ' ' + textstring(pl['opt']['v'])
+							end
+						end
+						if pl['opt']['dv'] and pl['opt']['dv'].is_a?(String)
+							annots << ' /DV'
+							if pl['opt']['dv'].is_a?(Array)
+								pl['opt']['dv'].eath {|optval|
+									annots << ' ' + optval
+								}
+							else
+								annots << ' ' + textstring(pl['opt']['dv'])
+							end
+						end
+						if pl['opt']['rv'] and pl['opt']['rv'].is_a?(String)
+							annots << ' /RV'
+							if pl['opt']['rv'].is_a?(Array)
+								pl['opt']['rv'].eath {|optval|
+									annots << ' ' + optval
+								}
+							else
+								annots << ' ' + textstring(pl['opt']['rv'])
+							end
+						end
+						if pl['opt']['a'] and !pl['opt']['a'].empty?
+							annots << ' /A << ' + pl['opt']['a'] + ' >>'
+						end
+						if pl['opt']['aa'] and !pl['opt']['aa'].empty?
+							annots << ' /AA << ' + pl['opt']['aa'] + ' >>'
+						end
+						if pl['opt']['q'] and (pl['opt']['q'] >= 0) and (pl['opt']['q'] <= 2)
+							annots << ' /Q ' + pl['opt']['q'].to_i.to_s
+						end
+						if pl['opt']['opt'] and pl['opt']['opt'].is_a?(Array) and !pl['opt']['opt'].empty?
+							annots << ' /Opt ['
+							pl['opt']['opt'].each {|copt|
+								if copt.is_a?(Array)
+									annots << ' [' + textstring(copt[0]) + ' ' + textstring(copt[1]) + ']'
+								else
+									annots << ' ' + textstring(copt)
+								end
+							}
+							annots << ']'
+						end
+						if pl['opt']['ti']
+							annots << ' /TI ' + pl['opt']['ti'].to_i.to_s
+						end
+						if pl['opt']['i'] and pl['opt']['i'].is_a?(Array) and !pl['opt']['i'].empty?
+							annots << ' /I ['
+							pl['opt']['i'].each {|copt|
+								annots << copt.to_i.to_s + ' '
+							}
+							annots << ']'
 						end
 					else
 					end
 
 					annots << '>>'
+					# create new annotation object
 					@annot_obj_id += 1
 					@offsets[@annot_obj_id] = @bufferlen
 					out(@annot_obj_id.to_s + ' 0 obj')
 					out(annots)
 					out('endobj')
+
+					if formfield
+						# store reference of form object
+						@form_obj_id.push = @annot_obj_id
+					end
 				}
 			end # end for each page
 		end
@@ -7230,7 +7447,7 @@ class TCPDF
 								when '='
 									valid = true  if dom[key]['attribute'][att] == val
 								when '~='
-									valid = true  if in_array(val, dom[key]['attribute'][att].split(' '))
+									valid = true  if dom[key]['attribute'][att].split(' ').include?(val)
 								when '^='
 									valid = true  if val == substr(dom[key]['attribute'][att], 0, val.length)
 								when '$='
@@ -8875,7 +9092,7 @@ class TCPDF
 	end
                 
 	#
-	# Get page buffer content.
+	# Get image buffer content.
 	# @param string :image image key
 	# @return string image buffer content or false in case of error
 	# @access protected
@@ -8997,24 +9214,22 @@ class TCPDF
 	end
 	
 	#
-	# Returns an associative array (keys: R,G,B) from 
-	# an html color name or a six-digit or three-digit 
-	# hexadecimal color representation (i.e. #3FE5AA or #7FF).
+	# Returns an associative array (keys: R,G,B) from an html color name or a six-digit or three-digit hexadecimal color representation (i.e. #3FE5AA or #7FF).
 	# @param string :color html color 
-	# @return array
+	# @return array RGB color or false in case of error.
 	# @access public
 	#
-	def convertHTMLColorToDec(color = "#000000")
+	def convertHTMLColorToDec(color = "#FFFFFF")
 		color = color.gsub(/[\s]*/, '') # remove extra spaces
 		color = color.downcase
-		# set default color to be returned in case of error
-		returncolor = ActiveSupport::OrderedHash.new
-		returncolor['R'] = 0
-		returncolor['G'] = 0
-		returncolor['B'] = 0
-		if !color
-			return returncolor
+		if !(dotpos = color.index('.')).nil?
+			# remove class parent (i.e.: color.red)
+			color = color[(dotpos + 1)..-1]
 		end
+		if color.length == 0
+			return false
+		end
+		returncolor = ActiveSupport::OrderedHash.new
 		if color[0,3] == 'rgb' 
 			codes = color.sub(/^rgb\(/, "")
 			codes = codes.gsub(')', '')
@@ -9026,9 +9241,10 @@ class TCPDF
 		end
 		if color[0].chr != "#"
 			# decode color name
-			color_code = @@webcolor[color]
-			if color_code.nil?
-				return returncolor
+			if @@webcolor[color]
+				color_code = @@webcolor[color]
+			else
+				return false
 			end
 		else
 			color_code = color.sub(/^#/, "")
@@ -9047,6 +9263,8 @@ class TCPDF
 			returncolor['R'] = color_code[0,2].hex
 			returncolor['G'] = color_code[2,2].hex
 			returncolor['B'] = color_code[4,2].hex
+		else
+			returncolor = false
 		end
 		return returncolor
 	end
