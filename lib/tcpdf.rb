@@ -4515,7 +4515,7 @@ class TCPDF
 	# @since 4.7.000 (2008-08-29)
 	#
 	def putannotsrefs(n)
-		unless @page_annots[n] or (@sign and @signature_data['cert_type'] and (@signature_data['cert_type'] > 0))
+		unless @page_annots[n] or (@sign and @signature_data['cert_type'])
 			return
 		end
 		out('/Annots [')
@@ -4526,7 +4526,7 @@ class TCPDF
 				out(@annot_obj_id.to_s + ' 0 R')
 			}
 		end
-		if (n == 1) and @sign and @signature_data['cert_type'] and (@ignature_data['cert_type'] > 0)
+		if (n == 1) and @sign and @signature_data['cert_type']
 			# set reference for signature object
 			out(@sig_annot_ref)
 		end
@@ -6409,7 +6409,9 @@ class TCPDF
 								end
 								pask = next_pask
 							end
-							@y += (curfontsize - fontsize) / @k
+							if (dom[key]['value'] != 'td') and (dom[key]['value'] != 'th')
+								@y += (curfontsize - fontsize) / @k
+							end
 							minstartliney = [@y, minstartliney].min
 						end
 						curfontname = fontname
