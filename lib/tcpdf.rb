@@ -84,37 +84,37 @@ end
 # @license http://www.gnu.org/copyleft/lesser.html LGPL
 #
 class TCPDF
-  include ActionView::Helpers
-  include RFPDF
-  include Core::RFPDF
-  include RFPDF::Math
-  require 'unicode_data.rb'
-  require 'htmlcolors.rb'
-  include Unicode_data
-  include Html_colors
-  
-  cattr_accessor :k_cell_height_ratio
-  @@k_cell_height_ratio = 1.25
+	include ActionView::Helpers
+	include RFPDF
+	include Core::RFPDF
+	include RFPDF::Math
+	require 'unicode_data.rb'
+	require 'htmlcolors.rb'
+	include Unicode_data
+	include Html_colors
 
-  cattr_accessor :k_blank_image
-  @@k_blank_image = ""
-  
-  cattr_accessor :k_small_ratio  
-  @@k_small_ratio = 2/3.0
-  
-  cattr_accessor :k_path_cache
-  @@k_path_cache = Rails.root.join('tmp').to_s
-  
-  cattr_accessor :k_path_main
-  @@k_path_main = Rails.root.join('tmp').to_s
-  
-  cattr_accessor :k_path_url
-  @@k_path_url = Rails.root.join('tmp').to_s
-  
-  @@k_path_images = ""
+	cattr_accessor :k_cell_height_ratio
+	@@k_cell_height_ratio = 1.25
 
-  cattr_accessor :decoder
-		
+	cattr_accessor :k_blank_image
+	@@k_blank_image = ""
+
+	cattr_accessor :k_small_ratio  
+	@@k_small_ratio = 2/3.0
+
+	cattr_accessor :k_path_cache
+	@@k_path_cache = Rails.root.join('tmp').to_s
+
+	cattr_accessor :k_path_main
+	@@k_path_main = Rails.root.join('tmp').to_s
+  
+	cattr_accessor :k_path_url
+	@@k_path_url = Rails.root.join('tmp').to_s
+
+	@@k_path_images = ""
+
+	cattr_accessor :decoder
+
 	attr_accessor :barcode
 	
 	attr_accessor :buffer
@@ -1233,42 +1233,44 @@ class TCPDF
 		end
 	end
 
-  #
-  # Rotate object.
-  # @param float :angle angle in degrees for counter-clockwise rotation
-  # @param int :x abscissa of the rotation center. Default is current x position
-  # @param int :y ordinate of the rotation center. Default is current y position
-  #
-  def Rotate(angle, x="", y="")
-
-  	if (x == '')
-  		x = @x;
-  	end
+	#
+	# Rotate object.
+	# @param float :angle angle in degrees for counter-clockwise rotation
+	# @param int :x abscissa of the rotation center. Default is current x position
+	# @param int :y ordinate of the rotation center. Default is current y position
+	# @access public
+	# @since 2.1.000 (2008-01-07)
+	# @see StartTransform(), StopTransform()
+	#
+	def Rotate(angle, x="", y="")
+		if (x == '')
+			x = @x
+		end
   	
-  	if (y == '')
-  		y = @y;
-  	end
+		if (y == '')
+			y = @y
+		end
   	
-  	if (@rtl)
-  		x = @w - x;
-  		angle = -@angle;
-  	end
-  	
-  	y = (@h - y) * @k;
-  	x *= @k;
+		if @rtl
+			x = @w - x
+			angle = -@angle
+		end
 
-  	# calculate elements of transformation matrix
-  	tm = []
-  	tm[0] = ::Math::cos(deg2rad(angle));
-  	tm[1] = ::Math::sin(deg2rad(angle));
-  	tm[2] = -tm[1];
-  	tm[3] = tm[0];
-  	tm[4] = x + tm[1] * y - tm[0] * x;
-  	tm[5] = y - tm[0] * y - tm[1] * x;
+		y = (@h - y) * @k
+		x *= @k
 
-  	# generate the transformation matrix
-  	Transform(tm);
-  end
+		# calculate elements of transformation matrix
+		tm = []
+		tm[0] = ::Math::cos(deg2rad(angle))
+		tm[1] = ::Math::sin(deg2rad(angle))
+		tm[2] = -tm[1]
+		tm[3] = tm[0]
+		tm[4] = x + tm[1] * y - tm[0] * x
+		tm[5] = y - tm[0] * y - tm[1] * x
+
+		# generate the transformation matrix
+		Transform(tm)
+	end
     alias_method :rotate, :Rotate
   
 	#
@@ -1864,12 +1866,13 @@ class TCPDF
   
 	#
 	# Returns the length of a string in user unit. A font must be selected.<br>
-	# Support UTF-8 Unicode [Nicola Asuni, 2005-01-02]
 	# @param string :s The string whose length is to be computed
 	# @param string :fontname Family font. It can be either a name defined by AddFont() or one of the standard families. It is also possible to pass an empty string, in that case, the current family is retained.
 	# @param string :fontstyle Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li></ul> or any combination. The default value is regular.
 	# @param float :fontsize Font size in points. The default value is the current size.
-	# @return int
+	# @return int string length
+	# @author Nicola Asuni
+	# @access public
 	# @since 1.2
 	#
 	def GetStringWidth(s, fontname='', fontstyle='', fontsize=0)
@@ -1879,12 +1882,13 @@ class TCPDF
 
 	#
 	# Returns the string length of an array of chars in user unit. A font must be selected.<br>
-	# @param string :arr The array of chars whose total length is to be computed
+	# @param string :sa The array of chars whose total length is to be computed
 	# @param string :fontname Family font. It can be either a name defined by AddFont() or one of the standard families. It is also possible to pass an empty string, in that case, the current family is retained.
 	# @param string :fontstyle Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li></ul> or any combination. The default value is regular.
 	# @param float :fontsize Font size in points. The default value is the current size.
 	# @return int string length
 	# @author Nicola Asuni
+	# @access public
 	# @since 2.4.000 (2008-03-06)
 	#
 	def GetArrStringWidth(sa, fontname='', fontstyle='', fontsize=0)
@@ -1907,8 +1911,8 @@ class TCPDF
 	end
 
 	#
-	# Returns the length of the char in user unit. A font must be selected.<br>
-	# @param string :char The char whose length is to be returned
+	# Returns the length of the char in user unit for the current font.<br>
+	# @param int :char The char code whose length is to be returned
 	# @return int char width
 	# @author Nicola Asuni
 	# @access public
@@ -3083,9 +3087,9 @@ class TCPDF
 					# get string width without spaces
 					width = GetStringWidth(txt.gsub(' ', ''))
 					# calculate average space width
-					spacewidth = (w - width - (2 * @c_margin)) / (ns ? ns : 1) / @font_size / @k
+					spacewidth = -1000 * (w - width - (2 * @c_margin)) / (ns ? ns : 1) / @font_size
 					# set word position to be used with TJ operator
-					txt2 = txt2.gsub(0.chr + ' ', ') ' + (-2830 * spacewidth).to_s + ' (')
+					txt2 = txt2.gsub(0.chr + ' ', ') ' + spacewidth.to_s + ' (')
 				else
 					# get string width
 					width = GetStringWidth(txt)
@@ -4984,46 +4988,44 @@ class TCPDF
 		out('/W [' + w + ' ]')
 	end
 
-  def putType0(font)
-  	#Type0
-  	newobj();
-  	out('<</Type /Font')
-  	out('/Subtype /Type0')
-  	out('/BaseFont /'+font['name']+'-'+font['cMap'])
-  	out('/Encoding /'+font['cMap'])
-  	out('/DescendantFonts ['+(@n+1).to_s+' 0 R]')
-  	out('>>')
-  	out('endobj')
-  	#CIDFont
-  	newobj()
-  	out('<</Type /Font')
-  	out('/Subtype /CIDFontType0')
-  	out('/BaseFont /'+font['name'])
-  	out('/CIDSystemInfo <</Registry (Adobe) /Ordering ('+font['registry']['ordering']+') /Supplement '+font['registry']['supplement'].to_s+'>>')
-  	out('/FontDescriptor '+(@n+1).to_s+' 0 R')
-  	w='/W [1 ['
+	def putType0(font)
+		# Type0
+		newobj()
+		out('<</Type /Font')
+		out('/Subtype /Type0')
+		out('/BaseFont /'+font['name']+'-'+font['cMap'])
+		out('/Encoding /'+font['cMap'])
+		out('/DescendantFonts ['+(@n+1).to_s+' 0 R]')
+		out('>>')
+		out('endobj')
+		# CIDFont
+		newobj()
+		out('<</Type /Font')
+		out('/Subtype /CIDFontType0')
+		out('/BaseFont /'+font['name'])
+		out('/CIDSystemInfo <</Registry (Adobe) /Ordering ('+font['registry']['ordering']+') /Supplement '+font['registry']['supplement'].to_s+'>>')
+		out('/FontDescriptor '+(@n+1).to_s+' 0 R')
+		w='/W [1 ['
 		font['cw'].keys.sort.each {|key|
-		  w+=font['cw'][key].to_s + " "
-# ActionController::Base::logger.debug key.to_s
-# ActionController::Base::logger.debug font['cw'][key].to_s
+			w+=font['cw'][key].to_s + " "
 		}
-  	out(w+'] 231 325 500 631 [500] 326 389 500]')
-  	out('>>')
-  	out('endobj')
-  	#Font descriptor
-  	newobj()
-  	out('<</Type /FontDescriptor')
-  	out('/FontName /'+font['name'])
-  	out('/Flags 6')
-  	out('/FontBBox [0 -200 1000 900]')
-  	out('/ItalicAngle 0')
-  	out('/Ascent 800')
-  	out('/Descent -200')
-  	out('/CapHeight 800')
-  	out('/StemV 60')
-  	out('>>')
-  	out('endobj')
-  end
+		out(w+'] 231 325 500 631 [500] 326 389 500]')
+		out('>>')
+		out('endobj')
+		# Font descriptor
+		newobj()
+		out('<</Type /FontDescriptor')
+		out('/FontName /'+font['name'])
+		out('/Flags 6')
+		out('/FontBBox [0 -200 1000 900]')
+		out('/ItalicAngle 0')
+		out('/Ascent 800')
+		out('/Descent -200')
+		out('/CapHeight 800')
+		out('/StemV 60')
+		out('>>')
+		out('endobj')
+	end
 
 	#
 	# Output images.
@@ -5482,12 +5484,14 @@ class TCPDF
 
 	#
 	# Read a 4-byte integer from file
+	# @param string :f file name.
+	# @return 4-byte integer
 	# @access protected
 	#
 	def freadint(f)
-    # Read a 4-byte integer from file
-    a = f.read(4).unpack('N')
-    return a[0]
+		# Read a 4-byte integer from file
+		a = f.read(4).unpack('N')
+		return a[0]
 	end
 
  	#
@@ -5540,8 +5544,8 @@ class TCPDF
 	# @access protected
 	#
 	def escape(s)
-    # Add \ before \, ( and )
-    s.gsub('\\','\\\\\\').gsub('(','\\(').gsub(')','\\)').gsub(13.chr, '\r')
+		# Add \ before \, ( and )
+		s.gsub('\\','\\\\\\').gsub('(','\\(').gsub(')','\\)').gsub(13.chr, '\r')
 	end
 
 	#
@@ -5740,7 +5744,7 @@ class TCPDF
 		out('endobj')
 	end
 
-	 #
+	#
 	# Converts UTF-8 strings to codepoints array.<br>
 	# Invalid byte sequences will be replaced with 0xFFFD (replacement character)<br>
 	# Based on: http://www.faqs.org/rfcs/rfc3629.html
@@ -6453,7 +6457,7 @@ class TCPDF
 								end
 								# calculate additional space to add to each space
 								spacewidth = ((tw - linew + ((no - ns) * GetStringWidth(32.chr))) / (ns ? ns : 1)) * @k
-								spacewidthu = (tw - linew + (no * GetStringWidth(32.chr))) / (ns ? ns : 1) / @font_size / @k
+						 		spacewidthu = -1000 * (tw - linew + (no * GetStringWidth(32.chr))) / (ns ? ns : 1) / @font_size
 								nsmax = ns
 								ns = 0
 								# reset(lnstring)
@@ -6547,7 +6551,7 @@ class TCPDF
 									pmidtemp =~ /\[\(([^\)]*)\)\]/x
 									matches1 = $1.gsub("#!#OP#!#", "(")
 									matches1.gsub!("#!#CP#!#", ")")
-									pmid = pmidtemp.sub(/\[\(([^\)]*)\)\]/x,  "[(" + matches1.gsub(0.chr + 32.chr, ") #{-2830 * spacew} (") + ")]")
+									pmid = pmidtemp.sub(/\[\(([^\)]*)\)\]/x,  "[(" + matches1.gsub(0.chr + 32.chr, ") #{spacew} (") + ")]")
 									setPageBuffer(startlinepage, pstart + "\n" + pmid + "\n" + pend)
 									endlinepos = (pstart + "\n" + pmid + "\n").length
 								else
@@ -6985,7 +6989,7 @@ class TCPDF
 	# @param string :html html text to print. Default value: empty string.
 	# @param mixed :border Indicates if borders must be drawn around the cell. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
 	# @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right (or left for RTL language)</li><li>1: to the beginning of the next line</li><li>2: below</li></ul>
-# Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
+	# Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
 	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
 	# @param boolean :reseth if true reset the last cell height (default true).
 	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
