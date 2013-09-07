@@ -6680,7 +6680,7 @@ class TCPDF
 						colspan = dom[key]['attribute']['colspan']
 						wtmp = colspan * (table_width / dom[table_el]['cols'])
 						if !dom[key]['width'].nil?
-							cellw = getHTMLUnitToUnits(dom[key]['width'], wtmp, 'px')
+							cellw = getHTMLUnitToUnits(dom[key]['width'], table_width, 'px')
 						else
 							cellw = wtmp
 						end
