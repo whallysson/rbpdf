@@ -4026,7 +4026,12 @@ class TCPDF
 				@img_rb_x = ximg + w
 			end
 		end
-		xkimg = ximg * @k
+		if ismask
+			# embed hidden, ouside the canvas
+			xkimg = 10 * @pagedim[@page]['w']
+		else
+			xkimg = ximg * @k
+		end
 		out(sprintf('q %.2f 0 0 %.2f %.2f %.2f cm /I%d Do Q', w * @k, h * @k, xkimg, (@h -(y + h)) * @k, info['i']))
 
 		if border != 0
