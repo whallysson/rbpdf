@@ -4528,7 +4528,7 @@ class TCPDF
 				annots << ' /Contents ' + textstring(pl['txt'])
 				# annots << ' /P '
 				annots << ' /NM ' + textstring(sprintf('%04u-%04u', n, key))
-				annots << ' /M ' + datastring('D:' + Time.now.strftime('%Y%m%d%H%M%S'))
+				annots << ' /M ' + datestring()
 				if !pl['opt']['f'].nil?
 					val = 0
 					if pl['opt']['f'].is_a?(Array)
@@ -4633,7 +4633,7 @@ class TCPDF
 					if !pl['opt']['rc'].nil?
 						annots << ' /RC ' + textstring(pl['opt']['rc'])
 					end
-					annots << ' /CreationDate ' + datastring('D:' + Time.now.strftime('%Y%m%d%H%M%S'))
+					annots << ' /CreationDate ' + datestring()
 					# annots << ' /IRT '
 					if !pl['opt']['subj'].nil?
 						annots << ' /Subj ' + textstring(pl['opt']['subj'])
@@ -5149,8 +5149,8 @@ class TCPDF
 			out('/Creator ' + textstring(@creator));
 		end
 		out('/Producer ' + textstring(PDF_PRODUCER))
-		out('/CreationDate ' + datastring('D:' + Time.now.strftime('%Y%m%d%H%M%S')))
-		out('/ModDate ' + datastring('D:' + Time.now.strftime('%Y%m%d%H%M%S')))
+		out('/CreationDate ' + datestring())
+		out('/ModDate ' + datestring())
 	end
 
 	#
@@ -5505,6 +5505,17 @@ class TCPDF
 		#	s = RC4(@objectkey(@n), s)
 		#end
 		return '(' + escape(s) + ')'
+	end
+
+	#
+	# Returns a formatted date for meta information
+	# @return string escaped date string.
+	# @access protected
+	# @since 4.6.028 (2009-08-25)
+	#
+	def datestring()
+		current_time = Time.now.strftime('%Y%m%d%H%M%S%z').insert(-3, '\'') + '\''
+		return datastring('D:' + current_time)
 	end
 
 	#
