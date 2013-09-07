@@ -6456,8 +6456,9 @@ class TCPDF
 									t_x = @l_margin - @endlinex - ((no - ns - 1) * GetStringWidth(32.chr))
 								end
 								# calculate additional space to add to each space
-								spacewidth = ((tw - linew + ((no - ns) * GetStringWidth(32.chr))) / (ns ? ns : 1)) * @k
-						 		spacewidthu = -1000 * (tw - linew + (no * GetStringWidth(32.chr))) / (ns ? ns : 1) / @font_size
+								spacelen = GetStringWidth(32.chr)
+								spacewidth = ((tw - linew + ((no - ns) * spacelen)) / (ns ? ns : 1)) * @k
+						 		spacewidthu = -1000 * (tw - linew + (no * spacelen)) / (ns ? ns : 1) / @font_size
 								nsmax = ns
 								ns = 0
 								# reset(lnstring)
@@ -6467,6 +6468,19 @@ class TCPDF
 								while pmid_offset = pmid.index(/([0-9\.\+\-]*)[\s](Td|cm|m|l|c|re)[\s]/x, offset)
 									pmid_data = $1
 									pmid_mark = $2
+									# check if we are inside a string section '[( ... )]'
+									stroffset = pmid.index('[(', offset)
+									if (stroffset != false) and (stroffset <= pmid_offset)
+										# set offset to the end of string section 
+										offset = pmid.index(')]', stroffset)
+										while (offset != false) and (pmid[offset - 1, 1] == '\\')
+											offset = pmid.index(')]', offset + 1)
+										end
+										if offset == false
+											Error('HTML Justification: malformed PDF code.')
+										end
+										next
+									end
 									if isRTLTextDir()
 										spacew = spacewidth * (nsmax - ns)
 									else
@@ -6487,7 +6501,7 @@ class TCPDF
 										pmid_e = pmid[epsposend..-1]
 										pmid = pmid_b + "\nq\n" + trx + "\n" + pmid_m + "\nQ\n" + pmid_e
 										offset = epsposend
-										continue
+										next
 									end
 									prev_epsposbeg = epsposbeg
 									currentxpos = 0
