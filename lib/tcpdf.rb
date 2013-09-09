@@ -427,7 +427,9 @@ class TCPDF
 		@embedded_start_obj_id ||= 100000
 		@annots_start_obj_id ||= 200000
 		@annot_obj_id ||= 200000
+		@curr_annot_obj_id ||= 200000
 		@form_obj_id ||= []
+		@apxo_start_obj_id ||= 400000
 		@apxo_obj_id ||= 400000
 		@annotation_fonts ||= {}
 		@radiobutton_groups ||= []
@@ -449,6 +451,8 @@ class TCPDF
 		SetFont(@font_family, @font_style, @font_size_pt)
 
 		@annot_obj_id = @annots_start_obj_id
+		@curr_annot_obj_id = @annots_start_obj_id
+		@apxo_obj_id = @apxo_start_obj_id
 	end
 	
 	#
@@ -3053,8 +3057,11 @@ class TCPDF
 			# text lenght
 			width = GetStringWidth(txt);
 			# ratio between cell lenght and text lenght
-			ratio = (w - (2 * @c_margin)) / width
-
+			if width <= 0
+				ratio = 1
+			else
+				ratio = (w - (2 * @c_margin)) / width
+			end
 			# stretch text if required
 			if (stretch > 0) and ((ratio < 1) or ((ratio > 1) and ((stretch % 2) == 0)))
 				if stretch > 2
@@ -4539,11 +4546,16 @@ class TCPDF
 			return
 		end
 		out('/Annots [')
-		(@annots_start_obj_id + 1).upto(@annot_obj_id) do |i|
-			if !@radio_groups.include?(i)
-				out(i.to_s + ' 0 R')
+		num_annots = @page_annots[n].length
+		0.upto(num_annots - 1) do |i|
+			@curr_annot_obj_id += 1
+			if !@radio_groups.include?(@curr_annot_obj_id)
+				out(@curr_annot_obj_id.to_s + ' 0 R')
+			else
+				num_annots += 1
 			end
 		end
+
 		if (n == 1) and @sign and @signature_data['cert_type']
 			# set reference for signature object
 			out(@sig_annot_ref)
@@ -6607,7 +6619,15 @@ class TCPDF
 		else
 			@listindent = GetStringWidth('0000')
 		end
+		# save previous list state
+		prev_listnum = @listnum
+		prev_listordered = @listordered
+		prev_listcount = @listcount
+		prev_lispacer = @lispacer
 		@listnum = 0
+		@listordered = []
+		@listcount = []
+		@lispacer = ''
 		if empty_string(@lasth) or reseth
 			#set row height
 			@lasth = @font_size * @@k_cell_height_ratio
@@ -7373,6 +7393,11 @@ class TCPDF
 			@l_margin = @pagedim[@page]['olm']
 			@r_margin = @pagedim[@page]['orm']
 		end
+		# restore previous list state
+		@listnum = prev_listnum
+		@listordered = prev_listordered
+		@listcount = prev_listcount
+		@lispacer = prev_lispacer
 		dom = nil
 	end
   alias_method :write_html, :writeHTML
