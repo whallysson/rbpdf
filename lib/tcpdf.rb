@@ -4546,13 +4546,15 @@ class TCPDF
 			return
 		end
 		out('/Annots [')
-		num_annots = @page_annots[n].length
-		0.upto(num_annots - 1) do |i|
-			@curr_annot_obj_id += 1
-			if !@radio_groups.include?(@curr_annot_obj_id)
-				out(@curr_annot_obj_id.to_s + ' 0 R')
-			else
-				num_annots += 1
+		if @page_annots[n]
+			num_annots = @page_annots[n].length
+			0.upto(num_annots - 1) do |i|
+				@curr_annot_obj_id += 1
+				if !@radio_groups.include?(@curr_annot_obj_id)
+					out(@curr_annot_obj_id.to_s + ' 0 R')
+				else
+					num_annots += 1
+				end
 			end
 		end
 
