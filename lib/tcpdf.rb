@@ -346,6 +346,7 @@ class TCPDF
 		@bufferlen ||= 0
 		@numfonts ||= 0
 		@fontkeys ||= []
+		@font_obj_ids ||= {}
 		@pageopen ||= []
 		@cell_height_ratio = @@k_cell_height_ratio
 		@cache_file_length = {}
@@ -427,6 +428,10 @@ class TCPDF
 		@annots_start_obj_id ||= 200000
 		@annot_obj_id ||= 200000
 		@form_obj_id ||= []
+		@apxo_obj_id ||= 400000
+		@annotation_fonts ||= {}
+		@radiobutton_groups ||= []
+		@radio_groups ||= []
 
 		# user's rights
 		@ur = false;
@@ -2730,6 +2735,7 @@ class TCPDF
 		if opt['mk'] and opt['mk']['ix'] and File.exist?(opt['mk']['ix'])
 			Image(opt['mk']['ix'], '', '', 0, 0, '', '', '', false, 300, '', false, false, 0, false, true)
 		end
+		@annot_obj_id += 1
 	end
 
 	#
@@ -4533,12 +4539,10 @@ class TCPDF
 			return
 		end
 		out('/Annots [')
-		if @page_annots[n]
-			# set page annotations
-			@page_annots[n].each { |id|
-				@annot_obj_id += 1
-				out(@annot_obj_id.to_s + ' 0 R')
-			}
+		(@annots_start_obj_id + 1).upto(@annot_obj_id) do |i|
+			if !@radio_groups.include?(i)
+				out(i.to_s + ' 0 R')
+			end
 		end
 		if (n == 1) and @sign and @signature_data['cert_type']
 			# set reference for signature object
@@ -4562,6 +4566,36 @@ class TCPDF
 			if !@page_annots[n].nil?
 				# set page annotations
 				@page_annots[n].each_with_index { |pl, key|
+					# create annotation object for grouping radiobuttons
+					if @radiobutton_groups[n] and @radiobutton_groups[n][pl['txt']] and @radiobutton_groups[n][pl['txt']].is_a?(Array)
+						annots = '<<'
+						annots << ' /Type /Annot'
+						annots << ' /Subtype /Widget'
+						annots << ' /T ' + datastring(pl['txt'])
+						annots << ' /FT /Btn'
+						annots << ' /Ff 49152'
+						annots << ' /Kids ['
+						@radiobutton_groups[n][pl['txt']].each {|data|
+							annots << ' ' + data['kid'] + ' 0 R'
+							if data['def'] != 'Off'
+								defval = data['def']
+							end
+						}
+						annots << ' ]'
+						if defval
+							annots << ' /V /' + defval
+						end
+						annots << ' >>'
+						@annot_obj_id += 1
+						@offsets[@annot_obj_id] = @bufferlen
+						out(@annot_obj_id + ' 0 obj')
+						out(annots)
+						out('endobj')
+						@form_obj_id.push = @annot_obj_id
+						# store object id to be used on Parent entry of Kids
+						@radiobutton_groups[n][pl['txt']] = @annot_obj_id
+					end
+
 					formfield = false
 					pl['opt'] = pl['opt'].inject({}) do |pl_opt, keys|
 						pl_opt[keys[0].downcase] = keys[1]
@@ -4622,20 +4656,31 @@ class TCPDF
 					if pl['opt']['as'] and pl['opt']['as'].is_a?(String)
 						annots << ' /AS /' + pl['opt']['as']
 					end
-					if pl['opt']['ap'] and pl['opt']['ap'].is_a?(String)
+					if pl['opt']['ap']
+						# appearance stream
 						annots << ' /AP << ' + pl['opt']['ap'] + ' >>'
-					elsif pl['opt']['ft'] and ft.include?(pl['opt']['ft'])
 						annots << ' /AP <<'
-						annots << ' /N <<'
-						annots << ' /Type /XObject'
-						annots << ' /Subtype /Form'
-						annots << ' /FormType 1'
-						rect = sprintf('%.2f %.2f', c, d)
-						annots << ' /BBox [0 0 ' + rect + ']'
-						annots << ' /Matrix [1 0 0 1 0 0]'
-						annots << ' /Resources << /ProcSet [/PDF] >>'
-						annots << ' /Length 0'
-						annots << ' >>'
+						if pl['opt']['ap'].is_a?(Hash)
+							pl['opt']['ap'].each {|apmode, apdef|
+								# apmode can be: n = normal; r = rollover; d = down
+								annots << ' /' + apmode.upcase
+								if apdef.is_a?(Array)
+									annots << ' <<'
+									apdef.each {|apstate, stream|
+										# reference to XObject that define the appearance for this mode-state
+										apsobjid = putAPXObject(c, d, stream)
+										annots << ' /' + apstate + ' ' + apsobjid + ' 0 R'
+									}
+									annots << ' >>'
+								else
+									# reference to XObject that define the appearance for this mode
+									apsobjid = putAPXObject(c, d, apdef)
+									annots << ' ' + apsobjid + ' 0 R'
+								end
+							}
+						else
+							annots << pl['opt']['ap']
+						end
 						annots << ' >>'
 					end
 					if !pl['opt']['bs'].nil? and pl['opt']['bs'].is_a?(Hash)
@@ -4772,7 +4817,9 @@ class TCPDF
 						# annots << ' /PA '
 						# annots << ' /Quadpoints '
 					when 'freetext'
-						annots << ' /DA ' + textstring(pl['txt'])
+						if pl['opt']['da'] and !pl['opt']['da'].empty?
+							annots << ' /DA (' + pl['opt']['da'] + ')'
+						end
 						if !pl['opt']['q'].nil? and (pl['opt']['q'] >= 0) and (pl['opt']['q'] <= 2)
 							annots << ' /Q ' + pl['opt']['q'].to_i
 						end
@@ -4864,19 +4911,13 @@ class TCPDF
 								annots << ']'
 							end
 							if pl['opt']['mk']['ca']
-								annots << ' /CA ' + textstring(pl['opt']['mk']['ca'])
-							elsif pl['opt']['t'] and pl['opt']['t'].is_a?(String)
-								annots << ' /CA ' + textstring(pl['opt']['t'])
+								annots << ' /CA ' + pl['opt']['mk']['ca'] + ''
 							end
 							if pl['opt']['mk']['rc']
-								annots << ' /RC ' + textstring(pl['opt']['mk']['rc'])
-							elsif pl['opt']['t'] and pl['opt']['t'].is_a?(String)
-								annots << ' /RC ' + textstring(pl['opt']['t'])
+								annots << ' /RC ' + pl['opt']['mk']['ca'] + ''
 							end
 							if pl['opt']['mk']['ac']
-								annots << ' /AC ' + textstring(pl['opt']['mk']['ac'])
-							elsif pl['opt']['t'] and pl['opt']['t'].is_a?(String)
-								annots << ' /AC ' + textstring(pl['opt']['t'])
+								annots << ' /AC ' + pl['opt']['mk']['ca'] + ''
 							end
 							if pl['opt']['mk']['i']
 								info = getImageBuffer(pl['opt']['mk']['i'])
@@ -4923,8 +4964,10 @@ class TCPDF
 						end # end MK
 
 						# --- Entries for field dictionaries ---
-						# /Parent
-						# /Kids
+						if @radiobutton_groups[n][pl['txt']]
+							# set parent
+							annots << ' /Parent ' + @radiobutton_groups[n][pl['txt']] + ' 0 R'
+						end
 						if pl['opt']['t'] and pl['opt']['t'].is_a?(String)
 							annots << ' /T ' + datastring(pl['opt']['t'])
 						end
@@ -4985,6 +5028,9 @@ class TCPDF
 						if pl['opt']['aa'] and !pl['opt']['aa'].empty?
 							annots << ' /AA << ' + pl['opt']['aa'] + ' >>'
 						end
+						if pl['opt']['da'] and !pl['opt']['da'].empty?
+							annots << ' /DA (' + pl['opt']['da'] + ')'
+						end
 						if pl['opt']['q'] and (pl['opt']['q'] >= 0) and (pl['opt']['q'] <= 2)
 							annots << ' /Q ' + pl['opt']['q'].to_i.to_s
 						end
@@ -5020,13 +5066,46 @@ class TCPDF
 					out(annots)
 					out('endobj')
 
-					if formfield
+					if formfield and ! @radiobutton_groups[n][pl['txt']]
 						# store reference of form object
 						@form_obj_id.push = @annot_obj_id
 					end
 				}
 			end # end for each page
 		end
+	end
+
+	#
+	# Put appearance streams XObject used to define annotation's appearance states
+	# @param int :w annotation width
+	# @param int :h annotation height
+	# @param string :stream appearance stream
+	# @return int object ID
+	# @access protected
+	# @since 4.8.001 (2009-09-09)
+	#
+	def putAPXObject(w=0, h=0, stream='')
+		stream = stream.strip
+		@apxo_obj_id += 1
+		@offsets[@apxo_obj_id] = @bufferlen
+		out(@apxo_obj_id + ' 0 obj')
+		out('<<')
+		out('/Type /XObject')
+		out('/Subtype /Form')
+		out('/FormType 1')
+		if @compress
+			stream = gzcompress(stream)
+			out('/Filter /FlateDecode')
+		end
+		rect = sprintf('%.2f %.2f', w, h)
+		out('/BBox [0 0 ' + rect + ']')
+		out('/Matrix [1 0 0 1 0 0]')
+		out('/Resources <</ProcSet [/PDF]>>')
+		out('/Length ' + stream.length.to_s)
+		out('>>')
+		putstream(stream)
+		out('endobj')
+		return @apxo_obj_id
 	end
 
 	#
@@ -5095,13 +5174,17 @@ class TCPDF
 			name = font['name'];
 			if (type=='core')
 				#Standard font
-				newobj();
+				obj_id = newobj()
 				out('<</Type /Font');
 				out('/Subtype /Type1');
 				out('/BaseFont /' + name)
 				out('/Name /F' + font['i'].to_s)
-				if (name != 'symbol' && name != 'zapfdingbats')
+				if (name.downcase != 'symbol' && name.downcase != 'zapfdingbats')
 					out('/Encoding /WinAnsiEncoding');
+				end
+				if name.downcase == 'helvetica'
+					# add default font for annotations
+					@annotation_fonts['helvetica'] = k
 				end
 				out('>>');
 				out('endobj');
@@ -5109,7 +5192,7 @@ class TCPDF
 				putType0(font)
 			elsif (type=='Type1' || type=='TrueType')
 				#Additional Type1 or TrueType font
-				newobj();
+				obj_id = newobj()
 				out('<</Type /Font');
 				out('/Subtype /' + type);
 				out('/BaseFont /' + name)
@@ -5138,8 +5221,8 @@ class TCPDF
 				#Descriptor
 				newobj();
 				s='<</Type /FontDescriptor /FontName /' + name;
-				font['desc'].each do |k, v|
-					s << ' /' + k + ' ' + v + ''
+				font['desc'].each do |fdk, fdv|
+					s << ' /' + fdk + ' ' + fdv + ''
 				end
 				if !empty_string(font['file'])
 					s << ' /FontFile' + (type=='Type1' ? '' : '2') + ' ' + @font_files[font['file']]['n'] + ' 0 R'
@@ -5151,9 +5234,10 @@ class TCPDF
 				mtd='put' + type.downcase;
 				if (!self.respond_to?(mtd))
 					Error('Unsupported font type: ' + type)
-				else
-  				self.send(mtd,font)
 				end
+				obj_id = self.send(mtd,font)
+				# store object ID for current font
+				@font_obj_ids[k] = obj_id
 			end
 		end
 	end
@@ -5875,6 +5959,7 @@ class TCPDF
 	# Adds unicode fonts.<br>
 	# Based on PDF Reference 1.3 (section 5)
 	# @parameter array :font font data
+	# @return int font object ID
 	# @access protected
 	# @author Nicola Asuni
 	# @since 1.52.0.TC005 (2005-01-05)
@@ -5882,7 +5967,7 @@ class TCPDF
 	def puttruetypeunicode(font)
 		# Type0 Font
 		# A composite font composed of other fonts, organized hierarchically
-		newobj();
+		obj_id = newobj()
 		out('<</Type /Font');
 		out('/Subtype /Type0');
 		out('/BaseFont /' + font['name'] + '');
@@ -5966,12 +6051,15 @@ class TCPDF
 			end
 		end
 		out('endobj');
+
+		return obj_id
 	end
 
 	#
 	# Output CID-0 fonts.
 	# A Type 0 CIDFont contains glyph descriptions based on the Adobe Type 1 font format
 	# @param array :font font data
+	# @return int font object ID
 	# @access protected
 	# @author Andrew Whitehead, Nicola Asuni, Yukihiro Nakadaira
 	# @since 3.2.000 (2008-06-23)
@@ -5998,7 +6086,7 @@ class TCPDF
 		else
 			longname = name
 		end
-		newobj()
+		obj_id = newobj()
 		out('<</Type /Font')
 		out('/Subtype /Type0')
 		out('/BaseFont /' + longname)
@@ -6031,6 +6119,8 @@ class TCPDF
 		}
 		out(s + '>>')
 		out('endobj')
+
+		return obj_id
 	end
 
 	#
