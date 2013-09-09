@@ -302,6 +302,7 @@ class TCPDF
 		@lisymbol ||= ''
 		@epsmarker ||= 'x#!#EPS#!#x'
 		@transfmatrix ||= []
+		@transfmatrix_key ||= 0
 		@feps ||= 0.005
 		@tagvspaces ||= []
 		@customlistindent ||= -1
@@ -1304,6 +1305,8 @@ class TCPDF
 	def StartTransform
 		out('q');
 		@transfmrk[@page] = @pagelen[@page]
+		@transfmatrix_key += 1
+		@transfmatrix[@transfmatrix_key] = []
 	end
 	  alias_method :start_transform, :StartTransform
 	
@@ -1317,8 +1320,9 @@ class TCPDF
 	#
 	def StopTransform
 		out('Q');
-		if !@transfmatrix.nil?
-			@transfmatrix.pop
+		if @transfmatrix[@transfmatrix_key]
+			@transfmatrix[@transfmatrix_key].pop
+			@transfmatrix_key -= 1
 		end
 		@transfmrk[@page] = nil
 	end
@@ -1326,13 +1330,14 @@ class TCPDF
 	
 	#
 	# Apply graphic transformations.
+	# @access protected
 	# @since 2.1.000 (2008-01-07)
 	# @see StartTransform(), StopTransform()
 	#
 	def Transform(tm)
 		out(sprintf('%.3f %.3f %.3f %.3f %.3f %.3f cm', tm[0], tm[1], tm[2], tm[3], tm[4], tm[5]))
-		# transformation matrix
-		@transfmatrix.push 'a' => tm[0], 'b' => tm[1], 'c' => tm[2], 'd' => tm[3], 'e' => tm[4], 'f' => tm[5]
+		# add tranformation matrix
+		@transfmatrix[@transfmatrix_key].push 'a' => tm[0], 'b' => tm[1], 'c' => tm[2], 'd' => tm[3], 'e' => tm[4], 'f' => tm[5]
 		# update tranformation mark
 		if !@transfmrk[@page].nil?
 			@transfmrk[@page] = @pagelen[@page]
@@ -2681,41 +2686,43 @@ class TCPDF
 
 		# recalculate coordinates to account for graphic transformations
 		if !@transfmatrix.nil?
-			maxid = @transfmatrix.length - 1
-			maxid.downto(0) do |i|
-				ctm = @transfmatrix[i]
-				if !ctm['a'].nil?
-					x = x * @k
-					y = (@h - y) * @k
-					w = w * @k
-					h = h * @k
-					# top left
-					xt = x
-					yt = y
-					x1 = (ctm['a'] * xt) + (ctm['c'] * yt) + ctm['e']
-					y1 = (ctm['b'] * xt) + (ctm['d'] * yt) + ctm['f']
-					# top right
-					xt = x + w
-					yt = y
-					x2 = (ctm['a'] * xt) + (ctm['c'] * yt) + ctm['e']
-					y2 = (ctm['b'] * xt) + (ctm['d'] * yt) + ctm['f']
-					# bottom left
-					xt = x
-					yt = y - h
-					x3 = (ctm['a'] * xt) + (ctm['c'] * yt) + ctm['e']
-					y3 = (ctm['b'] * xt) + (ctm['d'] * yt) + ctm['f']
-					# bottom right
-					xt = x + w
-					yt = y - h
-					x4 = (ctm['a'] * xt) + (ctm['c'] * yt) + ctm['e']
-					y4 = (ctm['b'] * xt) + (ctm['d'] * yt) + ctm['f']
-					# new coordinates (rectangle area)
-					x = [x1, x2, x3, x4].min
-					y = [y1, y2, y3, y4].max
-					w = ([x1, x2, x3, x4].max - x) / @k
-					h = (y - [y1, y2, y3, y4].min) / @k
-					x = x / @k
-					y = @h - (y / @k)
+			@transfmatrix_key.downto(1) do |i|
+				maxid = @transfmatrix[i].length - 1
+				maxid.downto(0) do |j|
+					ctm = @transfmatrix[i][j]
+					if !ctm['a'].nil?
+						x = x * @k
+						y = (@h - y) * @k
+						w = w * @k
+						h = h * @k
+						# top left
+						xt = x
+						yt = y
+						x1 = (ctm['a'] * xt) + (ctm['c'] * yt) + ctm['e']
+						y1 = (ctm['b'] * xt) + (ctm['d'] * yt) + ctm['f']
+						# top right
+						xt = x + w
+						yt = y
+						x2 = (ctm['a'] * xt) + (ctm['c'] * yt) + ctm['e']
+						y2 = (ctm['b'] * xt) + (ctm['d'] * yt) + ctm['f']
+						# bottom left
+						xt = x
+						yt = y - h
+						x3 = (ctm['a'] * xt) + (ctm['c'] * yt) + ctm['e']
+						y3 = (ctm['b'] * xt) + (ctm['d'] * yt) + ctm['f']
+						# bottom right
+						xt = x + w
+						yt = y - h
+						x4 = (ctm['a'] * xt) + (ctm['c'] * yt) + ctm['e']
+						y4 = (ctm['b'] * xt) + (ctm['d'] * yt) + ctm['f']
+						# new coordinates (rectangle area)
+						x = [x1, x2, x3, x4].min
+						y = [y1, y2, y3, y4].max
+						w = ([x1, x2, x3, x4].max - x) / @k
+						h = (y - [y1, y2, y3, y4].min) / @k
+						x = x / @k
+						y = @h - (y / @k)
+					end
 				end
 			end
 		end
