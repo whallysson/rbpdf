@@ -1927,7 +1927,7 @@ class TCPDF
 	end
 
 	#
-	# Returns the length of the char in user unit for the current font.<br>
+	# Returns the length of the char in user unit for the current font.
 	# @param int :char The char code whose length is to be returned
 	# @return int char width
 	# @author Nicola Asuni
@@ -6065,7 +6065,10 @@ class TCPDF
 	# @since 3.2.000 (2008-06-23)
 	#
 	def putcidfont0(font)
-		cidoffset = 31
+		cidoffset = 0
+		if font['cw'][1].nil?
+			cidoffset = 31
+		end
 		if font['cidinfo']['uni2cid']
 			# convert unicode to cid.
 			uni2cid = font['cidinfo']['uni2cid']
