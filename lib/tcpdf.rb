@@ -1,3 +1,4 @@
+# coding: ASCII-8BIT
 #============================================================+
 # File name   : tcpdf.rb
 # Begin       : 2002-08-03
@@ -2280,7 +2281,7 @@ class TCPDF
 				SetFillColorArray(fill_color)
 			end
 			case style
-			when 'F':
+			when 'F'
 				op = 'f'
 				line_style = nil
 			when 'FD', 'DF'
@@ -7456,19 +7457,19 @@ class TCPDF
 		# remove empty blocks
 		cssdata.gsub!(/([^\}\{]+)\{\}/, '')
 		# replace media type parenthesis
-		cssdata.gsub!(/@media[\s]+([^\{]*)\{/i, '@media \\1§')
-		cssdata.gsub!(/\}\}/mi, '}§')
+		cssdata.gsub!(/@media[\s]+([^\{]*)\{/i, "@media \\1\t")
+		cssdata.gsub!(/\}\}/mi, "}\t")
 		# trim string
-		cssdata = cssdata.strip
+		cssdata = cssdata.lstrip
 		# find media blocks (all, braille, embossed, handheld, print, projection, screen, speech, tty, tv)
 		cssblocks = {}
-		matches = cssdata.scan(/@media[\s]+([^\§]*)§([^§]*)§/i)
+		matches = cssdata.scan(/@media +([^\t]*)\t([^\t]*)\t/i)
 		unless matches.empty?
 			matches.each { |type|
 				cssblocks[type[0]] = type[1]
 			}
 			# remove media blocks
-			cssdata.gsub!(/@media[\s]+([^\§]*)§([^§]*)§/i, '')
+			cssdata.gsub!(/@media +([^\t]*)\t([^\t]*)\t/i, '')
 		end
 		# keep 'all' and 'print' media, other media types are discarded
 		if cssblocks['all'] and !cssblocks['all'].empty?
@@ -9456,6 +9457,7 @@ class TCPDF
 		end
 			
 		# check if string contains arabic text
+		str.force_encoding('ASCII-8BIT') if str.respond_to?(:force_encoding)
 		if str =~ @@k_re_pattern_arabic
 			arabic = true
 		else
