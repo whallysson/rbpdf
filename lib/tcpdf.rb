@@ -94,6 +94,10 @@ class TCPDF
 	include Unicode_data
 	include Html_colors
 
+	def logger
+		Rails.logger
+	end
+
 	cattr_accessor :k_cell_height_ratio
 	@@k_cell_height_ratio = 1.25
 
@@ -1468,8 +1472,13 @@ class TCPDF
 		headerfont = GetHeaderFont()
 		headerdata = GetHeaderData()
 		if headerdata['logo'] and (headerdata['logo'] != @@k_blank_image)
-			Image(@@k_path_images + headerdata['logo'], GetX(), GetHeaderMargin(), headerdata['logo_width'])
-			imgy = GetImageRBY()
+			result_img = Image(@@k_path_images + headerdata['logo'], GetX(), GetHeaderMargin(), headerdata['logo_width'])
+			if result_img != false
+				imgy = GetImageRBY()
+			else
+				Write(@lasth, File.basename(headerdata['logo']), '', false, '', false, 0, false)
+				imgy = GetY()
+			end
 		else
 			imgy = GetY()
 		end
@@ -8230,6 +8239,7 @@ class TCPDF
 				#if tag['attribute']['src'][0] == '/'
 				#	tag['attribute']['src'] = Rails.root.join('public') + tag['attribute']['src']
 				#end
+				img_name = tag['attribute']['src']
 				tag['attribute']['src'] = getImageFilename(tag['attribute']['src'])
 				if tag['attribute']['width'].nil?
 					tag['attribute']['width'] = 0
@@ -8252,7 +8262,11 @@ class TCPDF
 				else
 					align = 'B'
 				end
-				type = File.extname(tag['attribute']['src'])
+				unless tag['attribute']['src'].nil?
+					type = File.extname(tag['attribute']['src'])
+				else
+					type =  ''
+				end
 				prevy = @y
 				xpos = GetX()
 				if !dom[key - 1].nil? and (dom[key - 1]['value'] == ' ')
@@ -8294,11 +8308,16 @@ class TCPDF
 					ih = getHTMLUnitToUnits(tag['attribute']['height'], 1, 'px', false)
 				end
 
+				begin
 #				if (type == 'eps') or (type == 'ai')
 #					ImageEps(tag['attribute']['src'], xpos, GetY(), iw, ih, imglink, true, align, '', border)
 #				else
 					result_img = Image(tag['attribute']['src'], xpos, GetY(), iw, ih, '', imglink, align, false, 300, '', false, false, border)
 #				end
+				rescue => err
+					logger.error "pdf: Image: error: #{err.message}"
+					result_img = false
+				end
 				if result_img != false
 					case align
 					when 'T'
@@ -8308,6 +8327,8 @@ class TCPDF
 					when 'B'
 						@y = @img_rb_y - (tag['fontsize'] / @k)
 					end
+				else
+					Write(@lasth, img_name, '', false, '', false, 0, false)
 				end
 			end
 		when 'dl'
