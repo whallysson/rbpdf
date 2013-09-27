@@ -26,10 +26,8 @@ module RFPDF
   # http://uk2.php.net/getimagesize
   def getimagesize(filename)
     out = Hash.new
-    unless Object.const_defined?(:Magick)
-      type = File::extname(filename)
-      return false if type != '.png'
-
+    type = File::extname(filename)
+    if type == '.png'
       open(filename,'rb') do |f|
         # Check signature
         return false if (f.read(8)!=137.chr + 'PNG' + 13.chr + 10.chr + 26.chr + 10.chr)
@@ -42,6 +40,8 @@ module RFPDF
 
       return out
     end
+
+    return false unless Object.const_defined?(:Magick)
 
     image = Magick::ImageList.new(filename)
     
