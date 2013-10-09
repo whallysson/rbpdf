@@ -3942,6 +3942,9 @@ class TCPDF
 		x = @x if x == ''
 		y = @y if y == ''
 
+		# set bottomcoordinates
+		@img_rb_y = y + h
+
 		# get image dimensions
 		size_info = getimagesize(file)
 		return false if size_info == false
@@ -4053,8 +4056,6 @@ class TCPDF
 		if checkPageBreak(h, y)
 			y = GetY() + @c_margin
 		end
-		# set bottomcoordinates
-		@img_rb_y = y + h;
 		# set alignment
 		if @rtl
 			if palign == 'L'
@@ -8318,17 +8319,16 @@ class TCPDF
 					logger.error "pdf: Image: error: #{err.message}"
 					result_img = false
 				end
-				if result_img != false
-					case align
-					when 'T'
-						@y = prevy
-					when 'M'
-						@y = (@img_rb_y + prevy - (tag['fontsize'] / @k)) / 2
-					when 'B'
-						@y = @img_rb_y - (tag['fontsize'] / @k)
-					end
-				else
-					Write(@lasth, img_name, '', false, '', false, 0, false)
+				case align
+				when 'T'
+					@y = prevy
+				when 'M'
+					@y = (@img_rb_y + prevy - (tag['fontsize'] / @k)) / 2
+				when 'B'
+					@y = @img_rb_y - (tag['fontsize'] / @k)
+				end
+				if result_img == false
+					Write(@lasth, File::basename(img_name), '', false, '', false, 0, false)
 				end
 			end
 		when 'dl'

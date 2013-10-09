@@ -25,6 +25,8 @@ module RFPDF
 
   # http://uk2.php.net/getimagesize
   def getimagesize(filename)
+    return false unless File.exists?(filename)
+
     out = Hash.new
     type = File::extname(filename)
     if type == '.png'
