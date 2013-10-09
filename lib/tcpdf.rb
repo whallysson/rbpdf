@@ -215,6 +215,11 @@ class TCPDF
 	attr_accessor :underline
 	
 	attr_accessor :ws
+
+	attr_accessor :diskcache
+
+	attr_accessor :cache_file_length
+	attr_accessor :prev_cache_file_length
 	
 	#
 	# This is the class constructor. 
@@ -356,6 +361,7 @@ class TCPDF
 		@pageopen ||= []
 		@cell_height_ratio = @@k_cell_height_ratio
 		@cache_file_length = {}
+		@prev_cache_file_length = {}
 		@thead ||= ''
 		@thead_margins ||= {}
 		@cache_utf8_string_to_array = {}
@@ -440,6 +446,7 @@ class TCPDF
 		@annotation_fonts ||= {}
 		@radiobutton_groups ||= []
 		@radio_groups ||= []
+		@textindent ||= 0
 
 		# user's rights
 		@ur = false;
@@ -4356,14 +4363,13 @@ class TCPDF
 			# remove buffer file from cache
 			File.delete(@buffer.path)
 		end
-		# This is PHP specific code
-		#foreach (array_keys(get_object_vars($this)) as $val) {
-		#	if destroyall or ((val != 'internal_encoding') and (val != 'state') and (val != 'bufferlen') and (val != 'buffer') and (val != 'diskcache'))
-		#		if !preserve_objcopy or (val != 'objcopy')
-		#			unset(val)
-		#		end
-		#	end
-		#}
+		self.instance_variables.each { |val|
+			if destroyall or ((val != '@internal_encoding') and (val != '@state') and (val != '@bufferlen') and (val != '@buffer') and (val != '@diskcache') and (val != '@sign') and (val != '@signature_data') and (val != '@signature_max_lenght') and (val != '@byterange_string'))
+				if !preserve_objcopy or (val.to_s != '@objcopy')
+					eval("#{val} = nil")
+				end
+			end
+		}
 	end
 
 	# Protected methods
@@ -6596,15 +6602,16 @@ class TCPDF
 		curfontstyle = @font_style
 		curfontsize = @font_size_pt
 		@newline = true
-		minstartliney = @y
-		yshift = 0
 		startlinepage = @page
+		minstartliney = @y
+		startlinex = @x
+		startliney = @y
+		yshift = 0
 		newline = true
 		loop = 0
 		curpos = 0
 		opentagpos = nil
-		startlinex = nil
-		startliney = nil
+		this_method_vars = {}
 		blocktags = ['blockquote','br','dd','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','ul']
 		@premode = false
 		if !@page_annots[@page].nil?
@@ -6639,7 +6646,7 @@ class TCPDF
 		else
 			@listindent = GetStringWidth('0000')
 		end
-		# save previous list state
+		# save previous states
 		prev_listnum = @listnum
 		prev_listordered = @listordered
 		prev_listcount = @listcount
@@ -6657,6 +6664,47 @@ class TCPDF
 		key = 0
 		while key < maxel
 			if dom[key]['tag'] or (key == 0)
+				if dom[key]['tag'] and dom[key]['opening'] and dom[key]['attribute']['nobr'] and (dom[key]['attribute']['nobr'] == 'true')
+					if dom[(dom[key]['parent'])]['attribute']['nobr'] and (dom[(dom[key]['parent'])]['attribute']['nobr'] == 'true')
+						dom[key]['attribute']['nobr'] = false
+					else
+						# store current object
+						startTransaction()
+						# save this method vars
+						this_method_vars['html'] = html
+						this_method_vars['ln'] = ln
+						this_method_vars['fill'] = fill
+						this_method_vars['reseth'] = reseth
+						this_method_vars['cell'] = cell
+						this_method_vars['align'] = align
+						this_method_vars['gvars'] = gvars
+						this_method_vars['prevPage'] = prevPage
+						this_method_vars['prevlMargin'] = prevlMargin
+						this_method_vars['prevrMargin'] = prevrMargin
+						this_method_vars['curfontname'] = curfontname
+						this_method_vars['curfontstyle'] = curfontstyle
+						this_method_vars['curfontsize'] = curfontsize
+						this_method_vars['minstartliney'] = minstartliney
+						this_method_vars['yshift'] = yshift
+						this_method_vars['startlinepage'] = startlinepage
+						this_method_vars['startlinepos'] = startlinepos
+						this_method_vars['startlinex'] = startlinex
+						this_method_vars['startliney'] = startliney
+						this_method_vars['newline'] = newline
+						this_method_vars['loop'] = loop
+						this_method_vars['curpos'] = curpos
+						this_method_vars['pask'] = pask
+						this_method_vars['lalign'] = lalign
+						this_method_vars['plalign'] = plalign
+						this_method_vars['w'] = w
+						this_method_vars['prev_listnum'] = prev_listnum
+						this_method_vars['prev_listordered'] = prev_listordered
+						this_method_vars['prev_listcount'] = prev_listcount
+						this_method_vars['prev_lispacer'] = prev_lispacer
+						this_method_vars['key'] = key
+						this_method_vars['dom'] = dom
+					end
+				end
 				if ((dom[key]['value'] == 'table') or (dom[key]['value'] == 'tr')) and !dom[key]['align'].nil?
 					dom[key]['align'] = @rtl ? 'R' : 'L'
 				end
@@ -7052,6 +7100,10 @@ class TCPDF
 			end
 			if dom[key]['tag']
 				if dom[key]['opening']    
+					# get text indentation (if any)
+					if dom[key]['text-indent'] and ['blockquote','dd','div','dt','h1','h2','h3','h4','h5','h6','li','ol','p','ul','table','tr','td'].include?(dom[key]['value'])
+						@textindent = dom[key]['text-indent']
+					end
 					if dom[key]['value'] == 'table'
 						if @rtl
 							wtmp = @x - @l_margin
@@ -7303,8 +7355,14 @@ class TCPDF
 				else
 					ctmpmargin = @c_margin
 					@c_margin = 0
+					if @rtl
+						@x -= @textindent
+					else
+						@x += @textindent
+					end
 					# ****** write only until the end of the line and get the rest ******
 					strrest = Write(@lasth, dom[key]['value'], '', wfill, '', false, 0, true, firstblock)
+					@textindent = 0
 					@c_margin = ctmpmargin
 				end
 				if !strrest.nil? and strrest.length > 0
@@ -7332,6 +7390,16 @@ class TCPDF
 				end
 			end
 			key += 1
+			if dom[key] and dom[key]['tag'] and (dom[key]['opening'].nil? or !dom[key]['opening']) and dom[(dom[key]['parent'])]['attribute']['nobr'] and (dom[(dom[key]['parent'])]['attribute']['nobr'] == 'true') and (@start_transaction_page < @numpages)
+				# restore previous object
+				rollbackTransaction(true)
+				# restore previous values
+				this_method_vars.each {|vkey , vval|
+					eval("#{vkey} = vval") 
+				}
+				# add a page
+				AddPage()
+			end
 		end # end for each :key
 		# align the last line
 		if !startlinex.nil?
@@ -7812,6 +7880,7 @@ class TCPDF
 
 		dom[key]['align'] = ''
 		dom[key]['listtype'] = ''
+		dom[key]['text-indent'] = 0
 		dom[key]['attribute'] = {} # reset attribute array
 		thead = false # true when we are inside the THEAD tag
 		key += 1
@@ -7899,6 +7968,7 @@ class TCPDF
 						dom[key]['fgcolor'] = dom[parentkey]['fgcolor'].dup
 						dom[key]['align'] = dom[parentkey]['align'].dup
 						dom[key]['listtype'] = dom[parentkey]['listtype'].dup
+						dom[key]['text-indent'] = dom[parentkey]['text-indent']
 					end
 					# get attributes
 					attr_array = element.scan(/([^=\s]*)[\s]*=[\s]*"([^"]*)"/)
@@ -7938,6 +8008,13 @@ class TCPDF
 							dom[key]['listtype'] = dom[key]['style']['list-style-type'].downcase.strip
 							if dom[key]['listtype'] == 'inherit'
 								dom[key]['listtype'] = dom[parentkey]['listtype']
+							end
+						end
+						# text-indent
+						if dom[key]['style']['text-indent']
+							dom[key]['text-indent'] = getHTMLUnitToUnits(dom[key]['style']['text-indent'])
+							if dom[key]['text-indent'] == 'inherit'
+								dom[key]['text-indent'] = dom[parentkey]['text-indent']
 							end
 						end
 						# font size
@@ -10150,6 +10227,80 @@ class TCPDF
 	#
 	def formatPageNumber(num)
 		return number_with_delimiter(num, :delimiter => ",")
+	end
+
+	#
+	# Stores a copy of the current TCPDF object used for undo operation.
+	# @access public
+	# @since 4.5.029 (2009-03-19)
+	#
+	def startTransaction()
+		if @objcopy
+			# remove previous copy
+			commitTransaction()
+		end
+		# record current page number
+		@start_transaction_page = @page
+		# clone current object
+		@objcopy = objclone(self)
+	end
+
+	#
+	# Delete the copy of the current TCPDF object used for undo operation.
+	# @access public
+	# @since 4.5.029 (2009-03-19)
+	#
+	def commitTransaction()
+		if @objcopy
+			@objcopy.destroy(true, true)
+			@objcopy = nil
+		end
+	end
+
+	#
+	# This method allows to undo the latest transaction by returning the latest saved TCPDF object with startTransaction().
+	# @param boolean :this_self if true restores current class object to previous state without the need of reassignment via the returned value.
+	# @return TCPDF object.
+	# @access public
+	# @since 4.5.029 (2009-03-19)
+	#
+	def rollbackTransaction(this_self=false)
+		if @objcopy
+			if @objcopy.diskcache
+				# truncate files to previous values
+				@objcopy.prev_cache_file_length.each { |file, length|
+					open(file , "r+") do |f|
+						f.flock(File::LOCK_EX)
+						f.truncate(length)
+					end
+				}
+			end
+			destroy(true, true)
+			if this_self
+				objvars = @objcopy.instance_variables
+				objvars.each {|key|
+					eval("#{key} = @objcopy.instance_variable_get(key)") if key.to_s != '@objcopy'
+				}
+			end
+			return @objcopy
+		end
+		return self
+	end
+
+	#
+	# Creates a copy of a class object
+	# @param object :object class object to be cloned
+	# @return cloned object
+	# @access public
+	# @since 4.5.029 (2009-03-19)
+	#
+	def objclone(object)
+                if @diskcache
+			@prev_cache_file_length = object.cache_file_length.dup
+			return object.dup
+		else
+			return Marshal.load(Marshal.dump(object))
+		end
 	end
 
 end # END OF TCPDF CLASS

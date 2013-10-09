@@ -134,13 +134,9 @@ class TcpdfTest < ActiveSupport::TestCase
     pages = pdf.GetNumPages
     assert_equal 2, pages
 
-    assert_raise(RuntimeError) {pdf.SetPage(0)} # Page under size
-
     pdf.SetPage(1)
     page = pdf.GetPage
     assert_equal 1, page
-
-    assert_raise(RuntimeError) {pdf.SetPage(3)} # Page over size
 
     pdf.AddPage
     page = pdf.GetPage
@@ -165,4 +161,50 @@ class TcpdfTest < ActiveSupport::TestCase
     assert_equal 3, pages
   end
 
+  test "AddPage SetPage Under Error" do
+    pdf = TCPDF.new
+
+    page = pdf.GetPage
+    assert_equal 0, page
+    pages = pdf.GetNumPages
+    assert_equal 0, pages
+
+    pdf.SetPrintHeader(false)
+    pdf.AddPage
+    page = pdf.GetPage
+    assert_equal 1, page
+    pages = pdf.GetNumPages
+    assert_equal 1, pages
+
+    assert_raise(RuntimeError) {pdf.SetPage(0)} # Page under size
+  end
+
+  test "AddPage SetPage Over Error" do
+    pdf = TCPDF.new
+
+    page = pdf.GetPage
+    assert_equal 0, page
+    pages = pdf.GetNumPages
+    assert_equal 0, pages
+
+    pdf.SetPrintHeader(false)
+    pdf.AddPage
+    page = pdf.GetPage
+    assert_equal 1, page
+    pages = pdf.GetNumPages
+    assert_equal 1, pages
+
+    pdf.SetPrintFooter(false)
+    pdf.AddPage
+    page = pdf.GetPage
+    assert_equal 2, page
+    pages = pdf.GetNumPages
+    assert_equal 2, pages
+
+    pdf.SetPage(1)
+    page = pdf.GetPage
+    assert_equal 1, page
+
+    assert_raise(RuntimeError) {pdf.SetPage(3)} # Page over size
+  end
 end
