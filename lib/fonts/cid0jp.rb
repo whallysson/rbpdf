@@ -8,12 +8,12 @@ TCPDFFontDescriptor.define('cid0jp') do |font|
 
   require 'fonts/arialunicid0_cw.rb'
   include(ARIALUNICID0_CW)
-  font[:cw]=@@font_cw
+  font[:cw]=FONT_CW
 
   # Japanese
   require 'fonts/uni2cid_aj16.rb'
-  include(UNI2CID)
-  font[:cidinfo]={'Registry'=>'Adobe','Ordering'=>'Japan1','Supplement'=>5, 'uni2cid'=>@@uni2cid}
+  include(UNI2CID_AJ16)
+  font[:cidinfo]={'Registry'=>'Adobe','Ordering'=>'Japan1','Supplement'=>5, 'uni2cid'=>UNI2CID}
   font[:enc]='UniJIS-UTF16-H'
 
   font[:diff]=''

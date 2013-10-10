@@ -1,8 +1,8 @@
 # unicode to cid conversion table is from
 # ftp://ftp.oreilly.com/pub/examples/nutshell/cjkv/adobe/
 # cid2code.txt in ag15.tar.Z
-module UNI2CID
-@@uni2cid = {
+module UNI2CID_AC15
+UNI2CID = {
 32=>1,
 33=>2,
 34=>3,

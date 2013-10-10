@@ -8,12 +8,12 @@ TCPDFFontDescriptor.define('cid0ct') do |font|
 
   require 'fonts/arialunicid0_cw.rb'
   include(ARIALUNICID0_CW)
-  font[:cw]=@@font_cw
+  font[:cw]=FONT_CW
 
   # Traditional Chinese
   require 'fonts/uni2cid_ac15.rb'
-  include(UNI2CID)
-  font[:cidinfo]={'Registry'=>'Adobe','Ordering'=>'CNS1','Supplement'=>0, 'uni2cid'=>@@uni2cid}
+  include(UNI2CID_AC15)
+  font[:cidinfo]={'Registry'=>'Adobe','Ordering'=>'CNS1','Supplement'=>0, 'uni2cid'=>UNI2CID}
   font[:enc]='UniCNS-UTF16-H'
 
   font[:diff]=''

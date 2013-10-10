@@ -1,3 +1,4 @@
+# coding: ASCII-8BIT
 require 'test_helper'
 
 class TcpdfTest < ActiveSupport::TestCase
