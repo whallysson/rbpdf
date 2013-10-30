@@ -6612,6 +6612,7 @@ class TCPDF
 		curpos = 0
 		opentagpos = nil
 		this_method_vars = {}
+		undo = false
 		blocktags = ['blockquote','br','dd','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','ul']
 		@premode = false
 		if !@page_annots[@page].nil?
@@ -7390,15 +7391,20 @@ class TCPDF
 				end
 			end
 			key += 1
-			if dom[key] and dom[key]['tag'] and (dom[key]['opening'].nil? or !dom[key]['opening']) and dom[(dom[key]['parent'])]['attribute']['nobr'] and (dom[(dom[key]['parent'])]['attribute']['nobr'] == 'true') and (@start_transaction_page < @numpages)
-				# restore previous object
-				rollbackTransaction(true)
-				# restore previous values
-				this_method_vars.each {|vkey , vval|
-					eval("#{vkey} = vval") 
-				}
-				# add a page
-				AddPage()
+			if dom[key] and dom[key]['tag'] and (dom[key]['opening'].nil? or !dom[key]['opening']) and dom[(dom[key]['parent'])]['attribute']['nobr'] and (dom[(dom[key]['parent'])]['attribute']['nobr'] == 'true')
+				if !undo and (@start_transaction_page == (@numpages - 1))
+					# restore previous object
+					rollbackTransaction(true)
+					# restore previous values
+					this_method_vars.each {|vkey , vval|
+						eval("#{vkey} = vval") 
+					}
+					# add a page
+					AddPage()
+					undo = true # avoid infinite loop
+				else
+					undo = false
+				end
 			end
 		end # end for each :key
 		# align the last line
@@ -7821,7 +7827,7 @@ class TCPDF
 		html.gsub!(/<!--(.|\s)*?-->/m, '')
 
 		# remove all unsupported tags (the line below lists all supported tags)
-		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id))
+		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr))
 		html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
 		# replace some blank characters
 		html.gsub!(/<pre/, '<xre') # preserve pre tag
