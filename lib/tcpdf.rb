@@ -10149,7 +10149,7 @@ class TCPDF
 	# @author Olivier Plathey, Nicola Asuni
 	# @since 2.1.002 (2008-02-12)
 	#
-	def Bookmark(txt, level=0, y=-1, page='')
+	def Bookmark(txt, level=0, y=-1, page=nil)
 		if level < 0
 			level = 0
 		end
@@ -10165,7 +10165,7 @@ class TCPDF
 		if y == -1
 			y = GetY()
 		end
-		if page.empty?
+		if page.nil?
 			page = PageNo()
 		end
 		@outlines.push :t => txt, :l => level, :y => y, :p => page
@@ -10182,6 +10182,8 @@ class TCPDF
 		if nb == 0
 			return
 		end
+		# sort outlines by page and original position
+		@outlines = @outlines.sort_by {|x| x[:p]}
 		lru = []
 		level = 0
 		@outlines.each_with_index do |o, i|
