@@ -2807,8 +2807,8 @@ class TCPDF
 		if @rtl
 			# bidirectional algorithm (some chars may be changed affecting the line length)
 			s = utf8Bidi(UTF8StringToArray(txt), txt, @tmprtl)
-			#l = GetArrStringWidth(s) # This should not happen. not use.
-			xr = @w - x - GetArrStringWidth(s)
+			l = GetArrStringWidth(s)
+			xr = @w - x - l
 		else
 			xr = x
 		end
@@ -3170,10 +3170,10 @@ class TCPDF
 				xdx = @x + dx
 			end
 			if @underline
-				s << ' ' + dounderline(xdx, basefonty, txt)
+				s << ' ' + dounderlinew(xdx, basefonty, width)
 			end
 			if @linethrough
-				s << ' ' + dolinethrough(xdx, basefonty, txt)
+				s << ' ' + dolinethroughw(xdx, basefonty, width)
 			end
 			if (@color_flag)
 				s<<' Q';
@@ -5729,10 +5729,8 @@ class TCPDF
 	# @access protected
 	#
 	def dounderline(x, y, txt)
-		up = @current_font['up'];
-		ut = @current_font['ut'];
 		w = GetStringWidth(txt)
-		sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - (y - up / 1000.0 * @font_size)) * @k, w * @k, -ut / 1000.0 * @font_size_pt);
+		return dounderlinew(x, y, w)
 	end
 
 	#
@@ -5743,9 +5741,35 @@ class TCPDF
 	# @access protected
 	#
 	def dolinethrough(x, y, txt)
+		w = GetStringWidth(txt)
+		return dolinethroughw(x, y, w)
+	end
+
+	#
+	# Underline for rectangular text area.
+	# @param int :x X coordinate
+	# @param int :y Y coordinate
+	# @param int :w width to underline
+	# @access protected
+	# @since 4.8.008 (2009-09-29)
+	#
+	def dounderlinew(x, y, w)
 		up = @current_font['up']
 		ut = @current_font['ut']
-		w = GetStringWidth(txt)
+		return sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - (y - up / 1000.0 * @font_size)) * @k, w * @k, -ut / 1000.0 * @font_size_pt)
+	end
+
+	#
+	# Line through for rectangular text area.
+	# @param int :x X coordinate
+	# @param int :y Y coordinate
+	# @param string :txt text to linethrough
+	# @access protected
+	# @since 4.8.008 (2009-09-29)
+	#
+	def dolinethroughw(x, y, w)
+		up = @current_font['up']
+		ut = @current_font['ut']
 		sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - (y - (@font_size/2) - up / 1000.0 * @font_size)) * @k, w * @k, -ut / 1000.0 * @font_size_pt)
 	end
 
