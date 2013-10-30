@@ -71,8 +71,10 @@ module RFPDF
     # I can't see how to just list the number of channels with ImageMagick / rmagick
     if image.colorspace.to_s == "CMYKColorspace"
         out['channels'] = 4
-    elsif image.colorspace.to_s == "RGBColorspace"
+    elsif (image.colorspace.to_s == "RGBColorspace") and (image.image_type.to_s != "GrayscaleType")
       out['channels'] = 3
+    else
+      out['channels'] = 0
     end
 
     out['bits'] = image.channel_depth
