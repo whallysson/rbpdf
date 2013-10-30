@@ -3178,7 +3178,7 @@ class TCPDF
 			if (@color_flag)
 				s<<' Q';
 			end
-			if link && !link.empty?
+			if link && ((link.is_a?(String) and !link.empty?) or link.is_a? Fixnum)
 				Link(xdx, @y + ((h - @font_size) / 2), width, @font_size, link, txt.count(32.chr))
 			end
 		end
