@@ -313,6 +313,7 @@ class TCPDF
 		@epsmarker ||= 'x#!#EPS#!#x'
 		@transfmatrix ||= []
 		@transfmatrix_key ||= 0
+		@booklet ||= false
 		@feps ||= 0.005
 		@tagvspaces ||= []
 		@customlistindent ||= -1
@@ -842,22 +843,53 @@ class TCPDF
   alias_method :set_auto_page_break, :SetAutoPageBreak
 
 	#
-	# Defines the way the document is to be displayed by the viewer. The zoom level can be set: pages can be displayed entirely on screen, occupy the full width of the window, use real size, be scaled by a specific zooming factor or use viewer default (configured in the Preferences menu of Acrobat). The page layout can be specified too: single at once, continuous display, two columns or viewer default. By default, documents use the full width mode with continuous display.
+	# Defines the way the document is to be displayed by the viewer.
 	# @param mixed :zoom The zoom to use. It can be one of the following string values or a number indicating the zooming factor to use. <ul><li>fullpage: displays the entire page on screen </li><li>fullwidth: uses maximum width of window</li><li>real: uses real size (equivalent to 100% zoom)</li><li>default: uses viewer default mode</li></ul>
-	# @param string :layout The page layout. Possible values are:<ul><li>single: displays one page at once</li><li>continuous: displays pages continuously (default)</li><li>two: displays two pages on two columns</li><li>default: uses viewer default mode</li></ul>
+	# @param string :layout The page layout. Possible values are:<ul><li>SinglePage Display one page at a time</li><li>OneColumn Display the pages in one column</li><li>TwoColumnLeft Display the pages in two columns, with odd-numbered pages on the left</li><li>TwoColumnRight Display the pages in two columns, with odd-numbered pages on the right</li><li>TwoPageLeft (PDF 1.5) Display the pages two at a time, with odd-numbered pages on the left</li><li>TwoPageRight (PDF 1.5) Display the pages two at a time, with odd-numbered pages on the right</li></ul>
+	# @param string :mode A name object specifying how the document should be displayed when opened:<ul><li>UseNone Neither document outline nor thumbnail images visible</li><li>UseOutlines Document outline visible</li><li>UseThumbs Thumbnail images visible</li><li>FullScreen Full-screen mode, with no menu bar, window controls, or any other window visible</li><li>UseOC (PDF 1.5) Optional content group panel visible</li><li>UseAttachments (PDF 1.6) Attachments panel visible</li></ul>
+	# @access public
 	# @since 1.2
 	#
-	def SetDisplayMode(zoom, layout = 'continuous')
+	def SetDisplayMode(zoom, layout='SinglePage', mode='UseNone')
 		#Set display mode in viewer
 		if (zoom == 'fullpage' or zoom == 'fullwidth' or zoom == 'real' or zoom == 'default' or !zoom.is_a?(String))
 			@zoom_mode = zoom
 		else
-			Error("Incorrect zoom display mode: #{zoom}")
+			Error('Incorrect zoom display mode: ' + zoom)
 		end
-		if (layout == 'single' or layout == 'continuous' or layout == 'two' or layout == 'default')
-			@layout_mode = layout
+
+		case layout
+		when 'default', 'single', 'SinglePage'
+			@layout_mode = 'SinglePage'
+		when 'continuous', 'OneColumn'
+			@layout_mode = 'OneColumn'
+		when 'two', 'TwoColumnLeft'
+			@layout_mode = 'TwoColumnLeft'
+		when 'TwoColumnRight'
+			@layout_mode = 'TwoColumnRight'
+		when 'TwoPageLeft'
+			@layout_mode = 'TwoPageLeft'
+		when 'TwoPageRight'
+			@layout_mode = 'TwoPageRight'
 		else
-			Error("Incorrect layout display mode: #{layout}")
+			@layout_mode = 'SinglePage'
+		end
+
+		case mode
+		when 'UseNone'
+			@page_mode = 'UseNone'
+		when 'UseOutlines'
+			@page_mode = 'UseOutlines'
+		when 'UseThumbs'
+			@page_mode = 'UseThumbs'
+		when 'FullScreen'
+			@page_mode = 'FullScreen'
+		when 'UseOC'
+			@page_mode = 'UseOC'
+		when ''
+			@page_mode = 'UseAttachments'
+		else
+			@page_mode = 'UseNone'
 		end
 	end
   alias_method :set_display_mode, :SetDisplayMode
@@ -4060,8 +4092,14 @@ class TCPDF
 		end
 
 		# Check whether we need a new page first as this does not fit
+		prev_x = @x
 		if checkPageBreak(h, y)
 			y = GetY() + @c_margin
+			if @rtl
+				x += (prev_x - @x)
+			else
+				x += (@x - prev_x)
+			end
 		end
 		# set alignment
 		if @rtl
@@ -5561,12 +5599,11 @@ class TCPDF
 		elsif (!@zoom_mode.is_a?(String))
 			out('/OpenAction [3 0 R /XYZ null null ' + (@zoom_mode/100) + ']');
 		end
-		if (@layout_mode=='single')
-			out('/PageLayout /SinglePage');
-		elsif (@layout_mode=='continuous')
-			out('/PageLayout /OneColumn');
-		elsif (@layout_mode=='two')
-			out('/PageLayout /TwoColumnLeft');
+		if @layout_mode and !empty_string(@layout_mode)
+			out('/PageLayout /' + @layout_mode + '')
+		end
+		if @page_mode and !empty_string(@page_mode)
+			out('/PageMode /' + @page_mode)
 		end
 		if @outlines.size > 0
 			out('/Outlines ' + @outline_root.to_s + ' 0 R')
@@ -7880,7 +7917,7 @@ class TCPDF
 		html.gsub!(/<\/(td|th)>/, '<marker style="font-size:0"/></\\1>')
 		html.gsub!(/<\/table>([\s]*)<marker style="font-size:0"\/>/, '</table>')
 		html.gsub!(/<img/, ' <img')
-		html.gsub!(/<img([^\>]*)>/xi, '<img\\1><span></span>')
+		html.gsub!(/<img([^\>]*)>/xi, '<img\\1><span><marker style="font-size:0"/></span>')
 		html.gsub!(/<xre/, '<pre') # restore pre tag
 
 		# trim string
@@ -8850,6 +8887,24 @@ class TCPDF
 		if vsize > @htmlvspace
 			Ln(vsize - @htmlvspace, cell)
 			@htmlvspace = vsize
+		end
+	end
+
+	#
+	# Set the booklet mode for double-sided pages.
+	# @param boolean :booklet true set the booklet mode on, fals eotherwise.
+	# @param float :inner Inner page margin.
+	# @param float :outer Outer page margin.
+	# @access public
+	# @since 4.2.000 (2008-10-29)
+	#
+	def SetBooklet(booklet=true, inner=-1, outer=-1)
+		@booklet = booklet
+		if inner >= 0
+			@l_margin = inner
+		end
+		if outer >= 0
+			@r_margin = outer
 		end
 	end
 
