@@ -330,6 +330,8 @@ class TCPDF
 	@footer_margin ||= 10
 	@r_margin ||= 0
 	@l_margin ||= 0
+	@header_font ||= ['', '', 10]
+	@footer_font ||= ['', '', 8]
   	@print_header ||= true
   	@print_footer ||= true
 		@state ||= 0

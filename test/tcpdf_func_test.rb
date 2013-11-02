@@ -22,7 +22,6 @@ class TcpdfTest < ActiveSupport::TestCase
 
   test "Transaction test without diskcache" do
     pdf = TCPDF.new
-    pdf.SetPrintHeader(false)
     pdf.AddPage()
     page = pdf.GetPage
 
@@ -43,7 +42,6 @@ class TcpdfTest < ActiveSupport::TestCase
 
   test "Transaction test with diskcache" do
     pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
-    pdf.SetPrintHeader(false)
     pdf.AddPage()
     page = pdf.GetPage
 
