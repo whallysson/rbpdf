@@ -2633,6 +2633,7 @@ class TCPDF
 	#
 	# Defines the size of the current font.
 	# @param float :size The size (in points)
+	# @access public
 	# @since 1.0
 	# @see SetFont()
 	#
@@ -7562,6 +7563,46 @@ class TCPDF
 		dom = nil
 	end
   alias_method :write_html, :writeHTML
+
+	#
+	# Returns the current font size.
+	# @return current font size
+	# @access public
+	# @since 3.2.000 (2008-06-23)
+	#
+	def GetFontSize()
+		return @font_size
+	end
+
+	#
+	# Returns the current font size in points unit.
+	# @return current font size in points unit
+	# @access public
+	# @since 3.2.000 (2008-06-23)
+	#
+	def GetFontSizePt()
+		return @font_size_pt
+	end
+
+	#
+	# Returns the current font family name.
+	# @return string current font family name
+	# @access public
+	# @since 4.3.008 (2008-12-05)
+	#
+	def GetFontFamily()
+		return @font_family
+	end
+
+	#
+	# Returns the current font style.
+	# @return string current font style
+	# @access public
+	# @since 4.3.008 (2008-12-05)
+	#
+	def GetFontStyle()
+		return @font_style
+	end
 
 	#
 	# Prints a cell (rectangular area) with optional borders, background color and html text string. The upper-left corner of the cell corresponds to the current position. After the call, the current position moves to the right or to the next line.<br />
