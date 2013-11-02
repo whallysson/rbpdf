@@ -3360,7 +3360,7 @@ class TCPDF
 		end
 
 		# Get end-of-text Y position
-		currentY = GetY()
+		currentY = @y
 		# get latest page number
 		end_page = @page
 
@@ -3540,6 +3540,9 @@ class TCPDF
 	#
 	def Write(h, txt, link=nil, fill=0, align='', ln=false, stretch=0, firstline=false, firstblock=false, maxh=0)
 		txt.force_encoding('ASCII-8BIT') if txt.respond_to?(:force_encoding)
+		if txt.length == 0
+			txt = ' '
+		end
 
 		# remove carriage returns
 		s = txt.gsub("\r", '');
@@ -3567,16 +3570,6 @@ class TCPDF
 
 		# get the number of characters
 		nb = chars.size
-
-		# handle single space character
-		if (nb == 1) and (s =~ /\s/)
-			if @rtl
-				@x -= GetStringWidth(s)
-			else
-				@x += GetStringWidth(s)
-			end
-			return;
-		end
 
 		# replacement for SHY character (minus symbol)
 		shy_replacement = 45
@@ -3613,6 +3606,8 @@ class TCPDF
 		nl = 0   # number of lines
 		linebreak = false
 
+		pc = 0 # previous character
+		# for each character
 		while(i<nb)
 			if (maxh > 0) and (@y >= maxy)
 				firstline = true
@@ -3675,6 +3670,13 @@ class TCPDF
 					# check if is a SHY
 					if c == 173
 						shy = true
+						if pc == 45
+							tmp_shy_replacement_width = 0
+							tmp_shy_replacement_char = ''
+						else
+							tmp_shy_replacement_width = shy_replacement_width
+							tmp_shy_replacement_char = shy_replacement_char
+						end
 					else 
 						shy = false
 					end
@@ -3689,7 +3691,7 @@ class TCPDF
 					l += GetCharWidth(c)
 				end
 
-				if (l > wmax) or (shy and ((l + shy_replacement_width) > wmax))
+				if (l > wmax) or (shy and ((l + tmp_shy_replacement_width) > wmax))
 					# we have reached the end of column
 					if (sep == -1)
 						# check if the line was already started
@@ -3740,13 +3742,13 @@ class TCPDF
 						end
 						if shy
 							# add hypen (minus symbol) at the end of the line
-							shy_width = shy_replacement_width
+							shy_width = tmp_shy_replacement_width
 							if @rtl
-								shy_char_left = shy_replacement_char
+								shy_char_left = tmp_shy_replacement_char
 								shy_char_right = ''
 							else
 								shy_char_left = ''
-								shy_char_right = shy_replacement_char
+								shy_char_right = tmp_shy_replacement_char
 							end
 						else
 							shy_width = 0
@@ -3800,10 +3802,12 @@ class TCPDF
 					end
 				end
 			end
+			# save last character
+			pc = c
 			i +=1
 		end # end while i < nb
 
-		# print last row (if any)
+		# print last substring (if any)
 		if l > 0
 			case align
 			when 'J' , 'C'
