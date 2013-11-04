@@ -3057,6 +3057,7 @@ class TCPDF
 			end
 		end
 		s = '';
+		# fill and borders
 		if (fill == 1) or (border.to_i == 1)
 			if (fill == 1)
 				op = (border.to_i == 1) ? 'B' : 'f';
@@ -3143,38 +3144,10 @@ class TCPDF
 				stretch == 0
 			end
 
-			if (align == 'L' || align == 'left')
-				if @rtl
-					dx = w - width - @c_margin
-				else
-					dx = @c_margin
-				end
-			elsif (align == 'R' || align == 'right')
-				if @rtl
-					dx = @c_margin
-				else
-					dx = w - width - @c_margin
-				end
-			elsif (align=='C' || align == 'center')
-				dx = (w - width)/2;
-			elsif (align=='J' || align=='justify' || align=='justified')
-				if @rtl
-					dx = w - width - @c_margin
-				else
-					dx = @c_margin
-				end
-			else
-				dx = @c_margin;
-			end
 			if (@color_flag)
 				s << 'q ' + @text_color + ' ';
 			end
 			txt2 = escapetext(txt);
-			if @rtl
-				xdk = (@x - dx - width) * k
-			else
-				xdk = (@x + dx) * k
-			end
 			# Justification
 			if (align == 'J')
 				# count number of spaces
@@ -3192,18 +3165,37 @@ class TCPDF
 					spacewidth = ((w - width - (2 * @c_margin)) / (ns ? ns : 1)) * @k
 					rs << sprintf('BT %.3f Tw ET ', spacewidth)
 				end
+				width = w - (2 * @c_margin)
+			end
+			case align
+			when 'C'
+				dx = (w - width) / 2
+			when 'R'
+				if @rtl
+					dx = @c_margin
+				else
+					dx = w - width - @c_margin
+				end
+			else # 'L', 'J'
+				if @rtl
+					dx = w - width - @c_margin
+				else
+					dx = @c_margin
+				end
 			end
 
-			# calculate approximate position of the font base line
-			basefonty = @y + (h / 2) + (@font_size / 3)
-
-			# print text
-			s << sprintf('BT %.2f %.2f Td [(%s)] TJ ET', xdk, (@h - basefonty) * k, txt2)
 			if @rtl
 				xdx = @x - dx - width
 			else
 				xdx = @x + dx
 			end
+			xdk = xdx * k
+			# calculate approximate position of the font base line
+			basefonty = @y + (h / 2) + (@font_size / 3)
+
+			# print text
+			s << sprintf('BT %.2f %.2f Td [(%s)] TJ ET', xdk, (@h - basefonty) * k, txt2)
+
 			if @underline
 				s << ' ' + dounderlinew(xdx, basefonty, width)
 			end
@@ -5477,7 +5469,7 @@ class TCPDF
 			out('/Subtype /Image');
 			out('/Width ' + info['w'].to_s);
 			out('/Height ' + info['h'].to_s);
-			if info['masked']
+			if info.key?('masked')
 				out('/SMask ' + (@n - 1).to_s + ' 0 R')
 			end
 			if (info['cs']=='Indexed')
@@ -6965,6 +6957,7 @@ class TCPDF
 							if isRTLTextDir()
 								t_x = @l_margin - @endlinex
 							end
+							one_space_width = GetStringWidth(32.chr)
 							no = 0
 							ns = 0
 
@@ -6989,15 +6982,20 @@ class TCPDF
 									else
 										tvalue = lnstring[kk][0]
 									end
-									# count spaces on line
-									no += lnstring[kk][0].count(32.chr)
-									ns += tvalue.count(32.chr)
+									# store number of spaces on the strings
+									lnstring[kk][1] = lnstring[kk][0].count(32.chr)
+									lnstring[kk][2] = tvalue.count(32.chr)
+									# count total spaces on line
+									no += lnstring[kk][1]
+									ns += lnstring[kk][2]
+									lnstring[kk][3] = no
+									lnstring[kk][4] = ns
 								end
 								if isRTLTextDir()
-									t_x = @l_margin - @endlinex - ((no - ns - 1) * GetStringWidth(32.chr))
+									t_x = @l_margin - @endlinex - ((no - ns - 1) * one_space_width)
 								end
 								# calculate additional space to add to each space
-								spacelen = GetStringWidth(32.chr)
+								spacelen = one_space_width
 								spacewidth = ((tw - linew + ((no - ns) * spacelen)) / (ns ? ns : 1)) * @k
 						 		spacewidthu = -1000 * (tw - linew + (no * spacelen)) / (ns ? ns : 1) / @font_size
 								nsmax = ns
@@ -7006,6 +7004,10 @@ class TCPDF
 								offset = 0
 								strcount = 0
 								prev_epsposbeg = 0
+								textpos = 0;
+								if isRTLTextDir()
+									textpos = @w_pt
+								end
 								while pmid_offset = pmid.index(/([0-9\.\+\-]*)[\s](Td|cm|m|l|c|re)[\s]/x, offset)
 									pmid_data = $1
 									pmid_mark = $2
@@ -7052,6 +7054,7 @@ class TCPDF
 										# get current X position
 										pmid =~ /([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x
 										currentxpos = $1.to_i
+										textpos = currentxpos
 										if (strcount <= maxkk) and (pmid_mark == 'Td')
 											if strcount == maxkk
 												if isRTLTextDir()
@@ -7071,17 +7074,43 @@ class TCPDF
 										# justify block
 										pmid.sub!(/([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x, "" + sprintf("%.2f", $1.to_f + spacew) + " " + $2 + " x*#!#*x" + $3 + $4)
 									when 're'
-										# get current X position
-										pmid =~ /([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x
-										currentxpos = $1.to_i
 										# justify block
-										pmid.sub!(/([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x, "" + sprintf("%.2f", $1.to_f + spacew) + " " + $2 + " " + $3 + " " + $4 + " x*#!#*x" + $5 + $6)
+										pmid =~ /([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s](#{pmid_data})[\s](re)([\s]*)/x
+										currentxpos = $1.to_i
+										x_diff = 0
+										w_diff = 0
+										if isRTLTextDir() # RTL
+											if currentxpos < textpos
+												x_diff = spacewidth * (nsmax - lnstring[strcount][4])
+												w_diff = spacewidth * lnstring[strcount][2]
+											else
+												if strcount > 0
+													x_diff = spacewidth * (nsmax - lnstring[strcount - 1][4])
+													w_diff = spacewidth * lnstring[strcount - 1][2]
+												end
+											end
+										else # LTR
+											if currentxpos > textpos
+												if strcount > 0
+													x_diff = spacewidth * lnstring[strcount - 1][3]
+												end
+												w_diff = spacewidth * lnstring[strcount][2]
+											else
+												if strcount > 1
+													x_diff = spacewidth * lnstring[strcount - 2][3]
+												end
+												if strcount > 0
+													w_diff = spacewidth * lnstring[strcount - 1][2]
+												end
+											end
+										end
+										pmid.sub!(/(#{$1})[\s](#{$2})[\s](#{$3})[\s](#{pmid_data})[\s](re)([\s]*)/x, "" + sprintf("%.2f", $1.to_f + x_diff) + " " + $2 + " " + sprintf("%.2f", $3.to_f + w_diff) + " " + $4 + " x*#!#*x" + $5 + $6)
 									when 'c'
 										# get current X position
-										pmid =~ /([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x
+										pmid =~ /([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s](#{pmid_data})[\s](c)([\s]*)/x
 										currentxpos = $1.to_i
 										# justify block
-										pmid.sub!(/([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x, "" + sprintf("%.3f", $1.to_f + spacew) + " " + $2 + " " +  sprintf("%.3f", $3.to_f + spacew) + " " + $4 + " " + sprintf("%.3f", $5.to_f + spacew) + " " + $6 + " x*#!#*x" + $7 + $8)
+										pmid.sub!(/(#{$1})[\s](#{$2})[\s](#{$3})[\s](#{$4})[\s](${5})[\s](#{pmid_data})[\s](c)([\s]*)/x, "" + sprintf("%.3f", $1.to_f + spacew) + " " + $2 + " " +  sprintf("%.3f", $3.to_f + spacew) + " " + $4 + " " + sprintf("%.3f", $5.to_f + spacew) + " " + $6 + " x*#!#*x" + $7 + $8)
 									end
 									# shift the annotations and links
 									if !@page_annots[@page].nil?
