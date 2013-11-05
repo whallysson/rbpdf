@@ -10396,6 +10396,144 @@ class TCPDF
 	end
 
 	#
+	# Remove the specified page.
+	# @param int :page page to remove
+	# @return true in case of success, false in case of error.
+	# @access public
+	# @since 4.6.004 (2009-04-23)
+	#
+	def deletePage(page)
+		if page > @numpages
+			return false
+		end
+		# delete current page
+		@pages[page] = nil
+		@pagedim[page] = nil
+		@pagelen[page] = nil
+		@intmrk[page] = nil
+		if @footerpos[page]
+			@footerpos[page] = nil
+		end
+		if @footerlen[page]
+			@footerlen[page] = nil
+		end
+		if @transfmrk[page]
+			@transfmrk[page] = nil
+		end
+		if @page_annots[page]
+			@page_annots[page] = nil
+		end
+		if @newpagegroup[page]
+			@newpagegroup[page] = nil
+		end
+		if @pageopen[page]
+			@pageopen[page] = nil
+		end
+		# update remaining pages
+		page.upto(@numpages - 1) do |i|
+			j = i + 1
+			# shift pages
+			@pages[i] = @pages[j]
+			@pagedim[i] = @pagedim[j]
+			@pagelen[i] = @pagelen[j]
+			@intmrk[i] = @intmrk[j]
+			if @footerpos[j]
+				@footerpos[i] = @footerpos[j]
+			elsif @footerpos[i]
+				@footerpos[i] = nil
+			end
+			if @footerlen[j]
+				@footerlen[i] = @footerlen[j]
+			elsif @footerlen[i]
+				@footerlen[i] = nil
+			end
+			if @transfmrk[j]
+				@transfmrk[i] = @transfmrk[j]
+			elsif @transfmrk[i]
+				@transfmrk[i] = nil
+			end
+			if @page_annots[j]
+				@page_annots[i] = page_annots[j]
+			elsif @page_annots[i]
+				@page_annots[i] = nil
+			end
+			if @newpagegroup[j]
+				@newpagegroup[i] = @newpagegroup[j]
+			elsif @newpagegroup[i]
+				@newpagegroup[i] = nil
+			end
+			if @pageopen[j]
+				@pageopen[i] = @pageopen[j]
+			elsif @pageopen[i]
+				@pageopen[i] = nil
+			end
+		end
+		# remove last page
+		@pages[@numpages] = nil
+		@pagedim[@numpages] = nil
+		@pagelen[@numpages] = nil
+		@intmrk[@numpages] = nil
+		if @footerpos[@numpages]
+			@footerpos[@numpages] = nil
+		end
+		if @footerlen[@numpages]
+			@footerlen[@numpages] = nil
+		end
+		if @transfmrk[@numpages]
+			@transfmrk[@numpages] = nil
+		end
+		if @page_annots[@numpages]
+			@page_annots[@numpages] = nil
+		end
+		if @newpagegroup[@numpages]
+			@newpagegroup[@numpages] = nil
+		end
+		if @pageopen[@numpages]
+			@pageopen[@numpages] = nil
+		end
+		@numpages -= 1
+		@page = @numpages
+		# adjust outlines
+		tmpoutlines = @outlines
+		tmpoutlines.each_with_index do |outline, key|
+			if outline[:p] > page
+				@outlines[key][:p] = outline[:p] - 1
+			elsif outline[:p] == page
+				@outlines[key] = nil
+			end
+		end
+		# adjust links
+		tmplinks = @links
+		tmplinks.each_with_index do |link, key|
+			if link[0] > page
+				@links[key][0] = link[0] - 1
+			elsif link[0] == page
+				@links[key] = nil
+			end
+		end
+
+		#### PDF javascript code does not implement, yet. ###
+		# adjust javascript
+		#tmpjavascript = @javascript
+		#jpage = page
+		#tmpjavascript =~ /this\.addField\(\'([^\']*)\',\'([^\']*)\',([0-9]+)/
+		#pagenum = $3.to_i + 1
+		#if pagenum >= jpage
+		#	newpage = pagenum - 1
+		#elsif pagenum == jpage
+		#	newpage = 1
+		#else
+		#	newpage = pagenum
+		#end
+		#newpage -= 1
+		#@javascript = "this.addField(\'" + $1 + "\',\'" + $2 + "\'," + newpage + ""
+
+		# return to last page
+		LastPage(true)
+		return true
+	end
+
+	#
 	# Stores a copy of the current TCPDF object used for undo operation.
 	# @access public
 	# @since 4.5.029 (2009-03-19)
