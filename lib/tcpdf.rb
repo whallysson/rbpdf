@@ -4318,6 +4318,7 @@ class TCPDF
 	def Output(name='', dest='')
 		#Output PDF to some destination
 		#Finish document if necessary
+		LastPage()
 		if (@state < 3)
 			Close();
 		end
@@ -5559,29 +5560,44 @@ class TCPDF
 	end
 	
 	#
-	# Adds some Metadata information
-	# (see Chapter 10.2 of PDF Reference)
+	# Adds some Metadata information (Document Information Dictionary)
+	# (see Chapter 14.3.3 Document Information Dictionary of PDF32000_2008.pdf Reference)
 	# @access protected
 	#
 	def putinfo()
 		if !empty_string(@title)
+			# The document's title.
 			out('/Title ' + textstring(@title));
 		end
-		if !empty_string(@subject)
-			out('/Subject ' + textstring(@subject));
-		end
 		if !empty_string(@author)
+			# The name of the person who created the document.
 			out('/Author ' + textstring(@author));
 		end
+		if !empty_string(@subject)
+			# The subject of the document.
+			out('/Subject ' + textstring(@subject))
+		end
 		if !empty_string(@keywords)
+			# Keywords associated with the document.
 			out('/Keywords ' + textstring(@keywords));
 		end
 		if !empty_string(@creator)
+			# If the document was converted to PDF from another format, the name of the conforming product that created the original document from which it was converted.
 			out('/Creator ' + textstring(@creator));
 		end
-		out('/Producer ' + textstring(PDF_PRODUCER))
+		if defined?(PDF_PRODUCER)
+			# If the document was converted to PDF from another format, the name of the conforming product that converted it to PDF.
+			out('/Producer ' + textstring(PDF_PRODUCER))
+		else
+			# default producer
+			out('/Producer ' + textstring('TCPDF'))
+		end
+		# The date and time the document was created, in human-readable form
 		out('/CreationDate ' + datestring())
+		# The date and time the document was most recently modified, in human-readable form
 		out('/ModDate ' + datestring())
+		# A name object indicating whether the document has been modified to include trapping information
+		# out('/Trapped /False')
 	end
 
 	#
@@ -6726,48 +6742,57 @@ class TCPDF
 		maxel = dom.size
 		key = 0
 		while key < maxel
-			if dom[key]['tag'] or (key == 0)
-				if dom[key]['tag'] and dom[key]['opening'] and dom[key]['attribute']['nobr'] and (dom[key]['attribute']['nobr'] == 'true')
-					if dom[(dom[key]['parent'])]['attribute']['nobr'] and (dom[(dom[key]['parent'])]['attribute']['nobr'] == 'true')
-						dom[key]['attribute']['nobr'] = false
-					else
-						# store current object
-						startTransaction()
-						# save this method vars
-						this_method_vars['html'] = html
-						this_method_vars['ln'] = ln
-						this_method_vars['fill'] = fill
-						this_method_vars['reseth'] = reseth
-						this_method_vars['cell'] = cell
-						this_method_vars['align'] = align
-						this_method_vars['gvars'] = gvars
-						this_method_vars['prevPage'] = prevPage
-						this_method_vars['prevlMargin'] = prevlMargin
-						this_method_vars['prevrMargin'] = prevrMargin
-						this_method_vars['curfontname'] = curfontname
-						this_method_vars['curfontstyle'] = curfontstyle
-						this_method_vars['curfontsize'] = curfontsize
-						this_method_vars['minstartliney'] = minstartliney
-						this_method_vars['yshift'] = yshift
-						this_method_vars['startlinepage'] = startlinepage
-						this_method_vars['startlinepos'] = startlinepos
-						this_method_vars['startlinex'] = startlinex
-						this_method_vars['startliney'] = startliney
-						this_method_vars['newline'] = newline
-						this_method_vars['loop'] = loop
-						this_method_vars['curpos'] = curpos
-						this_method_vars['pask'] = pask
-						this_method_vars['lalign'] = lalign
-						this_method_vars['plalign'] = plalign
-						this_method_vars['w'] = w
-						this_method_vars['prev_listnum'] = prev_listnum
-						this_method_vars['prev_listordered'] = prev_listordered
-						this_method_vars['prev_listcount'] = prev_listcount
-						this_method_vars['prev_lispacer'] = prev_lispacer
-						this_method_vars['key'] = key
-						this_method_vars['dom'] = dom
-					end
+			if dom[key]['tag'] and dom[key]['attribute'] and dom[key]['attribute']['pagebreak']
+				# check for pagebreak 
+				if (dom[key]['attribute']['pagebreak'] == 'true') or (dom[key]['attribute']['pagebreak'] == 'left') or (dom[key]['attribute']['pagebreak'] == 'right')
+					AddPage()
 				end
+				if ((dom[key]['attribute']['pagebreak'] == 'left') and ((!@rtl and (@page % 2 == 0)) or (@rtl and (@page % 2 != 0)))) or ((dom[key]['attribute']['pagebreak'] == 'right') and ((!@rtl and (@page % 2 != 0)) or (@rtl and (@page % 2 == 0))))
+					AddPage()
+				end
+			end
+			if dom[key]['tag'] and dom[key]['opening'] and dom[key]['attribute']['nobr'] and (dom[key]['attribute']['nobr'] == 'true')
+				if dom[(dom[key]['parent'])]['attribute']['nobr'] and (dom[(dom[key]['parent'])]['attribute']['nobr'] == 'true')
+					dom[key]['attribute']['nobr'] = false
+				else
+					# store current object
+					startTransaction()
+					# save this method vars
+					this_method_vars['html'] = html
+					this_method_vars['ln'] = ln
+					this_method_vars['fill'] = fill
+					this_method_vars['reseth'] = reseth
+					this_method_vars['cell'] = cell
+					this_method_vars['align'] = align
+					this_method_vars['gvars'] = gvars
+					this_method_vars['prevPage'] = prevPage
+					this_method_vars['prevlMargin'] = prevlMargin
+					this_method_vars['prevrMargin'] = prevrMargin
+					this_method_vars['curfontname'] = curfontname
+					this_method_vars['curfontstyle'] = curfontstyle
+					this_method_vars['curfontsize'] = curfontsize
+					this_method_vars['minstartliney'] = minstartliney
+					this_method_vars['yshift'] = yshift
+					this_method_vars['startlinepage'] = startlinepage
+					this_method_vars['startlinepos'] = startlinepos
+					this_method_vars['startlinex'] = startlinex
+					this_method_vars['startliney'] = startliney
+					this_method_vars['newline'] = newline
+					this_method_vars['loop'] = loop
+					this_method_vars['curpos'] = curpos
+					this_method_vars['pask'] = pask
+					this_method_vars['lalign'] = lalign
+					this_method_vars['plalign'] = plalign
+					this_method_vars['w'] = w
+					this_method_vars['prev_listnum'] = prev_listnum
+					this_method_vars['prev_listordered'] = prev_listordered
+					this_method_vars['prev_listcount'] = prev_listcount
+					this_method_vars['prev_lispacer'] = prev_lispacer
+					this_method_vars['key'] = key
+					this_method_vars['dom'] = dom
+				end
+			end
+			if dom[key]['tag'] or (key == 0)
 				if ((dom[key]['value'] == 'table') or (dom[key]['value'] == 'tr')) and !dom[key]['align'].nil?
 					dom[key]['align'] = @rtl ? 'R' : 'L'
 				end
@@ -7966,6 +7991,7 @@ class TCPDF
 		html.gsub!(/<!--(.|\s)*?-->/m, '')
 
 		# remove all unsupported tags (the line below lists all supported tags)
+		::ActionView::Base.sanitized_allowed_css_properties = ["page-break-before", "page-break-after", "page-break-inside"]
 		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr))
 		html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
 		# replace some blank characters
@@ -8236,6 +8262,31 @@ class TCPDF
 						# check for border attribute
 						if !dom[key]['style']['border'].nil?
 							dom[key]['attribute']['border'] = dom[key]['style']['border']
+						end
+
+						# page-break-inside
+						if dom[key]['style']['page-break-inside'] and (dom[key]['style']['page-break-inside'] == 'avoid')
+							dom[key]['attribute']['nobr'] = 'true'
+						end
+						# page-break-before
+						if dom[key]['style']['page-break-before']
+							if dom[key]['style']['page-break-before'] == 'always'
+								dom[key]['attribute']['pagebreak'] = 'true'
+							elsif dom[key]['style']['page-break-before'] == 'left'
+								dom[key]['attribute']['pagebreak'] = 'left'
+							elsif dom[key]['style']['page-break-before'] == 'right'
+								dom[key]['attribute']['pagebreak'] = 'right'
+							end
+						end
+						# page-break-after
+						if dom[key]['style']['page-break-after']
+							if dom[key]['style']['page-break-after'] == 'always'
+								dom[key]['attribute']['pagebreakafter'] = 'true'
+							elsif dom[key]['style']['page-break-after'] == 'left'
+								dom[key]['attribute']['pagebreakafter'] = 'left'
+							elsif dom[key]['style']['page-break-after'] == 'right'
+								dom[key]['attribute']['pagebreakafter'] = 'right'
+							end
 						end
 					end
 					# check for font tag
@@ -8638,6 +8689,17 @@ class TCPDF
 		when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
 			addHTMLVertSpace(1, cell, (tag['fontsize'] * 1.5) / @k, firstorlast, tag['value'], false)
 		end
+
+		if dom[key]['self'] and dom[key]['attribute']['pagebreakafter']
+			pba = dom[key]['attribute']['pagebreakafter']
+			# check for pagebreak 
+			if (pba == 'true') or (pba == 'left') or (pba == 'right')
+				AddPage()
+			end
+			if ((pba == 'left') and ((!@rtl and (@page % 2 == 0)) or (@rtl and (@page % 2 != 0)))) or ((pba == 'right') and ((!@rtl and (@page % 2 != 0)) or (@rtl and (@page % 2 == 0))))
+				AddPage()
+			end
+		end
 	end
   
 	#
@@ -8716,8 +8778,8 @@ class TCPDF
 					in_table_head = true
 				end
 
-				# draw borders
 				table_el = parent
+				# draw borders
 				if (!table_el['attribute']['border'].nil? and (table_el['attribute']['border'].to_i > 0)) or (!table_el['style'].nil? and !table_el['style']['border'].nil? and (table_el['style']['border'].to_i > 0))
 					border = 1
 				else
@@ -8867,6 +8929,10 @@ class TCPDF
 					end
 					@lasth = @font_size * @cell_height_ratio
 					if !@thead_margins['top'].nil?
+						if (@thead_margins['top'] == @t_margin) and (@page == (@numpages - 1))
+							# remove last page containing only THEAD
+							deletePage(@numpages)
+						end
 						# restore top margin
 						@t_margin = @thead_margins['top']
 						@pagedim[@page]['tm'] = @t_margin
@@ -8930,6 +8996,16 @@ class TCPDF
 				addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], true)
 			when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
 				addHTMLVertSpace(1, cell, (parent['fontsize'] * 1.5) / @k, firstorlast, tag['value'], true)
+		end
+		if dom[(dom[key]['parent'])]['attribute']['pagebreakafter']
+			pba = dom[(dom[key]['parent'])]['attribute']['pagebreakafter']
+			# check for pagebreak 
+			if (pba == 'true') or (pba == 'left') or (pba == 'right')
+				AddPage()
+			end
+			if ((pba == 'left') and ((!@rtl and (@page % 2 == 0)) or (@rtl and (@page % 2 != 0)))) or ((pba == 'right') and ((!@rtl and (@page % 2 != 0)) or (@rtl and (@page % 2 == 0))))
+				AddPage()
+			end
 		end
 		@tmprtl = false
 	end

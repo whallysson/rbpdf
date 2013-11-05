@@ -200,4 +200,41 @@ class TcpdfTest < ActiveSupport::TestCase
 
     assert_raise(RuntimeError) {pdf.SetPage(3)} # Page over size
   end
+
+  test "deletePage test" do
+    pdf = TCPDF.new
+
+    pdf.AddPage
+    pdf.Write(0, "Page 1")
+
+    page = pdf.GetPage
+    assert_equal 1, page
+    pages = pdf.GetNumPages
+    assert_equal 1, pages
+
+    contents1 = pdf.getPageBuffer(1)
+
+    pdf.AddPage
+    pdf.Write(0, "Page 2")
+
+    page = pdf.GetPage
+    assert_equal 2, page
+    pages = pdf.GetNumPages
+    assert_equal 2, pages
+
+    contents2 = pdf.getPageBuffer(2)
+
+    pdf.deletePage(1)
+    page = pdf.GetPage
+    assert_equal 1, page
+    pages = pdf.GetNumPages
+    assert_equal 1, pages
+
+    contents3 = pdf.getPageBuffer(1)
+    assert_not_equal contents3, contents1
+    assert_equal contents3, contents2
+
+    contents4 = pdf.getPageBuffer(2)
+    assert_equal contents4, false
+  end
 end
