@@ -3992,13 +3992,13 @@ class TCPDF
 	# @param string :type Image format. Possible values are (case insensitive): JPG, JPEG, PNG. If not specified, the type is inferred from the file extension.
 	# @param mixed :link URL or identifier returned by AddLink().
 	# @param string :align Indicates the alignment of the pointer next to image insertion relative to image height. The value can be:<ul><li>T: top-right for LTR or top-left for RTL</li><li>M: middle-right for LTR or middle-left for RTL</li><li>B: bottom-right for LTR or bottom-left for RTL</li><li>N: next line</li></ul>
-	# @param boolean :resize If true resize (reduce) the image to fit :w and :h (requires RMagick library).
+	# @param mixed :resize If true resize (reduce) the image to fit :w and :h (requires RMagick library); if false do not resize; if 2 force resize in all cases (upscaling and downscaling).
 	# @param int :dpi dot-per-inch resolution used on resize
 	# @param string :palign Allows to center or align the image on the current line. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
 	# @param boolean :ismask true if this image is a mask, false otherwise
 	# @param mixed :imgmask image object returned by this function or false
 	# @param mixed :border Indicates if borders must be drawn around the image. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
-	# @param boolean :fitbox If true scale image dimensions proportionally to fit within the ($w, $h) box.
+	# @param boolean :fitbox If true scale image dimensions proportionally to fit within the (:w, :h) box.
 	# @param boolean :hidden if true do not display the image.
 	# @return image information
 	# @access public
@@ -4039,42 +4039,55 @@ class TCPDF
 		neww = (w * @k * dpi / @dpi).round
 		newh = (h * @k * dpi / @dpi).round
 		# check if resize is necessary (resize is used only to reduce the image)
-		if (neww * newh) >= (pixw * pixh)
+		newsize = neww * newh
+		pixsize = pixw * pixh
+		if resize == 2
+			resize = true
+		elsif newsize >= pixsize
 			resize = false
 		end
 
 		# check if image has been already added on document
-		if !@imagekeys.include?(file)
+		newimage = true
+		if @imagekeys.include?(file)
+			newimage = false;
+			# get existing image data
+			info = getImageBuffer(file)
+			# check if the newer image is larger
+			oldsize = info['w'] * info['h']
+			if ((oldsize < newsize) and resize) or ((oldsize < pixsize) and !resize)
+				newimage = true
+			end
+		end
+		if newimage
 			#First use of image, get info
 			if (type == '')
 				type = getImageFileType(file)
 			end
-			if (type == 'jpeg')
-				info=parsejpeg(file)
-			elsif (type == 'png')
-				info=parsepng(file);
-			elsif (type == 'gif')
-				tmpFile = imageToPNG(file)
-				info=parsepng(tmpFile.path)
-                                tmpFile.delete
-			else
-				#Allow for additional formats
-				mtd='parse' + type;
-				if (!self.respond_to?(mtd))
-					Error('Unsupported image type: ' + type);
+
+			info = false
+			if !resize or !Object.const_defined?(:Magick)
+				if (type == 'jpeg')
+					info=parsejpeg(file)
+				elsif (type == 'png')
+					info=parsepng(file);
+				elsif (type == 'gif')
+					tmpFile = imageToPNG(file)
+					info=parsepng(tmpFile.path)
+					tmpFile.delete
+				else
+					#Allow for additional formats
+					mtd='parse' + type;
+					if (!self.respond_to?(mtd))
+						Error('Unsupported image type: ' + type);
+					end
+					info=send(mtd, file);
 				end
-				info=send(mtd, file);
+				# not use
+				#if info == 'pngalpha'
+				#	return ImagePngAlpha(file, x, y, w, h, 'PNG', link, align, resize, dpi, palign)
+				#end
 			end
-
-			## not use ##
-			## Specific image handlers
-			#mtd = 'parse' + type
-			#info = false
-			#if !self.respond_to?(mtd)
-			#	# TCPDF image functions
-			#	info = send(mtd, file)
-			#end
-
 			if !info
 				if Object.const_defined?(:Magick)
 					# RMagick library
@@ -4104,14 +4117,15 @@ class TCPDF
 				# force grayscale
 				info['cs'] = 'DeviceGray'
 			end
-			info['i'] = @numimages + 1
+			info['i'] = @numimages
+			if !@imagekeys.include?(file)
+				info['i'] += 1
+			end
 			if imgmask != false
 				info['masked'] = imgmask
 			end
 			# add image to document
 			setImageBuffer(file, info)
-		else
-			info = getImageBuffer(file)
 		end
 
 		# Check whether we need a new page first as this does not fit
@@ -6549,6 +6563,19 @@ class TCPDF
 		end
 	end
 	alias_method :set_language_array, :SetLanguageArray
+
+	#
+	# Set the default JPEG compression quality (1-100)
+	# @param int :quality JPEG quality, integer between 1 and 100
+	# @access public
+	# @since 3.0.000 (2008-03-27)
+	#
+	def SetJPEGQuality(quality)
+		if (quality < 1) or (quality > 100)
+			quality = 75
+		end
+		@jpeg_quality = quality
+	end
 
 	#
 	# Set the height of cell repect font height.
@@ -9550,12 +9577,12 @@ class TCPDF
 		end
 		if !@imagekeys.include?(image)
 			@imagekeys.push image
+			@numimages += 1
 		end
-		@numimages += 1
 	end
 
 	#
-	# Set image buffer content.
+	# Set image buffer content for a specified sub-key.
 	# @param string :image image key
 	# @param string :key image sub-key
 	# @param hash :data image data
