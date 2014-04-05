@@ -2795,7 +2795,7 @@ class TCPDF
 		end
 		@page_annots[page] ||= []
 		@page_annots[page].push 'x' => x, 'y' => y, 'w' => w, 'h' => h, 'txt' => text, 'opt' => opt, 'numspaces' => spaces
-		if (opt['Subtype'] == 'FileAttachment') and !empty_string(opt['FS']) and File.exist?(opt['FS']) and @embeddedfiles[File.basename(opt['FS'])].nil?
+		if ((opt['Subtype'] == 'FileAttachment') or (opt['Subtype'] == 'Sound')) and !empty_string(opt['FS']) and File.exist?(opt['FS']) and @embeddedfiles[File.basename(opt['FS'])].nil?
 			@embeddedfiles[File.basename(opt['FS'])] = {'file' => opt['FS'], 'n' => (@embeddedfiles.length + @embedded_start_obj_id)}
 		end
 		# Add widgets annotation's icons
@@ -4667,7 +4667,7 @@ class TCPDF
 
 	#
 	# Output annotations objects for all pages.
-	# !!! THIS FUNCTION IS NOT YET COMPLETED !!!
+	# !!! THIS METHOD IS NOT YET COMPLETED !!!
 	# See section 12.5 of PDF 32000_2008 reference.
 	# @access protected
 	# @author Nicola Asuni
@@ -4980,15 +4980,14 @@ class TCPDF
 							end	
 						end	
 					when 'sound'
-						if pl['opt']['sound'].nil?
+						if pl['opt']['fs'].nil?
 							break
 						end
-						filename = File.basename(pl['opt']['sound'])
+						filename = File.basename(pl['opt']['fs'])
 						if !@embeddedfiles[filename]['n'].nil?
-							annots << ' /Sound <</Type /Sound'
 							# ... TO BE COMPLETED ...
 							# /R /C /B /E /CO /CP
-							# annots << ' /F ' + datastring(filename) + ' /EF <</F ' + @embeddedfiles[filename]['n'] + ' 0 R>> >>'
+							annots << ' /Sound <</Type /Filespec /F ' + datastring(filename) + ' /EF <</F ' + @embeddedfiles[filename]['n'] + ' 0 R>> >>'
 							iconsapp = ['Speaker', 'Mic']
 							if !pl['opt']['name'].nil? and iconsapp.include?(pl['opt']['name'])
 								annots << ' /Name /' + pl['opt']['name']
