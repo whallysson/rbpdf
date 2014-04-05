@@ -6944,7 +6944,7 @@ class TCPDF
 								end
 								pask = next_pask
 							end
-							if (dom[key]['value'] != 'td') and (dom[key]['value'] != 'th')
+							if (dom[key]['value'] != 'tr') and (dom[key]['value'] != 'td') and (dom[key]['value'] != 'th')
 								@y += (curfontsize - fontsize) / @k
 							end
 							minstartliney = [@y, minstartliney].min
@@ -8852,7 +8852,7 @@ class TCPDF
 						# update row-spanned cells
 						if !dom[(dom[key]['parent'])]['rowspans'].nil?
 							dom[(dom[key]['parent'])]['rowspans'].each_with_index { |trwsp, k|
-								if (trwsp['trid'] == trkey) and (trwsp['mrowspan'] == 1) and (trwsp['endpage'] == dom[prevtrkey]['endpage'])
+								if (trwsp['trid'] == trkey) and (trwsp['mrowspan'] > 1) and (trwsp['endpage'] == dom[prevtrkey]['endpage'])
 									dom[(dom[key]['parent'])]['rowspans'][k]['endy'] = pgendy
 									dom[(dom[key]['parent'])]['rowspans'][k]['mrowspan'] = -1
 								end
