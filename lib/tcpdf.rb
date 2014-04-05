@@ -1985,6 +1985,8 @@ class TCPDF
 			prev_FontSizePt = @font_size_pt
 			SetFont(fontname, fontstyle, fontsize)
 		end
+		# convert UTF-8 array to Latin1 if required
+		sa = UTF8ArrToLatin1(sa)
 		w = 0
 		sa.each do |char|
 			w += GetCharWidth(char)
@@ -3124,8 +3126,9 @@ class TCPDF
 			end
 		end
 		if (txt != '')
+			txt2 = escapetext(txt)
 			# text lenght
-			width = GetStringWidth(txt);
+			width = txwidth = GetStringWidth(txt)
 			# ratio between cell lenght and text lenght
 			if width <= 0
 				ratio = 1
@@ -3157,7 +3160,6 @@ class TCPDF
 			if (@color_flag)
 				s << 'q ' + @text_color + ' ';
 			end
-			txt2 = escapetext(txt);
 			# Justification
 			if (align == 'J')
 				# count number of spaces
@@ -3171,8 +3173,9 @@ class TCPDF
 					txt2 = txt2.gsub(0.chr + ' ', ') ' + spacewidth.to_s + ' (')
 				else
 					# get string width
-					width = GetStringWidth(txt)
+					width = txwidth
 					spacewidth = ((w - width - (2 * @c_margin)) / (ns ? ns : 1)) * @k
+					# set word spacing
 					rs << sprintf('BT %.3f Tw ET ', spacewidth)
 				end
 				width = w - (2 * @c_margin)
@@ -6438,6 +6441,34 @@ class TCPDF
 			end
 		}
 		return outstr
+	end
+
+	#
+	# Converts UTF-8 characters array to Latin1<br>
+	# @param array :unicode array containing UTF-8 unicode values
+	# @return array
+	# @author Nicola Asuni
+	# @access protected
+	# @since 4.8.023 (2010-01-15)
+	#
+	def UTF8ArrToLatin1(unicode)
+		if !@is_unicode or (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+			return unicode # string is not in unicode
+		end
+		outarr = [] # array to be returned
+		unicode.each {|char|
+			if char < 256
+				outarr.push char
+			elsif @@utf8tolatin.key?(char)
+				# map from UTF-8
+				outarr.push @@utf8tolatin[char]
+			elsif char == 0xFFFD
+				# skip
+			else
+				outarr.push 63 # '?' character
+			end
+		}
+		return outarr
 	end
 
 	#
