@@ -3631,7 +3631,7 @@ class TCPDF
 				tmpstr = UniArrSubString(uchars, j, i)
 				if firstline
 					startx = @x
-					tmparr = chars[j, i]
+					tmparr = chars[j..i-1]
 					if rtlmode
 						tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
 					end
@@ -3689,7 +3689,7 @@ class TCPDF
 				if ((@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')) and arabic
 					# with bidirectional algorithm some chars may be changed affecting the line length
 					# *** very slow ***
-					l = GetArrStringWidth(utf8Bidi(chars[j..i], '', @tmprtl))
+					l = GetArrStringWidth(utf8Bidi(chars[j..i-1], '', @tmprtl))
 				else
 					l += GetCharWidth(c)
 				end
@@ -3710,7 +3710,7 @@ class TCPDF
 							tmpstr = UniArrSubString(uchars, j, i)
 							if firstline
 								startx = @x
-								tmparr = chars[j, i]
+								tmparr = chars[j..i-1]
 								if rtlmode
 									tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
 								end
@@ -3761,7 +3761,7 @@ class TCPDF
 						tmpstr = UniArrSubString(uchars, j, sep + endspace)
 						if firstline
 							startx = @x
-							tmparr = chars[j, sep + endspace]
+							tmparr = chars[j..sep+endspace-1]
 							if rtlmode
 								tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
 							end
@@ -3833,7 +3833,7 @@ class TCPDF
 			tmpstr = UniArrSubString(uchars, j, nb)
 			if firstline
 				startx = @x
-				tmparr = chars[j, nb]
+				tmparr = chars[j..nb-1]
 				if rtlmode
 					tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
 				end
