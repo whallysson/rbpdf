@@ -1599,6 +1599,8 @@ class TCPDF
 	#
 	def setHeader()
 		if @print_header
+			temp_thead = @thead
+			temp_theadMargins = @thead_margins
 			lasth = @lasth
 			out('q')
 			@r_margin = @original_r_margin
@@ -1620,6 +1622,8 @@ class TCPDF
 			end
 			out('Q')
 			@lasth = lasth
+			@thead = temp_thead
+			@thead_margins = temp_theadMargins
 		end
 	end
 
@@ -1636,6 +1640,8 @@ class TCPDF
 		@footerpos[@page] = @pagelen[@page]
 		out("\n")
 		if @print_footer
+			temp_thead = @thead
+			temp_theadMargins = @thead_margins
 			lasth = @lasth
 			out('q')
 			@r_margin = @original_r_margin
@@ -1658,6 +1664,8 @@ class TCPDF
 			end
 			out('Q')
 			@lasth = lasth
+			@thead = temp_thead
+			@thead_margins = temp_theadMargins
 		end
 		# restore graphic settings
 		setGraphicVars(gvars)
@@ -3945,6 +3953,24 @@ class TCPDF
 	end
 
 	#
+	# Return the image type given the file name and path
+	# @param string :imgfile image file name
+	# @return string image type
+	# @since 4.8.017 (2009-11-27)
+	#
+	def getImageFileType(imgfile)
+		type = '' # default type
+		return type if imgfile.nil?
+
+		fileinfo = File::extname(imgfile)
+		type = fileinfo.sub(/^\./, '').downcase if fileinfo != ''
+		if type == 'jpg'
+			type = 'jpeg'
+		end
+		return type
+	end
+
+	#
 	# Puts an image in the page. 
 	# The upper-left corner must be given. 
 	# The dimensions can be specified in different ways:<ul>
@@ -4021,12 +4047,9 @@ class TCPDF
 		if !@imagekeys.include?(file)
 			#First use of image, get info
 			if (type == '')
-				type = File::extname(file)
-				Error('Image file has no extension and no type was specified: ' + file) if type == ''
-				type = type.sub(/^\./, '')
+				type = getImageFileType(file)
 			end
-			type.downcase!
-			if (type == 'jpg' or type == 'jpeg')
+			if (type == 'jpeg')
 				info=parsejpeg(file)
 			elsif (type == 'png')
 				info=parsepng(file);
@@ -4044,7 +4067,6 @@ class TCPDF
 			end
 
 			## not use ##
-			#type = 'jpeg' if type == 'jpg'
 			## Specific image handlers
 			#mtd = 'parse' + type
 			#info = false
@@ -6985,8 +7007,8 @@ class TCPDF
 								t_x = @l_margin - @endlinex
 							end
 							one_space_width = GetStringWidth(32.chr)
-							no = 0
-							ns = 0
+							no = 0 # spaces without trim
+							ns = 0 # spaces with trim
 
 							pmidtemp = pmid
 							# escape special characters
@@ -7023,8 +7045,8 @@ class TCPDF
 								end
 								# calculate additional space to add to each space
 								spacelen = one_space_width
-								spacewidth = ((tw - linew + ((no - ns) * spacelen)) / (ns ? ns : 1)) * @k
-						 		spacewidthu = -1000 * (tw - linew + (no * spacelen)) / (ns ? ns : 1) / @font_size
+								spacewidth = (((tw - linew) + ((no - ns) * spacelen)) / (ns ? ns : 1)) * @k
+						 		spacewidthu = -1000 * ((tw - linew) + (no * spacelen)) / (ns ? ns : 1) / @font_size
 								nsmax = ns
 								ns = 0
 								# reset(lnstring)
@@ -8537,11 +8559,7 @@ class TCPDF
 				else
 					align = 'B'
 				end
-				unless tag['attribute']['src'].nil?
-					type = File.extname(tag['attribute']['src'])
-				else
-					type =  ''
-				end
+				type = getImageFileType(tag['attribute']['src'])
 				prevy = @y
 				xpos = GetX()
 				if !dom[key - 1].nil? and (dom[key - 1]['value'] == ' ')
