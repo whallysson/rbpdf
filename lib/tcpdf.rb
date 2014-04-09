@@ -1669,7 +1669,7 @@ class TCPDF
 		end
 		# restore graphic settings
 		setGraphicVars(gvars)
-		# calculate footer lenght
+		# calculate footer length
 		@footerlen[@page] = @pagelen[@page] - @footerpos[@page] + 1
 	end
 
@@ -2283,8 +2283,8 @@ class TCPDF
 		if border_style
 			border_style2 = {}
 			border_style.each_with_index { |value, line|
-				lenght = line.length
-				0.upto(lenght - 1) do |i|
+				length = line.length
+				0.upto(length - 1) do |i|
 					border_style2[line[i]] = value
 				end
 			}
@@ -3127,9 +3127,9 @@ class TCPDF
 		end
 		if (txt != '')
 			txt2 = escapetext(txt)
-			# text lenght
+			# text length
 			width = txwidth = GetStringWidth(txt)
-			# ratio between cell lenght and text lenght
+			# ratio between cell length and text length
 			if width <= 0
 				ratio = 1
 			else
@@ -3608,7 +3608,7 @@ class TCPDF
 		j = 0    # current starting position
 		sep = -1 # position of the last blank space
 		shy = false # true if the last blank is a soft hypen (SHY)
-		l = 0    # current string lenght
+		l = 0    # current string length
 		nl = 0   # number of lines
 		linebreak = false
 
@@ -4443,7 +4443,7 @@ class TCPDF
 			File.delete(@buffer.path)
 		end
 		self.instance_variables.each { |val|
-			if destroyall or ((val != '@internal_encoding') and (val != '@state') and (val != '@bufferlen') and (val != '@buffer') and (val != '@diskcache') and (val != '@sign') and (val != '@signature_data') and (val != '@signature_max_lenght') and (val != '@byterange_string'))
+			if destroyall or ((val != '@internal_encoding') and (val != '@state') and (val != '@bufferlen') and (val != '@buffer') and (val != '@diskcache') and (val != '@sign') and (val != '@signature_data') and (val != '@signature_max_length') and (val != '@byterange_string'))
 				if !preserve_objcopy or (val.to_s != '@objcopy')
 					eval("#{val} = nil")
 				end
