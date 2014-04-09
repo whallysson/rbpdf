@@ -3160,10 +3160,10 @@ class TCPDF
 			if (@color_flag)
 				s << 'q ' + @text_color + ' ';
 			end
+			# count number of spaces
+			ns = txt.count(' ')
 			# Justification
 			if (align == 'J')
-				# count number of spaces
-				ns = txt.count(' ')
 				if (@current_font['type'] == "TrueTypeUnicode") or (@current_font['type'] == "cidfont0")
 					# get string width without spaces
 					width = GetStringWidth(txt.gsub(' ', ''))
@@ -3219,7 +3219,7 @@ class TCPDF
 				s<<' Q';
 			end
 			if link && ((link.is_a?(String) and !link.empty?) or link.is_a? Fixnum)
-				Link(xdx, @y + ((h - @font_size) / 2), width, @font_size, link, txt.count(32.chr))
+				Link(xdx, @y + ((h - @font_size) / 2), width, @font_size, link, ns)
 			end
 		end
 
@@ -6738,6 +6738,21 @@ class TCPDF
 	# --- HTML PARSER FUNCTIONS ---
 	
 	#
+	# Returns the string used to find spaces
+	# @return string
+	# @access protected
+	# @author Nicola Asuni
+	# @since 4.8.024 (2010-01-15)
+	#
+	def getSpaceString()
+		spacestr = 32.chr
+		if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+			spacestr = 0.chr + 32.chr
+		end
+		return spacestr
+	end
+
+	#
 	# Allows to preserve some HTML formatting (limited support).<br />
 	# IMPORTANT: The HTML must be well formatted - try to clean-up it using an application like HTML-Tidy before submitting.
 	# Supported tags are: a, b, blockquote, br, dd, del, div, dl, dt, em, font, h1, h2, h3, h4, h5, h6, hr, i, img, li, ol, p, pre, small, span, strong, sub, sup, table, td, th, thead, tr, tt, u, ul
@@ -7074,6 +7089,7 @@ class TCPDF
 							# search spaces
 							lnstring = pmidtemp.scan(/\[\(([^\)]*)\)\]/x)
 							if !lnstring.empty?
+								spacestr = getSpaceString()
 								maxkk = lnstring.length - 1
 								0.upto(maxkk) do |kk|
 									# restore special characters
@@ -7089,8 +7105,8 @@ class TCPDF
 										tvalue = lnstring[kk][0]
 									end
 									# store number of spaces on the strings
-									lnstring[kk][1] = lnstring[kk][0].count(32.chr)
-									lnstring[kk][2] = tvalue.count(32.chr)
+									lnstring[kk][1] = lnstring[kk][0].count(spacestr)
+									lnstring[kk][2] = tvalue.count(spacestr)
 									# count total spaces on line
 									no += lnstring[kk][1]
 									ns += lnstring[kk][2]
@@ -7171,7 +7187,7 @@ class TCPDF
 											else
 												tvalue = lnstring[strcount][0]
 											end
-											ns += tvalue.count(32.chr)
+											ns += tvalue.count(spacestr)
 											strcount += 1
 										end
 										if isRTLTextDir()
@@ -8621,9 +8637,9 @@ class TCPDF
 				xpos = GetX()
 				if !dom[key - 1].nil? and (dom[key - 1]['value'] == ' ')
 					if @rtl
-						xpos += GetStringWidth(' ')
+						xpos += GetStringWidth(32.chr)
 					else
-						xpos -= GetStringWidth(' ')
+						xpos -= GetStringWidth(32.chr)
 					end
 				end
 				imglink = ''

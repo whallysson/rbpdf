@@ -20,6 +20,16 @@ class TcpdfTest < ActiveSupport::TestCase
     assert_equal unit, 4.0
   end
 
+  test "getSpaceString test" do
+    pdf = TCPDF.new
+    spacestr = pdf.getSpaceString()
+    assert_equal spacestr, 32.chr
+
+    pdf.SetFont('freesans', '', 18)
+    spacestr = pdf.getSpaceString()
+    assert_equal spacestr, 0.chr + 32.chr
+  end
+
   test "Transaction test without diskcache" do
     pdf = TCPDF.new
     pdf.AddPage()
