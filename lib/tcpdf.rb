@@ -7092,7 +7092,7 @@ class TCPDF
 						elsif (plalign == 'J') and (plalign == lalign)
 							# Justification
 							if isRTLTextDir()
-								t_x = @l_margin - @endlinex
+								t_x = @l_margin - @endlinex + @c_margin
 							end
 							one_space_width = GetStringWidth(32.chr)
 							no = 0 # spaces without trim
@@ -7128,9 +7128,6 @@ class TCPDF
 									ns += lnstring[kk][2]
 									lnstring[kk][3] = no
 									lnstring[kk][4] = ns
-								end
-								if isRTLTextDir()
-									t_x = @l_margin - @endlinex - ((no - ns - 1) * one_space_width)
 								end
 								# calculate additional space to add to each space
 								spacelen = one_space_width
@@ -7349,7 +7346,7 @@ class TCPDF
 						end
 						if dom[key]['attribute']['nested'] and (dom[key]['attribute']['nested'] == 'true')
 							# add margin for nested tables
-							wtmp -= @c_margin # DEBUG
+							wtmp -= @c_margin
 						end
 						# table width
 						if !dom[key]['width'].nil?
@@ -7594,8 +7591,6 @@ class TCPDF
 					# HTML <a> Link
 					strrest = addHtmlLink(@href['url'], dom[key]['value'], wfill, true, @href['color'], @href['style'])
 				else
-					ctmpmargin = @c_margin
-					@c_margin = 0
 					if @rtl
 						@x -= @textindent
 					else
@@ -7604,7 +7599,6 @@ class TCPDF
 					# ****** write only until the end of the line and get the rest ******
 					strrest = Write(@lasth, dom[key]['value'], '', wfill, '', false, 0, true, firstblock)
 					@textindent = 0
-					@c_margin = ctmpmargin
 				end
 				if !strrest.nil? and strrest.length > 0
 					# store the remaining string on the previous :key position
@@ -7691,6 +7685,7 @@ class TCPDF
 					tw += prevrMargin - @r_margin
 				end
 				mdiff = (tw - linew).abs
+				t_x = 0
 				if plalign == 'C'
 					if @rtl
 						t_x = -(mdiff / 2)
@@ -7703,8 +7698,11 @@ class TCPDF
 				elsif (plalign == 'L') and @rtl
 					# left alignment on RTL document
 					t_x = -mdiff
-				else
+				elseif (plalign == 'J') and (plalign == lalign)
+					# Justification
 					t_x = 0
+				else
+					t_x = -@c_margin
 				end
 				if (t_x != 0) or (yshift < 0)
 					# shift the line
