@@ -6932,52 +6932,72 @@ class TCPDF
 				if !@newline and (dom[key]['value'] == 'img') and !dom[key]['attribute']['height'].nil? and (dom[key]['attribute']['height'].to_i > 0)
 					# get image height
 					imgh = getHTMLUnitToUnits(dom[key]['attribute']['height'], @lasth, 'px')
-					if !@in_footer
-						# check for page break
-						checkPageBreak(imgh)
+					# check for automatic line break
+					autolinebreak = false
+					if dom[key]['attribute']['width'] and (dom[key]['attribute']['width'].to_i > 0)
+						imgw = getHTMLUnitToUnits(dom[key]['attribute']['width'], 1, 'px', false)
+						if (@rtl and (@x - imgw < @l_margin)) or (!@rtl and (@x + imgw > @w - @r_margin))
+							# add automatic line break
+							autolinebreak = true
+							Ln('', cell)
+							# go back to evaluate this line break
+							key -= 1
+						end
 					end
-					if @page > startlinepage
-						# fix line splitted over two pages
-						if !@footerlen[startlinepage].nil?
-							curpos = @pagelen[startlinepage] - @footerlen[startlinepage]
+					if !autolinebreak
+						if !@in_footer
+							pre_y = @y
+							# check for page break
+							checkPageBreak(imgh)
+							post_y = @y
+							# check for multicolumn mode
+							if post_y < pre_y
+								startliney = post_y
+							end
 						end
-						# line to be moved one page forward
-						pagebuff = getPageBuffer(startlinepage)
-						linebeg = pagebuff[startlinepos, curpos - startlinepos]
-						tstart = pagebuff[0, startlinepos]
-						tend = pagebuff[curpos..-1]
-						# remove line from previous page
-						setPageBuffer(startlinepage, tstart + '' + tend)
-						pagebuff = getPageBuffer(@page)
-						tstart = pagebuff[0, @cntmrk[@page]]
-						tend = pagebuff[@cntmrk[@page]..-1]
-						# add line start to current page
-						yshift = minstartliney - @y
-						try = sprintf('1 0 0 1 0 %.3f cm', (yshift * @k))
-						setPageBuffer(@page, tstart + "\nq\n" + try + "\n" + linebeg + "\nQ\n" + tend)
-						# shift the annotations and links
-						if @page_annots[@page]
-							next_pask = @page_annots[@page].length
-						else
-							next_pask = 0
+						if @page > startlinepage
+							# fix line splitted over two pages
+							if !@footerlen[startlinepage].nil?
+								curpos = @pagelen[startlinepage] - @footerlen[startlinepage]
+							end
+							# line to be moved one page forward
+							pagebuff = getPageBuffer(startlinepage)
+							linebeg = pagebuff[startlinepos, curpos - startlinepos]
+							tstart = pagebuff[0, startlinepos]
+							tend = pagebuff[curpos..-1]
+							# remove line from previous page
+							setPageBuffer(startlinepage, tstart + '' + tend)
+							pagebuff = getPageBuffer(@page)
+							tstart = pagebuff[0, @cntmrk[@page]]
+							tend = pagebuff[@cntmrk[@page]..-1]
+							# add line start to current page
+							yshift = minstartliney - @y
+							try = sprintf('1 0 0 1 0 %.3f cm', (yshift * @k))
+							setPageBuffer(@page, tstart + "\nq\n" + try + "\n" + linebeg + "\nQ\n" + tend)
+							# shift the annotations and links
+							if @page_annots[@page]
+								next_pask = @page_annots[@page].length
+							else
+								next_pask = 0
+							end
+							if !@page_annots[startlinepage].nil?
+								@page_annots[startlinepage].each_with_index { |pac, pak|
+									if pak >= pask
+										@page_annots[@page].push pac
+										@page_annots[startlinepage].delete_at(pak)
+										npak = @page_annots[@page].length - 1
+										@page_annots[@page][npak]['y'] -= yshift
+									end
+								}
+							end
+							pask = next_pask
+							startlinepos = @cntmrk[@page]
+							startlinepage = @page
+							startliney = @y
 						end
-						if !@page_annots[startlinepage].nil?
-							@page_annots[startlinepage].each_with_index { |pac, pak|
-								if pak >= pask
-									@page_annots[@page].push pac
-									@page_annots[startlinepage].delete_at(pak)
-									npak = @page_annots[@page].length - 1
-									@page_annots[@page][npak]['y'] -= yshift
-								end
-							}
-						end
-						pask = next_pask
-						startlinepos = @cntmrk[@page]
-						startlinepage = @page
-						startliney = @y
+						@y += (curfontsize / @k) - imgh
+						minstartliney = [@y, minstartliney].min
 					end
-					@y += (curfontsize / @k) - imgh
-					minstartliney = [@y, minstartliney].min
 	 			elsif !dom[key]['fontname'].nil? or !dom[key]['fontstyle'].nil? or !dom[key]['fontsize'].nil?
 					# account for different font size
 					pfontname = curfontname
@@ -7600,10 +7620,15 @@ class TCPDF
 				end
 				if newline
 					if !@premode
+						prelen = dom[key]['value'].length
 						if isRTLTextDir()
 							dom[key]['value'] = dom[key]['value'].rstrip
 						else
 							dom[key]['value'] = dom[key]['value'].lstrip
+						end
+						postlen = dom[key]['value'].length
+						if (postlen == 0) and (prelen > 0)
+							dom[key]['trimmed_space'] = true
 						end
 					end
 					newline = false
@@ -8690,11 +8715,12 @@ class TCPDF
 				type = getImageFileType(tag['attribute']['src'])
 				prevy = @y
 				xpos = GetX()
-				if !dom[key - 1].nil? and (dom[key - 1]['value'] == ' ')
-					if @rtl
-						xpos += GetStringWidth(32.chr)
-					else
+				# eliminate marker spaces
+				if !dom[key - 1].nil?
+					if (dom[key - 1]['value'] == ' ') or !dom[key - 1]['trimmed_space'].nil?
 						xpos -= GetStringWidth(32.chr)
+					elsif @rtl and (dom[key - 1]['value'] == '  ')
+						xpos -= 2 * GetStringWidth(32.chr)
 					end
 				end
 				imglink = ''
