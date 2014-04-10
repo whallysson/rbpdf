@@ -3628,7 +3628,7 @@ class TCPDF
 		# for each character
 		while(i<nb)
 			if (maxh > 0) and (@y >= maxy)
-				firstline = true
+				break
 			end
 			# Get the current character
 			c = chars[i]
@@ -8121,7 +8121,7 @@ class TCPDF
 
 		# remove all unsupported tags (the line below lists all supported tags)
 		::ActionView::Base.sanitized_allowed_css_properties = ["page-break-before", "page-break-after", "page-break-inside"]
-		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr))
+		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote body br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr))
 		html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
 		# replace some blank characters
 		html.gsub!(/<br>/, '<br/>')
