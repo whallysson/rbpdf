@@ -296,6 +296,7 @@ class TCPDF
 		@images ||= {}
   	@img_scale ||= 1
 		@in_footer ||= false
+		@in_thead ||= false
 		@alias_nb_pages = '{nb}'
 		@alias_num_page = '{pnb}'
 		@is_unicode = unicode
@@ -1685,7 +1686,7 @@ class TCPDF
 			@pagedim[@page]['tm'] = @t_margin
 			@y = @t_margin
 		end
-		if !empty_string(@thead)
+		if !empty_string(@thead) and !@in_thead
 			# set margins
 			prev_lMargin = @l_margin
 			prev_rMargin = @r_margin
@@ -1956,28 +1957,30 @@ class TCPDF
 	# @param string :fontname Family font. It can be either a name defined by AddFont() or one of the standard families. It is also possible to pass an empty string, in that case, the current family is retained.
 	# @param string :fontstyle Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li></ul> or any combination. The default value is regular.
 	# @param float :fontsize Font size in points. The default value is the current size.
-	# @return int string length
+	# @param boolean :getarray if true returns an array of characters widths, if false returns the total length.
+	# @return mixed int total string length or array of characted widths
 	# @author Nicola Asuni
 	# @access public
 	# @since 1.2
 	#
-	def GetStringWidth(s, fontname='', fontstyle='', fontsize=0)
-		return GetArrStringWidth(utf8Bidi(UTF8StringToArray(s), s, @tmprtl), fontname, fontstyle, fontsize)
+	def GetStringWidth(s, fontname='', fontstyle='', fontsize=0, getarray=false)
+		return GetArrStringWidth(utf8Bidi(UTF8StringToArray(s), s, @tmprtl), fontname, fontstyle, fontsize, getarray)
 	end
   alias_method :get_string_width, :GetStringWidth
 
 	#
-	# Returns the string length of an array of chars in user unit. A font must be selected.<br>
+	# Returns the string length of an array of chars in user unit or an array of characters widths. A font must be selected.<br>
 	# @param string :sa The array of chars whose total length is to be computed
 	# @param string :fontname Family font. It can be either a name defined by AddFont() or one of the standard families. It is also possible to pass an empty string, in that case, the current family is retained.
 	# @param string :fontstyle Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li></ul> or any combination. The default value is regular.
 	# @param float :fontsize Font size in points. The default value is the current size.
-	# @return int string length
+	# @param boolean :getarray if true returns an array of characters widths, if false returns the total length.
+	# @return mixed int total string length or array of characted widths
 	# @author Nicola Asuni
 	# @access public
 	# @since 2.4.000 (2008-03-06)
 	#
-	def GetArrStringWidth(sa, fontname='', fontstyle='', fontsize=0)
+	def GetArrStringWidth(sa, fontname='', fontstyle='', fontsize=0, getarray=false)
 		# store current values
 		if !empty_string(fontname)
 			prev_FontFamily = @font_family
@@ -1987,13 +1990,20 @@ class TCPDF
 		end
 		# convert UTF-8 array to Latin1 if required
 		sa = UTF8ArrToLatin1(sa)
-		w = 0
+		w = 0 # total width
+		wa = [] # array of characters widths
 		sa.each do |char|
-			w += GetCharWidth(char)
+			# character width
+			cw = GetCharWidth(char)
+			wa.push cw
+			w += cw
 		end
 		# restore previous values
 		if !empty_string(fontname)
 			SetFont(prev_FontFamily, prev_FontStyle, prev_FontSizePt)
+		end
+		if getarray
+			return wa
 		end
 		return w
 	end
@@ -7325,13 +7335,17 @@ class TCPDF
 						@textindent = dom[key]['text-indent']
 					end
 					if dom[key]['value'] == 'table'
+						# available page width
 						if @rtl
 							wtmp = @x - @l_margin
 						else
 							wtmp = @w - @r_margin - @x
 						end
-						wtmp -= 2 * @c_margin
-						# calculate cell width
+						if dom[key]['attribute']['nested'] and (dom[key]['attribute']['nested'] == 'true')
+							# add margin for nested tables
+							wtmp -= @c_margin # DEBUG
+						end
+						# table width
 						if !dom[key]['width'].nil?
 							table_width = getHTMLUnitToUnits(dom[key]['width'], wtmp, 'px')
 						else
@@ -7363,9 +7377,10 @@ class TCPDF
 							cellspacingx = cellspacing
 						end
 						colspan = dom[key]['attribute']['colspan']
-						wtmp = colspan * (table_width / dom[table_el]['cols'])
+						table_columns_width = table_width - (cellspacing * (dom[table_el]['cols'] - 1))
+						wtmp = colspan * (table_columns_width / dom[table_el]['cols']) + (colspan - 1) * cellspacing
 						if !dom[key]['width'].nil?
-							cellw = getHTMLUnitToUnits(dom[key]['width'], table_width, 'px')
+							cellw = getHTMLUnitToUnits(dom[key]['width'], table_columns_width, 'px')
 						else
 							cellw = wtmp
 						end
@@ -7375,7 +7390,6 @@ class TCPDF
 						else
 							cellh = 0
 						end
-						cellw -= cellspacing
 						if !dom[key]['content'].nil?
 							cell_content = dom[key]['content']
 						else
@@ -7399,8 +7413,9 @@ class TCPDF
 						end
 						if dom[trid]['startx'].nil?
 							dom[trid]['startx'] = @x
+						else
+							@x += (cellspacingx / 2)
 						end
-						@x += (cellspacingx / 2)
 						if !dom[parentid]['attribute']['rowspan'].nil?
 							rowspan = dom[parentid]['attribute']['rowspan'].to_i
 						else
@@ -7612,12 +7627,19 @@ class TCPDF
 			key += 1
 			if dom[key] and dom[key]['tag'] and (dom[key]['opening'].nil? or !dom[key]['opening']) and dom[(dom[key]['parent'])]['attribute']['nobr'] and (dom[(dom[key]['parent'])]['attribute']['nobr'] == 'true')
 				if !undo and (@start_transaction_page == (@numpages - 1))
+					if dom[(dom[key]['parent'])]['thead']
+						# we are inside a thead section
+						inthead = true
+					else
+						inthead = false
+					end
 					# restore previous object
 					rollbackTransaction(true)
 					# restore previous values
 					this_method_vars.each {|vkey , vval|
 						eval("#{vkey} = vval") 
 					}
+					@in_thead = inthead
 					# add a page
 					AddPage()
 					undo = true # avoid infinite loop
@@ -8200,6 +8222,8 @@ class TCPDF
 						(dom[key]['parent'] + 1).upto(key - 1) do |i|
 							dom[(dom[key]['parent'])]['content'] << a[dom[i]['elkey']]
 						end
+						# mark nested tables
+						dom[(dom[key]['parent'])]['content'] = dom[(dom[key]['parent'])]['content'].gsub('<table', '<table nested="true"')
 					end
 					# store header rows on a new table
 					if (dom[key]['value'] == 'tr') and (dom[(dom[key]['parent'])]['thead'] == true)
@@ -8209,8 +8233,15 @@ class TCPDF
 						dom[key]['parent'].upto(key) do |i|
 							dom[grandparent]['thead'] << a[dom[i]['elkey']]
 						end
+						if dom[(dom[key]['parent'])]['attribute'].nil?
+							dom[(dom[key]['parent'])]['attribute'] = {}
+						end
+						# header elements must be always contained in a single page
+						dom[(dom[key]['parent'])]['attribute']['nobr'] = 'true'
 					end
 					if (dom[key]['value'] == 'table') and !empty_string(dom[(dom[key]['parent'])]['thead'])
+						# remove the nobr attributes from the table header
+						dom[(dom[key]['parent'])]['thead'] = dom[(dom[key]['parent'])]['thead'].gsub(' nobr="true"', '')
 						dom[(dom[key]['parent'])]['thead'] << '</tablehead>'
 					end
 				else
@@ -8867,6 +8898,7 @@ class TCPDF
 				if tag['value'] == 'tablehead'
 					# closing tag used for the thead part
 					in_table_head = true
+					@in_thead = false
 				end
 
 				table_el = parent
