@@ -6949,10 +6949,9 @@ class TCPDF
 							pre_y = @y
 							# check for page break
 							checkPageBreak(imgh)
-							post_y = @y
-							# check for multicolumn mode
-							if post_y < pre_y
-								startliney = post_y
+							if @y < pre_y
+								# fix for multicolumn mode
+								startliney = @y
 							end
 						end
 						if @page > startlinepage
@@ -6971,7 +6970,7 @@ class TCPDF
 							tstart = pagebuff[0, @cntmrk[@page]]
 							tend = pagebuff[@cntmrk[@page]..-1]
 							# add line start to current page
-							yshift = minstartliney - @y
+							yshift = minstartliney - @y + (curfontsize / @k)
 							try = sprintf('1 0 0 1 0 %.3f cm', (yshift * @k))
 							setPageBuffer(@page, tstart + "\nq\n" + try + "\n" + linebeg + "\nQ\n" + tend)
 							# shift the annotations and links
