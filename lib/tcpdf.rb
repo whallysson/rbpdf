@@ -3062,10 +3062,6 @@ class TCPDF
 	# @see Cell()
 	#
 	def getCellCode(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false)
-		if @rtl
-			# remove right spaces
-			txt = txt.rstrip
-		end
 		rs = "" # string to be returned
 		txt = removeSHY(txt)
 		if !ignore_min_height
@@ -3369,7 +3365,7 @@ class TCPDF
 			nl = 1
 		else
 			# ******* Write text
-			nl = Write(@lasth, txt, '', 0, align, true, stretch, false, false, maxh)
+			nl = Write(@lasth, txt, '', 0, align, true, stretch, false, true, maxh)
 		end
 
 		if autopadding
@@ -3666,6 +3662,9 @@ class TCPDF
 						@c_margin = 0
 					end
 				end
+				if firstblock and isRTLTextDir()
+					tmpstr = tmpstr.rstrip
+				end
 				Cell(w, h, tmpstr, 0, 1, talign, fill, link, stretch)
 				tmpstr = ''
 				if firstline
@@ -3746,6 +3745,9 @@ class TCPDF
 									@c_margin = 0
 								end
 							end
+							if firstblock and isRTLTextDir()
+								tmpstr = tmpstr.rstrip
+							end
 							Cell(w, h, tmpstr, 0, 1, align, fill, link, stretch)
 							tmpstr = ''
 							if firstline
@@ -3798,7 +3800,11 @@ class TCPDF
 							end
 						end
 						# print the line
+						if firstblock and isRTLTextDir()
+							tmpstr = tmpstr.rstrip
+						end
 						Cell(w, h, shy_char_left + tmpstr + shy_char_right, 0, 1, align, fill, link, stretch)
+						tmpstr = ''
 						if firstline
 							# return the remaining text
 							@c_margin = tmpcmargin
@@ -3869,7 +3875,11 @@ class TCPDF
 					@c_margin = 0
 				end
 			end
+			if firstblock and isRTLTextDir()
+				tmpstr = tmpstr.rstrip
+			end
 			Cell(w, h, tmpstr, 0, (ln ? 1 : 0), align, fill, link, stretch)
+			tmpstr = ''
 			if firstline
 				@c_margin = tmpcmargin
 				return UniArrSubString(uchars, nb)
@@ -7129,6 +7139,9 @@ class TCPDF
 									lnstring[kk][3] = no
 									lnstring[kk][4] = ns
 								end
+								if isRTLTextDir()
+									t_x = @l_margin - @endlinex + @c_margin - ((no - ns) * one_space_width)
+								end
 								# calculate additional space to add to each space
 								spacelen = one_space_width
 								spacewidth = (((tw - linew) + ((no - ns) * spacelen)) / (ns ? ns : 1)) * @k
@@ -7698,11 +7711,6 @@ class TCPDF
 				elsif (plalign == 'L') and @rtl
 					# left alignment on RTL document
 					t_x = -mdiff
-				elseif (plalign == 'J') and (plalign == lalign)
-					# Justification
-					t_x = 0
-				else
-					t_x = -@c_margin
 				end
 				if (t_x != 0) or (yshift < 0)
 					# shift the line
