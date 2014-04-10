@@ -4714,7 +4714,7 @@ class TCPDF
 						annots = '<<'
 						annots << ' /Type /Annot'
 						annots << ' /Subtype /Widget'
-						annots << ' /T ' + datastring(pl['txt'])
+						annots << ' /T ' + dataannobjstring(pl['txt'])
 						annots << ' /FT /Btn'
 						annots << ' /Ff 49152'
 						annots << ' /Kids ['
@@ -4760,7 +4760,7 @@ class TCPDF
 					end
 					annots << ' /Contents ' + textstring(pl['txt'])
 					annots << ' /P ' + @page_obj_id[n].to_s + ' 0 R'
-					annots << ' /NM ' + datastring(sprintf('%04u-%04u', n, key))
+					annots << ' /NM ' + dataannobjstring(sprintf('%04u-%04u', n, key))
 					annots << ' /M ' + datestring()
 					if !pl['opt']['f'].nil?
 						val = 0
@@ -4945,7 +4945,7 @@ class TCPDF
 					when 'link'
 						if pl['txt'].is_a?(String)
 							# external URI link
-							annots << ' /A <</S /URI /URI ' + datastring(unhtmlentities(pl['txt'])) + '>>'
+							annots << ' /A <</S /URI /URI ' + dataannobjstring(unhtmlentities(pl['txt'])) + '>>'
 						else
 							# internal link
 							l = @links[pl['txt']]
@@ -5000,7 +5000,7 @@ class TCPDF
 						end
 						filename = File.basename(pl['opt']['fs'])
 						if !@embeddedfiles[filename]['n'].nil?
-							annots << ' /FS <</Type /Filespec /F ' + datastring(filename) + ' /EF <</F ' + @embeddedfiles[filename]['n'].to_s + ' 0 R>> >>'
+							annots << ' /FS <</Type /Filespec /F ' + dataannobjstring(filename) + ' /EF <</F ' + @embeddedfiles[filename]['n'].to_s + ' 0 R>> >>'
 							iconsapp = ['Graph', 'Paperclip', 'PushPin', 'Tag']
 							if !pl['opt']['name'].nil? and iconsapp.include?(pl['opt']['name'])
 								annots << ' /Name /' + pl['opt']['name']
@@ -5016,7 +5016,7 @@ class TCPDF
 						if !@embeddedfiles[filename]['n'].nil?
 							# ... TO BE COMPLETED ...
 							# /R /C /B /E /CO /CP
-							annots << ' /Sound <</Type /Filespec /F ' + datastring(filename) + ' /EF <</F ' + @embeddedfiles[filename]['n'] + ' 0 R>> >>'
+							annots << ' /Sound <</Type /Filespec /F ' + dataannobjstring(filename) + ' /EF <</F ' + @embeddedfiles[filename]['n'] + ' 0 R>> >>'
 							iconsapp = ['Speaker', 'Mic']
 							if !pl['opt']['name'].nil? and iconsapp.include?(pl['opt']['name'])
 								annots << ' /Name /' + pl['opt']['name']
@@ -5111,13 +5111,13 @@ class TCPDF
 							annots << ' /Parent ' + @radiobutton_groups[n][pl['txt']] + ' 0 R'
 						end
 						if pl['opt']['t'] and pl['opt']['t'].is_a?(String)
-							annots << ' /T ' + datastring(pl['opt']['t'])
+							annots << ' /T ' + dataannobjstring(pl['opt']['t'])
 						end
 						if pl['opt']['tu'] and pl['opt']['tu'].is_a?(String)
-							annots << ' /TU ' + datastring(pl['opt']['tu'])
+							annots << ' /TU ' + dataannobjstring(pl['opt']['tu'])
 						end
 						if pl['opt']['tm'] and pl['opt']['tm'].is_a?(String)
-							annots << ' /TM ' + datastring(pl['opt']['tm'])
+							annots << ' /TM ' + dataannobjstring(pl['opt']['tm'])
 						end
 						if pl['opt']['ff']
 							if pl['opt']['ff'].is_a?(Array)
@@ -6037,8 +6037,8 @@ class TCPDF
 	end
 
  	#
-	# Format a date string for meta information
-	# @param string :s date string to escape.
+	# Format a data string for meta information
+	# @param string :s data string to escape.
 	# @return string escaped string.
 	# @access protected
 	#
@@ -6049,6 +6049,18 @@ class TCPDF
 		return '(' + escape(s) + ')'
 	end
 
+	#
+	# Format a data string for annotation objects
+	# @param string :s data string to escape.
+	# @return string escaped string.
+	# @access protected
+	#
+	def dataannobjstring(s)
+		#if @encrypted
+		#	s = RC4(@objectkey(@annot_obj_id + 1), s)
+		#end
+		return '(' + escape(s) + ')'
+	end
 	#
 	# Returns a formatted date for meta information
 	# @return string escaped date string.
