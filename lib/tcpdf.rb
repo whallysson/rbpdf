@@ -7283,7 +7283,7 @@ class TCPDF
 									pmidtemp =~ /\[\(([^\)]*)\)\]/x
 									matches1 = $1.gsub("#!#OP#!#", "(")
 									matches1.gsub!("#!#CP#!#", ")")
-									pmid = pmidtemp.sub(/\[\(([^\)]*)\)\]/x,  "[(" + matches1.gsub(0.chr + 32.chr, ") #{spacew} (") + ")]")
+									pmid = pmidtemp.sub(/\[\(([^\)]*)\)\]/x,  "[(" + matches1.gsub(0.chr + 32.chr, ") " + sprintf("%.3f", spacew) + " (") + ")]")
 									setPageBuffer(startlinepage, pstart + "\n" + pmid + "\n" + pend)
 									endlinepos = (pstart + "\n" + pmid + "\n").length
 								else
