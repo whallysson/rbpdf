@@ -3062,6 +3062,10 @@ class TCPDF
 	# @see Cell()
 	#
 	def getCellCode(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false)
+		if @rtl
+			# remove right spaces
+			txt = txt.rstrip
+		end
 		rs = "" # string to be returned
 		txt = removeSHY(txt)
 		if !ignore_min_height
@@ -3173,7 +3177,7 @@ class TCPDF
 			# count number of spaces
 			ns = txt.count(' ')
 			# Justification
-			if (align == 'J')
+			if (align == 'J') and (ns > 0)
 				if (@current_font['type'] == "TrueTypeUnicode") or (@current_font['type'] == "cidfont0")
 					# get string width without spaces
 					width = GetStringWidth(txt.gsub(' ', ''))
@@ -3199,12 +3203,14 @@ class TCPDF
 				else
 					dx = w - width - @c_margin
 				end
-			else # 'L', 'J'
+			when 'L'
 				if @rtl
 					dx = w - width - @c_margin
 				else
 					dx = @c_margin
 				end
+			else # 'J'
+				dx = @c_margin
 			end
 
 			if @rtl
