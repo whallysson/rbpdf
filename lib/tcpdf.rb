@@ -6924,6 +6924,28 @@ class TCPDF
 					this_method_vars['dom'] = dom
 				end
 			end
+			# print THEAD block
+			if (dom[key]['value'] == 'tr') and dom[key]['thead'] and dom[key]['thead']
+				while (key < maxel) and !((dom[key]['tag'] and dom[key]['opening'] and (dom[key]['value'] == 'tr') and (dom[key]['thead'].nil? or !dom[key]['thead'])) or (dom[key]['tag'] and !dom[key]['opening'] and (dom[key]['value'] == 'table')))
+					# move :key index forward
+					key += 1
+				end
+				if dom[(dom[key]['parent'])]['thead'] and !empty_string(dom[(dom[key]['parent'])]['thead'])
+					# print table header (thead)
+					writeHTML(@thead, false, false, false, false, '')
+					if @start_transaction_page == (@numpages - 1)
+						# restore previous object
+						rollbackTransaction(true)
+						# restore previous values
+						this_method_vars.each {|vkey , vval|
+							eval("#{vkey} = vval") 
+						}
+						@in_thead = false
+						# add a page
+						AddPage()
+					end
+				end
+			end
 			if dom[key]['tag'] or (key == 0)
 				if ((dom[key]['value'] == 'table') or (dom[key]['value'] == 'tr')) and !dom[key]['align'].nil?
 					dom[key]['align'] = @rtl ? 'R' : 'L'
@@ -7399,12 +7421,11 @@ class TCPDF
 							table_width = wtmp
 						end
 					end
-					# table content is handled in a special way
 					if (dom[key]['value'] == 'td') or (dom[key]['value'] == 'th')
 						trid = dom[key]['parent']
 						table_el = dom[trid]['parent']
 						if dom[table_el]['cols'].nil?
-							dom[table_el]['cols'] = trid['cols']
+							dom[table_el]['cols'] = dom[trid]['cols']
 						end
 						oldmargin = @c_margin
 						if !dom[(dom[trid]['parent'])]['attribute']['cellpadding'].nil?
@@ -8246,7 +8267,7 @@ class TCPDF
 				dom[key]['tag'] = true
 				dom[key]['value'] = tagname
 				if element[0,1] == '/'
-					# closing html tag
+					# *** closing html tag
 					dom[key]['opening'] = false
 					dom[key]['parent'] = level[-1]
 					level.pop if level.length > 1
@@ -8272,6 +8293,9 @@ class TCPDF
 						end
 						# mark nested tables
 						dom[(dom[key]['parent'])]['content'] = dom[(dom[key]['parent'])]['content'].gsub('<table', '<table nested="true"')
+						# remove thead sections from nested tables
+						dom[(dom[key]['parent'])]['content'] = dom[(dom[key]['parent'])]['content'].gsub('<thead>', '')
+						dom[(dom[key]['parent'])]['content'] = dom[(dom[key]['parent'])]['content'].gsub('</thead>', '')
 					end
 					# store header rows on a new table
 					if (dom[key]['value'] == 'tr') and (dom[(dom[key]['parent'])]['thead'] == true)
@@ -8293,7 +8317,7 @@ class TCPDF
 						dom[(dom[key]['parent'])]['thead'] << '</tablehead>'
 					end
 				else
-					# opening html tag
+					# *** opening html tag
 					dom[key]['opening'] = true
 					dom[key]['parent'] = level[-1]
 					if element[-1, 1] != '/'
@@ -8529,14 +8553,15 @@ class TCPDF
 					end
 					if dom[key]['value'] == 'tr'
 						dom[key]['cols'] = 0
-						# store the number of rows on table element
-						dom[(dom[key]['parent'])]['rows'] += 1
-						# store the TR elements IDs on table element
-						dom[(dom[key]['parent'])]['trids'].push(key)
 						if thead
 							dom[key]['thead'] = true
+							# rows on thead block are printed as a separate table
 						else
 							dom[key]['thead'] = false
+							# store the number of rows on table element
+							dom[(dom[key]['parent'])]['rows'] += 1
+							# store the TR elements IDs on table element
+							dom[(dom[key]['parent'])]['trids'].push(key)
 						end
 					end
 					if (dom[key]['value'] == 'th') or (dom[key]['value'] == 'td')
@@ -8613,12 +8638,16 @@ class TCPDF
 			cp = 0
 			cs = 0
 			dom[key]['rowspans'] = []
-			if !empty_string(dom[key]['thead'])
+			if dom[key]['attribute']['nested'].nil? or (dom[key]['attribute']['nested'] != 'true')
 				# set table header
-				@thead = dom[key]['thead']
-				if @thead_margins.nil? or @thead_margins.empty?
-					@thead_margins ||= {}
-					@thead_margins['cmargin'] = @c_margin
+				if !empty_string(dom[key]['thead'])
+					# set table header
+					@thead = dom[key]['thead']
+					if @thead_margins.nil? or @thead_margins.empty?
+						@thead_margins ||= {}
+						@thead_margins['cmargin'] = @c_margin
+					end
+					@in_thead = true
 				end
 			end
 			if !tag['attribute']['cellpadding'].nil?
@@ -8633,6 +8662,11 @@ class TCPDF
 		when 'tr'
 			# array of columns positions
 			dom[key]['cellpos'] = []
+			if tag['thead']
+				@in_thead = true
+			else
+				@in_thead = false
+			end
 		when 'hr'
 			Ln('', cell)
 			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
@@ -9109,9 +9143,11 @@ class TCPDF
 						@t_margin = @thead_margins['top']
 						@pagedim[@page]['tm'] = @t_margin
 					end
-					# reset table header
-					@thead = ''
-					@thead_margins = {}
+					if table_el['attribute']['nested'].nil? or (table_el['attribute']['nested'] != 'true')
+						# reset main table header
+						@thead = ''
+						@thead_margins = {}
+					end
 				end
 			when 'a'
 				@href = {}
