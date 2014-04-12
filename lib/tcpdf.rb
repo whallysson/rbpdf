@@ -759,14 +759,16 @@ class TCPDF
   alias_method :get_scale_factor, :GetScaleFactor
 
 	#
-	# Defines the left, top and right margins. By default, they equal 1 cm. Call this method to change them.
+	# Defines the left, top and right margins.
 	# @param float :left Left margin.
 	# @param float :top Top margin.
 	# @param float :right Right margin. Default value is the left one.
+	# @param boolean $keepmargins if true overwrites the default page margins
+	# @access public
 	# @since 1.0
 	# @see SetLeftMargin(), SetTopMargin(), SetRightMargin(), SetAutoPageBreak()
 	#
-	def SetMargins(left, top, right=-1)
+	def SetMargins(left, top, right=-1, keepmargins=false)
 		#Set left, top and right margins
 		@l_margin = left
 		@t_margin = top
@@ -774,6 +776,11 @@ class TCPDF
 			right = left
 		end
 		@r_margin = right
+		if keepmargins
+			# overwrite original values
+			@original_l_margin = @l_margin
+			@original_r_margin = @r_margin
+		end
 	end
   alias_method :set_margins, :SetMargins
 
@@ -1193,15 +1200,16 @@ class TCPDF
 	# The origin of the coordinate system is at the top-left corner (or top-right for RTL) and increasing ordinates go downwards.
 	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
 	# @param mixed :format The format used for pages. It can be either one of the following values (case insensitive) or a custom format in the form of a two-element array containing the width and the height (expressed in the unit given by unit).<ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
+	# @param boolean :keepmargins if true overwrites the default page margins with the current margin
 	# @access public
 	# @since 1.0
 	# @see startPage(), endPage()
 	#
-	def AddPage(orientation='', format='')
-		if @original_l_margin.nil?
+	def AddPage(orientation='', format='', keepmargins=false)
+		if @original_l_margin.nil? or keepmargins
 			@original_l_margin = @l_margin
 		end
-		if @original_r_margin.nil?
+		if @original_r_margin.nil? or keepmargins
 			@original_r_margin = @r_margin
 		end
 		# terminate previous page
@@ -1625,6 +1633,7 @@ class TCPDF
 			@lasth = lasth
 			@thead = temp_thead
 			@thead_margins = temp_theadMargins
+			@newline = false
 		end
 	end
 
@@ -4064,6 +4073,33 @@ class TCPDF
 				w = h * pixw / pixh
 			end
 		end
+		# resize image proportionally to be contained on a single page
+		if h > @h
+			h = @h
+			w = h * pixw / pixh
+		end
+		if w > @w
+			w = @w
+			h = w * pixh / pixw
+		end
+		# Check whether we need a new page first as this does not fit
+		prev_x = @x
+		if checkPageBreak(h, y)
+			# resize image to vertically fit the available space
+			h = @page_break_trigger - y
+			w = h * pixw / pixh
+			y = GetY() # + @c_margin
+			if @rtl
+				x += prev_x - @x
+			else
+				x += @x - prev_x
+			end
+		end
+		# resize image proportionally to be contained on a single page
+		if x + w > @w
+			w = @w - x
+			h = w * pixh / pixw
+		end
 		# calculate new minimum dimensions in pixels
 		neww = (w * @k * dpi / @dpi).round
 		newh = (h * @k * dpi / @dpi).round
@@ -4157,16 +4193,8 @@ class TCPDF
 			setImageBuffer(file, info)
 		end
 
-		# Check whether we need a new page first as this does not fit
-		prev_x = @x
-		if checkPageBreak(h, y)
-			y = GetY() + @c_margin
-			if @rtl
-				x += (prev_x - @x)
-			else
-				x += (@x - prev_x)
-			end
-		end
+		# set bottomcoordinates
+		@img_rb_y = y + h
 		# set alignment
 		if @rtl
 			if palign == 'L'
@@ -6823,6 +6851,7 @@ class TCPDF
 		opentagpos = nil
 		this_method_vars = {}
 		undo = false
+		fontaligned = false
 		blocktags = ['blockquote','br','dd','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','ul']
 		@premode = false
 		if !@page_annots[@page].nil?
@@ -6920,30 +6949,32 @@ class TCPDF
 					this_method_vars['prev_listordered'] = prev_listordered
 					this_method_vars['prev_listcount'] = prev_listcount
 					this_method_vars['prev_lispacer'] = prev_lispacer
+					this_method_vars['fontaligned'] = fontaligned
 					this_method_vars['key'] = key
 					this_method_vars['dom'] = dom
 				end
 			end
 			# print THEAD block
 			if (dom[key]['value'] == 'tr') and dom[key]['thead'] and dom[key]['thead']
-				while (key < maxel) and !((dom[key]['tag'] and dom[key]['opening'] and (dom[key]['value'] == 'tr') and (dom[key]['thead'].nil? or !dom[key]['thead'])) or (dom[key]['tag'] and !dom[key]['opening'] and (dom[key]['value'] == 'table')))
-					# move :key index forward
-					key += 1
-				end
-				if dom[(dom[key]['parent'])]['thead'] and !empty_string(dom[(dom[key]['parent'])]['thead'])
+				if dom[key]['parent'] and dom[(dom[key]['parent'])]['thead'] and !empty_string(dom[(dom[key]['parent'])]['thead'])
+					@in_thead = true
 					# print table header (thead)
 					writeHTML(@thead, false, false, false, false, '')
-					if @start_transaction_page == (@numpages - 1)
+					if (@start_transaction_page == (@numpages - 1)) or checkPageBreak(@lasth, '', false)
 						# restore previous object
 						rollbackTransaction(true)
 						# restore previous values
 						this_method_vars.each {|vkey , vval|
 							eval("#{vkey} = vval") 
 						}
-						@in_thead = false
 						# add a page
 						AddPage()
+						@start_transaction_page = @page
 					end
+				end
+				# move :key index forward to skip THEAD block
+				while (key < maxel) and !((dom[key]['tag'] and dom[key]['opening'] and (dom[key]['value'] == 'tr') and (dom[key]['thead'].nil? or !dom[key]['thead'])) or (dom[key]['tag'] and !dom[key]['opening'] and (dom[key]['value'] == 'table')))
+					key += 1
 				end
 			end
 			if dom[key]['tag'] or (key == 0)
@@ -6958,7 +6989,7 @@ class TCPDF
 					autolinebreak = false
 					if dom[key]['attribute']['width'] and (dom[key]['attribute']['width'].to_i > 0)
 						imgw = getHTMLUnitToUnits(dom[key]['attribute']['width'], 1, 'px', false)
-						if (@rtl and (@x - imgw < @l_margin)) or (!@rtl and (@x + imgw > @w - @r_margin))
+						if (@rtl and (@x - imgw < @l_margin + @c_margin)) or (!@rtl and (@x + imgw > @w - @r_margin - @c_margin))
 							# add automatic line break
 							autolinebreak = true
 							Ln('', cell)
@@ -6970,8 +7001,7 @@ class TCPDF
 						if !@in_footer
 							pre_y = @y
 							# check for page break
-							checkPageBreak(imgh)
-							if @y < pre_y
+							if !checkPageBreak(imgh) and (@y < pre_y)
 								# fix for multicolumn mode
 								startliney = @y
 							end
@@ -6992,7 +7022,10 @@ class TCPDF
 							tstart = pagebuff[0, @cntmrk[@page]]
 							tend = pagebuff[@cntmrk[@page]..-1]
 							# add line start to current page
-							yshift = minstartliney - @y + (curfontsize / @k)
+							yshift = minstartliney - @y
+							if fontaligned
+								yshift += curfontsize / @k
+							end
 							try = sprintf('1 0 0 1 0 %.3f cm', (yshift * @k))
 							setPageBuffer(@page, tstart + "\nq\n" + try + "\n" + linebeg + "\nQ\n" + tend)
 							# shift the annotations and links
@@ -7067,12 +7100,18 @@ class TCPDF
 									}
 								end
 								pask = next_pask
+								startlinepos = @cntmrk[@page]
+								startlinepage = @page
+								startliney = @y
 							end
 							if (dom[key]['value'] != 'tr') and (dom[key]['value'] != 'td') and (dom[key]['value'] != 'th')
 								@y += (curfontsize - fontsize) / @k
 							end
 							minstartliney = [@y, minstartliney].min
+							fontaligned = true
 						end
+						SetFont(fontname, fontstyle, fontsize)
+						@lasth = @font_size * @cell_height_ratio
 						curfontname = fontname
 						curfontstyle = fontstyle
 						curfontsize = fontsize
@@ -7102,13 +7141,14 @@ class TCPDF
 			# align lines
 			if @newline and (dom[key]['value'].length > 0) and (dom[key]['value'] != 'td') and (dom[key]['value'] != 'th')
 				newline = true
+				fontaligned = false
 				# we are at the beginning of a new line
 				if !startlinex.nil?
 					yshift = minstartliney - startliney
 					if (yshift > 0) or (@page > startlinepage)
 						yshift = 0
 					end
-					if (!plalign.nil? and ((plalign == 'C') or (plalign == 'J') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl))) or (yshift < 0)
+					t_x = 0
 						# the last line must be shifted to be aligned as requested
 						linew = (@endlinex - startlinex).abs
 						pstart = getPageBuffer(startlinepage)[0, startlinepos]
@@ -7130,6 +7170,7 @@ class TCPDF
 							pmid = getPageBuffer(startlinepage)[startlinepos..-1]
 							pend = ''
 						end
+					if (!plalign.nil? and ((plalign == 'C') or (plalign == 'J') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl))) or (yshift < 0)
 						# calculate shifting amount
 						tw = w
 						if @l_margin != prevlMargin
@@ -7138,8 +7179,8 @@ class TCPDF
 						if @r_margin != prevrMargin
 							tw += prevrMargin - @r_margin
 						end
+						one_space_width = GetStringWidth(32.chr)
 						mdiff = (tw - linew).abs
-						t_x = 0
 						if plalign == 'C'
 							if @rtl
 								t_x = -(mdiff / 2)
@@ -7148,16 +7189,32 @@ class TCPDF
 							end
 						elsif (plalign == 'R') and !@rtl
 							# right alignment on LTR document
+							if revstrpos(pmid, ')]').to_i == revstrpos(pmid, ' )]').to_i + 1
+								# remove last space (if any)
+								linew -= one_space_width
+								mdiff = (tw - linew).abs
+							end
 							t_x = mdiff
 						elsif (plalign == 'L') and @rtl
 							# left alignment on RTL document
+							if (revstrpos(pmid, '[( ').to_i == revstrpos(pmid, '[(').to_i) or (revstrpos(pmid, '[(' + 0.chr + 32.chr).to_i == revstrpos(pmid, '[(').to_i)
+								# remove first space (if any)
+								linew -= one_space_width
+							end
+							if pmid.index('[(').to_i == revstrpos(pmid, '[(').to_i
+								# remove last space (if any)
+								linew -= one_space_width
+								if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+									linew -= one_space_width
+								end
+							end
+							mdiff = (tw - linew).abs
 							t_x = -mdiff
 						elsif (plalign == 'J') and (plalign == lalign)
 							# Justification
 							if isRTLTextDir()
 								t_x = @l_margin - @endlinex + @c_margin
 							end
-							one_space_width = GetStringWidth(32.chr)
 							no = 0 # spaces without trim
 							ns = 0 # spaces with trim
 
@@ -7315,10 +7372,17 @@ class TCPDF
 									end
 									# shift the annotations and links
 									if !@page_annots[@page].nil?
+										cxpos = currentxpos / @k
+										lmpos = @l_margin + @c_margin + @feps
+
 										@page_annots[@page].each_with_index { |pac, pak|
 											if (pac['y'] >= minstartliney) and (pac['x'] * @k >= currentxpos - @feps) and (pac['x'] * @k <= currentxpos + @feps)
-												@page_annots[@page][pak]['x'] += spacew / @k
-												@page_annots[@page][pak]['w'] += (spacewidth * pac['numspaces']) / @k
+												if cxpos > lmpos
+													@page_annots[@page][pak]['x'] += (spacew - one_space_width) / @k
+													@page_annots[@page][pak]['w'] += (spacewidth * pac['numspaces']) / @k
+												else
+													@page_annots[@page][pak]['w'] += ((spacewidth * pac['numspaces']) - one_space_width) / @k
+												end
 												break
 											end
 										}
@@ -7348,37 +7412,32 @@ class TCPDF
 								end
 							end
 						end # end of J
-						if (t_x != 0) or (yshift < 0)
-							# shift the line
-							trx = sprintf('1 0 0 1 %.3f %.3f cm', t_x * @k, yshift * @k)
-							setPageBuffer(startlinepage, pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n" + pend)
-							endlinepos = (pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n").length
-							# shift the annotations and links
-							if !@page_annots[@page].nil?
-								@page_annots[@page].each_with_index { |pac, pak|
-									if pak >= pask
-										@page_annots[@page][pak]['x'] += t_x
-										@page_annots[@page][pak]['y'] -= yshift
-									end
-								}
-							end
-							@y -= yshift
+					end # end if $startlinex
+					if (t_x != 0) or (yshift < 0)
+						# shift the line
+						trx = sprintf('1 0 0 1 %.3f %.3f cm', t_x * @k, yshift * @k)
+						setPageBuffer(startlinepage, pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n" + pend)
+						endlinepos = (pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n").length
+						# shift the annotations and links
+						if !@page_annots[@page].nil?
+							@page_annots[@page].each_with_index { |pac, pak|
+								if pak >= pask
+									@page_annots[@page][pak]['x'] += t_x
+									@page_annots[@page][pak]['y'] -= yshift
+								end
+							}
 						end
+						@y -= yshift
 					end
 				end
 				@newline = false
 				pbrk = checkPageBreak(@lasth)
-				SetFont(fontname, fontstyle, fontsize)
-				if wfill == 1
-					SetFillColorArray(@bgcolor)
-				end
 				startlinex = @x
 				startliney = @y
-				minstartliney = @y
+				minstartliney = startliney
 				startlinepage = @page
 				if !endlinepos.nil? and !pbrk
 					startlinepos = endlinepos
-					endlinepos = nil
 				else
 					if !@footerlen[@page].nil?
 						@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
@@ -7387,13 +7446,18 @@ class TCPDF
 					end
 					startlinepos = @footerpos[@page]
 				end
+				endlinepos = nil
 				plalign = lalign
 				if !@page_annots[@page].nil?
 					pask = @page_annots[@page].length
 				else
 					pask = 0
 				end
-			end
+				SetFont(fontname, fontstyle, fontsize)
+				if wfill  == 1
+					SetFillColorArray(@bgcolor)
+				end
+			end # end newline
 			if !opentagpos.nil?
 				opentagpos = nil
 			end
@@ -7614,8 +7678,6 @@ class TCPDF
 					@lasth = @font_size * @cell_height_ratio
 					minstartliney = @y
 					putHtmlListBullet(@listnum, @lispacer, pfontsize)
-					SetFont(curfontname, curfontstyle, curfontsize)
-					@lasth = @font_size * @cell_height_ratio
 					if (pfontsize.is_a? Integer) and (pfontsize > 0) and (curfontsize.is_a? Integer) and (curfontsize > 0) and (pfontsize != curfontsize)
 						@y += (pfontsize - curfontsize) / @k
 						minstartliney = [@y, minstartliney].min
@@ -7642,7 +7704,7 @@ class TCPDF
 					if !@premode
 						prelen = dom[key]['value'].length
 						if isRTLTextDir()
-							dom[key]['value'] = dom[key]['value'].rstrip
+							dom[key]['value'] = dom[key]['value'].rstrip + 0.chr
 						else
 							dom[key]['value'] = dom[key]['value'].lstrip
 						end
@@ -7657,19 +7719,20 @@ class TCPDF
 					firstblock = false
 				end
 				strrest = ''
+				if @rtl
+					@x -= @textindent
+				else
+					@x += @textindent
+				end
 				if !@href.empty? and @href['url']
 					# HTML <a> Link
-					strrest = addHtmlLink(@href['url'], dom[key]['value'], wfill, true, @href['color'], @href['style'])
+					strrest = addHtmlLink(@href['url'], dom[key]['value'].strip, wfill, true, @href['color'], @href['style'], true)
 				else
-					if @rtl
-						@x -= @textindent
-					else
-						@x += @textindent
-					end
 					# ****** write only until the end of the line and get the rest ******
-					strrest = Write(@lasth, dom[key]['value'], '', wfill, '', false, 0, true, firstblock)
-					@textindent = 0
+					strrest = Write(@lasth, dom[key]['value'], '', wfill, '', false, 0, true, firstblock, 0)
 				end
+				@textindent = 0
+
 				if !strrest.nil? and strrest.length > 0
 					# store the remaining string on the previous :key position
 					@newline = true
@@ -7686,7 +7749,15 @@ class TCPDF
 					else
 						loop = 0
 					end
-					dom[key]['value'] = strrest.lstrip
+					if !@href.empty? and @href['url']
+						dom[key]['value'] = strrest.strip
+					elsif @premode
+						dom[key]['value'] = strrest
+					elsif isRTLTextDir()
+						dom[key]['value'] = strrest.rstrip
+					else
+						dom[key]['value'] = strrest.lstrip
+					end
 					if loop < 3
 						key -= 1
 					end
@@ -7697,19 +7768,12 @@ class TCPDF
 			key += 1
 			if dom[key] and dom[key]['tag'] and (dom[key]['opening'].nil? or !dom[key]['opening']) and dom[(dom[key]['parent'])]['attribute']['nobr'] and (dom[(dom[key]['parent'])]['attribute']['nobr'] == 'true')
 				if !undo and (@start_transaction_page == (@numpages - 1))
-					if dom[(dom[key]['parent'])]['thead']
-						# we are inside a thead section
-						inthead = true
-					else
-						inthead = false
-					end
 					# restore previous object
 					rollbackTransaction(true)
 					# restore previous values
 					this_method_vars.each {|vkey , vval|
 						eval("#{vkey} = vval") 
 					}
-					@in_thead = inthead
 					# add a page
 					AddPage()
 					undo = true # avoid infinite loop
@@ -7724,28 +7788,29 @@ class TCPDF
 			if (yshift > 0) or (@page > startlinepage)
 				yshift = 0
 			end
+			t_x = 0
+			# the last line must be shifted to be aligned as requested
+			linew = (@endlinex - startlinex).abs
+			pstart = getPageBuffer(startlinepage)[0, startlinepos]
+			if !opentagpos.nil? and !@footerlen[startlinepage].nil? and !@in_footer
+				@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
+				midpos = [opentagpos, @footerpos[startlinepage]].min
+			elsif !opentagpos.nil?
+				midpos = opentagpos
+			elsif !@footerlen[startlinepage].nil? and !@in_footer
+				@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
+				midpos = @footerpos[startlinepage]
+			else
+				midpos = 0
+			end
+			if midpos > 0
+				pmid = getPageBuffer(startlinepage)[startlinepos, midpos - startlinepos]
+				pend = getPageBuffer(startlinepage)[midpos..-1]
+			else
+				pmid = getPageBuffer(startlinepage)[startlinepos..-1]
+				pend = ""
+			end
 			if (!plalign.nil? and (((plalign == 'C') or (plalign == 'J') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl)))) or (yshift < 0)
-				# the last line must be shifted to be aligned as requested
-				linew = (@endlinex - startlinex).abs
-				pstart = getPageBuffer(startlinepage)[0, startlinepos]
-				if !opentagpos.nil? and !@footerlen[startlinepage].nil? and !@in_footer
-					@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
-					midpos = [opentagpos, @footerpos[startlinepage]].min
-				elsif !opentagpos.nil?
-					midpos = opentagpos
-				elsif !@footerlen[startlinepage].nil? and !@in_footer
-					@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
-					midpos = @footerpos[startlinepage]
-				else
-					midpos = 0
-				end
-				if midpos > 0
-					pmid = getPageBuffer(startlinepage)[startlinepos, midpos - startlinepos]
-					pend = getPageBuffer(startlinepage)[midpos..-1]
-				else
-					pmid = getPageBuffer(startlinepage)[startlinepos..-1]
-					pend = ""
-				end
 				# calculate shifting amount
 				tw = w
 				if @l_margin != prevlMargin
@@ -7754,8 +7819,8 @@ class TCPDF
 				if @r_margin != prevrMargin
 					tw += prevrMargin - @r_margin
 				end
+				one_space_width = GetStringWidth(32.chr)
 				mdiff = (tw - linew).abs
-				t_x = 0
 				if plalign == 'C'
 					if @rtl
 						t_x = -(mdiff / 2)
@@ -7764,28 +7829,45 @@ class TCPDF
 					end
 				elsif (plalign == 'R') and !@rtl
 					# right alignment on LTR document
+					if revstrpos(pmid, ')]').to_i == revstrpos(pmid, ' )]').to_i + 1
+						# remove last space (if any)
+						linew -= one_space_width
+						mdiff = (tw - linew).abs
+					end
 					t_x = mdiff
 				elsif (plalign == 'L') and @rtl
 					# left alignment on RTL document
+					if (revstrpos(pmid, '[( ').to_i == revstrpos(pmid, '[(').to_i) or (revstrpos(pmid, '[(' + 0.chr + 32.chr).to_i == revstrpos(pmid, '[(').to_i)
+						# remove first space (if any)
+						linew -= one_space_width
+					end
+					if pmid.index('[(').to_i == revstrpos(pmid, '[(').to_i
+						# remove last space (if any)
+						linew -= one_space_width
+						if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+							linew -= one_space_width
+						end
+					end
+					mdiff = (tw - linew).abs
 					t_x = -mdiff
 				end
-				if (t_x != 0) or (yshift < 0)
-					# shift the line
-					trx = sprintf('1 0 0 1 %.3f %.3f cm', t_x * @k, yshift * @k)
-					setPageBuffer(startlinepage, pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n" + pend)
-					endlinepos = (pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n").length
+			end # end if startlinex
+			if (t_x != 0) or (yshift < 0)
+				# shift the line
+				trx = sprintf('1 0 0 1 %.3f %.3f cm', t_x * @k, yshift * @k)
+				setPageBuffer(startlinepage, pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n" + pend)
+				endlinepos = (pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n").length
 
-					# shift the annotations and links
-					if !@page_annots[@page].nil?
-						@page_annots[@page].each_with_index { |pac, pak|
-							if pak >= pask
-								@page_annots[@page][pak]['x'] += t_x
-								@page_annots[@page][pak]['y'] -= yshift
-							end
-						}
-					end
-					@y -= yshift
+				# shift the annotations and links
+				if !@page_annots[@page].nil?
+					@page_annots[@page].each_with_index { |pac, pak|
+						if pak >= pask
+							@page_annots[@page][pak]['x'] += t_x
+							@page_annots[@page][pak]['y'] -= yshift
+						end
+					}
 				end
+				@y -= yshift
 			end
 		end
 		if ln and !(cell and (dom[key-1]['value'] == 'table'))
@@ -8647,7 +8729,6 @@ class TCPDF
 						@thead_margins ||= {}
 						@thead_margins['cmargin'] = @c_margin
 					end
-					@in_thead = true
 				end
 			end
 			if !tag['attribute']['cellpadding'].nil?
@@ -8658,15 +8739,13 @@ class TCPDF
 			if !tag['attribute']['cellspacing'].nil?
 				cs = getHTMLUnitToUnits(tag['attribute']['cellspacing'], 1, 'px')
 			end
-			checkPageBreak((2 * cp) + (2 * cs) + @lasth)
+			if checkPageBreak(((2 * cp) + (2 * cs) + @lasth), '', false)
+				@in_thead = true
+				AddPage()
+			end
 		when 'tr'
 			# array of columns positions
 			dom[key]['cellpos'] = []
-			if tag['thead']
-				@in_thead = true
-			else
-				@in_thead = false
-			end
 		when 'hr'
 			Ln('', cell)
 			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
@@ -8792,7 +8871,7 @@ class TCPDF
 #				if (type == 'eps') or (type == 'ai')
 #					ImageEps(tag['attribute']['src'], xpos, GetY(), iw, ih, imglink, true, align, '', border)
 #				else
-					result_img = Image(tag['attribute']['src'], xpos, GetY(), iw, ih, '', imglink, align, false, 300, '', false, false, border)
+					result_img = Image(tag['attribute']['src'], xpos, GetY(), iw, ih, '', imglink, align, false, 300, '', false, false, border, false, false)
 #				end
 				rescue => err
 					logger.error "pdf: Image: error: #{err.message}"
@@ -9849,6 +9928,23 @@ class TCPDF
  		return (str.nil? or (str.is_a?(String) and (str.length == 0)))
  	end
 
+ 	#
+	# Find position of last occurrence of a substring in a string
+	# @param string :haystack The string to search in.
+	# @param string :needle substring to search.
+	# @param int :offset May be specified to begin searching an arbitrary number of characters into the string.
+	# @return Returns the position where the needle exists. Returns FALSE if the needle was not found. 
+	# @access public
+	# @since 4.8.038 (2010-03-13)
+ 	#
+	def revstrpos(haystack, needle, offset = 0)
+		length = haystack.length
+		offset = (offset > 0) ? (length - offset) : offset.abs
+		pos = haystack.reverse.index(needle.reverse, offset)
+
+		return (pos.nil? ? nil : length - pos - needle.length)
+ 	end
+
 	#
 	# Output anchor link.
 	# @param string :url link URL or internal link (i.e.: <a href="#23">link to page 23</a>)
@@ -9857,10 +9953,11 @@ class TCPDF
 	# @param boolean :firstline if true prints only the first line and return the remaining string.
 	# @param array :color array of RGB text color
 	# @param string :style font style (U, D, B, I)
+	# @param boolean :firstblock if true the string is the starting of a line.
 	# @return the number of cells used or the remaining text if :firstline = true
 	# @access public
 	#
-	def addHtmlLink(url, name, fill=0, firstline=false, color='', style=-1)
+	def addHtmlLink(url, name, fill=0, firstline=false, color='', style=-1, firstblock=false)
 		if !empty_string(url) and (url[0, 1] == '#')
 			# convert url to internal link
 			page = url.sub(/^#/, "").to_i
@@ -9880,7 +9977,7 @@ class TCPDF
 		else
 			SetFont('', @font_style + style)
 		end
-		ret = Write(@lasth, name, url, fill, '', false, 0, firstline)
+		ret = Write(@lasth, name, url, fill, '', false, 0, firstline, firstblock, 0)
 		# restore settings
 		SetFont('', prevstyle)
 		SetTextColorArray(prevcolor)

@@ -30,6 +30,59 @@ class TcpdfTest < ActiveSupport::TestCase
     assert_equal spacestr, 0.chr + 32.chr
   end
 
+  test "revstrpos test" do
+    pdf = TCPDF.new
+    pos = pdf.revstrpos('abcd efgh ', 'cd')
+    assert_equal pos, 2
+
+    pos = pdf.revstrpos('abcd efgh ', 'cd ')
+    assert_equal pos, 2
+
+    pos = pdf.revstrpos('abcd efgh abcd efg', 'cd')
+    assert_equal pos, 12
+
+    pos = pdf.revstrpos('abcd efgh abcd efg', 'zy')
+    assert_equal pos, nil
+  end
+
+  test "revstrpos offset test 1" do
+    pdf = TCPDF.new
+
+    pos = pdf.revstrpos('abcd efgh ', 'cd', 3)          # 'abc'
+    assert_equal pos, nil
+
+    pos = pdf.revstrpos('abcd efgh ', 'cd', 4)          # 'abcd'
+    assert_equal pos, 2
+
+    pos = pdf.revstrpos('abcd efgh abcd efg', 'cd', 3)  # 'abc'
+    assert_equal pos, nil
+
+    pos = pdf.revstrpos('abcd efgh abcd efg', 'cd', 4)  # 'abcd'
+    assert_equal pos, 2
+
+    pos = pdf.revstrpos('abcd efgh abcd efg', 'cd', 13) # 'abcd efgh abc'
+    assert_equal pos, 2 
+
+    pos = pdf.revstrpos('abcd efgh abcd efg', 'cd', 14) # 'abcd efgh abcd'
+    assert_equal pos, 12
+  end
+
+  test "revstrpos offset test 2" do
+    pdf = TCPDF.new
+
+    pos = pdf.revstrpos('abcd efgh ', 'cd', -6)         # 'abcd'
+    assert_equal pos, 2
+
+    pos = pdf.revstrpos('abcd efgh ', 'cd', -7)         # 'abc'
+    assert_equal pos, nil
+
+    pos = pdf.revstrpos('abcd efgh abcd efg', 'cd', -4) # 'abcd efgh abcd'
+    assert_equal pos, 12
+
+    pos = pdf.revstrpos('abcd efgh abcd efg', 'cd', -5) # 'abcd efgh abc'
+    assert_equal pos, 2
+  end
+
   test "Transaction test without diskcache" do
     pdf = TCPDF.new
     pdf.AddPage()
