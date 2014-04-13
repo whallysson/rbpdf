@@ -2358,7 +2358,7 @@ class TCPDF
 			return
 		end
 		if rx
-			if (false != style.index('F')) and fill_color
+			if (nil != style.index('F')) and fill_color
 				SetFillColorArray(fill_color)
 			end
 			case style
@@ -7293,10 +7293,10 @@ class TCPDF
 									pmid_mark = $2
 									# check if we are inside a string section '[( ... )]'
 									stroffset = pmid.index('[(', offset)
-									if (stroffset != false) and (stroffset <= pmid_offset)
+									if (stroffset != nil) and (stroffset <= pmid_offset)
 										# set offset to the end of string section 
 										offset = pmid.index(')]', stroffset)
-										while (offset != false) and (pmid[offset - 1, 1] == '\\')
+										while (offset != nil) and (pmid[offset - 1, 1] == '\\')
 											offset = pmid.index(')]', offset + 1)
 										end
 										if offset == false
@@ -7319,6 +7319,7 @@ class TCPDF
 										# shift EPS images
 										trx = sprintf('1 0 0 1 %.3f 0 cm', spacew)
 										epsposbeg = pmid.index('q' + @epsmarker, prev_epsposbeg - 6)
+										epsposbeg = 0 if epsposbeg.nil?
 										pmid_b = pmid[0, epsposbeg]
 										pmid_m = pmid[epsposbeg, epsposend - epsposbeg]
 										pmid_e = pmid[epsposend..-1]
@@ -8117,7 +8118,7 @@ class TCPDF
 								when '$='
 									valid = true  if val == substr(dom[key]['attribute'][att], -val.length)
 								when '*='
-									valid = true  if dom[key]['attribute'][att].index(val) != false
+									valid = true  if dom[key]['attribute'][att].index(val) != nil
 								when '|='
 									if dom[key]['attribute'][att] == val
 										valid = true
@@ -8194,7 +8195,7 @@ class TCPDF
 		# get all styles that apply
 		css.each { |selector, style|
 			# remove specificity
-			selector = selector[selector.index(' ')..-1]
+			selector = selector[selector.index(' ')..-1] if selector.index(' ')
 			# check if this selector apply to current tag
 			if isValidCSSSelectorForTag(dom, key, selector)
 				# apply style

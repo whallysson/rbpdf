@@ -95,6 +95,9 @@ class TcpdfCssTest < ActiveSupport::TestCase
     dom = pdf.getHtmlDomArray('<h1>abc</h1>')
     tag = pdf.getTagStyleFromCSS(dom, 2, {"0001 h1"=>"color:navy;font-family:times;"}) # dom, key, css selector
     assert_equal(";color:navy;font-family:times;", tag)
+
+    tag = pdf.getTagStyleFromCSS(dom, 2, {"0001h1"=>"color:navy;font-family:times;"}) # dom, key, css selector
+    assert_equal("", tag)
   end
 
   test "CSS Dom test" do
