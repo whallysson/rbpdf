@@ -3189,7 +3189,7 @@ class TCPDF
 					# calculate average space width
 					spacewidth = -1000 * (w - width - (2 * @c_margin)) / (ns ? ns : 1) / @font_size
 					# set word position to be used with TJ operator
-					txt2 = txt2.gsub(0.chr + ' ', ') ' + spacewidth.to_s + ' (')
+					txt2 = txt2.gsub(0.chr + ' ', ') ' + sprintf('%.3f', spacewidth) + ' (')
 				else
 					# get string width
 					width = txwidth
@@ -5067,7 +5067,7 @@ class TCPDF
 								pl['opt']['mk']['bc'].each {|col|
 									col = col.to_i
 									color = col <= 0 ? 0 : (col >= 255 ? 1 : col / 255)
-									annots << ' ' + color
+									annots << sprintf(' %.2f', color)
 								}
 								annots << ']'
 							end
@@ -5076,7 +5076,7 @@ class TCPDF
 								pl['opt']['mk']['bg'].each {|col|
 									col = col.to_i
 									color = col <= 0 ? 0 : (col >= 255 ? 1 : col / 255)
-									annots << ' ' + color
+									annots << sprintf(' %.2f', color)
 								}
 								annots << ']'
 							end
@@ -5118,7 +5118,7 @@ class TCPDF
 									annots << ' /S /' + pl['opt']['mk']['if']['s']
 								end
 								if pl['opt']['mk']['if']['a'] and pl['opt']['mk']['if']['a'].is_a?(Array) and !pl['opt']['mk']['if']['a'].empty?
-									annots << ' /A [' + pl['opt']['mk']['if']['a'][0] + ' ' + pl['opt']['mk']['if']['a'][1] + ']'
+									annots << sprintf(' /A [%.2f  %.2f]', pl['opt']['mk']['if']['a'][0], pl['opt']['mk']['if']['a'][1])
 								end
 								if pl['opt']['mk']['if']['fb'] and pl['opt']['mk']['if']['fb']
 									annots << ' /FB true'
@@ -5166,26 +5166,35 @@ class TCPDF
 							annots << ' /V'
 							if pl['opt']['v'].is_a?(Array)
 								pl['opt']['v'].each { |optval|
+									if optval.is_a? Float
+										optval = sprintf('%.2f', optval)
+									end
 									annots << ' ' + optval
 								}
 							else
 								annots << ' ' + textstring(pl['opt']['v'])
 							end
 						end
-						if pl['opt']['dv'] and pl['opt']['dv'].is_a?(String)
+						if pl['opt']['dv']
 							annots << ' /DV'
 							if pl['opt']['dv'].is_a?(Array)
 								pl['opt']['dv'].eath {|optval|
+									if optval.is_a? Float
+										optval = sprintf('%.2f', optval)
+									end
 									annots << ' ' + optval
 								}
 							else
 								annots << ' ' + textstring(pl['opt']['dv'])
 							end
 						end
-						if pl['opt']['rv'] and pl['opt']['rv'].is_a?(String)
+						if pl['opt']['rv']
 							annots << ' /RV'
 							if pl['opt']['rv'].is_a?(Array)
 								pl['opt']['rv'].eath {|optval|
+									if optval.is_a? Float
+										optval = sprintf('%.2f', optval)
+									end
 									annots << ' ' + optval
 								}
 							else
@@ -5392,6 +5401,9 @@ class TCPDF
 				newobj();
 				s='<</Type /FontDescriptor /FontName /' + name;
 				font['desc'].each do |fdk, fdv|
+					if fdv.is_a? Float
+						fdv = sprintf('%.3f', fdv)
+					end
 					s << ' /' + fdk + ' ' + fdv + ''
 				end
 				if !empty_string(font['file'])
@@ -6226,7 +6238,10 @@ class TCPDF
 		out('<</Type /FontDescriptor');
 		out('/FontName /' + font['name']);
 		font['desc'].each do |key, value|
-			out('/' + key.to_s + ' ' + value.to_s);
+			if value.is_a? Float
+				value = sprintf('%.3f', value)
+			end
+			out('/' + key.to_s + ' ' + value.to_s + '')
 		end
 		fontdir = ''
 		if !empty_string(font['file'])
@@ -6337,6 +6352,9 @@ class TCPDF
 		s = '<</Type /FontDescriptor /FontName /' + name
 		font['desc'].each {|k, v|
 			if k != 'Style'
+				if fdv.is_a? Float
+					fdv = sprintf('%.3f', fdv)
+				end
 				s << ' /' + k + ' ' + v.to_s + ''
 			end
 		}
@@ -6859,10 +6877,14 @@ class TCPDF
 		else
 			pask = 0
 		end
-		if !@footerlen[@page].nil?
-			@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
+		if !@in_footer
+			if !@footerlen[@page].nil?
+				@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
+			else
+				@footerpos[@page] = @pagelen[@page]
+			end
 		else
-			@footerpos[@page] = @pagelen[@page]
+			startlinepos = @pagelen[@page]
 		end
 		startlinepos = @footerpos[@page]
 		lalign = align
@@ -7439,12 +7461,16 @@ class TCPDF
 				if !endlinepos.nil? and !pbrk
 					startlinepos = endlinepos
 				else
-					if !@footerlen[@page].nil?
-						@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
+					if !@in_footer
+						if !@footerlen[@page].nil?
+							@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
+						else
+							@footerpos[@page] = @pagelen[@page]
+						end
+						startlinepos = @footerpos[@page]
 					else
-						@footerpos[@page] = @pagelen[@page]
+						startlinepos = @pagelen[@page]
 					end
-					startlinepos = @footerpos[@page]
 				end
 				endlinepos = nil
 				plalign = lalign
@@ -7589,13 +7615,7 @@ class TCPDF
 						end
 						# add rowspan information to table element
 						if rowspan > 1
-							if !@footerlen[@page].nil?
-								@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
-							else
-								@footerpos[@page] = @pagelen[@page]
-							end
-							trintmrkpos = @footerpos[@page]
-							dom[table_el]['rowspans'].push({'trid' => trid, 'rowspan' => rowspan, 'mrowspan' => rowspan, 'colspan' => colspan, 'startpage' => @page, 'startx' => @x, 'starty' => @y, 'intmrkpos' => trintmrkpos})
+							dom[table_el]['rowspans'].push({'trid' => trid, 'rowspan' => rowspan, 'mrowspan' => rowspan, 'colspan' => colspan, 'startpage' => @page, 'startx' => @x, 'starty' => @y})
 							trsid = dom[table_el]['rowspans'].size
 						end
 						dom[trid]['cellpos'].push({'startx' => @x})
