@@ -2675,12 +2675,12 @@ class TCPDF
 		if !@current_font['desc'].nil? and !@current_font['desc']['Ascent'].nil? and (@current_font['desc']['Ascent'] > 0)
 			@font_ascent = @current_font['desc']['Ascent'] * @font_size / 1000
 		else
-			@font_ascent = 0.8 * @font_size
+			@font_ascent = 0.85 * @font_size
 		end
 		if !@current_font['desc'].nil? and !@current_font['desc']['Descent'].nil? and (@current_font['desc']['Descent'] > 0)
 			@font_descent = - @current_font['desc']['Descent'] * @font_size / 1000
 		else
-			@font_descent = 0.2 * @font_size
+			@font_descent = 0.15 * @font_size
 		end
 		if (@page > 0) and !@current_font['i'].nil?
 			out(sprintf('BT /F%d %.2f Tf ET ', @current_font['i'], @font_size_pt));
@@ -2853,7 +2853,7 @@ class TCPDF
 			@offsets[filedata['n']] = @bufferlen
 			out(filedata['n'].to_s + ' 0 obj')
 			out('<</Type /EmbeddedFile' + filter + ' /Length ' + data.length.to_s + ' >>')
-			putstream(data)
+			putstream(data, filedata['n'])
 			out('endobj')
 		}
 	end
@@ -3145,7 +3145,52 @@ class TCPDF
 			end
 		end
 		if (txt != '')
-			txt2 = escapetext(txt)
+			txt2 = txt
+			if @is_unicode
+				if (@current_font['type'] == 'core') or (@current_font['type'] == 'TrueType') or (@current_font['type'] == 'Type1')
+					txt2 = UTF8ToLatin1(txt2)
+					txt2 = escape(txt2)
+				else
+					unicode = UTF8StringToArray(txt) # array of UTF-8 unicode values
+					# Convert string to UTF-16BE and reverse RTL language
+					txt2 = utf8StrArrRev(unicode, '', false, @tmprtl)
+					txt2 = escape(txt2)
+					# ---- Fix for bug #2977340 "Incorrect Thai characters position arrangement" ----
+					# Symbols that could overlap on the font top (only works in LTR)
+					topchar = [3611, 3613, 3615, 3650, 3651, 3652] # chars that extends on top
+					btmchar = [] # chars that extends on bottom
+					topsym = [3633, 3636, 3637, 3638, 3639, 3655, 3656, 3657, 3658, 3659, 3660, 3661, 3662] # symbols with top positi
+					btmsym = [] # symbols with bottom position
+					uniblock = []
+					numchars = unicode.length # number of chars
+					shift = 0
+					vh = 0.2 * @font_size * @k # vertical shift to avoid overlapping
+					# resolve overlapping conflicts by splitting the string in several parts
+					1.upto(numchars - 1) do |i|
+						uniblock.push unicode[i]
+						# check if symbols overlaps at top
+						if topsym.include?(unicode[i]) and (topsym.include?(unicode[i - 1]) or topchar.inclue?(unicode[i - 1]))
+							# get postion on string
+							overpos = escape(arrUTF8ToUTF16BE(uniblock, false)).length
+							txt2 = txt2[0, overpos + shift] + ') Tj ' + sprintf('%05.2f', vh) + ' Ts (' + txt2[overpos + shift, 2] + ') Tj 0 Ts (' + txt2[(overpos + shift + 2)..-1]
+
+							shift += overpos + 26
+							uniblock = []
+						end
+						# check if symbols overlaps at bottom
+						if btmsym.include?(unicode[i]) and (btmsym.include?(unicode[i - 1]) or btmchar.include?(unicode[i - 1]))
+							# get postion on string
+							overpos = escape(arrUTF8ToUTF16BE(uniblock, false)).length
+							txt2 = txt2[0, overpos + shift] + ') Tj -' + sprintf('%05.2f', vh) + ' Ts (' + txt2[overpos + shift, 2] + ') Tj 0 Ts (' + txt2[(overpos + shift + 2)..-1]
+							shift += overpos + 27
+							uniblock = []
+						end
+					end
+					# ---- END OF Fix for bug #2977340 "Incorrect Thai characters position arrangement" ----
+				end
+			else
+				txt2 = escape(txt2)
+			end
 			# text length
 			width = txwidth = GetStringWidth(txt)
 			# ratio between cell length and text length
@@ -3224,8 +3269,8 @@ class TCPDF
 				xdx = @x + dx
 			end
 			xdk = xdx * k
-			# calculate approximate position of the font base line
-			basefonty = @y + (h / 2) + (@font_size / 3)
+			# get position of the font base line
+			basefonty = @y + ((h + @font_ascent - @font_descent) / 2)
 
 			# print text
 			s << sprintf('BT %.2f %.2f Td [(%s)] TJ ET', xdk, (@h - basefonty) * k, txt2)
@@ -6155,9 +6200,19 @@ class TCPDF
 
 	#
 	#
+	# Output a stream.
+	# @param string :s string to output.
+	# @param int :n object reference for encryption mode
 	# @access protected
 	#
-	def putstream(s)
+	def putstream(s, n=0)
+		#if @encrypted
+		#	if n <= 0
+		#		# default to current object
+		#		n = @n
+		#	end
+		#	s = RC4(objectkey(n), s)
+		#end
 		out('stream');
 		out(s);
 		out('endstream');
@@ -6528,7 +6583,7 @@ class TCPDF
 	end
 
 	#
-	# Converts UTF-8 characters array to Latin1<br>
+	# Converts UTF-8 characters array to array of Latin1 characters<br>
 	# @param array :unicode array containing UTF-8 unicode values
 	# @return array
 	# @author Nicola Asuni
@@ -6909,6 +6964,7 @@ class TCPDF
 			@listindent = GetStringWidth('0000')
 		end
 		# save previous states
+		prev_cell_height_ratio = @cell_height_ratio
 		prev_listnum = @listnum
 		prev_listordered = @listordered
 		prev_listcount = @listcount
@@ -6928,10 +6984,12 @@ class TCPDF
 			if dom[key]['tag'] and dom[key]['attribute'] and dom[key]['attribute']['pagebreak']
 				# check for pagebreak 
 				if (dom[key]['attribute']['pagebreak'] == 'true') or (dom[key]['attribute']['pagebreak'] == 'left') or (dom[key]['attribute']['pagebreak'] == 'right')
-					AddPage()
+					# add a page (or trig AcceptPageBreak() for multicolumn mode)
+					checkPageBreak(@page_break_trigger + 1)
 				end
 				if ((dom[key]['attribute']['pagebreak'] == 'left') and ((!@rtl and (@page % 2 == 0)) or (@rtl and (@page % 2 != 0)))) or ((dom[key]['attribute']['pagebreak'] == 'right') and ((!@rtl and (@page % 2 != 0)) or (@rtl and (@page % 2 == 0))))
-					AddPage()
+					# add a page (or trig AcceptPageBreak() for multicolumn mode)
+					checkPageBreak(@page_break_trigger + 1)
 				end
 			end
 			if dom[key]['tag'] and dom[key]['opening'] and dom[key]['attribute']['nobr'] and (dom[key]['attribute']['nobr'] == 'true')
@@ -6967,6 +7025,7 @@ class TCPDF
 					this_method_vars['lalign'] = lalign
 					this_method_vars['plalign'] = plalign
 					this_method_vars['w'] = w
+					this_method_vars['prev_cell_height_ratio'] = prev_cell_height_ratio
 					this_method_vars['prev_listnum'] = prev_listnum
 					this_method_vars['prev_listordered'] = prev_listordered
 					this_method_vars['prev_listcount'] = prev_listcount
@@ -6989,8 +7048,8 @@ class TCPDF
 						this_method_vars.each {|vkey , vval|
 							eval("#{vkey} = vval") 
 						}
-						# add a page
-						AddPage()
+						# add a page (or trig AcceptPageBreak() for multicolumn mode)
+						checkPageBreak(@page_break_trigger + 1)
 						@start_transaction_page = @page
 					end
 				end
@@ -7000,6 +7059,11 @@ class TCPDF
 				end
 			end
 			if dom[key]['tag'] or (key == 0)
+				if dom[key]['line-height']
+					# set line height
+					@cell_height_ratio = dom[key]['line-height']
+					@lasth = @font_size * @cell_height_ratio
+				end
 				if ((dom[key]['value'] == 'table') or (dom[key]['value'] == 'tr')) and !dom[key]['align'].nil?
 					dom[key]['align'] = @rtl ? 'R' : 'L'
 				end
@@ -7795,8 +7859,8 @@ class TCPDF
 					this_method_vars.each {|vkey , vval|
 						eval("#{vkey} = vval") 
 					}
-					# add a page
-					AddPage()
+					# add a page (or trig AcceptPageBreak() for multicolumn mode)
+					checkPageBreak(@page_break_trigger + 1)
 					undo = true # avoid infinite loop
 				else
 					undo = false
@@ -7901,6 +7965,7 @@ class TCPDF
 			@r_margin = @pagedim[@page]['orm']
 		end
 		# restore previous list state
+		@cell_height_ratio = prev_cell_height_ratio
 		@listnum = prev_listnum
 		@listordered = prev_listordered
 		@listcount = prev_listcount
@@ -8336,6 +8401,7 @@ class TCPDF
 		dom[key]['fontname'] = @font_family.dup
 		dom[key]['fontstyle'] = @font_style.dup
 		dom[key]['fontsize'] = @font_size_pt
+		dom[key]['line-height'] = @cell_height_ratio
 		dom[key]['bgcolor'] = ActiveSupport::OrderedHash.new
 		dom[key]['fgcolor'] = @fgcolor.dup
 
@@ -8379,6 +8445,7 @@ class TCPDF
 					dom[key]['fontname'] = dom[grandparent]['fontname'].dup
 					dom[key]['fontstyle'] = dom[grandparent]['fontstyle'].dup
 					dom[key]['fontsize'] = dom[grandparent]['fontsize']
+					dom[key]['line-height'] = dom[grandparent]['line-height']
 					dom[key]['bgcolor'] = dom[grandparent]['bgcolor'].dup
 					dom[key]['fgcolor'] = dom[grandparent]['fgcolor'].dup
 					dom[key]['align'] = dom[grandparent]['align'].dup
@@ -8437,6 +8504,7 @@ class TCPDF
 						dom[key]['fontname'] = dom[parentkey]['fontname'].dup
 						dom[key]['fontstyle'] = dom[parentkey]['fontstyle'].dup
 						dom[key]['fontsize'] = dom[parentkey]['fontsize']
+						dom[key]['line-height'] = dom[parentkey]['line-height']
 						dom[key]['bgcolor'] = dom[parentkey]['bgcolor'].dup
 						dom[key]['fgcolor'] = dom[parentkey]['fgcolor'].dup
 						dom[key]['align'] = dom[parentkey]['align'].dup
@@ -8516,6 +8584,20 @@ class TCPDF
 								dom[key]['fontsize'] = dom[parentkey]['fontsize'] + 3
 							else
 								dom[key]['fontsize'] = getHTMLUnitToUnits(fsize, dom[parentkey]['fontsize'], 'pt', true)
+							end
+						end
+						# line-height
+						if dom[key]['style']['line-height']
+							lineheight = dom[key]['style']['line-height'].strip
+							case lineheight
+								# A normal line height. This is default
+							when 'normal'
+								dom[key]['line-height'] = dom[0]['line-height']
+							else
+								if lineheight.is_a? Integer
+									lineheight = lineheight * 100
+								end
+								dom[key]['line-height'] = getHTMLUnitToUnits(lineheight, 1, '%', true)
 							end
 						end
 						# font style
@@ -8999,10 +9081,12 @@ class TCPDF
 			pba = dom[key]['attribute']['pagebreakafter']
 			# check for pagebreak 
 			if (pba == 'true') or (pba == 'left') or (pba == 'right')
-				AddPage()
+				# add a page (or trig AcceptPageBreak() for multicolumn mode)
+				checkPageBreak(@page_break_trigger + 1)
 			end
 			if ((pba == 'left') and ((!@rtl and (@page % 2 == 0)) or (@rtl and (@page % 2 != 0)))) or ((pba == 'right') and ((!@rtl and (@page % 2 != 0)) or (@rtl and (@page % 2 == 0))))
-				AddPage()
+				# add a page (or trig AcceptPageBreak() for multicolumn mode)
+				checkPageBreak(@page_break_trigger + 1)
 			end
 		end
 	end
@@ -9406,7 +9490,7 @@ class TCPDF
 	end
 
 	#
-	# convert html string containing value and unit of measure to user's units or points.
+	# convert HTML string containing value and unit of measure to user's units or points.
 	# @param string :htmlval string containing values and unit
 	# @param string :refsize reference value in points
 	# @param string :defaultunit default unit (can be one of the following: %, em, ex, px, in, mm, pc, pt).
@@ -10092,12 +10176,29 @@ class TCPDF
 	#
 	# Reverse the RLT substrings using the Bidirectional Algorithm (http://unicode.org/reports/tr9/).
 	# @param string :str string to manipulate. (UTF-8)
-	# @param bool :forcertl if 'R' forces RTL, if 'L' forces LTR
+	# @param bool :setbom  if true set the Byte Order Mark (BOM = 0xFEFF)
+	# @param bool :forcertl if true forces RTL text direction
 	# @return string (UTF-16BE)
 	# @author Nicola Asuni
 	# @since 2.1.000 (2008-01-08)
+	#
 	def utf8StrRev(str, setbom=false, forcertl=false)
-		return arrUTF8ToUTF16BE(utf8Bidi(UTF8StringToArray(str), str, forcertl), setbom)
+		return utf8StrArrRev(UTF8StringToArray(str), str, setbom, forcertl)
+	end
+
+	#
+	# Reverse the RLT substrings array using the Bidirectional Algorithm (http://unicode.org/reports/tr9/).
+	# @param array :arr array of unicode values.
+	# @param string :str string to manipulate (or empty value).
+	# @param bool :setbom  if true set the Byte Order Mark (BOM = 0xFEFF)
+	# @param bool :forcertl if true forces RTL text direction
+	# @return string
+	# @access protected
+	# @author Nicola Asuni
+	# @since 4.9.000 (2010-03-27)
+	#
+	def utf8StrArrRev(arr, str='', setbom=false, forcertl=false)
+		return arrUTF8ToUTF16BE(utf8Bidi(arr, str, forcertl), setbom)
 	end
 
 	#

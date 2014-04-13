@@ -71,15 +71,15 @@ class TcpdfPageTest < ActiveSupport::TestCase
 
     assert_equal content.length,  8
     assert_equal content[6],  " 0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg"
-    assert_equal content[7],  "q 0.000 0.000 0.000 rg BT 31.19 792.70 Td [(\000C\000h\000a\000p\000t\000e\000r)] TJ ET Q "
+    assert_equal content[7],  "q 0.000 0.000 0.000 rg BT 31.19 790.87 Td [(\x00C\x00h\x00a\x00p\x00t\x00e\x00r)] TJ ET Q "
 
     #################################################
     # 0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg       # getCellCode
     # q                                             # Save current graphic state.
     # 0.000 0.000 0.000 rg                          # Set colors.
     # BT
-    #   31.19 792.70 Td                             # Set text offset.
-    #   [(\000C\000h\000a\000p\000t\000e\000r)] TJ  # Write array of characters.
+    #   31.19 790.87 Td                             # Set text offset.
+    #   [(\x00C\x00h\x00a\x00p\x00t\x00e\x00r)] TJ  # Write array of characters.
     # ET
     # Q                                             # Restore previous graphic state.
     #################################################
