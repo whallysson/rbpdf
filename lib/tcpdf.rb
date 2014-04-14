@@ -297,6 +297,10 @@ class TCPDF
   	@img_scale ||= 1
 		@in_footer ||= false
 		@in_thead ||= false
+		@columns ||= []
+		@start_transaction_y ||= 0
+		@num_columns ||= 0
+		@current_column ||= 0
 		@alias_nb_pages = '{nb}'
 		@alias_num_page = '{pnb}'
 		@is_unicode = unicode
@@ -763,7 +767,7 @@ class TCPDF
 	# @param float :left Left margin.
 	# @param float :top Top margin.
 	# @param float :right Right margin. Default value is the left one.
-	# @param boolean $keepmargins if true overwrites the default page margins
+	# @param boolean :keepmargins if true overwrites the default page margins
 	# @access public
 	# @since 1.0
 	# @see SetLeftMargin(), SetTopMargin(), SetRightMargin(), SetAutoPageBreak()
@@ -2901,52 +2905,29 @@ class TCPDF
   alias_method :text, :Text
 
 	#
-	# Whenever a page break condition is met, the method is called, and the break is issued or not depending on the returned value. The default implementation returns a value according to the mode selected by SetAutoPageBreak().<br />
-	# This method is called automatically and should not be called directly by the application.<br />
-	# <b>Example:</b><br />
-	# The method is overriden in an inherited class in order to obtain a 3 column layout:<br />
-	# <pre>
-	# class PDF extends TCPDF {
-	# 	var :col=0;
-	#
-	# 	def SetCol(col)
-	# 		#Move position to a column
-	# 		@col = col;
-	# 		:x=10+:col*65;
-	# 		SetLeftMargin(x);
-	# 		SetX(x);
-	# 	end
-	#
-	# 	def AcceptPageBreak()
-	# 		if (@col<2)
-	# 			#Go to next column
-	# 			SetCol(@col+1);
-	# 			SetY(10);
-	# 			return false;
-	# 		end
-	# 		else
-	# 			#Go back to first column and issue page break
-	# 			SetCol(0);
-	# 			return true;
-	# 		end
-	# 	end
-	# }
-	#
-	# :pdf=new PDF();
-	# :pdf->Open();
-	# :pdf->AddPage();
-	# :pdf->SetFont('Arial','',12);
-	# for(i=1;:i<=300;:i++)
-	#     :pdf->Cell(0,5,"Line :i",0,1);
-	# }
-	# :pdf->Output();
-	# </pre>
+	# Whenever a page break condition is met, the method is called, and the break is issued or not depending on the returned value.
+	# The default implementation returns a value according to the mode selected by SetAutoPageBreak().<br />
+	# This method is called automatically and should not be called directly by the application.
 	# @return boolean
+	# @access public
 	# @since 1.4
 	# @see SetAutoPageBreak()
 	#
 	def AcceptPageBreak()
-		#Accept automatic page break or not
+		#if @num_columns > 0
+		#	# multi column mode
+		#	if @current_column < (@num_columns - 1)
+		#		# go to next column
+		#		selectColumn(@current_column + 1)
+		#	else
+		#		# add a new page
+		#		AddPage()
+		#		# set first column
+		#		selectColumn(0)
+		#	end
+		#	# avoid page breaking from checkPageBreak()
+		#	return false
+		#end
 		return @auto_page_break;
 	end
   alias_method :accept_page_break, :AcceptPageBreak
@@ -3149,48 +3130,39 @@ class TCPDF
 			if @is_unicode
 				if (@current_font['type'] == 'core') or (@current_font['type'] == 'TrueType') or (@current_font['type'] == 'Type1')
 					txt2 = UTF8ToLatin1(txt2)
-					txt2 = escape(txt2)
 				else
 					unicode = UTF8StringToArray(txt) # array of UTF-8 unicode values
-					# Convert string to UTF-16BE and reverse RTL language
-					txt2 = utf8StrArrRev(unicode, '', false, @tmprtl)
-					txt2 = escape(txt2)
+					unicode = utf8Bidi(unicode, '', @tmprtl)
 					# ---- Fix for bug #2977340 "Incorrect Thai characters position arrangement" ----
+					# NOTE: this doesn't work with HTML justification
 					# Symbols that could overlap on the font top (only works in LTR)
 					topchar = [3611, 3613, 3615, 3650, 3651, 3652] # chars that extends on top
-					btmchar = [] # chars that extends on bottom
 					topsym = [3633, 3636, 3637, 3638, 3639, 3655, 3656, 3657, 3658, 3659, 3660, 3661, 3662] # symbols with top positi
-					btmsym = [] # symbols with bottom position
-					uniblock = []
 					numchars = unicode.length # number of chars
-					shift = 0
-					vh = 0.2 * @font_size * @k # vertical shift to avoid overlapping
+					unik = 0;
+					uniblock = []
+					uniblock[unik] = []
+					uniblock[unik].push unicode[0]
 					# resolve overlapping conflicts by splitting the string in several parts
 					1.upto(numchars - 1) do |i|
-						uniblock.push unicode[i]
 						# check if symbols overlaps at top
 						if topsym.include?(unicode[i]) and (topsym.include?(unicode[i - 1]) or topchar.inclue?(unicode[i - 1]))
-							# get postion on string
-							overpos = escape(arrUTF8ToUTF16BE(uniblock, false)).length
-							txt2 = txt2[0, overpos + shift] + ') Tj ' + sprintf('%05.2f', vh) + ' Ts (' + txt2[overpos + shift, 2] + ') Tj 0 Ts (' + txt2[(overpos + shift + 2)..-1]
-
-							shift += overpos + 26
-							uniblock = []
-						end
-						# check if symbols overlaps at bottom
-						if btmsym.include?(unicode[i]) and (btmsym.include?(unicode[i - 1]) or btmchar.include?(unicode[i - 1]))
-							# get postion on string
-							overpos = escape(arrUTF8ToUTF16BE(uniblock, false)).length
-							txt2 = txt2[0, overpos + shift] + ') Tj -' + sprintf('%05.2f', vh) + ' Ts (' + txt2[overpos + shift, 2] + ') Tj 0 Ts (' + txt2[(overpos + shift + 2)..-1]
-							shift += overpos + 27
-							uniblock = []
+							# move symbols to another array
+							unik += 1
+							uniblock[unik] = []
+							uniblock[unik].push unicode[i]
+							unik += 1
+							uniblock[unik] = []
+							unicode[i] = 8203 # Unicode Character 'ZERO WIDTH SPACE' (U+200B)
+						else
+							uniblock[unik].push unicode[i]
 						end
 					end
-					# ---- END OF Fix for bug #2977340 "Incorrect Thai characters position arrangement" ----
+					# ---- END OF Fix for bug #2977340
+					txt2 = arrUTF8ToUTF16BE(unicode, false)
 				end
-			else
-				txt2 = escape(txt2)
 			end
+			txt2 = escape(txt2)
 			# text length
 			width = txwidth = GetStringWidth(txt)
 			# ratio between cell length and text length
@@ -3227,6 +3199,7 @@ class TCPDF
 			# count number of spaces
 			ns = txt.count(' ')
 			# Justification
+			spacewidth = 0
 			if (align == 'J') and (ns > 0)
 				if (@current_font['type'] == "TrueTypeUnicode") or (@current_font['type'] == "cidfont0")
 					# get string width without spaces
@@ -3234,7 +3207,8 @@ class TCPDF
 					# calculate average space width
 					spacewidth = -1000 * (w - width - (2 * @c_margin)) / (ns ? ns : 1) / @font_size
 					# set word position to be used with TJ operator
-					txt2 = txt2.gsub(0.chr + ' ', ') ' + sprintf('%.3f', spacewidth) + ' (')
+					txt2 = txt2.gsub(0.chr + 32.chr, ') ' + sprintf('%.3f', spacewidth) + ' (')
+					unicode_justification = true
 				else
 					# get string width
 					width = txwidth
@@ -3244,6 +3218,8 @@ class TCPDF
 				end
 				width = w - (2 * @c_margin)
 			end
+			# replace carriage return characters
+			txt2 = txt2.gsub("\r", ' ')
 			case align
 			when 'C'
 				dx = (w - width) / 2
@@ -3275,6 +3251,27 @@ class TCPDF
 			# print text
 			s << sprintf('BT %.2f %.2f Td [(%s)] TJ ET', xdk, (@h - basefonty) * k, txt2)
 
+			if uniblock
+				# print overlapping characters as separate string
+				xshift = 0 # horizontal shift
+				ty = (@h - basefonty + (0.2 * @font_size)) * k
+				spw = (w - txwidth - (2 * @c_margin)) / (ns ? ns : 1)
+				uniblock.each_with_index {|uniarr, uk|
+					if (uk % 2) == 0
+						# x space to skip
+						if spacewidth != 0
+							# justification shift
+							xshift += uniarr.select {|item| item == 32 }.length * spw
+						end
+						xshift += GetArrStringWidth(uniarr) # + shift justification
+					else
+						# character to print
+						topchr = arrUTF8ToUTF16BE(uniarr, false)
+						topchr = escape(topchr)
+						s << sprintf(' BT %.2f %.2f Td [(%s)] TJ ET', xdk + (xshift * :k), ty, topchr)
+					end
+				}
+			end
 			if @underline
 				s << ' ' + dounderlinew(xdx, basefonty, width)
 			end
@@ -4322,7 +4319,10 @@ class TCPDF
 	# @see Cell()
 	#
 	def Ln(h='', cell=false)
-		# Line feed; default value is last cell height
+		if (@num_columns > 0) and (@y == @columns[@current_column]['y'])
+			# revove vertical space from the top of the column
+			return
+		end
 		cellmargin = 0
 		if cell
 			cellmargin = @c_margin
@@ -7041,7 +7041,7 @@ class TCPDF
 					@in_thead = true
 					# print table header (thead)
 					writeHTML(@thead, false, false, false, false, '')
-					if (@start_transaction_page == (@numpages - 1)) or checkPageBreak(@lasth, '', false)
+					if (@start_transaction_page == (@numpages - 1)) or (@y < @start_transaction_y) or checkPageBreak(@lasth, '', false)
 						# restore previous object
 						rollbackTransaction(true)
 						# restore previous values
@@ -7049,8 +7049,13 @@ class TCPDF
 							eval("#{vkey} = vval") 
 						}
 						# add a page (or trig AcceptPageBreak() for multicolumn mode)
-						checkPageBreak(@page_break_trigger + 1)
+						pre_y = @y
+						if !checkPageBreak(@page_break_trigger + 1) and (@y < pre_y)
+							# fix for multicolumn mode
+							startliney = @y
+						end
 						@start_transaction_page = @page
+						@start_transaction_y = @y
 					end
 				end
 				# move :key index forward to skip THEAD block
@@ -7340,7 +7345,11 @@ class TCPDF
 								end
 								# calculate additional space to add to each space
 								spacelen = one_space_width
-								spacewidth = (((tw - linew) + ((no - ns) * spacelen)) / (ns ? ns : 1)) * @k
+								if isRTLTextDir()
+									spacewidth = (((tw - linew) + ((no - ns + 1) * spacelen)) / (ns ? ns : 1)) * @k
+								else
+									spacewidth = (((tw - linew) + ((no - ns) * spacelen)) / (ns ? ns : 1)) * @k
+								end
 						 		spacewidthu = -1000 * ((tw - linew) + (no * spacelen)) / (ns ? ns : 1) / @font_size
 								nsmax = ns
 								ns = 0
@@ -7852,7 +7861,7 @@ class TCPDF
 			end
 			key += 1
 			if dom[key] and dom[key]['tag'] and (dom[key]['opening'].nil? or !dom[key]['opening']) and dom[(dom[key]['parent'])]['attribute']['nobr'] and (dom[(dom[key]['parent'])]['attribute']['nobr'] == 'true')
-				if !undo and (@start_transaction_page == (@numpages - 1))
+				if !undo and (@start_transaction_page == (@numpages - 1)) or (@y < @start_transaction_y)
 					# restore previous object
 					rollbackTransaction(true)
 					# restore previous values
@@ -7860,7 +7869,10 @@ class TCPDF
 						eval("#{vkey} = vval") 
 					}
 					# add a page (or trig AcceptPageBreak() for multicolumn mode)
-					checkPageBreak(@page_break_trigger + 1)
+					pre_y = @y
+					if !checkPageBreak(@page_break_trigger + 1) and (@y < pre_y)
+						startliney = @y
+					end
 					undo = true # avoid infinite loop
 				else
 					undo = false
@@ -7895,7 +7907,7 @@ class TCPDF
 				pmid = getPageBuffer(startlinepage)[startlinepos..-1]
 				pend = ""
 			end
-			if (!plalign.nil? and (((plalign == 'C') or (plalign == 'J') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl)))) or (yshift < 0)
+			if (!plalign.nil? and (((plalign == 'C') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl)))) or (yshift < 0)
 				# calculate shifting amount
 				tw = w
 				if @l_margin != prevlMargin
@@ -8844,7 +8856,8 @@ class TCPDF
 			end
 			if checkPageBreak(((2 * cp) + (2 * cs) + @lasth), '', false)
 				@in_thead = true
-				AddPage()
+				# add a page (or trig AcceptPageBreak() for multicolumn mode)
+				checkPageBreak(@page_break_trigger + 1)
 			end
 		when 'tr'
 			# array of columns positions
@@ -9393,10 +9406,12 @@ class TCPDF
 			pba = dom[(dom[key]['parent'])]['attribute']['pagebreakafter']
 			# check for pagebreak 
 			if (pba == 'true') or (pba == 'left') or (pba == 'right')
-				AddPage()
+				# add a page (or trig AcceptPageBreak() for multicolumn mode)
+				checkPageBreak(@page_break_trigger + 1)
 			end
 			if ((pba == 'left') and ((!@rtl and (@page % 2 == 0)) or (@rtl and (@page % 2 != 0)))) or ((pba == 'right') and ((!@rtl and (@page % 2 != 0)) or (@rtl and (@page % 2 == 0))))
-				AddPage()
+				# add a page (or trig AcceptPageBreak() for multicolumn mode)
+				checkPageBreak(@page_break_trigger + 1)
 			end
 		end
 		@tmprtl = false
@@ -11046,8 +11061,9 @@ class TCPDF
 			# remove previous copy
 			commitTransaction()
 		end
-		# record current page number
+		# record current page number and Y position
 		@start_transaction_page = @page
+		@start_transaction_y = @y
 		# clone current object
 		@objcopy = objclone(self)
 	end
