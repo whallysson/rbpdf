@@ -301,6 +301,7 @@ class TCPDF
 		@start_transaction_y ||= 0
 		@num_columns ||= 0
 		@current_column ||= 0
+		@column_start_page ||= 0
 		@alias_nb_pages = '{nb}'
 		@alias_num_page = '{pnb}'
 		@is_unicode = unicode
@@ -1693,6 +1694,10 @@ class TCPDF
 	# @since 4.5.030 (2009-03-25)
 	#
 	def setTableHeader()
+		if @num_columns > 1
+			# multi column mode
+			return
+		end
 		if !@thead_margins['top'].nil?
 			# restore the original top-margin
 			@t_margin = @thead_margins['top']
@@ -1718,6 +1723,7 @@ class TCPDF
 			@l_margin = prev_lMargin
 			@r_margin = prev_rMargin
 		end
+		# print table header (if any)
 	end
 
 	#
@@ -2595,8 +2601,19 @@ class TCPDF
 			#  register CID font (all styles at once)
 			styles = {'' => '', 'B' => ',Bold', 'I' => ',Italic', 'BI' => ',BoldItalic'}
 			sname = font_desc[:name] + styles[bistyle]
-			if (bistyle.index('B') != nil) and font_desc[:desc]['StemV'] and (font_desc[:desc]['StemV'] == 70)
-				font_desc[:desc]['StemV'] = 120
+			if bistyle.index('B') != nil
+				if font_desc[:desc]['StemV']
+					font_desc[:desc]['StemV'] *= 2
+				else
+					font_desc[:desc]['StemV'] = 120
+				end
+			end
+			if bistyle.index('I') != nil
+				if font_desc[:desc]['ItalicAngle']
+					font_desc[:desc]['ItalicAngle'] -= 11
+				else
+					font_desc[:desc]['ItalicAngle'] =-11 
+				end
 			end
 			setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => sname, 'desc' => font_desc[:desc], 'cidinfo' => font_desc[:cidinfo], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc]})
 		elsif font_desc[:type] == 'core'
@@ -2914,7 +2931,7 @@ class TCPDF
 	# @see SetAutoPageBreak()
 	#
 	def AcceptPageBreak()
-		#if @num_columns > 0
+		#if @num_columns > 1
 		#	# multi column mode
 		#	if @current_column < (@num_columns - 1)
 		#		# go to next column
@@ -2998,9 +3015,11 @@ class TCPDF
 	# @see SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), AddLink(), Ln(), MultiCell(), Write(), SetAutoPageBreak()
 	#
 	def Cell(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false)
-		min_cell_height = @font_size * @@k_cell_height_ratio
-		if h < min_cell_height
-			h = min_cell_height
+		if !ignore_min_height
+			min_cell_height = @font_size * @@k_cell_height_ratio
+			if h < min_cell_height
+				h = min_cell_height
+			end
 		end
 		checkPageBreak(h)
 		out(getCellCode(w, h, txt, border, ln, align, fill, link, stretch, ignore_min_height) + ' ')
@@ -3268,7 +3287,7 @@ class TCPDF
 						# character to print
 						topchr = arrUTF8ToUTF16BE(uniarr, false)
 						topchr = escape(topchr)
-						s << sprintf(' BT %.2f %.2f Td [(%s)] TJ ET', xdk + (xshift * :k), ty, topchr)
+						s << sprintf(' BT %.2f %.2f Td [(%s)] TJ ET', xdk + (xshift * k), ty, topchr)
 					end
 				}
 			end
@@ -4319,7 +4338,7 @@ class TCPDF
 	# @see Cell()
 	#
 	def Ln(h='', cell=false)
-		if (@num_columns > 0) and (@y == @columns[@current_column]['y'])
+		if (@num_columns > 0) and ((@current_column > 0) or (@page > @column_start_page)) and (@y == @columns[@current_column]['y'])
 			# revove vertical space from the top of the column
 			return
 		end
@@ -7345,11 +7364,7 @@ class TCPDF
 								end
 								# calculate additional space to add to each space
 								spacelen = one_space_width
-								if isRTLTextDir()
-									spacewidth = (((tw - linew) + ((no - ns + 1) * spacelen)) / (ns ? ns : 1)) * @k
-								else
-									spacewidth = (((tw - linew) + ((no - ns) * spacelen)) / (ns ? ns : 1)) * @k
-								end
+								spacewidth = (((tw - linew + @c_margin) + ((no - ns) * spacelen)) / (ns ? ns : 1)) * @k
 						 		spacewidthu = -1000 * ((tw - linew) + (no * spacelen)) / (ns ? ns : 1) / @font_size
 								nsmax = ns
 								ns = 0
@@ -7566,6 +7581,7 @@ class TCPDF
 					# get text indentation (if any)
 					if dom[key]['text-indent'] and ['blockquote','dd','div','dt','h1','h2','h3','h4','h5','h6','li','ol','p','ul','table','tr','td'].include?(dom[key]['value'])
 						@textindent = dom[key]['text-indent']
+						@newline = true
 					end
 					if dom[key]['value'] == 'table'
 						# available page width
@@ -9158,20 +9174,24 @@ class TCPDF
 						end
 					}
 				end
-				SetPage(dom[(dom[key]['parent'])]['endpage']);
-				@y = dom[(dom[key]['parent'])]['endy']
-				if !dom[table_el]['attribute']['cellspacing'].nil?
-					cellspacing = getHTMLUnitToUnits(dom[table_el]['attribute']['cellspacing'], 1, 'px')
-					@y += cellspacing
-				end
-				Ln(0, cell)
-				@x = parent['startx']
-				# account for booklet mode
-				if @page > parent['startpage']
-					if @rtl and (@pagedim[@page]['orm'] != @pagedim[parent['startpage']]['orm'])
-						@x -= @pagedim[@page]['orm'] - @pagedim[parent['startpage']]['orm']
-					elsif !@rtl and (@pagedim[@page]['olm'] != @pagedim[parent['startpage']]['olm'])
-						@x += @pagedim[@page]['olm'] - @pagedim[parent['startpage']]['olm']
+				if (@num_columns > 1) and (dom[(dom[key]['parent'])]['endy'] >= (@page_break_trigger - @lasth)) and (@y < dom[(dom[key]['parent'])]['endy'])
+					Ln(0, cell)
+				else
+					SetPage(dom[(dom[key]['parent'])]['endpage']);
+					@y = dom[(dom[key]['parent'])]['endy']
+					if !dom[table_el]['attribute']['cellspacing'].nil?
+						cellspacing = getHTMLUnitToUnits(dom[table_el]['attribute']['cellspacing'], 1, 'px')
+						@y += cellspacing
+					end
+					Ln(0, cell)
+					@x = parent['startx']
+					# account for booklet mode
+					if @page > parent['startpage']
+						if @rtl and (@pagedim[@page]['orm'] != @pagedim[parent['startpage']]['orm'])
+							@x -= @pagedim[@page]['orm'] - @pagedim[parent['startpage']]['orm']
+						elsif !@rtl and (@pagedim[@page]['olm'] != @pagedim[parent['startpage']]['olm'])
+							@x += @pagedim[@page]['olm'] - @pagedim[parent['startpage']]['olm']
+						end
 					end
 				end
 			when 'table', 'tablehead'
