@@ -117,6 +117,7 @@ class TCPDF
 	@@k_path_url = Rails.root.join('tmp').to_s
 
 	@@k_path_images = ""
+	@@k_thai_topchars = nil
 
 	cattr_accessor :decoder
 
@@ -1288,7 +1289,8 @@ class TCPDF
 	end
 
 	#
-	# Set start-writing mark on current page for multicell borders and fills.
+	# Set start-writing mark on current page stream used to put borders and fills.
+	# Borders and fills are always created after content and inserted on the position marked by this method.
 	# This function must be called after calling Image() function for a background image.
 	# Background images must be always inserted before calling Multicell() or WriteHTMLCell() or WriteHTML() functions.
 	# @access public
@@ -1301,6 +1303,7 @@ class TCPDF
 
 	#
 	# Set start-writing mark on selected page.
+	# Borders and fills are always created after content and inserted on the position marked by this method.
 	# @param int :page page number (default is the current page)
 	# @access protected
 	# @since 4.6.021 (2009-07-20)
@@ -2524,7 +2527,7 @@ class TCPDF
 		end
 
 		# get specified font directory (if any)
-		fontdir = '';
+		fontdir = false
 		if !empty_string(fontfile)
 			fontdir = File.dirname(fontfile)
 			if empty_string(fontdir) or (fontdir == '.')
@@ -2540,7 +2543,7 @@ class TCPDF
 			fontfile1 = family.gsub(' ', '') + style.downcase + '.rb'
 			fontfile2 = family.gsub(' ', '') + '.rb'
 			# search files on various directories
-			if File.exists?(fontdir + fontfile1)
+			if (fontdir != false) and File.exists?(fontdir + fontfile1)
 				fontfile = fontdir + fontfile1
 				fontname = fontfile1
 			elsif fontfile = getfontpath(fontfile1)
@@ -2548,7 +2551,7 @@ class TCPDF
 			elsif File.exists?(fontfile1)
 				fontfile = fontfile1
 				fontname = fontfile1
-			elsif File.exists?(fontdir + fontfile2)
+			elsif (fontdir != false) and File.exists?(fontdir + fontfile2)
 				fontfile = fontdir + fontfile2
 				fontname = fontfile2
 			elsif fontfile = getfontpath(fontfile2)
@@ -2698,7 +2701,7 @@ class TCPDF
 		else
 			@font_ascent = 0.85 * @font_size
 		end
-		if !@current_font['desc'].nil? and !@current_font['desc']['Descent'].nil? and (@current_font['desc']['Descent'] > 0)
+		if !@current_font['desc'].nil? and !@current_font['desc']['Descent'].nil? and (@current_font['desc']['Descent'] <= 0)
 			@font_descent = - @current_font['desc']['Descent'] * @font_size / 1000
 		else
 			@font_descent = 0.15 * @font_size
@@ -2708,6 +2711,50 @@ class TCPDF
 		end
 	end
   alias_method :set_font_size, :SetFontSize
+
+	#
+	# Return the font descent value
+	# @param string :font font name
+	# @param string :style font style
+	# @param float :size The size (in points)
+	# @return int font descent
+	# @access public
+	# @since 4.9.003 (2010-03-30)
+	#
+	def getFontDescent(font, style='', size=0)
+		# Set font size in points
+		sizek = size / @k
+		fontdata = AddFont(font, style)
+		font = getFontBuffer(fontdata['fontkey'])
+		if font['desc'] and font['desc']['Descent'] and (font['desc']['Descent'] <= 0)
+			descent = - font['desc']['Descent'] * sizek / 1000
+		else
+			descent = 0.15 * sizek
+		end
+		return descent
+	end
+
+	#
+	# Return the font ascent value
+	# @param string :font font name
+	# @param string :style font style
+	# @param float :size The size (in points)
+	# @return int font ascent
+	# @access public
+	# @since 4.9.003 (2010-03-30)
+	#
+	def getFontAscent(font, style='', size=0)
+		# Set font size in points
+		sizek = size / @k
+		fontdata = AddFont(font, style)
+		font = getFontBuffer(fontdata['fontkey'])
+		if font['desc'] and font['desc']['Ascent'] and (font['desc']['Ascent'] > 0)
+			ascent = font['desc']['Ascent'] * sizek / 1000
+		else
+			ascent = 0.85 * sizek
+		end
+		return ascent
+	end
 
 	#
 	# Defines the default monospaced font.
@@ -2901,9 +2948,9 @@ class TCPDF
 		end
 		opt = ""
 		if (stroke > 0) and !clip
-			opt << "1 Tr " + stroke.to_i + " w "
+			opt << "1 Tr " + stroke.to_s + " w "
 		elsif (stroke > 0) and clip
-			opt << "5 Tr " + stroke.to_i + " w "
+			opt << "5 Tr " + stroke.to_s + " w "
 		elsif clip
 			opt << "7 Tr "
 		end
@@ -3152,32 +3199,34 @@ class TCPDF
 				else
 					unicode = UTF8StringToArray(txt) # array of UTF-8 unicode values
 					unicode = utf8Bidi(unicode, '', @tmprtl)
-					# ---- Fix for bug #2977340 "Incorrect Thai characters position arrangement" ----
-					# NOTE: this doesn't work with HTML justification
-					# Symbols that could overlap on the font top (only works in LTR)
-					topchar = [3611, 3613, 3615, 3650, 3651, 3652] # chars that extends on top
-					topsym = [3633, 3636, 3637, 3638, 3639, 3655, 3656, 3657, 3658, 3659, 3660, 3661, 3662] # symbols with top positi
-					numchars = unicode.length # number of chars
-					unik = 0;
-					uniblock = []
-					uniblock[unik] = []
-					uniblock[unik].push unicode[0]
-					# resolve overlapping conflicts by splitting the string in several parts
-					1.upto(numchars - 1) do |i|
-						# check if symbols overlaps at top
-						if topsym.include?(unicode[i]) and (topsym.include?(unicode[i - 1]) or topchar.inclue?(unicode[i - 1]))
-							# move symbols to another array
-							unik += 1
-							uniblock[unik] = []
-							uniblock[unik].push unicode[i]
-							unik += 1
-							uniblock[unik] = []
-							unicode[i] = 8203 # Unicode Character 'ZERO WIDTH SPACE' (U+200B)
-						else
-							uniblock[unik].push unicode[i]
+					if @@k_thai_topchars and @@k_thai_topchars == true
+						# ---- Fix for bug #2977340 "Incorrect Thai characters position arrangement" ----
+						# NOTE: this doesn't work with HTML justification
+						# Symbols that could overlap on the font top (only works in LTR)
+						topchar = [3611, 3613, 3615, 3650, 3651, 3652] # chars that extends on top
+						topsym = [3633, 3636, 3637, 3638, 3639, 3655, 3656, 3657, 3658, 3659, 3660, 3661, 3662] # symbols with top positi
+						numchars = unicode.length # number of chars
+						unik = 0;
+						uniblock = []
+						uniblock[unik] = []
+						uniblock[unik].push unicode[0]
+						# resolve overlapping conflicts by splitting the string in several parts
+						1.upto(numchars - 1) do |i|
+							# check if symbols overlaps at top
+							if topsym.include?(unicode[i]) and (topsym.include?(unicode[i - 1]) or topchar.inclue?(unicode[i - 1]))
+								# move symbols to another array
+								unik += 1
+								uniblock[unik] = []
+								uniblock[unik].push unicode[i]
+								unik += 1
+								uniblock[unik] = []
+								unicode[i] = 8203 # Unicode Character 'ZERO WIDTH SPACE' (U+200B)
+							else
+								uniblock[unik].push unicode[i]
+							end
 						end
+						# ---- END OF Fix for bug #2977340
 					end
-					# ---- END OF Fix for bug #2977340
 					txt2 = arrUTF8ToUTF16BE(unicode, false)
 				end
 			end
@@ -3270,7 +3319,7 @@ class TCPDF
 			# print text
 			s << sprintf('BT %.2f %.2f Td [(%s)] TJ ET', xdk, (@h - basefonty) * k, txt2)
 
-			if uniblock
+			if !uniblock.nil?
 				# print overlapping characters as separate string
 				xshift = 0 # horizontal shift
 				ty = (@h - basefonty + (0.2 * @font_size)) * k
@@ -3721,6 +3770,7 @@ class TCPDF
 						tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
 					end
 					linew = GetArrStringWidth(tmparr)
+					tmparr = ''
 					if @rtl
 						@endlinex = startx - linew
 					else
@@ -4562,7 +4612,7 @@ class TCPDF
 		end
 		self.instance_variables.each { |val|
 			if destroyall or ((val != '@internal_encoding') and (val != '@state') and (val != '@bufferlen') and (val != '@buffer') and (val != '@diskcache') and (val != '@sign') and (val != '@signature_data') and (val != '@signature_max_length') and (val != '@byterange_string'))
-				if !preserve_objcopy or (val.to_s != '@objcopy')
+				if (!preserve_objcopy or (val.to_s != '@objcopy')) and @val
 					eval("#{val} = nil")
 				end
 			end
@@ -4850,7 +4900,7 @@ class TCPDF
 						annots << ' /FT /' + pl['opt']['ft']
 						formfield = true
 					end
-					annots << ' /Contents ' + textstring(pl['txt'])
+					annots << ' /Contents ' + textannobjstring(pl['txt'])
 					annots << ' /P ' + @page_obj_id[n].to_s + ' 0 R'
 					annots << ' /NM ' + dataannobjstring(sprintf('%04u-%04u', n, key))
 					annots << ' /M ' + datestring()
@@ -4982,19 +5032,19 @@ class TCPDF
 					if markups.include?(pl['opt']['subtype'].downcase)
 						# this is a markup type
 						if !pl['opt']['t'].nil? and pl['opt']['t'].is_a?(String)
-							annots << ' /T ' + textstring(pl['opt']['t'])
+							annots << ' /T ' + textannobjstring(pl['opt']['t'])
 						end
 						# annots .= ' /Popup '
 						if !pl['opt']['ca'].nil?
 							annots << ' /CA ' + sprintf("%.4f", pl['opt']['ca'].to_f)
 						end
 						if !pl['opt']['rc'].nil?
-							annots << ' /RC ' + textstring(pl['opt']['rc'])
+							annots << ' /RC ' + textannobjstring(pl['opt']['rc'])
 						end
 						annots << ' /CreationDate ' + datestring()
 						# annots << ' /IRT '
 						if !pl['opt']['subj'].nil?
-							annots << ' /Subj ' + textstring(pl['opt']['subj'])
+							annots << ' /Subj ' + textannobjstring(pl['opt']['subj'])
 						end
 						# annots << ' /RT '
 						# annots << ' /IT '
@@ -5059,10 +5109,10 @@ class TCPDF
 							annots << ' /Q ' + pl['opt']['q'].to_i
 						end
 						if !pl['opt']['rc'].nil?
-							annots << ' /RC ' + textstring(pl['opt']['rc'])
+							annots << ' /RC ' + textannobjstring(pl['opt']['rc'])
 						end
 						if !pl['opt']['ds'].nil?
-							annots << ' /DS ' + textstring(pl['opt']['ds'])
+							annots << ' /DS ' + textannobjstring(pl['opt']['ds'])
 						end
 						if !['opt']['cl'].nil? and pl['opt']['cl'].is_a?(Array)
 							annots << ' /CL ['
@@ -5236,7 +5286,7 @@ class TCPDF
 									annots << ' ' + optval
 								}
 							else
-								annots << ' ' + textstring(pl['opt']['v'])
+								annots << ' ' + textannobjstring(pl['opt']['v'])
 							end
 						end
 						if pl['opt']['dv']
@@ -5249,7 +5299,7 @@ class TCPDF
 									annots << ' ' + optval
 								}
 							else
-								annots << ' ' + textstring(pl['opt']['dv'])
+								annots << ' ' + textannobjstring(pl['opt']['dv'])
 							end
 						end
 						if pl['opt']['rv']
@@ -5262,7 +5312,7 @@ class TCPDF
 									annots << ' ' + optval
 								}
 							else
-								annots << ' ' + textstring(pl['opt']['rv'])
+								annots << ' ' + textannobjstring(pl['opt']['rv'])
 							end
 						end
 						if pl['opt']['a'] and !pl['opt']['a'].empty?
@@ -5281,9 +5331,9 @@ class TCPDF
 							annots << ' /Opt ['
 							pl['opt']['opt'].each {|copt|
 								if copt.is_a?(Array)
-									annots << ' [' + textstring(copt[0]) + ' ' + textstring(copt[1]) + ']'
+									annots << ' [' + textannobjstring(copt[0]) + ' ' + textannobjstring(copt[1]) + ']'
 								else
-									annots << ' ' + textstring(copt)
+									annots << ' ' + textannobjstring(copt)
 								end
 							}
 							annots << ']'
@@ -5370,7 +5420,7 @@ class TCPDF
 			file = file.downcase
 			fontfile = ''
 			# search files on various directories
-			if File.exist?(fontdir + file)
+			if (fontdir != false) and File.exist?(fontdir + file)
 				fontfile = fontdir + file
 			elsif fontfile = getfontpath(file)
 			elsif File.exist?(file)
@@ -6191,6 +6241,20 @@ class TCPDF
 	end
 
 	#
+	# Format a UTF-8 text string for meta information on annotations
+	# @param string :s string to escape.
+	# @return string escaped string.
+	# @access protected
+	#
+	def textannobjstring(s)
+		if @is_unicode
+			# Convert string to UTF-16BE
+			s = UTF8ToUTF16BE(s, true)
+		end
+		return dataannobjstring(s)
+	end
+
+	#
 	# Format a text string
 	# @param string :s string to escape.
 	# @return string escaped string.
@@ -6317,7 +6381,7 @@ class TCPDF
 			end
 			out('/' + key.to_s + ' ' + value.to_s + '')
 		end
-		fontdir = ''
+		fontdir = false
 		if !empty_string(font['file'])
 			# A stream containing a TrueType font
 			out('/FontFile2 ' + @font_files[font['file']]['n'].to_s + ' 0 R');
@@ -6336,7 +6400,7 @@ class TCPDF
 			# search and get ctg font file to embedd
 			fontfile = ''
 			# search files on various directories
-			if File.exists?(fontdir + ctgfile)
+			if (fontdir != false) and File.exists?(fontdir + ctgfile)
 				fontfile = fontdir + ctgfile
 			elsif fontfile = getfontpath(ctgfile)
 			elsif File.exists?(ctgfile)
@@ -6931,9 +6995,12 @@ class TCPDF
 		curfontname = @font_family
 		curfontstyle = @font_style
 		curfontsize = @font_size_pt
+		curfontascent = getFontAscent(curfontname, curfontstyle, curfontsize)
+		curfontdescent = getFontDescent(curfontname, curfontstyle, curfontsize)
 		@newline = true
 		startlinepage = @page
 		minstartliney = @y
+		maxbottomliney = 0
 		startlinex = @x
 		startliney = @y
 		yshift = 0
@@ -7030,7 +7097,10 @@ class TCPDF
 					this_method_vars['curfontname'] = curfontname
 					this_method_vars['curfontstyle'] = curfontstyle
 					this_method_vars['curfontsize'] = curfontsize
+					this_method_vars['curfontascent'] = curfontascent
+					this_method_vars['curfontdescent'] = curfontdescent
 					this_method_vars['minstartliney'] = minstartliney
+					this_method_vars['maxbottomliney'] = maxbottomliney
 					this_method_vars['yshift'] = yshift
 					this_method_vars['startlinepage'] = startlinepage
 					this_method_vars['startlinepos'] = startlinepos
@@ -7158,7 +7228,7 @@ class TCPDF
 							startlinepage = @page
 							startliney = @y
 						end
-						@y += (curfontsize / @k) - imgh
+						@y += ((curfontsize * @cell_height_ratio / @k) + curfontascent - curfontdescent) / 2  - imgh
 						minstartliney = [@y, minstartliney].min
 					end
 	 			elsif !dom[key]['fontname'].nil? or !dom[key]['fontstyle'].nil? or !dom[key]['fontsize'].nil?
@@ -7169,9 +7239,9 @@ class TCPDF
 					fontname  = !dom[key]['fontname'].nil?  ? dom[key]['fontname']  : curfontname
 					fontstyle = !dom[key]['fontstyle'].nil? ? dom[key]['fontstyle'] : curfontstyle
 					fontsize  = !dom[key]['fontsize'].nil?  ? dom[key]['fontsize']  : curfontsize
+					fontascent = getFontAscent(fontname, fontstyle, fontsize)
+					fontdescent = getFontDescent(fontname, fontstyle, fontsize)
 					if (fontname != curfontname) or (fontstyle != curfontstyle) or (fontsize != curfontsize)
-						SetFont(fontname, fontstyle, fontsize)
-						@lasth = @font_size * @@k_cell_height_ratio
 						if (fontsize.is_a? Integer) and (fontsize > 0) and (curfontsize.is_a? Integer) and (curfontsize > 0) and (fontsize != curfontsize) and !@newline and (key < maxel - 1)
 							if !@newline and (@page > startlinepage)
 								# fix lines splitted over two pages
@@ -7213,11 +7283,10 @@ class TCPDF
 								startlinepage = @page
 								startliney = @y
 							end
-							if !dom[key]['block'] and (dom[key]['value'] != 'tr') and (dom[key]['value'] != 'td') and (dom[key]['value'] != 'th')
-								@y += (curfontsize - fontsize) / @k
-							end
 							if !dom[key]['block']
+								@y += (((curfontsize - fontsize) * @cell_height_ratio / @k) + curfontascent - fontascent - curfontdescent + fontdescent) / 2
 								minstartliney = [@y, minstartliney].min
+								maxbottomliney = [@y + ((fontsize * @cell_height_ratio) / @k), maxbottomliney].max
 							end
 							fontaligned = true
 						end
@@ -7226,6 +7295,8 @@ class TCPDF
 						curfontname = fontname
 						curfontstyle = fontstyle
 						curfontsize = fontsize
+						curfontascent = fontascent
+						curfontdescent = fontdescent
 					end
 				end
 				if (plalign == 'J') and dom[key]['block']
@@ -7547,6 +7618,7 @@ class TCPDF
 				startlinex = @x
 				startliney = @y
 				minstartliney = startliney
+				maxbottomliney = startliney + @font_size * @cell_height_ratio
 				startlinepage = @page
 				if !endlinepos.nil? and !pbrk
 					startlinepos = endlinepos
@@ -7580,7 +7652,7 @@ class TCPDF
 			if dom[key]['tag']
 				if dom[key]['opening']    
 					# get text indentation (if any)
-					if dom[key]['text-indent'] and ['blockquote','dd','div','dt','h1','h2','h3','h4','h5','h6','li','ol','p','ul','table','tr','td'].include?(dom[key]['value'])
+					if dom[key]['text-indent'] and dom[key]['block']
 						@textindent = dom[key]['text-indent']
 						@newline = true
 					end
@@ -7780,7 +7852,7 @@ class TCPDF
 					end
 				else
 					# closing tag
-					closeHTMLTagHandler(dom, key, cell)
+					closeHTMLTagHandler(dom, key, cell, maxbottomliney)
 				end
 			elsif dom[key]['value'].length > 0
 				# print list-item
@@ -7789,9 +7861,14 @@ class TCPDF
 					@lasth = @font_size * @cell_height_ratio
 					minstartliney = @y
 					putHtmlListBullet(@listnum, @lispacer, pfontsize)
+					SetFont(curfontname, curfontstyle, curfontsize)
+					@lasth = @font_size * @cell_height_ratio
 					if (pfontsize.is_a? Integer) and (pfontsize > 0) and (curfontsize.is_a? Integer) and (curfontsize > 0) and (pfontsize != curfontsize)
-						@y += (pfontsize - curfontsize) / @k
+						pfontascent = getFontAscent(pfontname, pfontstyle, pfontsize)
+						pfontdescent = getFontDescent(pfontname, pfontstyle, pfontsize)
+						@y += ((pfontsize - curfontsize) * @cell_height_ratio / @k + pfontascent - curfontascent - pfontdescent + curfontdescent) / 2
 						minstartliney = [@y, minstartliney].min
+						maxbottomliney = [@y + pfontsize * @cell_height_ratio / @k, maxbottomliney].max
 					end
 				end
 				# text
@@ -7999,6 +8076,9 @@ class TCPDF
 		@listordered = prev_listordered
 		@listcount = prev_listcount
 		@lispacer = prev_lispacer
+		if @y < maxbottomliney
+			@y = maxbottomliney
+		end
 		dom = nil
 	end
   alias_method :write_html, :writeHTML
@@ -8314,7 +8394,7 @@ class TCPDF
 	#
 	def getHtmlDomArray(html)
 		#  define block tags
-		blocktags = ['blockquote','br','dd','dl','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','ul']
+		blocktags = ['blockquote','br','dd','dl','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','ul','table','tr','td']
 		# array of CSS styles ( selector => properties).
 		css = {}
 		# extract external CSS files
@@ -8841,10 +8921,12 @@ class TCPDF
 	# Process opening tags.
 	# @param array :dom html dom array 
 	# @param int :key current element id
+	# @param int :minstartliney minimum y value of current line
+	# @param int :maxbottomliney maximum y value of current line
 	# @param boolean :cell if true add the default c_margin space to each new line (default false).
 	# @access protected
 	#
-	def openHTMLTagHandler(dom, key, cell=false)
+	def openHTMLTagHandler(dom, key, cell)
 		tag = dom[key]
 		parent = dom[(dom[key]['parent'])]
 		firstorlast = (key == 1)
@@ -9152,15 +9234,16 @@ class TCPDF
 	# Process closing tags.
 	# @param array :dom html dom array 
 	# @param int :key current element id
+	# @param int :minstartliney minimum y value of current line
+	# @param int :maxbottomliney maximum y value of current line
 	# @param boolean :cell if true add the default c_margin space to each new line (default false).
 	# @access protected
 	#
-	def closeHTMLTagHandler(dom, key, cell=false)
+	def closeHTMLTagHandler(dom, key, cell, maxbottomliney=0)
 		tag = dom[key].dup
 		parent = dom[(dom[key]['parent'])].dup
 		firstorlast = dom[key + 1].nil? or (dom[key + 2].nil? and (dom[key + 1]['value'] == 'marker'))
 		in_table_head = false
-		# Closing tag
 		if tag['block']
 			# calculate vertical space for block tags
 			if parent['fontsize']
@@ -9168,8 +9251,12 @@ class TCPDF
 			else
 				pre_h = @font_size * @cell_height_ratio
 			end
-			hb = 2 * pre_h
+			hb = pre_h
+			if @y < maxbottomliney
+				hb += maxbottomliney - @y
+			end
 		end
+		# Closing tag
 		case (tag['value'])
 			when 'tr'
 				table_el = dom[(dom[key]['parent'])]['parent']
