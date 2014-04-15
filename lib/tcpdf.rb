@@ -4338,7 +4338,7 @@ class TCPDF
 	# @see Cell()
 	#
 	def Ln(h='', cell=false)
-		if (@num_columns > 0) and ((@current_column > 0) or (@page > @column_start_page)) and (@y == @columns[@current_column]['y'])
+		if (@num_columns > 0) and (@y == @columns[@current_column]['y']) and @columns[@current_column]['x'] and (@x == @columns[@current_column]['x'])
 			# revove vertical space from the top of the column
 			return
 		end
@@ -6944,7 +6944,6 @@ class TCPDF
 		this_method_vars = {}
 		undo = false
 		fontaligned = false
-		blocktags = ['blockquote','br','dd','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','ul']
 		@premode = false
 		if !@page_annots[@page].nil?
 			pask = @page_annots[@page].length
@@ -7214,10 +7213,12 @@ class TCPDF
 								startlinepage = @page
 								startliney = @y
 							end
-							if (dom[key]['value'] != 'tr') and (dom[key]['value'] != 'td') and (dom[key]['value'] != 'th')
+							if !dom[key]['block'] and (dom[key]['value'] != 'tr') and (dom[key]['value'] != 'td') and (dom[key]['value'] != 'th')
 								@y += (curfontsize - fontsize) / @k
 							end
-							minstartliney = [@y, minstartliney].min
+							if !dom[key]['block']
+								minstartliney = [@y, minstartliney].min
+							end
 							fontaligned = true
 						end
 						SetFont(fontname, fontstyle, fontsize)
@@ -7227,7 +7228,7 @@ class TCPDF
 						curfontsize = fontsize
 					end
 				end
-				if (plalign == 'J') and blocktags.include?(dom[key]['value'])
+				if (plalign == 'J') and dom[key]['block']
 					plalign = ''
 				end
 				# get current position on page buffer
@@ -8312,6 +8313,8 @@ class TCPDF
 	# @since 3.2.000 (2008-06-20)
 	#
 	def getHtmlDomArray(html)
+		#  define block tags
+		blocktags = ['blockquote','br','dd','dl','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','ul']
 		# array of CSS styles ( selector => properties).
 		css = {}
 		# extract external CSS files
@@ -8424,6 +8427,7 @@ class TCPDF
 		dom[key] = {}
 		# set first void element
 		dom[key]['tag'] = false
+		dom[key]['block'] = false
 		dom[key]['value'] = ''
 		dom[key]['parent'] = 0
 		dom[key]['fontname'] = @font_family.dup
@@ -8463,6 +8467,11 @@ class TCPDF
 				end
 				dom[key]['tag'] = true
 				dom[key]['value'] = tagname
+				if blocktags.include?(dom[key]['value'])
+					dom[key]['block'] = true
+				else
+					dom[key]['block'] = false
+				end
 				if element[0,1] == '/'
 					# *** closing html tag
 					dom[key]['opening'] = false
@@ -8810,6 +8819,7 @@ class TCPDF
 			else
 				# text
 				dom[key]['tag'] = false
+				dom[key]['block'] = false
 				dom[key]['value'] = unhtmlentities(element).gsub(/\\\\/, "\\")
 				dom[key]['parent'] = level[-1]
 			end
@@ -8844,7 +8854,25 @@ class TCPDF
 		else
 			@tmprtl = false
 		end
-
+		if tag['block']
+			# calculate vertical space for block tags
+			hb = ''
+			if tag['fontsize']
+				cur_h = (tag['fontsize'] / @k) * @cell_height_ratio
+				if parent['fontsize']
+					pre_h = (parent['fontsize'] / @k) * @cell_height_ratio
+				else
+					pre_h = @font_size * @cell_height_ratio
+				end
+				if @htmlvspace == 0
+					hb = cur_h + pre_h
+				elsif cur_h > @htmlvspace
+					hb = cur_h + (@htmlvspace / 2)
+				else
+					hb = cur_h + pre_h
+				end
+			end
+		end
 		#Opening tag
 		case tag['value']
 		when 'table'
@@ -9088,13 +9116,13 @@ class TCPDF
 			else
 				@l_margin += @listindent
 			end
-			addHTMLVertSpace(2, cell, '', firstorlast, tag['value'], false)
+			addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], false)
 		when 'br'
 			Ln('', cell)
 		when 'div'
 			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
 		when 'p'
-			addHTMLVertSpace(2, cell, '', firstorlast, tag['value'], false)
+			addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], false)
 		when 'pre'
 			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
 			@premode = true
@@ -9103,7 +9131,7 @@ class TCPDF
 		when 'sub'
 			SetXY(GetX(), GetY() + ((0.3 * @font_size_pt) / @k))
 		when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
-			addHTMLVertSpace(1, cell, (tag['fontsize'] * 1.5) / @k, firstorlast, tag['value'], false)
+			addHTMLVertSpace(1, cell, 3 * hb/4, firstorlast, tag['value'], false)
 		end
 
 		if dom[key]['self'] and dom[key]['attribute']['pagebreakafter']
@@ -9133,6 +9161,15 @@ class TCPDF
 		firstorlast = dom[key + 1].nil? or (dom[key + 2].nil? and (dom[key + 1]['value'] == 'marker'))
 		in_table_head = false
 		# Closing tag
+		if tag['block']
+			# calculate vertical space for block tags
+			if parent['fontsize']
+				pre_h = (parent['fontsize'] / @k) * @cell_height_ratio
+			else
+				pre_h = @font_size * @cell_height_ratio
+			end
+			hb = 2 * pre_h
+		end
 		case (tag['value'])
 			when 'tr'
 				table_el = dom[(dom[key]['parent'])]['parent']
@@ -9380,9 +9417,9 @@ class TCPDF
 				else
 					@l_margin -= @listindent
 				end
-				addHTMLVertSpace(2, cell, '', firstorlast, tag['value'], true)
+				addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], true)
 			when 'p'
-				addHTMLVertSpace(2, cell, '', firstorlast, tag['value'], true)
+				addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], true)
 			when 'pre'
 				addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], true)
 				@premode = false
@@ -9390,7 +9427,7 @@ class TCPDF
 				@listnum -= 1
 				if @listnum <= 0
 					@listnum = 0
-					addHTMLVertSpace(2, cell, '', firstorlast, tag['value'], true)
+					addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], true)
 				end
 			when 'dt'
 				@lispacer = ''
@@ -9413,14 +9450,14 @@ class TCPDF
 				end
 				if @listnum <= 0
 					@listnum = 0
-					addHTMLVertSpace(2, cell, '', firstorlast, tag['value'], true)
+					addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], true)
 				end
 				@lasth = @font_size * @cell_height_ratio
 			when 'li'
 				@lispacer = ''
 				addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], true)
 			when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
-				addHTMLVertSpace(1, cell, (parent['fontsize'] * 1.5) / @k, firstorlast, tag['value'], true)
+				addHTMLVertSpace(1, cell, 3 * hb/4, firstorlast, tag['value'], true)
 		end
 		if dom[(dom[key]['parent'])]['attribute']['pagebreakafter']
 			pba = dom[(dom[key]['parent'])]['attribute']['pagebreakafter']

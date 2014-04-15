@@ -9,7 +9,7 @@ class TcpdfTest < ActiveSupport::TestCase
     dom = pdf.getHtmlDomArray('abc')
     assert_equal 0, dom[0]['parent']  # Root
     assert_equal false, dom[0]['tag']
-    assert_equal({'tag'=>false, 'value'=>'abc', 'elkey'=>0, 'parent'=>0}, dom[1])
+    assert_equal({'tag'=>false, 'value'=>'abc', 'elkey'=>0, 'parent'=>0, 'block'=>false}, dom[1])
 
     # Simple Tag
     dom = pdf.getHtmlDomArray('<b>abc</b>')
@@ -17,7 +17,7 @@ class TcpdfTest < ActiveSupport::TestCase
     assert_equal false, dom[0]['tag']
     assert_equal({}, dom[0]['attribute'])
 
-    assert_equal({'tag' => false, 'value'=>'', 'elkey'=>0, 'parent'=>0}, dom[1])
+    assert_equal({'tag' => false, 'value'=>'', 'elkey'=>0, 'parent'=>0, 'block'=>false}, dom[1])
 
     assert_equal 0, dom[2]['parent']   # parent -> parent tag key
     assert_equal 1, dom[2]['elkey']
@@ -26,7 +26,7 @@ class TcpdfTest < ActiveSupport::TestCase
     assert_equal 'b', dom[2]['value']
     assert_equal({}, dom[2]['attribute'])
 
-    assert_equal({'tag' => false, 'value'=>'abc', 'elkey'=>2, 'parent'=>2}, dom[3])  # parent -> open tag key
+    assert_equal({'tag' => false, 'value'=>'abc', 'elkey'=>2, 'parent'=>2, 'block'=>false}, dom[3])  # parent -> open tag key
 
     assert_equal 2, dom[4]['parent']   # parent -> open tag key
     assert_equal 3, dom[4]['elkey']
@@ -40,7 +40,7 @@ class TcpdfTest < ActiveSupport::TestCase
     assert_equal false, dom[0]['tag']
     assert_equal({}, dom[0]['attribute'])
 
-    assert_equal({'tag' => false, 'value'=>'', 'elkey'=>0, 'parent'=>0}, dom[1])
+    assert_equal({'tag' => false, 'value'=>'', 'elkey'=>0, 'parent'=>0, 'block'=>false}, dom[1])
 
     assert_equal 0, dom[2]['parent']   # parent -> Root key
     assert_equal 1, dom[2]['elkey']
@@ -48,7 +48,7 @@ class TcpdfTest < ActiveSupport::TestCase
     assert_equal false, dom[2]['opening']
     assert_equal 'ul', dom[2]['value']
 
-    assert_equal({'tag' => false, 'value'=>'', 'elkey'=>2, 'parent'=>0}, dom[3])  # parent -> open tag key
+    assert_equal({'tag' => false, 'value'=>'', 'elkey'=>2, 'parent'=>0, 'block'=>false}, dom[3])  # parent -> open tag key
 
     assert_equal 0, dom[4]['parent']   # parent -> Root key
     assert_equal 3, dom[4]['elkey']
@@ -62,7 +62,7 @@ class TcpdfTest < ActiveSupport::TestCase
     assert_equal false, dom[0]['tag']
     assert_equal({}, dom[0]['attribute'])
 
-    assert_equal({'tag' => false, 'value'=>'', 'elkey'=>0, 'parent'=>0}, dom[1])
+    assert_equal({'tag' => false, 'value'=>'', 'elkey'=>0, 'parent'=>0, 'block'=>false}, dom[1])
 
     assert_equal 0, dom[2]['parent']   # parent -> parent tag key
     assert_equal 1, dom[2]['elkey']
