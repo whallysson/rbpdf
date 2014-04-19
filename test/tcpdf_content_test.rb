@@ -20,23 +20,23 @@ class TcpdfPageTest < ActiveSupport::TestCase
     contents.each_line {|line| content.push line.chomp }
 
     assert_equal content.length,  4
-    assert_equal content[0],  " 0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg"
+    assert_equal content[0],  " 0 J 0 j [] 0 d 0 G 0 g"
     assert_equal content[1],  "BT /F1 12.00 Tf ET "
-    assert_equal content[2],  " 0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg"
+    assert_equal content[2],  " 0 J 0 j [] 0 d 0 G 0 g"
     assert_equal content[3],  "BT /F1 12.00 Tf ET "
 
-    ############################################
-    #  0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg # AddPage,startPage,setGraphicVars(SetFillColor)
-    #  BT /F1 12.00 Tf ET                      #
-    #  0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg #
-    #  BT /F1 12.00 Tf ET                      #
-    ############################################
+    ###########################
+    #  0 J 0 j [] 0 d 0 G 0 g # AddPage,startPage,setGraphicVars(SetFillColor)
+    #  BT /F1 12.00 Tf ET     #
+    #  0 J 0 j [] 0 d 0 G 0 g #
+    #  BT /F1 12.00 Tf ET     #
+    ###########################
     # ''                   # @linestyle_width    : Line width.
     # 0 J                  # @linestyle_cap      : Type of cap to put on the line. [butt:0, round:1, square:2]
     # 0 j                  # @linestyle_join     : Type of join. [miter:0, round:1, bevel:2]
     # [] 0 d               # @linestyle_dash     : Line dash pattern. (see SetLineStyle)
     # 0 G                  # @draw_color         : Drawing color. (see SetDrawColor)
-    # 0.784 0.784 0.784 rg # Set colors (200/256 200/256 200/256).
+    # 0 g                  # Set colors
     ########################
     # BT                   # Begin Text.
     #   /F1 12.00 Tf       # 12.00 point size font.
@@ -70,19 +70,17 @@ class TcpdfPageTest < ActiveSupport::TestCase
     contents.each_line {|line| content.push line.chomp }
 
     assert_equal content.length,  8
-    assert_equal content[6],  " 0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg"
+    assert_equal content[6],  " 0 J 0 j [] 0 d 0 G 0 g"
 
-    assert_equal content[7],  "q 0.000 0.000 0.000 rg BT 31.19 792.37 Td [(\x00C\x00h\x00a\x00p\x00t\x00e\x00r)] TJ ET Q "
+    assert_equal content[7],  "BT 31.19 792.37 Td 0 Tr 0.00 w [(\x00C\x00h\x00a\x00p\x00t\x00e\x00r)] TJ ET "
 
     #################################################
-    # 0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg       # getCellCode
-    # q                                             # Save current graphic state.
-    # 0.000 0.000 0.000 rg                          # Set colors.
+    # 0 J 0 j [] 0 d 0 G 0 g                        # getCellCode
     # BT
     #   31.19 792.37 Td                             # Set text offset.
+    #   0 Tr 0.00 w                                 # Set stroke outline and clipping mode
     #   [(\x00C\x00h\x00a\x00p\x00t\x00e\x00r)] TJ  # Write array of characters.
     # ET
-    # Q                                             # Restore previous graphic state.
     #################################################
   end
 

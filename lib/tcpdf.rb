@@ -303,6 +303,19 @@ class TCPDF
 		@num_columns ||= 0
 		@current_column ||= 0
 		@column_start_page ||= 0
+
+		# Text rendering mode: 
+		# 0 = Fill text;
+		# 1 =            Stroke text;
+		# 2 = Fill, then stroke text;
+		# 3 = Neither fill nor stroke text (invisible);
+		# 4 =              Fill text and add to path for clipping;
+		# 5 =            Stroke text and add to path for clipping;
+		# 6 = Fill, then stroke text and add to path for clipping;
+		# 7 = Add text to path for clipping.
+		@textrendermode ||= 0
+
+		@textstrokewidth ||= 0
 		@alias_nb_pages = '{nb}'
 		@alias_num_page = '{pnb}'
 		@is_unicode = unicode
@@ -311,6 +324,8 @@ class TCPDF
   	@listordered ||= []
   	@listcount ||= []
   	@lispacer ||= ""
+		@listindent ||= 0
+		@listindentlevel ||= 0
 		@n ||= 2
 		@offsets ||= []
 		@orientation_changes ||= []
@@ -427,6 +442,7 @@ class TCPDF
 		@default_monospaced_font = 'courier'
 		@issetfont = false
 		@fgcolor = ActiveSupport::OrderedHash.new
+		@strokecolor = ActiveSupport::OrderedHash.new
 		@bgcolor = ActiveSupport::OrderedHash.new
 #		@extgstates ||= []
 		@bgtag ||= []
@@ -439,8 +455,6 @@ class TCPDF
 		else
 			@tdalign ||= "L"
 		end
-		SetFillColor(200, 200, 200)
-		SetTextColor(0, 0, 0)
 
 		@sign ||= false
 		@signature_data ||= {}
@@ -1726,7 +1740,6 @@ class TCPDF
 			@l_margin = prev_lMargin
 			@r_margin = prev_rMargin
 		end
-		# print table header (if any)
 	end
 
 	#
@@ -1789,15 +1802,23 @@ class TCPDF
 		if (col2 == -1) and (col3 == -1) and (col4 == -1)
 			# Grey scale
 			@draw_color = sprintf('%.3f G', col1 / 255)
+			@strokecolor['G'] = col1
 		elsif col4 == -1
 			# RGB
 			@draw_color = sprintf('%.3f %.3f %.3f RG', col1 / 255, col2 / 255, col3 / 255)
+			@strokecolor['R'] = col1
+			@strokecolor['G'] = col2
+			@strokecolor['B'] = col3
 		else
 			# CMYK
 			@draw_color = sprintf('%.3f %.3f %.3f %.3f K', col1 / 100, col2 / 100, col3 / 100, col4 / 100)
+			@strokecolor['C'] = col1
+			@strokecolor['M'] = col2
+			@strokecolor['Y'] = col3
+			@strokecolor['K'] = col4
 		end
 		if (@page>0)
-			out(@draw_color);
+			out(@draw_color + ' ')
 		end
 	end
   alias_method :set_draw_color, :SetDrawColor
@@ -1806,7 +1827,7 @@ class TCPDF
 	# Defines the color used for all filling operations (filled rectangles and cell backgrounds). 
 	# It can be expressed in RGB components or gray scale. 
 	# The method can be called before the first page is created and the value is retained from page to page.
-	# @param array :color array of colors
+	# @param array or ordered hash :color array(or ordered hash) of colors
 	# @access public
 	# @since 3.1.000 (2008-6-11)
 	# @see SetFillColor()
@@ -1868,7 +1889,7 @@ class TCPDF
 			@bgcolor['K'] = col4
 		end
 
-		@color_flag = @fill_color != @text_color
+		@color_flag = (@fill_color != @text_color)
 		if @page > 0
 			out(@fill_color)
 		end
@@ -1894,7 +1915,7 @@ class TCPDF
 	#
 	# Defines the color used for text. It can be expressed in RGB components or gray scale. 
 	# The method can be called before the first page is created and the value is retained from page to page.
-	# @param array :color array of colors
+	# @param array or ordered hash :color array(or ordered hash) of colors
 	# @access public
 	# @since 3.1.000 (2008-6-11)
 	# @see SetFillColor()
@@ -1955,7 +1976,7 @@ class TCPDF
 			@fgcolor['Y'] = col3
 			@fgcolor['K'] = col4
 		end
-		@color_flag = @fill_color != @text_color
+		@color_flag = (@fill_color != @text_color)
 	end
   alias_method :set_text_color, :SetTextColor
 
@@ -2101,7 +2122,7 @@ class TCPDF
 
 	#
 	# Set line style.
-	# @param array :style Line style. Array with keys among the following:
+	# @param hash :style Line style. Array with keys among the following:
 	# <ul>
 	#        <li>width (float): Width of the line in user units.</li>
 	#        <li>cap (string): Type of cap to put on the line. Possible values are: butt, round, square. The difference between "square" and "butt" is that "square" projects a flat end past the end of the line.</li>
@@ -2114,6 +2135,9 @@ class TCPDF
 	# @since 2.1.000 (2008-01-08)
 	#
 	def SetLineStyle(style)
+		unless style.is_a? Hash
+			return
+		end
 		if !style['width'].nil?
 			width = style['width']
 			width_prev = @line_width
@@ -2169,13 +2193,13 @@ class TCPDF
 	# @param float :y1 Ordinate of first point
 	# @param float :x2 Abscissa of second point
 	# @param float :y2 Ordinate of second point
-	# @param array :style Line style. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param hash :style Line style. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
 	# @access public
 	# @since 1.0
 	# @see SetLineWidth(), SetDrawColor(), SetLineStyle()
 	#
 	def Line(x1, y1, x2, y2, style=nil)
-		if style
+		if style.is_a? Hash
 			SetLineStyle(style)
 		end
 		outPoint(x1, y1)
@@ -2604,6 +2628,7 @@ class TCPDF
 			#  register CID font (all styles at once)
 			styles = {'' => '', 'B' => ',Bold', 'I' => ',Italic', 'BI' => ',BoldItalic'}
 			sname = font_desc[:name] + styles[bistyle]
+			# artificial bold
 			if bistyle.index('B') != nil
 				if font_desc[:desc]['StemV']
 					font_desc[:desc]['StemV'] *= 2
@@ -2611,6 +2636,7 @@ class TCPDF
 					font_desc[:desc]['StemV'] = 120
 				end
 			end
+			# artificial italic
 			if bistyle.index('I') != nil
 				if font_desc[:desc]['ItalicAngle']
 					font_desc[:desc]['ItalicAngle'] -= 11
@@ -2927,44 +2953,29 @@ class TCPDF
 	end
 
 	#
-	# Prints a character string. The origin is on the left of the first charcter, on the baseline. This method allows to place a string precisely on the page, but it is usually easier to use Cell(), MultiCell() or Write() which are the standard methods to print text.
-	# @param float :x Abscissa of the origin
-	# @param float :y Ordinate of the origin
+	# Prints a text cell at the specified position.
+	# The origin is on the left of the first charcter, on the baseline.
+	# This method allows to place a string precisely on the page.
+	# @param float :x Abscissa of the cell origin
+	# @param float :y Ordinate of the cell origin
 	# @param string :txt String to print
-	# @param int :stroke outline size in points (0 = disable)
+	# @param int :stroke outline size in user units (false = disable)
 	# @param boolean :clip if true activate clipping mode (you must call StartTransform() before this function and StopTransform() to stop the clipping tranformation).
+	# @param boolean :fill if true fills the text
 	# @since 1.0
 	# @see SetFont(), SetTextColor(), Cell(), MultiCell(), Write()
 	#
-	def Text(x, y, txt, stroke=0, clip=false)
-		#Output a string
-		if @rtl
-			# bidirectional algorithm (some chars may be changed affecting the line length)
-			s = utf8Bidi(UTF8StringToArray(txt), txt, @tmprtl)
-			l = GetArrStringWidth(s)
-			xr = @w - x - l
-		else
-			xr = x
-		end
-		opt = ""
-		if (stroke > 0) and !clip
-			opt << "1 Tr " + stroke.to_s + " w "
-		elsif (stroke > 0) and clip
-			opt << "5 Tr " + stroke.to_s + " w "
-		elsif clip
-			opt << "7 Tr "
-		end
-		s = sprintf('BT %.2f %.2f Td %s(%s) Tj ET', xr * @k, (@h - y) * @k, opt, escapetext(txt))
-		if @underline and (txt != '')
-			s << ' ' + dounderline(xr, y, txt)
-		end
-		if @linethrough and (txt != '') 
-			s << ' ' + dolinethrough(xr, y, txt) 
-		end
-		if @color_flag and !clip
-			s = 'q ' + @text_color + ' ' + s + ' Q'
-		end
-		out(s);
+	def Text(x, y, txt, stroke=false, clip=false, fill=true)
+		stroke = 0 if stroke == false
+
+		textrendermode = @textrendermode
+		textstrokewidth = @textstrokewidth
+		setTextRenderingMode(stroke, fill, clip)
+		SetXY(x, y)
+		Cell(0, 0, txt, 0, 0, '', 0, '', 0, false)
+		# restore previous rendering mode
+		@textrendermode = textrendermode
+		@textstrokewidth = textstrokewidth
 	end
   alias_method :text, :Text
 
@@ -3264,6 +3275,9 @@ class TCPDF
 			if (@color_flag)
 				s << 'q ' + @text_color + ' ';
 			end
+			# rendering mode
+			# s << sprintf('BT %d Tr %.2f w ET ', @textrendermode, @textstrokewidth)
+			opt = sprintf('%d Tr %.2f w ', @textrendermode, @textstrokewidth) # fix for compatibility
 			# count number of spaces
 			ns = txt.count(' ')
 			# Justification
@@ -3317,7 +3331,8 @@ class TCPDF
 			basefonty = @y + ((h + @font_ascent - @font_descent) / 2)
 
 			# print text
-			s << sprintf('BT %.2f %.2f Td [(%s)] TJ ET', xdk, (@h - basefonty) * k, txt2)
+			# s << sprintf('BT %.2f %.2f Td [(%s)] TJ ET', xdk, (@h - basefonty) * k, txt2)
+			s << sprintf('BT %.2f %.2f Td %s[(%s)] TJ ET', xdk, (@h - basefonty) * k, opt, txt2) # fix for compatibility
 
 			if !uniblock.nil?
 				# print overlapping characters as separate string
@@ -3480,7 +3495,7 @@ class TCPDF
 
 		if ishtml
 			# ******* Write HTML text
-			writeHTML(txt, true, 0, reseth, true, align)
+			writeHTML(txt, true, false, reseth, true, align)
 			nl = 1
 		else
 			# ******* Write text
@@ -6986,7 +7001,7 @@ class TCPDF
 	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
 	# @access public
 	#
-	def writeHTML(html, ln=true, fill=0, reseth=false, cell=false, align='')
+	def writeHTML(html, ln=true, fill=false, reseth=false, cell=false, align='')
 		gvars = getGraphicVars()
 		# store current values
 		prevPage = @page
@@ -7048,6 +7063,7 @@ class TCPDF
 		else
 			@listindent = GetStringWidth('0000')
 		end
+		@listindentlevel = 0
 		# save previous states
 		prev_cell_height_ratio = @cell_height_ratio
 		prev_listnum = @listnum
@@ -7299,6 +7315,11 @@ class TCPDF
 						curfontdescent = fontdescent
 					end
 				end
+				# set text rendering mode
+				textstroke = !dom[key]['stroke'].nil? ? dom[key]['stroke'] : @textstrokewidth
+				textfill = !dom[key]['fill'].nil? ? dom[key]['fill'] : ((@textrendermode % 2) == 0) 
+				textclip = !dom[key]['clip'].nil? ? dom[key]['clip'] : (@textrendermode > 3)
+				setTextRenderingMode(textstroke, textfill, textclip)
 				if (plalign == 'J') and dom[key]['block']
 					plalign = ''
 				end
@@ -7312,6 +7333,9 @@ class TCPDF
 				end
 				if !dom[key]['fgcolor'].nil? and (dom[key]['fgcolor'].length > 0)
 					SetTextColorArray(dom[key]['fgcolor'])
+				end
+				if !dom[key]['strokecolor'].nil? and (dom[key]['strokecolor'].length > 0)
+					SetDrawColorArray(dom[key]['strokecolor'])
 				end
 				if !dom[key]['align'].nil?
 					lalign = dom[key]['align']
@@ -8063,6 +8087,9 @@ class TCPDF
 		end
 		if ln and !(cell and (dom[key-1]['value'] == 'table'))
 			Ln(@lasth)
+			if @y < maxbottomliney
+				@y = maxbottomliney
+			end
 		end
 		# restore previous values
 		setGraphicVars(gvars)
@@ -8076,9 +8103,6 @@ class TCPDF
 		@listordered = prev_listordered
 		@listcount = prev_listcount
 		@lispacer = prev_lispacer
-		if @y < maxbottomliney
-			@y = maxbottomliney
-		end
 		dom = nil
 	end
   alias_method :write_html, :writeHTML
@@ -8457,7 +8481,7 @@ class TCPDF
 
 		# remove all unsupported tags (the line below lists all supported tags)
 		::ActionView::Base.sanitized_allowed_css_properties = ["page-break-before", "page-break-after", "page-break-inside"]
-		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote body br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr))
+		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote body br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr stroke strokecolor fill))
 		html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
 		# replace some blank characters
 		html.gsub!(/<br>/, '<br/>')
@@ -8513,9 +8537,13 @@ class TCPDF
 		dom[key]['fontname'] = @font_family.dup
 		dom[key]['fontstyle'] = @font_style.dup
 		dom[key]['fontsize'] = @font_size_pt
+		dom[key]['stroke'] = @textstrokewidth
+		dom[key]['fill'] = ((@textrendermode % 2) == 0)
+		dom[key]['clip'] = (@textrendermode > 3)
 		dom[key]['line-height'] = @cell_height_ratio
 		dom[key]['bgcolor'] = ActiveSupport::OrderedHash.new
 		dom[key]['fgcolor'] = @fgcolor.dup
+		dom[key]['strokecolor'] = @strokecolor.dup
 
 		dom[key]['align'] = ''
 		dom[key]['listtype'] = ''
@@ -8562,9 +8590,13 @@ class TCPDF
 					dom[key]['fontname'] = dom[grandparent]['fontname'].dup
 					dom[key]['fontstyle'] = dom[grandparent]['fontstyle'].dup
 					dom[key]['fontsize'] = dom[grandparent]['fontsize']
+					dom[key]['stroke'] = dom[grandparent]['stroke']
+					dom[key]['fill'] = dom[grandparent]['fill']
+					dom[key]['clip'] = dom[grandparent]['clip']
 					dom[key]['line-height'] = dom[grandparent]['line-height']
 					dom[key]['bgcolor'] = dom[grandparent]['bgcolor'].dup
 					dom[key]['fgcolor'] = dom[grandparent]['fgcolor'].dup
+					dom[key]['strokecolor'] = dom[grandparent]['strokecolor'].dup
 					dom[key]['align'] = dom[grandparent]['align'].dup
 					if !dom[grandparent]['listtype'].nil?
 						dom[key]['listtype'] = dom[grandparent]['listtype'].dup
@@ -8621,9 +8653,13 @@ class TCPDF
 						dom[key]['fontname'] = dom[parentkey]['fontname'].dup
 						dom[key]['fontstyle'] = dom[parentkey]['fontstyle'].dup
 						dom[key]['fontsize'] = dom[parentkey]['fontsize']
+						dom[key]['stroke'] = dom[parentkey]['stroke']
+						dom[key]['fill'] = dom[parentkey]['fill']
+						dom[key]['clip'] = dom[parentkey]['clip']
 						dom[key]['line-height'] = dom[parentkey]['line-height']
 						dom[key]['bgcolor'] = dom[parentkey]['bgcolor'].dup
 						dom[key]['fgcolor'] = dom[parentkey]['fgcolor'].dup
+						dom[key]['strokecolor'] = dom[parentkey]['strokecolor'].dup
 						dom[key]['align'] = dom[parentkey]['align'].dup
 						dom[key]['listtype'] = dom[parentkey]['listtype'].dup
 						dom[key]['text-indent'] = dom[parentkey]['text-indent']
@@ -8883,6 +8919,10 @@ class TCPDF
 					if !empty_string(dom[key]['attribute']['bgcolor'])
 						dom[key]['bgcolor'] = convertHTMLColorToDec(dom[key]['attribute']['bgcolor'])
 					end
+					# set stroke color attribute
+					if !empty_string(dom[key]['attribute']['strokecolor'])
+						dom[key]['strokecolor'] = convertHTMLColorToDec(dom[key]['attribute']['strokecolor'])
+					end
 					# check for width attribute
 					if !dom[key]['attribute']['width'].nil?
 						dom[key]['width'] = dom[key]['attribute']['width'].to_i
@@ -8894,6 +8934,27 @@ class TCPDF
 					# check for text alignment
 					if !empty_string(dom[key]['attribute']['align']) and (dom[key]['value'] != 'img')
 						dom[key]['align'] = dom[key]['attribute']['align'][0,1].upcase
+					end
+					# check for text rendering mode (the following attributes do not exist in HTML)
+					if !dom[key]['attribute']['stroke'].nil?
+						# font stroke width
+						dom[key]['stroke'] = getHTMLUnitToUnits(dom[key]['attribute']['stroke'], dom[key]['fontsize'], 'pt', true)
+					end
+					if !dom[key]['attribute']['fill'].nil?
+						# font fill
+						if dom[key]['attribute']['fill'] == 'true'
+							dom[key]['fill'] = true
+						else
+							dom[key]['fill'] = false
+						end
+					end
+					if !dom[key]['attribute']['clip'].nil?
+						# clipping mode
+						if dom[key]['attribute']['clip'] == 'true'
+							dom[key]['clip'] = true
+						else
+							dom[key]['clip'] = false
+						end
 					end
 				end # end opening tag
 			else
@@ -9143,6 +9204,7 @@ class TCPDF
 			else
 				@l_margin += @listindent
 			end
+			@listindentlevel += 1
 			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
 		when 'ul', 'ol'
 			addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], false)
@@ -9163,6 +9225,9 @@ class TCPDF
 			else
 				@l_margin += @listindent
 			end
+			@listindentlevel += 1
+			addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], false)
+			@htmlvspace = 0
 		when 'li'
 			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
 			if @listordered[@listnum]
@@ -9198,6 +9263,7 @@ class TCPDF
 			else
 				@l_margin += @listindent
 			end
+			@listindentlevel += 1
 			addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], false)
 		when 'br'
 			Ln('', cell)
@@ -9504,6 +9570,7 @@ class TCPDF
 				else
 					@l_margin -= @listindent
 				end
+				@listindentlevel -= 1
 				addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], true)
 			when 'p'
 				addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], true)
@@ -9526,6 +9593,7 @@ class TCPDF
 				else
 					@l_margin -= @listindent
 				end
+				@listindentlevel -= 1
 				addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], true)
 			when 'ul', 'ol'
 				@listnum -= 1
@@ -9535,6 +9603,7 @@ class TCPDF
 				else
 					@l_margin -= @listindent
 				end
+				@listindentlevel -= 1
 				if @listnum <= 0
 					@listnum = 0
 					addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], true)
@@ -9883,6 +9952,8 @@ class TCPDF
 			'linestyleCap' => @linestyle_cap,
 			'linestyleJoin' => @linestyle_join,
 			'linestyleDash' => @linestyle_dash,
+			'textrendermode' => @textrendermode,
+			'textstrokewidth' => @textstrokewidth,
 			'DrawColor' => @draw_color,
 			'FillColor' => @fill_color,
 			'TextColor' => @text_color,
@@ -9913,6 +9984,8 @@ class TCPDF
 		@linestyle_cap = gvars['linestyleCap']
 		@linestyle_join = gvars['linestyleJoin']
 		@linestyle_dash = gvars['linestyleDash']
+		@textrendermode = gvars['textrendermode']
+		@textstrokewidth = gvars['textstrokewidth']
 		@draw_color = gvars['DrawColor']
 		@fill_color = gvars['FillColor']
 		@text_color = gvars['TextColor']
@@ -11268,6 +11341,63 @@ class TCPDF
 		else
 			return Marshal.load(Marshal.dump(object))
 		end
+	end
+
+	#
+	# Set Text rendering mode.
+	# @param int :stroke outline size in user units (0 = disable).
+	# @param boolean :fill if true fills the text (default).
+	# @param boolean :clip if true activate clipping mode
+	# @access public
+	# @since 4.9.008 (2009-04-02)
+	#
+	def setTextRenderingMode(stroke=0, fill=true, clip=false)
+		# Ref.: PDF 32000-1:2008 - 9.3.6 Text Rendering Mode
+		# convert text rendering parameters
+		if stroke < 0
+			stroke = 0
+		end
+		if fill == true
+			if stroke > 0
+				if clip == true
+					# Fill, then stroke text and add to path for clipping
+					textrendermode = 6
+				else
+					# Fill, then stroke text
+					textrendermode = 2
+				end
+				textstrokewidth = stroke
+			else
+				if clip == true
+					# Fill text and add to path for clipping
+					textrendermode = 4
+				else
+					# Fill text
+					textrendermode = 0
+				end
+			end
+		else
+			if stroke > 0
+				if clip == true
+					# Stroke text and add to path for clipping
+					textrendermode = 5
+				else
+					# Stroke text
+					textrendermode = 1
+				end
+				textstrokewidth = stroke
+			else
+				if clip == true
+					# Add text to path for clipping
+					textrendermode = 7
+				else
+					# Neither fill nor stroke text (invisible)
+					textrendermode = 3
+				end
+			end
+		end
+		@textrendermode = textrendermode
+		@textstrokewidth = stroke * @k
 	end
 
 end # END OF TCPDF CLASS

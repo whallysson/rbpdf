@@ -6,8 +6,8 @@ class TcpdfTest < ActiveSupport::TestCase
     pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.AddPage()
     code = pdf.getCellCode(10)
-    assert_equal code, " 0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg\n"
-    # 0 J 0 j [] 0 d 0 G 0.784 0.784 0.784 rg       # getCellCode
+    assert_equal code, " 0 J 0 j [] 0 d 0 G 0 g\n"
+    # 0 J 0 j [] 0 d 0 G 0 rg       # getCellCode
 
   end
 
@@ -19,18 +19,16 @@ class TcpdfTest < ActiveSupport::TestCase
     contents.each_line {|line| content.push line.chomp }
 
     assert_equal content.length,  2
-    assert_equal content[1], "28.35 813.82 m 28.35 784.91 l S 28.07 813.54 m 56.98 813.54 l S 56.70 813.82 m 56.70 784.91 l S 28.07 785.19 m 56.98 785.19 l S q 0.000 0.000 0.000 rg BT 31.19 795.17 Td [(abc)] TJ ET Q"
+    assert_equal content[1], "28.35 813.82 m 28.35 784.91 l S 28.07 813.54 m 56.98 813.54 l S 56.70 813.82 m 56.70 784.91 l S 28.07 785.19 m 56.98 785.19 l S BT 31.19 795.17 Td 0 Tr 0.00 w [(abc)] TJ ET"
     # 28.35 813.82 m 28.35 784.91 l S
     # 28.07 813.54 m 56.98 813.54 l S
     # 56.70 813.82 m 56.70 784.91 l S
     # 28.07 785.19 m 56.98 785.19 l S
-    # q
-    # 0.000 0.000 0.000 rg
     # BT
     #   31.19 795.17 Td
+    #   0 Tr 0.00 w 
     #   [(abc)] TJ
     # ET
-    # Q
   end
 
   test "getCellCode link page test" do
@@ -41,21 +39,11 @@ class TcpdfTest < ActiveSupport::TestCase
     contents.each_line {|line| content.push line.chomp }
 
     assert_equal content.length,  2
-    assert_equal content[1], "q 0.000 0.000 0.000 rg BT 31.19 795.17 Td [(abc)] TJ ET Q"
-    # q
-    # 0.000 0.000 0.000 rg
+    assert_equal content[1], "BT 31.19 795.17 Td 0 Tr 0.00 w [(abc)] TJ ET"
     # BT
     #    31.19 795.17 Td
+    #    0 Tr 0.00 w
     #    [(abc)] TJ
     # ET
-    # Q
-
-    # q                                             # Save current graphic state.
-    # 0.000 0.000 0.000 rg                          # Set colors.
-    # BT
-    #   31.19 792.70 Td                             # Set text offset.
-    #   [(\000C\000h\000a\000p\000t\000e\000r)] TJ  # Write array of characters.
-    # ET
-    # Q                                             # Restore previous graphic state.
   end
 end
