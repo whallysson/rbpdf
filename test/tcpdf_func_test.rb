@@ -83,6 +83,15 @@ class TcpdfTest < ActiveSupport::TestCase
     assert_equal pos, 2
   end
 
+  test "SetLineStyle Basic test" do
+    pdf = TCPDF.new
+
+    pdf.SetLineStyle({'width' => 0.1, 'cap' => 'butt', 'join' => 'miter', 'dash' => 0, 'color' => [0, 0, 0]})
+    pdf.SetLineStyle({'width' => 0.1, 'cap' => 'butt', 'join' => 'miter', 'dash' => '', 'phase' => 0, 'color' => [255, 0, 0]})
+    pdf.SetLineStyle({'width' => 0.1, 'cap' => 'butt', 'join' => 'miter', 'dash' => '1,2,3,4', 'phase' => 0, 'color' => [255, 0, 0]})
+    pdf.SetLineStyle({'width' => 0.1, 'cap' => 'butt', 'join' => 'miter', 'dash' => 'a', 'phase' => 0, 'color' => [255, 0, 0]}) # Invalid
+  end
+
   test "Transaction test without diskcache" do
     pdf = TCPDF.new
     pdf.AddPage()

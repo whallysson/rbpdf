@@ -337,7 +337,7 @@ class TCPDF
 		@transfmatrix_key ||= 0
 		@booklet ||= false
 		@feps ||= 0.005
-		@tagvspaces ||= []
+		@tagvspaces ||= {}
 		@customlistindent ||= -1
 		@opencell = true
 		@embeddedfiles ||= {}
@@ -2163,7 +2163,7 @@ class TCPDF
 		if !style['dash'].nil?
 			dash = style['dash']
 			dash_string = ''
-			if dash != 0
+			if dash != 0 and dash != ''
 				if dash =~ /^.+,/
 					tab = dash.split(',')
 				else
@@ -2174,7 +2174,7 @@ class TCPDF
 					if i != 0
 						dash_string << ' '
 					end
-					dash_string << sprintf("%.2f", v)
+					dash_string << sprintf("%.2f", v.to_f)
 				}
 			end
 			phase = 0
@@ -2959,20 +2959,29 @@ class TCPDF
 	# @param float :x Abscissa of the cell origin
 	# @param float :y Ordinate of the cell origin
 	# @param string :txt String to print
-	# @param int :stroke outline size in user units (false = disable)
-	# @param boolean :clip if true activate clipping mode (you must call StartTransform() before this function and StopTransform() to stop the clipping tranformation).
-	# @param boolean :fill if true fills the text
+	# @param int :fstroke outline size in user units (false = disable)
+	# @param boolean :fclip if true activate clipping mode (you must call StartTransform() before this function and StopTransform() to stop the clipping tranformation).
+	# @param boolean :ffill if true fills the text
+	# @param mixed :border Indicates if borders must be drawn around the cell. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
+	# @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right (or left for RTL languages)</li><li>1: to the beginning of the next line</li><li>2: below</li></ul>Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
+	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L or empty string: left align (default value)</li><li>C: center</li><li>R: right align</li><li>J: justify</li></ul>
+	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
+	# @param mixed :link URL or identifier returned by AddLink().
+	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
+	# @param boolean :ignore_min_height if true ignore automatic minimum height value.
+	# @param string :calign cell vertical alignment relative to the specified Y value. Possible values are:<ul><li>T : cell top</li><li>A : font top</li><li>L : font baseline</li><li>D : font bottom</li><li>B : cell bottom</li></ul>
+	# @param string :valign text vertical alignment inside the cell. Possible values are:<ul><li>T : top</li><li>C : center</li><li>B : bottom</li></ul>
 	# @since 1.0
 	# @see SetFont(), SetTextColor(), Cell(), MultiCell(), Write()
 	#
-	def Text(x, y, txt, stroke=false, clip=false, fill=true)
+	def Text(x, y, txt, stroke=ffalse, fclip=false, ffill=true, border=0, ln=0, align='', fill=0, link='', stretch=0, ignore_min_height=false, calign='T', valign='M')
 		stroke = 0 if stroke == false
 
 		textrendermode = @textrendermode
 		textstrokewidth = @textstrokewidth
-		setTextRenderingMode(stroke, fill, clip)
+		setTextRenderingMode(fstroke, ffill, fclip)
 		SetXY(x, y)
-		Cell(0, 0, txt, 0, 0, '', 0, '', 0, false)
+		Cell(0, 0, txt, border, ln, align, fill, link, stretch, ignore_min_height, calign, valign)
 		# restore previous rendering mode
 		@textrendermode = textrendermode
 		@textstrokewidth = textstrokewidth
@@ -3069,10 +3078,13 @@ class TCPDF
 	# @param mixed :link URL or identifier returned by AddLink().
 	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
 	# @param boolean :ignore_min_height if true ignore automatic minimum height value.
+	# @param string :calign cell vertical alignment relative to the specified Y value. Possible values are:<ul><li>T : cell top</li><li>A : font top</li><li>
+	# @param string :valign text vertical alignment inside the cell. Possible values are:<ul><li>T : top</li><li>C : center</li><li>B : bottom</li></ul>
+	# public
 	# @since 1.0
 	# @see SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), AddLink(), Ln(), MultiCell(), Write(), SetAutoPageBreak()
 	#
-	def Cell(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false)
+	def Cell(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false, calign='T', valign='M')
 		if !ignore_min_height
 			min_cell_height = @font_size * @@k_cell_height_ratio
 			if h < min_cell_height
@@ -3080,7 +3092,7 @@ class TCPDF
 			end
 		end
 		checkPageBreak(h)
-		out(getCellCode(w, h, txt, border, ln, align, fill, link, stretch, ignore_min_height) + ' ')
+		out(getCellCode(w, h, txt, border, ln, align, fill, link, stretch, ignore_min_height, calign, valign) + ' ')
 	end
   alias_method :cell, :Cell
 
@@ -3124,11 +3136,13 @@ class TCPDF
 	# @param mixed :link URL or identifier returned by AddLink().
 	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
 	# @param boolean :ignore_min_height if true ignore automatic minimum height value.
+	# @param string :calign cell vertical alignment relative to the specified Y value. Possible values are:<ul><li>T : cell top</li><li>A : font top</li><li>
+	# @param string :valign text vertical alignment inside the cell. Possible values are:<ul><li>T : top</li><li>C : center</li><li>B : bottom</li></ul>
 	# @access protected
 	# @since 1.0
 	# @see Cell()
 	#
-	def getCellCode(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false)
+	def getCellCode(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false, calign='T', valign='M')
 		rs = "" # string to be returned
 		txt = removeSHY(txt)
 		if !ignore_min_height
@@ -3138,11 +3152,44 @@ class TCPDF
 			end
 		end
 		k = @k
+		x = @x
+		y = @y
+		# cell vertical alignment
+		case calign
+		when 'A'
+			# font top
+			y -= (h - @font_ascent - @font_descent) / 2
+		when 'L'
+			# font baseline
+			y -= (h + @font_ascent - @font_descent) / 2
+		when 'D'
+			# font bottom
+			y -= (h + @font_ascent + @font_descent) / 2
+		when 'B'
+			# cell bottom
+			y -= h
+		else # 'T'
+			# cell top
+		end
+
+		# text vertical alignment
+		case valign
+		when 'T'
+			# top
+			basefonty = y + @font_ascent + @line_width
+		when 'B'
+			# bottom
+			basefonty = y + h - @font_descent - @line_width
+		else # 'M'
+			# center
+			basefonty = y + (h + @font_ascent - @font_descent) / 2
+		end
+
 		if empty_string(w) or (w <= 0)
 			if @rtl
-				w = @x - @l_margin
+				w = x - @l_margin
 			else
-				w = @w - @r_margin - @x
+				w = @w - @r_margin - x
 			end
 		end
 		s = '';
@@ -3159,12 +3206,10 @@ class TCPDF
 			else
 				xk = @x * k
 			end
-			s << sprintf('%.2f %.2f %.2f %.2f re %s ', xk, (@h - @y) * k, w * k, -h * k, op)
+			s << sprintf('%.2f %.2f %.2f %.2f re %s ', xk, (@h - y) * k, w * k, -h * k, op)
 		end
 		if (border.is_a?(String))
 			lm = @line_width / 2
-			x=@x;
-			y=@y;
 			if (border.include?('L'))
 				if @rtl
 					xk = (x - w) * k
@@ -3327,8 +3372,6 @@ class TCPDF
 				xdx = @x + dx
 			end
 			xdk = xdx * k
-			# get position of the font base line
-			basefonty = @y + ((h + @font_ascent - @font_descent) / 2)
 
 			# print text
 			# s << sprintf('BT %.2f %.2f Td [(%s)] TJ ET', xdk, (@h - basefonty) * k, txt2)
@@ -3365,7 +3408,7 @@ class TCPDF
 				s<<' Q';
 			end
 			if link && ((link.is_a?(String) and !link.empty?) or link.is_a? Fixnum)
-				Link(xdx, @y + ((h - @font_size) / 2), width, @font_size, link, ns)
+				Link(xdx, y + ((h - @font_size) / 2), width, @font_size, link, ns)
 			end
 		end
 
@@ -3392,7 +3435,7 @@ class TCPDF
 
 		if (ln.to_i>0)
 			# Go to the beginning of the next line
-			@y += h;
+			@y = y + h
 			if (ln == 1)
 				if @rtl
 					@x = @w - @r_margin
@@ -7379,6 +7422,9 @@ class TCPDF
 					if (!plalign.nil? and ((plalign == 'C') or (plalign == 'J') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl))) or (yshift < 0)
 						# calculate shifting amount
 						tw = w
+						if (plalign == 'J') and isRTLTextDir() and (@num_columns > 1)
+							tw += @c_margin
+						end
 						if @l_margin != prevlMargin
 							tw += prevlMargin - @l_margin
 						end
@@ -7460,7 +7506,7 @@ class TCPDF
 								end
 								# calculate additional space to add to each space
 								spacelen = one_space_width
-								spacewidth = (((tw - linew + @c_margin) + ((no - ns) * spacelen)) / (ns ? ns : 1)) * @k
+								spacewidth = (((tw - linew) + ((no - ns) * spacelen)) / (ns ? ns : 1)) * @k
 						 		spacewidthu = -1000 * ((tw - linew) + (no * spacelen)) / (ns ? ns : 1) / @font_size
 								nsmax = ns
 								ns = 0
@@ -8418,7 +8464,7 @@ class TCPDF
 	#
 	def getHtmlDomArray(html)
 		#  define block tags
-		blocktags = ['blockquote','br','dd','dl','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','ul','table','tr','td']
+		blocktags = ['blockquote','br','dd','dl','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','pre','ul','table','tr','td']
 		# array of CSS styles ( selector => properties).
 		css = {}
 		# extract external CSS files
@@ -8504,13 +8550,13 @@ class TCPDF
 		end
 		html.gsub!(/[\n]/, " ")
 		# remove extra spaces from code
-		html.gsub!(/[\s]+<\/(table|tr|td|th|ul|ol|li)>/, '</\\1>')
-		html.gsub!(/[\s]+<(tr|td|th|ul|ol|li|br)/, '<\\1')
-		html.gsub!(/<\/(table|tr|td|th|blockquote|dd|div|dt|h1|h2|h3|h4|h5|h6|hr|li|ol|ul|p)>[\s]+</, '</\\1><')
+		html.gsub!(/[\s]+<\/(table|tr|td|th|ul|ol|li|dl|dt|dd)>/, '</\\1>')
+		html.gsub!(/[\s]+<(tr|td|th|ul|ol|li|dl|dt|dd|br)/, '<\\1')
+		html.gsub!(/<\/(table|tr|td|th|blockquote|dd|dl|div|dt|h1|h2|h3|h4|h5|h6|hr|li|ol|ul|p)>[\s]+</, '</\\1><')
 
 		html.gsub!(/<\/(td|th)>/, '<marker style="font-size:0"/></\\1>')
 		html.gsub!(/<\/table>([\s]*)<marker style="font-size:0"\/>/, '</table>')
-		html.gsub!(/<img/, ' <img')
+		html.gsub!(/[\s]*<img/, ' <img')
 		html.gsub!(/<img([^\>]*)>/xi, '<img\\1><span><marker style="font-size:0"/></span>')
 		html.gsub!(/<xre/, '<pre') # restore pre tag
 
@@ -8998,23 +9044,32 @@ class TCPDF
 			@tmprtl = false
 		end
 		if tag['block']
+			hbz = 0 # distance from y to line bottom
+			hb = 0 # vertical space between block tags
 			# calculate vertical space for block tags
 			hb = ''
-			if tag['fontsize']
-				cur_h = (tag['fontsize'] / @k) * @cell_height_ratio
+			if @htmlvspace <= 0
 				if parent['fontsize']
-					pre_h = (parent['fontsize'] / @k) * @cell_height_ratio
+					hbz = (parent['fontsize'] / @k) * @cell_height_ratio
 				else
-					pre_h = @font_size * @cell_height_ratio
-				end
-				if @htmlvspace == 0
-					hb = cur_h + pre_h
-				elsif cur_h > @htmlvspace
-					hb = cur_h + (@htmlvspace / 2)
-				else
-					hb = cur_h + pre_h
+					hbz = @font_size * @cell_height_ratio
 				end
 			end
+			if @tagvspaces[tag['value']] and @tagvspaces[tag['value']][0] and @tagvspaces[tag['value']][0]['h'] and (@tagvspaces[tag['value']][0]['h'] >= 0)
+				cur_h = @tagvspaces[tag['value']][0]['h']
+			elsif !tag['fontsize'].nil?
+				cur_h = (tag['fontsize'] / @k) * @cell_height_ratio
+			else
+				cur_h = @font_size * @cell_height_ratio
+			end
+			if @tagvspaces[tag['value']] and @tagvspaces[tag['value']][0] and @tagvspaces[tag['value']][0]['n']
+				n = @tagvspaces[tag['value']][0]['n']
+			elsif tag['value'] =~ /[h][0-9]/
+				n = 0.6
+			else
+				n = 1
+			end
+			hb = n * cur_h
 		end
 		#Opening tag
 		case tag['value']
@@ -9050,22 +9105,26 @@ class TCPDF
 			# array of columns positions
 			dom[key]['cellpos'] = []
 		when 'hr'
-			Ln('', cell)
-			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
-			@htmlvspace = 0
 			wtmp = @w - @l_margin - @r_margin
 			if !tag['attribute']['width'].nil? and (tag['attribute']['width'] != '')
 				hrWidth = getHTMLUnitToUnits(tag['attribute']['width'], wtmp, 'px')
 			else
 				hrWidth = wtmp
 			end
+			if !tag['height'].nil? and (tag['height'] != '')
+				hrHeight = getHTMLUnitToUnits(tag['height'], 1, 'px')
+			else
+				hrHeight = GetLineWidth()
+			end
+			addHTMLVertSpace(hbz, (hrHeight / 2), cell, firstorlast)
 			x = GetX()
 			y = GetY()
 			prevlinewidth = GetLineWidth()
+			SetLineWidth(hrHeight)
 			Line(x, y, x + hrWidth, y)
 			SetLineWidth(prevlinewidth)
 			Ln('', cell)
-			addHTMLVertSpace(1, cell, '', dom[key + 1].nil?, tag['value'], false)
+			addHTMLVertSpace(hrHeight / 2, 0, cell, dom[key + 1].nil?)
 		when 'a'
 			if tag['attribute'].key?('href')
 				@href['url'] = tag['attribute']['href']
@@ -9194,10 +9253,14 @@ class TCPDF
 			end
 		when 'dl'
 			@listnum += 1
-			addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], false)
+			if @listnum == 1
+				addHTMLVertSpace(hbz, hb, cell, firstorlast)
+			else
+				addHTMLVertSpace(0, 0, cell, firstorlast)
+			end
 		when 'dt'
 			Ln('', cell)
-			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
+			addHTMLVertSpace(hbz, 0, cell, firstorlast)
 		when 'dd'
 			if @rtl
 				@r_margin += @listindent
@@ -9205,10 +9268,8 @@ class TCPDF
 				@l_margin += @listindent
 			end
 			@listindentlevel += 1
-			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
+			addHTMLVertSpace(hbz, 0, cell, firstorlast)
 		when 'ul', 'ol'
-			addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], false)
-			@htmlvspace = 0
 			@listnum += 1
 			if tag['value'] == "ol"
 				@listordered[@listnum] = true
@@ -9226,10 +9287,13 @@ class TCPDF
 				@l_margin += @listindent
 			end
 			@listindentlevel += 1
-			addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], false)
-			@htmlvspace = 0
+			if @listnum == 1
+				addHTMLVertSpace(hbz, hb, cell, firstorlast)
+			else
+				addHTMLVertSpace(0, 0, cell, firstorlast)
+			end
 		when 'li'
-			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
+			addHTMLVertSpace(hbz, 0, cell, firstorlast)
 			if @listordered[@listnum]
 				# ordered item
 				if !empty_string(parent['attribute']['type'])
@@ -9264,22 +9328,22 @@ class TCPDF
 				@l_margin += @listindent
 			end
 			@listindentlevel += 1
-			addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], false)
+			addHTMLVertSpace(hbz, hb, cell, firstorlast)
 		when 'br'
-			Ln('', cell)
+			addHTMLVertSpace(hbz, 0, cell, firstorlast)
 		when 'div'
-			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
+			addHTMLVertSpace(hbz, 0, cell, firstorlast)
 		when 'p'
-			addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], false)
+			addHTMLVertSpace(hbz, hb, cell, firstorlast)
 		when 'pre'
-			addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], false)
+			addHTMLVertSpace(hbz, hb, cell, firstorlast)
 			@premode = true
 		when 'sup'
 			SetXY(GetX(), GetY() - ((0.7 * @font_size_pt) / @k))
 		when 'sub'
 			SetXY(GetX(), GetY() + ((0.3 * @font_size_pt) / @k))
 		when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
-			addHTMLVertSpace(1, cell, 3 * hb/4, firstorlast, tag['value'], false)
+			addHTMLVertSpace(hbz, hb, cell, firstorlast)
 		end
 
 		if dom[key]['self'] and dom[key]['attribute']['pagebreakafter']
@@ -9311,15 +9375,26 @@ class TCPDF
 		firstorlast = dom[key + 1].nil? or (dom[key + 2].nil? and (dom[key + 1]['value'] == 'marker'))
 		in_table_head = false
 		if tag['block']
+			hbz = 0 # distance from y to line bottom
+			hb = 0 # vertical space between block tags
 			# calculate vertical space for block tags
-			if parent['fontsize']
+			if @tagvspaces[tag['value']] and @tagvspaces[tag['value']][1] and @tagvspaces[tag['value']][1]['h'] and (@tagvspaces[tag['value']][1]['h'] >= 0)
+				pre_h = @tagvspaces[tag['value']][1]['h']
+			elsif parent['fontsize']
 				pre_h = (parent['fontsize'] / @k) * @cell_height_ratio
 			else
 				pre_h = @font_size * @cell_height_ratio
 			end
-			hb = pre_h
+			if @tagvspaces[tag['value']] and @tagvspaces[tag['value']][1] and @tagvspaces[tag['value']][1]['n']
+				n = @tagvspaces[tag['value']][1]['n']
+			elsif tag['value'] =~ /[h][0-9]/
+				n = 0.6
+			else
+				n = 1
+			end
+			hb = n * pre_h
 			if @y < maxbottomliney
-				hb += maxbottomliney - @y
+				hbz = maxbottomliney - @y
 			end
 		end
 		# Closing tag
@@ -9563,7 +9638,7 @@ class TCPDF
 			when 'sub'
 				SetXY(GetX(), GetY() - (0.3 * parent['fontsize'] / @k))
 			when 'div'
-				addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], true)
+				addHTMLVertSpace(hbz, 0, cell, firstorlast)
 			when 'blockquote'
 				if @rtl
 					@r_margin -= @listindent
@@ -9571,21 +9646,24 @@ class TCPDF
 					@l_margin -= @listindent
 				end
 				@listindentlevel -= 1
-				addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], true)
+				addHTMLVertSpace(hbz, hb, cell, firstorlast)
 			when 'p'
-				addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], true)
+				addHTMLVertSpace(hbz, hb, cell, firstorlast)
 			when 'pre'
-				addHTMLVertSpace(1, cell, '', firstorlast, tag['value'], true)
+				addHTMLVertSpace(hbz, hb, cell, firstorlast)
 				@premode = false
 			when 'dl'
 				@listnum -= 1
 				if @listnum <= 0
 					@listnum = 0
-					addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], true)
+					addHTMLVertSpace(hbz, hb, cell, firstorlast)
+				else
+					addHTMLVertSpace(0, 0, cell, firstorlast)
 				end
+				@lasth = @font_size * @cell_height_ratio
 			when 'dt'
 				@lispacer = ''
-				addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], true)
+				addHTMLVertSpace(0, 0, cell, firstorlast)
 			when 'dd'
 				@lispacer = ''
 				if @rtl
@@ -9594,7 +9672,7 @@ class TCPDF
 					@l_margin -= @listindent
 				end
 				@listindentlevel -= 1
-				addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], true)
+				addHTMLVertSpace(0, 0, cell, firstorlast)
 			when 'ul', 'ol'
 				@listnum -= 1
 				@lispacer = ''
@@ -9606,14 +9684,16 @@ class TCPDF
 				@listindentlevel -= 1
 				if @listnum <= 0
 					@listnum = 0
-					addHTMLVertSpace(1, cell, hb, firstorlast, tag['value'], true)
+					addHTMLVertSpace(hbz, hb, cell, firstorlast)
+				else
+					addHTMLVertSpace(0, 0, cell, firstorlast)
 				end
 				@lasth = @font_size * @cell_height_ratio
 			when 'li'
 				@lispacer = ''
-				addHTMLVertSpace(0, cell, '', firstorlast, tag['value'], true)
+				addHTMLVertSpace(0, 0, cell, firstorlast)
 			when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
-				addHTMLVertSpace(1, cell, 3 * hb/4, firstorlast, tag['value'], true)
+				addHTMLVertSpace(hbz, hb, cell, firstorlast)
 		end
 		if dom[(dom[key]['parent'])]['attribute']['pagebreakafter']
 			pba = dom[(dom[key]['parent'])]['attribute']['pagebreakafter']
@@ -9632,37 +9712,26 @@ class TCPDF
 	
 	#
 	# Add vertical spaces if needed.
-	# @param int :n number of spaces to add
+	# @param string :hbz Distance between current y and line bottom.
+	# @param string :hb The height of the break.
 	# @param boolean :cell if true add the default cMargin space to each new line (default false).
-	# @param string :h The height of the break. By default, the value equals the height of the last printed cell.
 	# @param boolean :firstorlast if true do not print additional empty lines.
-	# @param string :tag HTML tag to which this space will be applied
-	# @param boolean :closing true if this space will be applied to a closing tag, false otherwise
 	# @access protected
 	#
-	def addHTMLVertSpace(n, cell=false, h='', firstorlast=false, tag='', closing=false)
+	def addHTMLVertSpace(hbz=0, hb=0, cell=false, firstorlast=false)
 		if firstorlast
 			Ln(0, cell)
 			@htmlvspace = 0
 			return
 		end
-		#### no use ###
-		#closing = closing ? 1 : 0
-		#if !@tagvspaces[tag][closing]['n'].nil?
-		#	n = @tagvspaces[tag][closing]['n']
-		#end
-		#if !@tagvspaces[tag][closing]['h'].nil?
-		#	h = @tagvspaces[tag][closing]['h']
-		#end
-		if h.is_a?(String)
-			vsize = n * @lasth
+
+		if hb < @htmlvspace
+			hd = 0
 		else
-			vsize = n * h
+			hd = hb - @htmlvspace
+			@htmlvspace = hb
 		end
-		if vsize > @htmlvspace
-			Ln(vsize - @htmlvspace, cell)
-			@htmlvspace = vsize
-		end
+		Ln(hbz + hd, cell)
 	end
 
 	#
@@ -9704,7 +9773,7 @@ class TCPDF
 	#
 	# Set the vertical spaces for HTML tags.
 	# The array must have the following structure (example):
-	# :tagvs = {'h1' => {0 => {'h' => '', 'n' => 2}, 1 => {'h' => 1.3, 'n' => 1}}}
+	# :tagvs = {'h1' => [{'h' => '', 'n' => 2}, {'h' => 1.3, 'n' => 1}]}
 	# The first array level contains the tag names,
 	# the second level contains 0 for opening tags or 1 for closing tags,
 	# the third level contains the vertical space unit (h) and the number spaces to add (n).
