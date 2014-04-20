@@ -3632,7 +3632,7 @@ class TCPDF
 				end
 			end
 		else
-			h = h > currentY - y ? h : currentY - y
+			h = [h, currentY - y].max
 			# put cursor at the beginning of text
 			SetY(y)
 			SetX(x)
@@ -4168,8 +4168,8 @@ class TCPDF
 	end
 
 	#
-	# Returns the unicode caracter specified by UTF-8 code
-	# @param int :c UTF-8 code (UCS4)
+	# Returns the unicode caracter specified by UTF-8 value
+	# @param int :c UTF-8 value (UCS4)
 	# @return Returns the specified character. (UTF-8)
 	# @author Miguel Perez, Nicola Asuni
 	# @since 2.3.000 (2008-03-05)
@@ -4476,7 +4476,8 @@ class TCPDF
 	# Performs a line break. 
 	# The current abscissa goes back to the left margin and the ordinate increases by the amount passed in parameter.
 	# @param float :h The height of the break. By default, the value equals the height of the last printed cell.
-	# @param boolean :cell if true add a cMargin to the x coordinate
+	# @param boolean :cell if true add a c_margin to the x coordinate
+	# @access public
 	# @since 1.0
 	# @see Cell()
 	#
@@ -4485,9 +4486,10 @@ class TCPDF
 			# revove vertical space from the top of the column
 			return
 		end
-		cellmargin = 0
 		if cell
 			cellmargin = @c_margin
+		else
+			cellmargin = 0
 		end
 		if @rtl
 			@x = @w - @r_margin - cellmargin
@@ -4573,20 +4575,31 @@ class TCPDF
 	# Moves the current abscissa back to the left margin and sets the ordinate.
 	# If the passed value is negative, it is relative to the bottom of the page.
 	# @param float :y The value of the ordinate.
+	# @param bool :resetx if true (default) reset the X position.
+	# @access public
 	# @since 1.0
 	# @see GetX(), GetY(), SetY(), SetXY()
 	#
-	def SetY(y)
-		#Set y position and reset x
-		if @rtl
-			@x = @w - @r_margin
-		else
-			@x = @l_margin
+	def SetY(y, resetx=true)
+		if resetx
+			# reset x
+			if @rtl
+				@x = @w - @r_margin
+			else
+				@x = @l_margin
+			end
 		end
 		if (y>=0)
 			@y = y;
 		else
 			@y=@h+y;
+		end
+
+		if @y < 0
+			@y = 0
+		end
+		if @y > @h
+			@y = @h
 		end
 	end
   alias_method :set_y, :SetY
@@ -4899,7 +4912,7 @@ class TCPDF
 	end
 
 	#
-	# Output referencees to page annotations
+	# Output references to page annotations
 	# @param int :n page number
 	# @access protected
 	# @author Nicola Asuni
@@ -7080,6 +7093,10 @@ class TCPDF
 	# @access public
 	#
 	def writeHTML(html, ln=true, fill=false, reseth=false, cell=false, align='')
+		ln = false if ln == 0
+		reseth = false if reseth == 0
+		cell = false if cell == 0
+
 		gvars = getGraphicVars()
 		# store current values
 		prevPage = @page
@@ -7116,10 +7133,10 @@ class TCPDF
 			else
 				@footerpos[@page] = @pagelen[@page]
 			end
+			startlinepos = @footerpos[@page]
 		else
 			startlinepos = @pagelen[@page]
 		end
-		startlinepos = @footerpos[@page]
 		lalign = align
 		plalign = align
 		if @rtl
