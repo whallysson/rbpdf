@@ -361,6 +361,7 @@ class TCPDF
   	@tempfontsize ||= 10
 		@text_color ||= '0 g'
 		@underline ||= false
+		@overline ||= false
 		@ws ||= 0
 		@dpi = 72
 		@pagegroups ||= {}
@@ -1136,7 +1137,7 @@ class TCPDF
 
 	#
 	# Move pointer at the specified document page and update page dimensions.
-	# @param int :pnum page number
+	# @param int :pnum page number (1 ... numpages)
 	# @param boolean :resetmargins if true reset left, right, top margins and Y position.
 	# @access public
 	# @since 2.1.000 (2008-01-07)
@@ -1998,7 +1999,7 @@ class TCPDF
 	# Returns the length of a string in user unit. A font must be selected.<br>
 	# @param string :s The string whose length is to be computed
 	# @param string :fontname Family font. It can be either a name defined by AddFont() or one of the standard families. It is also possible to pass an empty string, in that case, the current family is retained.
-	# @param string :fontstyle Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li></ul> or any combination. The default value is regular.
+	# @param string :fontstyle Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li><li>O: overline</li></ul> or any combination. The default value is regular.
 	# @param float :fontsize Font size in points. The default value is the current size.
 	# @param boolean :getarray if true returns an array of characters widths, if false returns the total length.
 	# @return mixed int total string length or array of characted widths
@@ -2015,7 +2016,7 @@ class TCPDF
 	# Returns the string length of an array of chars in user unit or an array of characters widths. A font must be selected.<br>
 	# @param string :sa The array of chars whose total length is to be computed
 	# @param string :fontname Family font. It can be either a name defined by AddFont() or one of the standard families. It is also possible to pass an empty string, in that case, the current family is retained.
-	# @param string :fontstyle Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li></ul> or any combination. The default value is regular.
+	# @param string :fontstyle Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li><li>O: overline</li></ul></ul> or any combination. The default value is regular.
 	# @param float :fontsize Font size in points. The default value is the current size.
 	# @param boolean :getarray if true returns an array of characters widths, if false returns the total length.
 	# @return mixed int total string length or array of characted widths
@@ -2529,11 +2530,17 @@ class TCPDF
 		else
 			@underline = false
 		end
-		# line through (deleted)
+		# line-through (deleted)
 		if tempstyle.index('D') != nil
 			@linethrough = true
 		else
 			@linethrough = false
+		end
+		# overline
+		if tempstyle.index('O') != nil
+			@overline = true
+		else
+			@overline = false
 		end
 		# bold
 		if tempstyle.index('B') != nil
@@ -2545,7 +2552,7 @@ class TCPDF
 		end
 		bistyle = style
 		fontkey = family + style;
-		font_style = style + (@underline ? 'U' : '') + (@linethrough ? 'D' : '')
+		font_style = style + (@underline ? 'U' : '') + (@linethrough ? 'D' : '') + (@overline ? 'O' : '')
 		fontdata = {'fontkey' => fontkey, 'family' => family, 'style' => font_style}
 		# check if the font has been already added
 		if getFontBuffer(fontkey) != false
@@ -2692,7 +2699,7 @@ class TCPDF
 	# If you just wish to change the current font size, it is simpler to call SetFontSize().
 	# Note: for the standard fonts, the font metric files must be accessible. There are three possibilities for this:<ul><li>They are in the current directory (the one where the running script lies)</li><li>They are in one of the directories defined by the include_path parameter</li><li>They are in the directory defined by the FPDF_FONTPATH constant</li></ul><br />
 	# @param string :family Family font. It can be either a name defined by AddFont() or one of the standard Type1 families (case insensitive):<ul><li>times (Times-Roman)</li><li>timesb (Times-Bold)</li><li>timesi (Times-Italic)</li><li>timesbi (Times-BoldItalic)</li><li>helvetica (Helvetica)</li><li>helveticab (Helvetica-Bold)</li><li>helveticai (Helvetica-Oblique)</li><li>helveticabi (Helvetica-BoldOblique)</li><li>courier (Courier)</li><li>courierb (Courier-Bold)</li><li>courieri (Courier-Oblique)</li><li>courierbi (Courier-BoldOblique)</li><li>symbol (Symbol)</li><li>zapfdingbats (ZapfDingbats)</li></ul> It is also possible to pass an empty string. In that case, the current family is retained.
-	# @param string :style Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li></ul> or any combination. The default value is regular. Bold and italic styles do not apply to Symbol and ZapfDingbats basic fonts or other fonts when not defined.
+	# @param string :style Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li><li>O: overline</li></ul> or any combination. The default value is regular. Bold and italic styles do not apply to Symbol and ZapfDingbats basic fonts or other fonts when not defined.
 	# @param float :size Font size in points. The default value is the current size. If no size has been specified since the beginning of the document, the value taken is 12
 	# @param string :fontfile The font definition file. By default, the name is built from the family and style, in lower case with no spaces.
 	# @access public
@@ -3439,6 +3446,9 @@ class TCPDF
 			if @linethrough
 				s << ' ' + dolinethroughw(xdx, basefonty, width)
 			end
+			if @overline
+				s << ' ' + dooverlinew(xdx, basefonty, width)
+			end
 			if (@color_flag)
 				s<<' Q';
 			end
@@ -3842,6 +3852,7 @@ class TCPDF
 			if (maxh > 0) and (@y >= maxy)
 				break
 			end
+			shy = false
 			# Get the current character
 			c = chars[i]
 			if (c == 10) # 10 = "\n" = new line
@@ -6105,18 +6116,6 @@ class TCPDF
 	end
 
 	#
-	# Line through text
-	# @param int :x X coordinate
-	# @param int :y Y coordinate
-	# @param string :txt text to underline
-	# @access protected
-	#
-	def dolinethrough(x, y, txt)
-		w = GetStringWidth(txt)
-		return dolinethroughw(x, y, w)
-	end
-
-	#
 	# Underline for rectangular text area.
 	# @param int :x X coordinate
 	# @param int :y Y coordinate
@@ -6125,23 +6124,59 @@ class TCPDF
 	# @since 4.8.008 (2009-09-29)
 	#
 	def dounderlinew(x, y, w)
-		up = @current_font['up']
-		ut = @current_font['ut']
-		return sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - (y - up / 1000.0 * @font_size)) * @k, w * @k, -ut / 1000.0 * @font_size_pt)
+		linew = - @current_font['ut'] / 1000.0 * @font_size_pt
+		return sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - y + (linew / 2)) * @k, w * @k, linew)
+	end
+
+	#
+	# Line through text
+	# @param int :x X coordinate
+	# @param int :y Y coordinate
+	# @param string :txt text to linethrough
+	# @access protected
+	#
+	def dolinethrough(x, y, txt)
+		w = GetStringWidth(txt)
+		return dolinethroughw(x, y, w)
 	end
 
 	#
 	# Line through for rectangular text area.
 	# @param int :x X coordinate
 	# @param int :y Y coordinate
-	# @param string :txt text to linethrough
+	# @param int :w width to linethrough
 	# @access protected
-	# @since 4.8.008 (2009-09-29)
+	# @since 4.9.008 (2009-09-29)
 	#
 	def dolinethroughw(x, y, w)
-		up = @current_font['up']
-		ut = @current_font['ut']
-		sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - (y - (@font_size/2) - up / 1000.0 * @font_size)) * @k, w * @k, -ut / 1000.0 * @font_size_pt)
+		linew = - @current_font['ut'] / 1000.0 * @font_size_pt
+		return sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - y + (@font_size / 3) + (linew / 2)) * @k, w * @k, linew)
+	end
+
+	#
+	# Overline text.
+	# @param int :x X coordinate
+	# @param int :y Y coordinate
+	# @param string :txt text to overline
+	# @access protected
+	# @since 4.9.015 (2010-04-19)
+	#
+	def dooverline(x, y, txt)
+		w = GetStringWidth(txt)
+		return dooverlinew(x, y, w)
+	end
+
+	#
+	# Overline for rectangular text area.
+	# @param int :x X coordinate
+	# @param int :y Y coordinate
+	# @param int :w width to overline
+	# @access protected
+	# @since 4.9.015 (2010-04-19)
+	#
+	def dooverlinew(x, y, w)
+		linew = - @current_font['ut'] / 1000.0 * @font_size_pt
+		return sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - y + @font_ascent - (linew / 2)) * @k, w * @k, linew)
 	end
 
 	#
@@ -8869,9 +8904,14 @@ class TCPDF
 								dec = dec.strip
 								unless empty_string(dec)
 									if dec[0,1] == 'u'
+										# underline
 										dom[key]['fontstyle'] << 'U'
 									elsif dec[0,1] == 'l'
+										# line-trough
 										dom[key]['fontstyle'] << 'D'
+									elsif dec[0,1] == 'o'
+										# overline
+										dom[key]['fontstyle'] << 'O'
 									end
 								end
 							}
@@ -9196,9 +9236,14 @@ class TCPDF
 						dec = dec.strip
 						if !empty_string(dec)
 							if dec[0, 1] == 'u'
+								# underline
 								@href['style'] << 'U'
 							elsif dec[0, 1] == 'l'
+								# line-trough
 								@href['style'] << 'D'
+							elsif dec[0, 1] == 'o'
+								# overline
+								@href['style'] << 'O'
 							end
 						end
 					}
@@ -10009,7 +10054,6 @@ class TCPDF
 			Rect(@x, @y + (@lasth - l)/ 2, l, l, 'F', {}, color)
 
 		# ordered types
-                                
 		# listcount[@listnum]
 		# textitem
 		when '1', 'decimal'
