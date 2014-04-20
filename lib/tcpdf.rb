@@ -7334,6 +7334,7 @@ class TCPDF
 						end
 						@y += ((curfontsize * @cell_height_ratio / @k) + curfontascent - curfontdescent) / 2  - imgh
 						minstartliney = [@y, minstartliney].min
+						maxbottomliney = startliney + @font_size * @cell_height_ratio
 					end
 	 			elsif !dom[key]['fontname'].nil? or !dom[key]['fontstyle'].nil? or !dom[key]['fontsize'].nil?
 					# account for different font size
@@ -7975,6 +7976,7 @@ class TCPDF
 					SetFont(pfontname, pfontstyle, pfontsize)
 					@lasth = @font_size * @cell_height_ratio
 					minstartliney = @y
+					maxbottomliney = startliney + @font_size * @cell_height_ratio
 					putHtmlListBullet(@listnum, @lispacer, pfontsize)
 					SetFont(curfontname, curfontstyle, curfontsize)
 					@lasth = @font_size * @cell_height_ratio
