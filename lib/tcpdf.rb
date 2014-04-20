@@ -4242,11 +4242,12 @@ class TCPDF
 	# @param mixed :border Indicates if borders must be drawn around the image. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
 	# @param boolean :fitbox If true scale image dimensions proportionally to fit within the (:w, :h) box.
 	# @param boolean :hidden if true do not display the image.
+	# @param boolean :fitonpage if true the image is resized to not exceed page dimensions.
 	# @return image information
 	# @access public
 	# @since 1.1
 	#
-	def Image(file, x='', y='', w=0, h=0, type='', link=nil, align='', resize=false, dpi=300, palign='', ismask=false, imgmask=false, border=0, fitbox=false, hidden=false)
+	def Image(file, x='', y='', w=0, h=0, type='', link=nil, align='', resize=false, dpi=300, palign='', ismask=false, imgmask=false, border=0, fitbox=false, hidden=false, fitonpage=false)
 		x = @x if x == ''
 		y = @y if y == ''
 
@@ -4277,32 +4278,27 @@ class TCPDF
 				w = h * pixw / pixh
 			end
 		end
-		# resize image proportionally to be contained on a single page
-		if h > @h
-			h = @h
-			w = h * pixw / pixh
-		end
-		if w > @w
-			w = @w
-			h = w * pixh / pixw
-		end
 		# Check whether we need a new page first as this does not fit
 		prev_x = @x
 		if checkPageBreak(h, y)
-			# resize image to vertically fit the available space
-			h = @page_break_trigger - y
-			w = h * pixw / pixh
-			y = GetY() # + @c_margin
+			y = @y
 			if @rtl
 				x += prev_x - @x
 			else
 				x += @x - prev_x
 			end
 		end
-		# resize image proportionally to be contained on a single page
-		if x + w > @w
-			w = @w - x
-			h = w * pixh / pixw
+		# resize image to be contained on a single page
+		if fitonpage
+			ratio_wh = w / h
+			if (y + h) > @page_break_trigger
+				h = @page_break_trigger - y
+				w = h * ratio_wh
+			end
+			if (x + w) > (@w - @r_margin)
+				w = @w - @r_margin - x
+				h = w / ratio_wh
+			end
 		end
 		# calculate new minimum dimensions in pixels
 		neww = (w * @k * dpi / @dpi).round
@@ -4513,7 +4509,6 @@ class TCPDF
 	# @see SetX(), GetY(), SetY()
 	#
 	def GetX()
-		#Get x position
 		if @rtl
 			return @w - @x
 		else
@@ -4555,7 +4550,6 @@ class TCPDF
 	# @see SetY(), GetX(), SetX()
 	#
 	def GetY()
-		#Get y position
 		return @y;
 	end
   alias_method :get_y, :GetY
@@ -4612,8 +4606,7 @@ class TCPDF
 	# @see SetX(), SetY()
 	#
 	def SetXY(x, y)
-		#Set x and y positions
-		SetY(y);
+		SetY(y, false)
 		SetX(x);
 	end
   alias_method :set_xy, :SetXY
@@ -9283,9 +9276,9 @@ class TCPDF
 
 				begin
 #				if (type == 'eps') or (type == 'ai')
-#					ImageEps(tag['attribute']['src'], xpos, GetY(), iw, ih, imglink, true, align, '', border)
+#					ImageEps(tag['attribute']['src'], xpos, @y, iw, ih, imglink, true, align, '', border, true)
 #				else
-					result_img = Image(tag['attribute']['src'], xpos, GetY(), iw, ih, '', imglink, align, false, 300, '', false, false, border, false, false)
+					result_img = Image(tag['attribute']['src'], xpos, @y, iw, ih, '', imglink, align, false, 300, '', false, false, border, false, false, true)
 #				end
 				rescue => err
 					logger.error "pdf: Image: error: #{err.message}"
