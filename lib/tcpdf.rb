@@ -2096,14 +2096,16 @@ class TCPDF
 	#
 	# Defines the line width. By default, the value equals 0.2 mm. The method can be called before the first page is created and the value is retained from page to page.
 	# @param float :width The width.
+	# @access public
 	# @since 1.0
 	# @see Line(), Rect(), Cell(), MultiCell()
 	#
 	def SetLineWidth(width)
 		#Set line width
 		@line_width = width;
+		@linestyle_width = sprintf('%.2f w', width * @k)
 		if (@page>0)
-			out(sprintf('%.2f w', width*@k));
+			out(@linestyle_width)
 		end
 	end
   alias_method :set_line_width, :SetLineWidth
@@ -3078,7 +3080,7 @@ class TCPDF
 	# @param mixed :link URL or identifier returned by AddLink().
 	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
 	# @param boolean :ignore_min_height if true ignore automatic minimum height value.
-	# @param string :calign cell vertical alignment relative to the specified Y value. Possible values are:<ul><li>T : cell top</li><li>A : font top</li><li>
+	# @param string :calign cell vertical alignment relative to the specified Y value. Possible values are:<ul><li>T : cell top</li><li>C : center</li><li>B : cell bottom</li><li>A : font top</li><li>L : font baseline</li><li>D : font bottom</li><li>
 	# @param string :valign text vertical alignment inside the cell. Possible values are:<ul><li>T : top</li><li>C : center</li><li>B : bottom</li></ul>
 	# public
 	# @since 1.0
@@ -3086,7 +3088,7 @@ class TCPDF
 	#
 	def Cell(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false, calign='T', valign='M')
 		if !ignore_min_height
-			min_cell_height = @font_size * @@k_cell_height_ratio
+			min_cell_height = @font_size * @cell_height_ratio
 			if h < min_cell_height
 				h = min_cell_height
 			end
@@ -3136,7 +3138,7 @@ class TCPDF
 	# @param mixed :link URL or identifier returned by AddLink().
 	# @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
 	# @param boolean :ignore_min_height if true ignore automatic minimum height value.
-	# @param string :calign cell vertical alignment relative to the specified Y value. Possible values are:<ul><li>T : cell top</li><li>A : font top</li><li>
+	# @param string :calign cell vertical alignment relative to the specified Y value. Possible values are:<ul><li>T : cell top</li><li>C : center</li><li>B : cell bottom</li><li>A : font top</li><li>L : font baseline</li><li>D : font bottom</li><li>
 	# @param string :valign text vertical alignment inside the cell. Possible values are:<ul><li>T : top</li><li>C : center</li><li>B : bottom</li></ul>
 	# @access protected
 	# @since 1.0
@@ -3146,7 +3148,7 @@ class TCPDF
 		rs = "" # string to be returned
 		txt = removeSHY(txt)
 		if !ignore_min_height
-			min_cell_height = @font_size * @@k_cell_height_ratio
+			min_cell_height = @font_size * @cell_height_ratio
 			if h < min_cell_height
 				h = min_cell_height
 			end
@@ -3158,16 +3160,49 @@ class TCPDF
 		case calign
 		when 'A'
 			# font top
-			y -= (h - @font_ascent - @font_descent) / 2
+			case valign
+			when 'T'
+				# top
+				y -= @line_width / 2
+			when 'B'
+				# bottom
+				y -= (h - @font_ascent - @font_descent - @line_width / 2)
+			else # 'M'
+				# center
+				y -= (h - @font_ascent - @font_descent) / 2
+			end
 		when 'L'
 			# font baseline
-			y -= (h + @font_ascent - @font_descent) / 2
+			case valign
+			when 'T'
+				# top
+				y -= (@font_ascent + @line_width / 2)
+			when 'B'
+				# bottom
+				y -= (h - @font_descent - @line_width / 2)
+			else # 'M'
+				# center
+				y -= (h + @font_ascent - @font_descent) / 2
+			end
 		when 'D'
 			# font bottom
-			y -= (h + @font_ascent + @font_descent) / 2
+			case valign
+			when 'T'
+				# top
+				y -= (@font_ascent + @font_descent + @line_width / 2)
+			when 'B'
+				# bottom
+				y -= (h - @line_width / 2)
+			else # 'M'
+				# center
+				y -= (h + @font_ascent + @font_descent) / 2
+			end
 		when 'B'
 			# cell bottom
 			y -= h
+		when 'C'
+			# cell center
+			y -= h / 2
 		else # 'T'
 			# cell top
 		end
@@ -3176,10 +3211,10 @@ class TCPDF
 		case valign
 		when 'T'
 			# top
-			basefonty = y + @font_ascent + @line_width
+			basefonty = y + @font_ascent + @line_width / 2
 		when 'B'
 			# bottom
-			basefonty = y + h - @font_descent - @line_width
+			basefonty = y + h - @font_descent - @line_width / 2
 		else # 'M'
 			# center
 			basefonty = y + (h + @font_ascent - @font_descent) / 2
@@ -3482,7 +3517,7 @@ class TCPDF
 	def MultiCell(w, h, txt, border=0, align='J', fill=0, ln=1, x='', y='', reseth=true, stretch=0, ishtml=false, autopadding=true, maxh=0)
 		if empty_string(@lasth) or reseth
 			# set row height
-			@lasth = @font_size * @@k_cell_height_ratio
+			@lasth = @font_size * @cell_height_ratio
 		end
 		 
 		if !empty_string(y)
@@ -7119,7 +7154,7 @@ class TCPDF
 		@lispacer = ''
 		if empty_string(@lasth) or reseth
 			#set row height
-			@lasth = @font_size * @@k_cell_height_ratio
+			@lasth = @font_size * @cell_height_ratio
 		end
 		dom = getHtmlDomArray(html)
 		maxel = dom.size
