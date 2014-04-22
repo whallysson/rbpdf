@@ -3863,7 +3863,6 @@ class TCPDF
 			if (maxh > 0) and (@y >= maxy)
 				break
 			end
-			shy = false
 			# Get the current character
 			c = chars[i]
 			if (c == 10) # 10 = "\n" = new line
@@ -3947,7 +3946,7 @@ class TCPDF
 					l += GetCharWidth(c)
 				end
 
-				if (l > wmax) or (shy and ((l + tmp_shy_replacement_width) > wmax))
+				if (l > wmax) or ((c == 173) and ((l + tmp_shy_replacement_width) > wmax))
 					# we have reached the end of column
 					if (sep == -1)
 						# check if the line was already started
@@ -7400,7 +7399,7 @@ class TCPDF
 					fontascent = getFontAscent(fontname, fontstyle, fontsize)
 					fontdescent = getFontDescent(fontname, fontstyle, fontsize)
 					if (fontname != curfontname) or (fontstyle != curfontstyle) or (fontsize != curfontsize)
-						if (fontsize.is_a? Integer) and (fontsize > 0) and (curfontsize.is_a? Integer) and (curfontsize > 0) and (fontsize != curfontsize) and !@newline and (key < maxel - 1)
+						if (fontsize.is_a? Integer) and (fontsize >= 0) and (curfontsize.is_a? Integer) and (curfontsize >= 0) and (fontsize != curfontsize) and !@newline and (key < maxel - 1)
 							if !@newline and (@page > startlinepage)
 								# fix lines splitted over two pages
 								if !@footerlen[startlinepage].nil?
