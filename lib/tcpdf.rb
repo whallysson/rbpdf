@@ -595,17 +595,28 @@ class TCPDF
 	# @since 3.0.015 (2008-06-06)
 	#
 	def setPageOrientation(orientation, autopagebreak='', bottommargin='')
-		orientation = orientation.upcase
-		if (orientation == 'P') or (orientation == 'PORTRAIT')
-			@cur_orientation = 'P'
-			@w_pt = @fw_pt
-			@h_pt = @fh_pt
-		elsif (orientation == 'L') or (orientation == 'LANDSCAPE')
-			@cur_orientation = 'L'
+		if @fw_pt > @fh_pt
+			# landscape
+			default_orientation = 'L'
+		else
+			# portrait
+			default_orientation = 'P'
+		end
+		valid_orientations = ['P', 'L']
+		if orientation.empty?
+			orientation = default_orientation
+		else
+			orientation = orientation[0, 1]
+			orientation = orientation.upcase
+		end
+		if valid_orientations.include?(orientation) and (orientation != default_orientation)
+			@cur_orientation = orientation
 			@w_pt = @fh_pt
 			@h_pt = @fw_pt
 		else
-			Error("Incorrect orientation: #{orientation}")
+			@cur_orientation = default_orientation
+			@w_pt = @fw_pt
+			@h_pt = @fh_pt
 		end
 		@w = @w_pt / @k
 		@h = @h_pt / @k
@@ -4206,13 +4217,20 @@ class TCPDF
 	end
 
 	#
-	# Return the image type given the file name and path
+	# Return the image type given the file name or array returned by getimagesize() function.
 	# @param string :imgfile image file name
+	# @param hash :iminfo array of image information returned by getimagesize() function.
 	# @return string image type
 	# @since 4.8.017 (2009-11-27)
 	#
-	def getImageFileType(imgfile)
-		type = '' # default type
+	def getImageFileType(imgfile, iminfo={})
+		if iminfo.is_a? Hash and iminfo['mime'] and !iminfo['mime'].empty?
+			mime = iminfo['mime'].split('/')
+			if (mime.length > 1) and (mime[0] == 'image') and !mime[1].empty?
+				return mime[1].strip
+			end
+		end
+		type = ''
 		return type if imgfile.nil?
 
 		fileinfo = File::extname(imgfile)
@@ -4266,11 +4284,11 @@ class TCPDF
 		@img_rb_y = y + h
 
 		# get image dimensions
-		size_info = getimagesize(file)
-		return false if size_info == false
+		imsize = getimagesize(file)
+		return false if imsize == false
 
-                pixw = size_info[0]
-                pixh = size_info[1]
+                pixw = imsize[0]
+                pixh = imsize[1]
 
 		# calculate image width and height on document
 		if (w <= 0) and (h <= 0)
@@ -4338,7 +4356,7 @@ class TCPDF
 		if newimage
 			#First use of image, get info
 			if (type == '')
-				type = getImageFileType(file)
+				type = getImageFileType(file, imsize)
 			end
 
 			info = false
