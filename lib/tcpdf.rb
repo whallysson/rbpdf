@@ -9132,8 +9132,6 @@ class TCPDF
 	# Process opening tags.
 	# @param array :dom html dom array 
 	# @param int :key current element id
-	# @param int :minstartliney minimum y value of current line
-	# @param int :maxbottomliney maximum y value of current line
 	# @param boolean :cell if true add the default c_margin space to each new line (default false).
 	# @access protected
 	#
@@ -9151,14 +9149,6 @@ class TCPDF
 			hbz = 0 # distance from y to line bottom
 			hb = 0 # vertical space between block tags
 			# calculate vertical space for block tags
-			hb = ''
-			if @htmlvspace <= 0
-				if parent['fontsize']
-					hbz = (parent['fontsize'] / @k) * @cell_height_ratio
-				else
-					hbz = @font_size * @cell_height_ratio
-				end
-			end
 			if @tagvspaces[tag['value']] and @tagvspaces[tag['value']][0] and @tagvspaces[tag['value']][0]['h'] and (@tagvspaces[tag['value']][0]['h'] >= 0)
 				cur_h = @tagvspaces[tag['value']][0]['h']
 			elsif !tag['fontsize'].nil?
@@ -9174,6 +9164,13 @@ class TCPDF
 				n = 1
 			end
 			hb = n * cur_h
+			if (@htmlvspace <= 0) and (n > 0)
+				if parent['fontsize']
+					hbz = (parent['fontsize'] / @k) * @cell_height_ratio
+				else
+					hbz = @font_size * @cell_height_ratio
+				end
+			end
 		end
 		#Opening tag
 		case tag['value']
@@ -9473,9 +9470,8 @@ class TCPDF
 	# Process closing tags.
 	# @param array :dom html dom array 
 	# @param int :key current element id
-	# @param int :minstartliney minimum y value of current line
-	# @param int :maxbottomliney maximum y value of current line
 	# @param boolean :cell if true add the default c_margin space to each new line (default false).
+	# @param int :maxbottomliney maximum y value of current line
 	# @access protected
 	#
 	def closeHTMLTagHandler(dom, key, cell, maxbottomliney=0)
