@@ -13,6 +13,9 @@ class TcpdfTest < ActiveSupport::TestCase
     unit = pdf.getHTMLUnitToUnits(100, 1, 'pt', false)
     assert_in_delta unit, 35.27, 0.01
 
+    unit = pdf.getHTMLUnitToUnits(100.0, 1, 'pt', false)
+    assert_in_delta unit, 35.27, 0.01
+
     unit = pdf.getHTMLUnitToUnits("200", 1, '%', false)
     assert_equal unit, 2.0
 

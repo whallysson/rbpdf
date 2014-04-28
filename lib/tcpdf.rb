@@ -257,6 +257,9 @@ class TCPDF
 		# bookmark
 		@outlines ||= []
 
+		@javascript ||= ''
+		@js_objects ||= []
+
 		#Some checks
 		dochecks();
 		
@@ -318,6 +321,7 @@ class TCPDF
 		@textstrokewidth ||= 0
 		@alias_nb_pages = '{nb}'
 		@alias_num_page = '{pnb}'
+		@imgscale ||= 1
 		@is_unicode = unicode
 		@lasth ||= 0
 		@links ||= []
@@ -331,6 +335,7 @@ class TCPDF
 		@orientation_changes ||= []
 		@page ||= 0
 		@htmlvspace ||= 0
+		@spot_colors ||= {}
 		@lisymbol ||= ''
 		@epsmarker ||= 'x#!#EPS#!#x'
 		@transfmatrix ||= []
@@ -445,7 +450,9 @@ class TCPDF
 		@fgcolor = ActiveSupport::OrderedHash.new
 		@strokecolor = ActiveSupport::OrderedHash.new
 		@bgcolor = ActiveSupport::OrderedHash.new
-#		@extgstates ||= []
+		@pdfunit ||= 'mm'
+		@extgstates ||= []
+		@gradients ||= []
 		@bgtag ||= []
 		@tableborder ||= 0
 		@tdbegin ||= false
@@ -500,8 +507,9 @@ class TCPDF
 	# @since 3.0.015 (2008-06-06)
 	#
 	def setPageUnit(unit)
+		unit = unit.downcase
 		# Set scale factor
-		case unit.downcase
+		case unit
 		when 'px', 'pt'; @k=1       # points
 		when 'mm'; @k = @dpi / 25.4 # millimeters
 		when 'cm'; @k = @dpi / 2.54 # centimeters
@@ -509,6 +517,7 @@ class TCPDF
 		# unsupported unit
 		else Error("Incorrect unit: #{unit}")
 		end
+		@pdfunit = unit
 		unless @cur_orientation.nil?
 			setPageOrientation(@cur_orientation)
 		end
@@ -1363,18 +1372,13 @@ class TCPDF
 			y = @y
 		end
   	
-		if @rtl
-			x = @w - x
-			angle = -@angle
-		end
-
 		y = (@h - y) * @k
 		x *= @k
 
 		# calculate elements of transformation matrix
 		tm = []
-		tm[0] = ::Math::cos(deg2rad(angle))
-		tm[1] = ::Math::sin(deg2rad(angle))
+		tm[0] = ::Math::cos(angle * ::Math::PI / 180) # deg2rad
+		tm[1] = ::Math::sin(angle * ::Math::PI / 180) # deg2rad
 		tm[2] = -tm[1]
 		tm[3] = tm[0]
 		tm[4] = x + tm[1] * y - tm[0] * x
@@ -1421,6 +1425,7 @@ class TCPDF
 	
 	#
 	# Apply graphic transformations.
+	# @param array :tm transformation matrix
 	# @access protected
 	# @since 2.1.000 (2008-01-07)
 	# @see StartTransform(), StopTransform()
@@ -1740,6 +1745,11 @@ class TCPDF
 			@l_margin = @pagedim[@page]['olm']
 			@r_margin = @pagedim[@page]['orm']
 			@c_margin = @thead_margins['cmargin']
+			if @rtl
+				@x = @w - @r_margin
+			else
+				@x = @l_margin
+			end
 			# print table header
 			writeHTML(@thead, false, false, false, false, '')
 			# set new top margin to skip the table headers
@@ -1765,6 +1775,25 @@ class TCPDF
 		return @page;
 	end
   alias_method :page_no, :PageNo
+
+	#
+	# Defines a new spot color.
+	# It can be expressed in RGB components or gray scale.
+	# The method can be called before the first page is created and the value is retained from page to page.
+	# @param int :c Cyan color for CMYK. Value between 0 and 255
+	# @param int :m Magenta color for CMYK. Value between 0 and 255
+	# @param int :y Yellow color for CMYK. Value between 0 and 255
+	# @param int :k Key (Black) color for CMYK. Value between 0 and 255
+	# @access public
+	# @since 4.0.024 (2008-09-12)
+	# @see SetDrawSpotColor(), SetFillSpotColor(), SetTextSpotColor()
+	#
+	def AddSpotColor(name, c, m, y, k)
+		if @spot_colors[name].nil?
+			i = 1 + @spot_colors.length
+			@spot_colors[name] = {'i' => i, 'c' => c, 'm' => m, 'y' => y, 'k' => k}
+		end
+	end
 
 	#
 	# Defines the color used for all drawing operations (lines, rectangles and cell borders). 
@@ -2218,40 +2247,35 @@ class TCPDF
 		end
 		outPoint(x1, y1)
 		outLine(x2, y2)
-		out(' S')
+		out('S')
 	end
   alias_method :line, :Line
                 
 	#
-	# Set a draw point.
+	# Begin a new subpath by moving the current point to coordinates (x, y), omitting any connecting line segment.
 	# @param float :x Abscissa of point.
 	# @param float :y Ordinate of point.
 	# @access protected
 	# @since 2.1.000 (2008-01-08)
 	#
 	def outPoint(x, y)
-		if @rtl
-			x = @w - x
-		end
 		out(sprintf("%.2f %.2f m", x * @k, (@h - y) * @k))
 	end
 
 	#
-	# Draws a line from last draw point.
+	# Append a straight line segment from the current point to the point (x, y).
+	# The new current point shall be (x, y).
 	# @param float :x Abscissa of end point.
 	# @param float :y Ordinate of end point.
 	# @access protected
 	# @since 2.1.000 (2008-01-08)
 	#
 	def outLine(x, y)
-		if @rtl
-			x = @w - x
-		end
 		out(sprintf("%.2f %.2f l", x * @k, (@h - y) * @k))
 	end
 
 	#
-	# Draws a rectangle.
+	# Append a rectangle to the current path as a complete subpath, with lower-left corner (x, y) and dimensions widthand height in user space.
 	# @param float :x Abscissa of upper-left corner (or upper-right corner for RTL language).
 	# @param float :y Ordinate of upper-left corner (or upper-right corner for RTL language).
 	# @param float :w Width.
@@ -2261,15 +2285,12 @@ class TCPDF
 	# @since 2.1.000 (2008-01-08)
 	#
 	def outRect(x, y, w, h, op)
-		if @rtl
-			x = @w - x - w
-		end
 		out(sprintf('%.2f %.2f %.2f %.2f re %s', x * @k, (@h - y) * @k, w * @k, -h * @k, op))
 	end
 
 	#
-	# Draws a Bezier curve from last draw point.
-	# The Bezier curve is a tangent to the line between the control points at either end of the curve.
+	# Append a cubic Bezier curve to the current path. The curve shall extend from the current point to the point (x3, y3), using (x1, y1) and (x2, y2) as the Bezier control points.
+	# The new current point shall be (x3, y3).
 	# @param float :x1 Abscissa of control point 1.
 	# @param float :y1 Ordinate of control point 1.
 	# @param float :x2 Abscissa of control point 2.
@@ -2280,12 +2301,37 @@ class TCPDF
 	# @since 2.1.000 (2008-01-08)
 	#
 	def outCurve(x1, y1, x2, y2, x3, y3)
-		if @rtl
-			x1 = @w - x1
-			x2 = @w - x2
-			x3 = @w - x3
-		end
 		out(sprintf("%.2f %.2f %.2f %.2f %.2f %.2f c", x1 * @k, (@h - y1) * @k, x2 * @k, (@h - y2) * @k, x3 * @k, (@h - y3) * @k))
+	end
+
+	#
+	# Append a cubic Bezier curve to the current path. The curve shall extend from the current point to the point (x3, y3), using the current point and (x2, y2) as the Bezier control points.
+	# The new current point shall be (x3, y3).
+	# @param float :x2 Abscissa of control point 2.
+	# @param float :y2 Ordinate of control point 2.
+	# @param float :x3 Abscissa of end point.
+	# @param float :y3 Ordinate of end point.
+	# @access protected
+	# @since 4.9.019 (2010-04-26)
+	#
+	def outCurveV(x2, y2, x3, y3)
+		out(sprintf('%.2f %.2f %.2f %.2f v', x2 * @k, (@h - y2) * @k, x3 * @k, (@h - y3) * @k))
+	end
+
+	#
+	# Append a cubic Bezier curve to the current path. The curve shall extend from the current point to the point (x3, y3), using (x1, y1) and (x3, y3) as the Bezier control points.
+	# The new current point shall be (x3, y3).
+	# @param float :x1 Abscissa of control point 1.
+	# @param float :y1 Ordinate of control point 1.
+	# @param float :x2 Abscissa of control point 2.
+	# @param float :y2 Ordinate of control point 2.
+	# @param float :x3 Abscissa of end point.
+	# @param float :y3 Ordinate of end point.
+	# @access protected
+	# @since 4.9.019 (2010-04-26)
+	#
+	def outCurveY(x1, y1, x3, y3)
+		out(sprintf('%.2f %.2f %.2f %.2f y', x1 * @k, (@h - y1) * @k, x3 * @k, (@h - y3) * @k))
 	end
 
 	#
@@ -2294,15 +2340,7 @@ class TCPDF
 	# @param float :y Ordinate of upper-left corner (or upper-right corner for RTL language).
 	# @param float :w Width.
 	# @param float :h Height.
-	# @param string :style Style of rendering. Possible values are:
-	# <ul>
-	#        <li>D or empty string: Draw (default).</li>
-	#        <li>F: Fill.</li>
-	#        <li>DF or FD: Draw and fill.</li>
-	#        <li>CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).</li>
-	#        <li>CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).</li>
-	# </ul>
-	# @param array :border_style Border style of rectangle. Array with keys among the following:
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
 	# <ul>
 	#        <li>all: Line style of all borders. Array like for {@link SetLineStyle SetLineStyle}.</li>
 	#        <li>L, T, R, B or combinations: Line style of left, top, right or bottom border. Array like for {@link SetLineStyle SetLineStyle}.</li>
@@ -2315,44 +2353,21 @@ class TCPDF
 	# @see SetLineStyle()
 	#
 	def Rect(x, y, w, h, style='', border_style={}, fill_color={})
-		if style.index('F') != nil and !fill_color.nil?
+		if style.index('F') != nil and !fill_color.empty?
 			SetFillColorArray(fill_color)
 		end
-		case style
-		when 'F'
-			op = 'f'
-			border_style = {}
-			outRect(x, y, w, h, op)
-		when 'DF', 'FD'
-			if !border_style or !border_style['all'].nil?
-				op = 'B'
-				if !border_style['all'].nil?
-					SetLineStyle(border_style['all'])
-					border_style = {}
-				end
-			else
-				op = 'f'
-			end
-			outRect(x, y, w, h, op)
-		when 'CNZ'
-			op = 'W n'
-			outRect(x, y, w, h, op)
-		when 'CEO'
-			op = 'W* n'
-			outRect(x, y, w, h, op)
-		else
-			op = 'S'
-			if !border_style or !border_style['all'].nil?
-				if !border_style['all'].nil? and border_style['all']
-					SetLineStyle(border_style['all'])
-					border_style = {}
-				end
-				outRect(x, y, w, h, op)
+		op = getPathPaintOperator(style)
+		if !border_style or !border_style['all'].nil?
+			if !border_style['all'].nil? and border_style['all']
+				SetLineStyle(border_style['all'])
+				border_style = {}
 			end
 		end
+		outRect(x, y, w, h, op)
+
 		if border_style
 			border_style2 = {}
-			border_style.each_with_index { |value, line|
+			border_style.each { |line, value|
 				length = line.length
 				0.upto(length - 1) do |i|
 					border_style2[line[i]] = value
@@ -2376,6 +2391,38 @@ class TCPDF
   alias_method :rect, :Rect
 
 	#
+	# Draws a Bezier curve.
+	# The Bezier curve is a tangent to the line between the control points at
+	# either end of the curve.
+	# @param float :x0 Abscissa of start point.
+	# @param float :y0 Ordinate of start point.
+	# @param float :x1 Abscissa of control point 1.
+	# @param float :y1 Ordinate of control point 1.
+	# @param float :x2 Abscissa of control point 2.
+	# @param float :y2 Ordinate of control point 2.
+	# @param float :x3 Abscissa of end point.
+	# @param float :y3 Ordinate of end point.
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :line_style Line style of curve. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+	# @access public
+	# @see SetLineStyle()
+	# @since 2.1.000 (2008-01-08)
+	#
+	def Curve(x0, y0, x1, y1, x2, y2, x3, y3, style='', line_style=nil, fill_color=nil)
+		if style and (style.index('F') != nil) and fill_color
+			SetFillColorArray(fill_color)
+		end
+		op = getPathPaintOperator(style)
+		if line_style
+			SetLineStyle(line_style)
+		end
+		outPoint(x0, y0)
+		outCurve(x1, y1, x2, y2, x3, y3)
+		out(op)
+	end
+
+	#
 	# Draws an ellipse.
 	# An ellipse is formed from n Bezier curves.
 	# @param float :x0 Abscissa of center point.
@@ -2385,88 +2432,126 @@ class TCPDF
 	# @param float :angle: Angle oriented (anti-clockwise). Default value: 0.
 	# @param float :astart: Angle start of draw line. Default value: 0.
 	# @param float :afinish: Angle finish of draw line. Default value: 360.
-	# @param string :style Style of rendering. Possible values are:
-	# <ul>
-	#   <li>D or empty string: Draw (default).</li>
-	#   <li>F: Fill.</li>
-	#   <li>DF or FD: Draw and fill.</li>
-	#   <li>C: Draw close.</li>
-	#   <li>CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).</li>
-	#   <li>CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).</li>
-	# </ul>
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
 	# @param array :line_style Line style of ellipse. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
 	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-	# @param integer :nc Number of curves used in ellipse. Default value: 8.
+	# @param integer :nc Number of curves used to draw a 90 degrees portion of ellipse.
+	# @author Nicola Asuni
 	# @access public
 	# @since 2.1.000 (2008-01-08)
 	#
-	def Ellipse(x0, y0, rx, ry=0, angle=0, astart=0, afinish=360, style='', line_style=nil, fill_color=nil, nc=8)
-		if angle != 0
-			StartTransform()
-			Rotate(angle, x0, y0)
-			Ellipse(x0, y0, rx, ry, 0, astart, afinish, style, line_style, fill_color, nc)
-			StopTransform()
-			return
+	def Ellipse(x0, y0, rx, ry='', angle=0, astart=0, afinish=360, style='', line_style=nil, fill_color=nil, nc=2)
+		if empty_string(ry) or (ry == 0)
+			ry = rx
 		end
-		if rx
-			if (nil != style.index('F')) and fill_color
-				SetFillColorArray(fill_color)
-			end
-			case style
-			when 'F'
-				op = 'f'
-				line_style = nil
-			when 'FD', 'DF'
-				op = 'B'
-			when 'C'
-				op = 's' # Small 's' signifies closing the path as well
-			when 'CNZ'
-				op = 'W n'
-			when 'CEO'
-				op = 'W* n'
-			else
-				op = 'S'
-			end
+		if style and (nil != style.index('F')) and fill_color
+			SetFillColorArray(fill_color)
+		end
+		op = getPathPaintOperator(style)
+		if op == 'f'
+			line_style = nil
+		end
+		if line_style
+			SetLineStyle(line_style)
+		end
+		outellipticalarc(x0, y0, rx, ry, angle, astart, afinish, false, nc)
+		out(op)
+	end
 
-			if line_style
-				SetLineStyle(line_style)
-			end
-
-			if ry == 0
-				ry = rx
-			end
-			rx *= @k
-			ry *= @k
-			if nc < 2
-				nc = 2
-			end
-			astart *= ::Math::PI / 180 
-			afinish *= ::Math::PI / 180
-			total_angle = afinish - astart
-			dt = total_angle / nc
-			dtm = dt / 3
-			x0 *= @k
-			y0 = (@h - y0) * @k
-			t1 = astart
-			a0 = x0 + rx * ::Math.cos(t1)
-			b0 = y0 + ry * ::Math.sin(t1)
-			c0 = -rx * ::Math.sin(t1)
-			d0 = ry * ::Math.cos(t1)
-			outPoint(a0 / @k, @h - (b0 / @k))
-			1.upto(nc) do |i|
-				# Draw this bit of the total curve
-				t1 = i * dt + astart
-				a1 = x0 + rx * ::Math.cos(t1)
-				b1 = y0 + ry * ::Math.sin(t1)
-				c1 = -rx * ::Math.sin(t1)
-				d1 = ry * ::Math.cos(t1)
-				outCurve((a0 + c0 * dtm) / @k, @h - ((b0 + d0 * dtm) / @k), (a1 - c1 * dtm) / @k, @h - ((b1 - d1 * dtm) / @k), a1 / @k, @h - (b1 / @k))
-				a0 = a1
-				b0 = b1
-				c0 = c1
-				d0 = d1
-			end
-			out(op)
+	#
+	# Append an elliptical arc to the current path.
+	# An ellipse is formed from n Bezier curves.
+	# @param float :xc Abscissa of center point.
+	# @param float :yc Ordinate of center point.
+	# @param float :rx Horizontal radius.
+	# @param float :ry Vertical radius (if ry = 0 then is a circle, see {@link Circle Circle}). Default value: 0.
+	# @param float :xang: Angle between the X-axis and the major axis of the ellipse. Default value: 0.
+	# @param float :angs: Angle start of draw line. Default value: 0.
+	# @param float :angf: Angle finish of draw line. Default value: 360.
+	# @param boolean :pie if true do not mark the border point (used to draw pie sectors).
+	# @param integer :nc Number of curves used to draw a 90 degrees portion of ellipse.
+	# @author Nicola Asuni
+	# @access protected
+	# @since 4.9.019 (2010-04-26)
+	#
+	def outellipticalarc(xc, yc, rx, ry, xang=0, angs=0, angf=360, pie=false, nc=2)
+		k = @k
+		if nc < 2
+			nc = 2
+		end
+		if pie
+			# center of the arc
+			outPoint(xc, yc)
+		end
+		xang = xang * ::Math::PI / 180 # deg2rad
+		angs = angs * ::Math::PI / 180 # deg2rad
+		angf = angf * ::Math::PI / 180 # deg2rad
+		as = ::Math.atan2((::Math.sin(angs) / ry), (::Math.cos(angs) / rx))
+		af = ::Math.atan2((::Math.sin(angf) / ry), (::Math.cos(angf) / rx))
+		if as < 0
+			as += (2 * ::Math::PI)
+		end
+		if af < 0
+			af += (2 * ::Math::PI)
+		end
+		if as > af
+			# reverse rotation go clockwise
+			as -= (2 * ::Math::PI)
+		end
+		total_angle = af - as
+		if nc < 2
+			nc = 2
+		end
+		# total arcs to draw
+		nc *= (2 * total_angle.abs / ::Math::PI)
+		nc = nc.round + 1
+		# angle of each arc
+		arcang = total_angle / nc
+		# center point in PDF coordiantes
+		x0 = xc
+		y0 = @h - yc
+		# starting angle
+		ang = as
+		alpha = ::Math.sin(arcang) * (::Math.sqrt(4 + 3 * (::Math.tan(arcang / 2) ** 2)) - 1) / 3
+		cos_xang = ::Math.cos(xang)
+		sin_xang = ::Math.sin(xang)
+		cos_ang = ::Math.cos(ang)
+		sin_ang = ::Math.sin(ang)
+		# first arc point
+		px1 = x0 + (rx * cos_xang * cos_ang) - (ry * sin_xang * sin_ang)
+		py1 = y0 + (rx * sin_xang * cos_ang) + (ry * cos_xang * sin_ang)
+		# first Bezier control point
+		qx1 = alpha * ((-rx * cos_xang * sin_ang) - (ry * sin_xang * cos_ang))
+		qy1 = alpha * ((-rx * sin_xang * sin_ang) + (ry * cos_xang * cos_ang))
+		if pie
+			outLine(px1, @h - py1)
+		else
+			outPoint(px1, @h - py1)
+		end
+		# draw arcs
+		1.upto(nc) do |i|
+			# starting angle
+			ang = as + i * arcang
+			cos_xang = ::Math.cos(xang)
+			sin_xang = ::Math.sin(xang)
+			cos_ang = ::Math.cos(ang)
+			sin_ang = ::Math.sin(ang)
+			# second arc point
+			px2 = x0 + (rx * cos_xang * cos_ang) - (ry * sin_xang * sin_ang)
+			py2 = y0 + (rx * sin_xang * cos_ang) + (ry * cos_xang * sin_ang)
+			# second Bezier control point
+			qx2 = alpha * ((-rx * cos_xang * sin_ang) - (ry * sin_xang * cos_ang))
+			qy2 = alpha * ((-rx * sin_xang * sin_ang) + (ry * cos_xang * cos_ang))
+			# draw arc
+			outCurve(px1 + qx1, @h - (py1 + qy1), px2 - qx2, @h - (py2 - qy2), px2, @h - py2)
+			# move to next point
+			px1 = px2
+			py1 = py2
+			qx1 = qx2
+			qy1 = qy2
+		end
+		if pie
+			outLine(xc, yc)
 		end
 	end
 
@@ -2476,25 +2561,17 @@ class TCPDF
 	# @param float :x0 Abscissa of center point.
 	# @param float :y0 Ordinate of center point.
 	# @param float :r Radius.
-	# @param float :astart: Angle start of draw line. Default value: 0.
-	# @param float :afinish: Angle finish of draw line. Default value: 360.
-	# @param string :style Style of rendering. Possible values are:
-	# <ul>
-	#   <li>D or empty string: Draw (default).</li>
-	#   <li>F: Fill.</li>
-	#   <li>DF or FD: Draw and fill.</li>
-	#   <li>C: Draw close.</li>
-	#   <li>CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).</li>
-	#   <li>CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).</li>
-	# </ul>
+	# @param float :angstr: Angle start of draw line. Default value: 0.
+	# @param float :angend: Angle finish of draw line. Default value: 360.
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
 	# @param array :line_style Line style of circle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
 	# @param array :fill_color Fill color. Format: array(red, green, blue). Default value: default color (empty array).
-	# @param integer :nc Number of curves used in circle. Default value: 8.
+	# @param integer :nc Number of curves used to draw a 90 degrees portion of circle.
 	# @access public
 	# @since 2.1.000 (2008-01-08)
 	#
-	def Circle(x0, y0, r, astart=0, afinish=360, style='', line_style=nil, fill_color=nil, nc=8)
-		Ellipse(x0, y0, r, 0, 0, astart, afinish, style, line_style, fill_color, nc)
+	def Circle(x0, y0, r, angstr=0, angend=360, style='', line_style=nil, fill_color=nil, nc=2)
+		Ellipse(x0, y0, r, r, 0, angstr, angend, style, line_style, fill_color, nc)
 	end
 	alias_method :circle, :Circle
 
@@ -2965,10 +3042,11 @@ class TCPDF
 				filter = ' /Filter /FlateDecode'
 			end
 			@offsets[filedata['n']] = @bufferlen
-			out(filedata['n'].to_s + ' 0 obj')
-			out('<</Type /EmbeddedFile' + filter + ' /Length ' + data.length.to_s + ' >>')
-			putstream(data, filedata['n'])
-			out('endobj')
+			out = filedata['n'].to_s + ' 0 obj'
+			out << '<</Type /EmbeddedFile' + filter + ' /Length ' + data.length.to_s + ' >>'
+			out << ' ' + getstream(data, filedata['n'])
+			out << ' endobj'
+			out(out)
 		}
 	end
 
@@ -2991,16 +3069,18 @@ class TCPDF
 	# @param boolean :ignore_min_height if true ignore automatic minimum height value.
 	# @param string :calign cell vertical alignment relative to the specified Y value. Possible values are:<ul><li>T : cell top</li><li>A : font top</li><li>L : font baseline</li><li>D : font bottom</li><li>B : cell bottom</li></ul>
 	# @param string :valign text vertical alignment inside the cell. Possible values are:<ul><li>T : top</li><li>C : center</li><li>B : bottom</li></ul>
+	# @param boolean :rtloff if true uses the page top-left corner as origin of axis for :x and :y initial position.
+	# @access public
 	# @since 1.0
 	# @see SetFont(), SetTextColor(), Cell(), MultiCell(), Write()
 	#
-	def Text(x, y, txt, stroke=ffalse, fclip=false, ffill=true, border=0, ln=0, align='', fill=0, link='', stretch=0, ignore_min_height=false, calign='T', valign='M')
-		stroke = 0 if stroke == false
+	def Text(x, y, txt, fstroke=false, fclip=false, ffill=true, border=0, ln=0, align='', fill=0, link='', stretch=0, ignore_min_height=false, calign='T', valign='M', rtloff=false)
+		fstroke = 0 if fstroke == false
 
 		textrendermode = @textrendermode
 		textstrokewidth = @textstrokewidth
 		setTextRenderingMode(fstroke, ffill, fclip)
-		SetXY(x, y)
+		SetXY(x, y, rtloff)
 		Cell(0, 0, txt, border, ln, align, fill, link, stretch, ignore_min_height, calign, valign)
 		# restore previous rendering mode
 		@textrendermode = textrendermode
@@ -4284,8 +4364,21 @@ class TCPDF
 
 		# get image dimensions
 		imsize = getimagesize(file)
-		return false if imsize == false
-
+		if imsize == false
+			# encode spaces on filename
+			file = file.gsub(' ', '%20')
+			imsize = getimagesize(file)
+			if imsize == false
+				if (w > 0) and (h > 0)
+					pw = getHTMLUnitToUnits(w, 0, @pdfunit, true) * @imgscale * @k
+					ph = getHTMLUnitToUnits(h, 0, @pdfunit, true) * @imgscale * @k
+					imsize = [pw, ph]
+				else
+					Error('[Image] Unable to get image width and height: ' + file)
+				end
+			end
+		end
+		# get original image width and height in pixels
                 pixw = imsize[0]
                 pixh = imsize[1]
 
@@ -4384,7 +4477,12 @@ class TCPDF
 			if !info
 				if Object.const_defined?(:Magick)
 					# RMagick library
-					img = Magick::ImageList.new(file)
+
+					### T.B.D ### TCPDF 5.0.000 ###
+					# if type == 'SVG'
+					# else
+						img = Magick::ImageList.new(file)
+					# end
 					if resize
 						img.resize(neww,newh)
 					end
@@ -4421,37 +4519,31 @@ class TCPDF
 			setImageBuffer(file, info)
 		end
 
-		# set bottomcoordinates
+		# set alignment
 		@img_rb_y = y + h
 		# set alignment
 		if @rtl
 			if palign == 'L'
 				ximg = @l_margin
-				# set right side coordinate
-				@img_rb_x = ximg + w
 			elsif palign == 'C'
-				ximg = (@w - x - w) / 2
-				# set right side coordinate
-				@img_rb_x = ximg + w
+				ximg = (@w - w) / 2
+			elsif palign == 'R'
+				ximg = @w - @r_margin - w
 			else
 				ximg = @w - x - w
-				# set left side coordinate
-				@img_rb_x = ximg
 			end
+			@img_rb_x = ximg
 		else
-			if palign == 'R'
-				ximg = @w - @r_margin - w
-				# set left side coordinate
-				@img_rb_x = ximg
+			if palign == 'L'
+				ximg = @l_margin
 			elsif palign == 'C'
-				ximg = (@w - x - w) / 2
-				# set right side coordinate
-				@img_rb_x = ximg + w
+				ximg = (@w - w) / 2
+			elsif palign == 'R'
+				ximg = @w - @r_margin - w
 			else
 				ximg = x
-				# set right side coordinate
-				@img_rb_x = ximg + w
 			end
+			@img_rb_x = ximg + w
 		end
 		if ismask or hidden
 			# image is not displayed
@@ -4549,13 +4641,14 @@ class TCPDF
 	# Defines the abscissa of the current position.
 	# If the passed value is negative, it is relative to the right of the page (or left if language is RTL).
 	# @param float :x The value of the abscissa.
+	# @param boolean :rtloff if true always uses the page top-left corner as origin of axis.
 	# @access public
 	# @since 1.2
 	# @see GetX(), GetY(), SetY(), SetXY()
 	#
-	def SetX(x)
+	def SetX(x, rtloff=false)
 		#Set x position
-		if @rtl
+		if !rtloff and @rtl
 			if x >= 0
 				@x = @w - x
 			else
@@ -4598,14 +4691,15 @@ class TCPDF
 	# If the passed value is negative, it is relative to the bottom of the page.
 	# @param float :y The value of the ordinate.
 	# @param bool :resetx if true (default) reset the X position.
+	# @param boolean :rtloff if true always uses the page top-left corner as origin of axis.
 	# @access public
 	# @since 1.0
 	# @see GetX(), GetY(), SetY(), SetXY()
 	#
-	def SetY(y, resetx=true)
+	def SetY(y, resetx=true, rtloff=false)
 		if resetx
 			# reset x
-			if @rtl
+			if !rtloff and @rtl
 				@x = @w - @r_margin
 			else
 				@x = @l_margin
@@ -4628,14 +4722,16 @@ class TCPDF
 
 	#
 	# Defines the abscissa and ordinate of the current position. If the passed values are negative, they are relative respectively to the right and bottom of the page.
-	# @param float :x The value of the abscissa
-	# @param float :y The value of the ordinate
+	# @param float :x The value of the abscissa.
+	# @param float :y The value of the ordinate.
+	# @param boolean :rtloff if true always uses the page top-left corner as origin of axis.
+	# @access public
 	# @since 1.2
 	# @see SetX(), SetY()
 	#
-	def SetXY(x, y)
-		SetY(y, false)
-		SetX(x);
+	def SetXY(x, y, rtloff=false)
+		SetY(y, false, rtloff)
+		SetX(x, rtloff)
 	end
   alias_method :set_xy, :SetXY
 
@@ -4644,7 +4740,7 @@ class TCPDF
 	# In the last case, the plug-in may be used (if present) or a download ("Save as" dialog box) may be forced.<br />
 	# The method first calls Close() if necessary to terminate the document.
 	# @param string :name The name of the file when saved. Note that special characters are removed and blanks characters are replaced with the underscore character.
-	# @param string :dest Destination where to send the document. It can take one of the following values:<ul><li>I: send the file inline to the browser (default). The plug-in is used if available. The name given by name is used when one selects the "Save as" option on the link generating the PDF.</li><li>D: send to the browser and force a file download with the name given by name.</li><li>F: save to a local file with the name given by name.</li><li>S: return the document as a string. name is ignored.</li></ul>
+	# @param string :dest Destination where to send the document. It can take one of the following values:<ul><li>I: send the file inline to the browser (default). The plug-in is used if available. The name given by name is used when one selects the "Save as" option on the link generating the PDF.</li><li>D: send to the browser and force a file download with the name given by name.</li><li>F: save to a local server file with the name given by name.</li><li>S: return the document as a string. name is ignored.</li><li>FI: equivalent to F + I option</li><li>FD: equivalent to F + D option</li></ul>
 	# @access public
 	# @since 1.0
 	# @see Close()
@@ -4671,7 +4767,7 @@ class TCPDF
 			end
 		end
 		case (dest)
-			when 'I'
+		when 'I'
 			  # This is PHP specific code
 				##Send to standard output
 				# if (ob_get_contents())
@@ -4686,8 +4782,8 @@ class TCPDF
 				# 	header('Content-Length: ' + @buffer.length);
 				# 	header('Content-disposition: inline; filename="' + name + '"');
 				# end
-				return getBuffer
-			when 'D'
+			return getBuffer
+		when 'D'
 			  # PHP specific
 				#Download file
 				# if (ob_get_contents())
@@ -4703,22 +4799,63 @@ class TCPDF
 				# end
 				# header('Content-Length: '+ @buffer.length);
 				# header('Content-disposition: attachment; filename="' + name + '"');
-				return getBuffer
-			when 'F'
-				# Save PDF to a local file
-				if @diskcache
-					FileUtils.copy(@buffer.path, name)
-				else
-					open(name,'wb') do |f|
-						f.write(@buffer)
-					end
-				end
-			when 'S'
-				# Returns PDF as a string
-				return getBuffer
+			return getBuffer
+		when 'F', 'FI', 'FD'
+			# Save PDF to a local file
+			if @diskcache
+				FileUtils.copy(@buffer.path, name)
 			else
-				Error('Incorrect output destination: ' + dest);
-			
+				open(name,'wb') do |f|
+					f.write(@buffer)
+				end
+			end
+			if dest == 'FI'
+			# This is PHP specific code
+			#	# send headers to browser
+			#	header('Content-Type: application/pdf')
+			#	header('Cache-Control: public, must-revalidate, max-age=0') # HTTP/1.1
+			#	header('Pragma: public')
+			#	header('Expires: Sat, 26 Jul 1997 05:00:00 GMT') # Date in the past
+			#	header('Last-Modified: ' + gmdate('D, d M Y H:i:s') + ' GMT')
+			#	header('Content-Length: ' + filesize(name))
+			#	header('Content-Disposition: inline; filename="' + File.basename(name) + '";')
+				# send document to the browser
+				data = ''
+				open(name) do |f| data<< f.read ;end
+				return data
+			elsif dest == 'FD'
+			# This is PHP specific code
+			#	# send headers to browser
+			#	if ob_get_contents()
+			#		Error('Some data has already been output, can\'t send PDF file')
+			#	end
+			#	header('Content-Description: File Transfer')
+			#	if headers_sent())
+			#		Error('Some data has already been output to browser, can\'t send PDF file')
+			#	end
+			#	header('Cache-Control: public, must-revalidate, max-age=0') # HTTP/1.1
+			#	header('Pragma: public')
+			#	header('Expires: Sat, 26 Jul 1997 05:00:00 GMT'); # Date in the past
+			#	header('Last-Modified: ' + gmdate('D, d M Y H:i:s') + ' GMT')
+			#	# force download dialog
+			#	header('Content-Type: application/force-download')
+			#	header('Content-Type: application/octet-stream', false)
+			#	header('Content-Type: application/download', false)
+			#	header('Content-Type: application/pdf', false)
+			#	# use the Content-Disposition header to supply a recommended filename
+			#	header('Content-Disposition: attachment; filename="' + File.basename(name) + '";')
+			#	header('Content-Transfer-Encoding: binary')
+			#	header('Content-Length: ' + filesize(name))
+				# send document to the browser
+				data = ''
+				open(name) do |f| data<< f.read ;end
+				return data
+			end
+		when 'S'
+			# Returns PDF as a string
+			return getBuffer
+		else
+			Error('Incorrect output destination: ' + dest);
 		end
 		return '';
 	ensure
@@ -4900,19 +5037,18 @@ class TCPDF
 			temppage = temppage.gsub(@epsmarker, '')
 			#Page
 			@page_obj_id[n] = newobj()
-			out('<</Type /Page')
-			out('/Parent 1 0 R')
-			out(sprintf('/MediaBox [0 0 %.2f %.2f]', @pagedim[n]['w'], @pagedim[n]['h']))
-			out('/Resources 2 0 R')
+			out = '<</Type /Page'
+			out << ' /Parent 1 0 R'
+			out << ' ' + sprintf('/MediaBox [0 0 %.2f %.2f]', @pagedim[n]['w'], @pagedim[n]['h'])
+			out << ' /Group << /Type /Group /S /Transparency /CS /DeviceRGB >>'
+			out << ' /Resources 2 0 R'
+			out(out)
 			putannotsrefs(n)
-			out('/Contents ' + (@n+1).to_s + ' 0 R>>');
-			out('endobj');
+			out('/Contents ' + (@n+1).to_s + ' 0 R>> endobj')
 			#Page content
 			p=(@compress) ? gzcompress(temppage) : temppage
 			newobj();
-			out('<<' + filter + '/Length '+ p.length.to_s + '>>');
-			putstream(p);
-			out('endobj');
+			out('<<' + filter +' /Length ' + p.length.to_s  + '>> ' + getstream(p) + ' endobj')
 			if @diskcache
 				# remove temporary files
 				File.delete(@pages[n].path)
@@ -4920,16 +5056,12 @@ class TCPDF
 		end
 		#Pages root
 		@offsets[1]=@bufferlen
-		out('1 0 obj');
-		out('<</Type /Pages');
-		out('/Kids [')
+		out = '1 0 obj <</Type /Pages  /Kids ['
 		@page_obj_id.each { |page_obj|
-			out(page_obj.to_s + ' 0 R') unless page_obj.nil?
+			out << ' ' + page_obj.to_s + ' 0 R' unless page_obj.nil?
 		}
-		out(']')
-		out('/Count ' + nb.to_s);
-		out('>>');
-		out('endobj');
+		out << ' ] /Count ' + nb.to_s + ' >>  endobj'
+		out(out)
 	end
 
 	#
@@ -4943,13 +5075,13 @@ class TCPDF
 		unless @page_annots[n] or (@sign and @signature_data['cert_type'])
 			return
 		end
-		out('/Annots [')
+		out = '/Annots ['
 		if @page_annots[n]
 			num_annots = @page_annots[n].length
 			0.upto(num_annots - 1) do |i|
 				@curr_annot_obj_id += 1
 				if !@radio_groups.include?(@curr_annot_obj_id)
-					out(@curr_annot_obj_id.to_s + ' 0 R')
+					out << ' ' + @curr_annot_obj_id.to_s + ' 0 R'
 				else
 					num_annots += 1
 				end
@@ -4958,9 +5090,10 @@ class TCPDF
 
 		if (n == 1) and @sign and @signature_data['cert_type']
 			# set reference for signature object
-			out(@sig_annot_ref)
+			out << ' ' + @sig_annot_ref
 		end
-		out(']')
+		out << ' ]'
+		out(out)
 	end
 
 	#
@@ -5000,9 +5133,7 @@ class TCPDF
 						annots << ' >>'
 						@annot_obj_id += 1
 						@offsets[@annot_obj_id] = @bufferlen
-						out(@annot_obj_id + ' 0 obj')
-						out(annots)
-						out('endobj')
+						out(@annot_obj_id + ' 0 obj ' + annots + ' endobj')
 						@form_obj_id.push = @annot_obj_id
 						# store object id to be used on Parent entry of Kids
 						@radiobutton_groups[n][pl['txt']] = @annot_obj_id
@@ -5482,9 +5613,7 @@ class TCPDF
 					# create new annotation object
 					@annot_obj_id += 1
 					@offsets[@annot_obj_id] = @bufferlen
-					out(@annot_obj_id.to_s + ' 0 obj')
-					out(annots)
-					out('endobj')
+					out(@annot_obj_id.to_s + ' 0 obj ' + annots + ' endobj')
 
 					if formfield and ! @radiobutton_groups[n][pl['txt']]
 						# store reference of form object
@@ -5508,23 +5637,24 @@ class TCPDF
 		stream = stream.strip
 		@apxo_obj_id += 1
 		@offsets[@apxo_obj_id] = @bufferlen
-		out(@apxo_obj_id + ' 0 obj')
-		out('<<')
-		out('/Type /XObject')
-		out('/Subtype /Form')
-		out('/FormType 1')
+		out = @apxo_obj_id + ' 0 obj'
+		out << ' <<'
+		out << ' /Type /XObject'
+		out << ' /Subtype /Form'
+		out << ' /FormType 1'
 		if @compress
 			stream = gzcompress(stream)
-			out('/Filter /FlateDecode')
+			out << ' /Filter /FlateDecode'
 		end
 		rect = sprintf('%.2f %.2f', w, h)
-		out('/BBox [0 0 ' + rect + ']')
-		out('/Matrix [1 0 0 1 0 0]')
-		out('/Resources <</ProcSet [/PDF]>>')
-		out('/Length ' + stream.length.to_s)
-		out('>>')
-		putstream(stream)
-		out('endobj')
+		out << ' /BBox [0 0 ' + rect + ']'
+		out << ' /Matrix [1 0 0 1 0 0]'
+		out << ' /Resources <</ProcSet [/PDF]>>'
+		out << ' /Length ' + stream.length.to_s
+		out << ' >>'
+		out << ' ' + getstream(stream)
+		out << ' endobj'
+		out(out)
 		return @apxo_obj_id
 	end
 
@@ -5537,8 +5667,7 @@ class TCPDF
 		@diffs.each do |diff|
 			#Encodings
 			newobj();
-			out('<</Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [' + diff + ']>>');
-			out('endobj');
+			out('<</Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [' + diff + ']>> endobj')
 		end
 		@font_files.each do |file, info|
 			# search and get font file to embedd
@@ -5573,17 +5702,18 @@ class TCPDF
 				end
 				newobj()
 				@font_files[file]['n'] = @n
-				out('<</Length '+ font.length.to_s)
+				out = '<</Length '+ font.length.to_s
 				if compressed
-					out('/Filter /FlateDecode')
+					out << ' /Filter /FlateDecode'
 				end
-				out('/Length1 ' + info['length1'].to_s)
+				out << ' /Length1 ' + info['length1'].to_s
 				if !info['length2'].nil?
-					out('/Length2 ' + info['length2'].to_s + ' /Length3 0')
+					out << ' /Length2 ' + info['length2'].to_s + ' /Length3 0'
 				end
-				out('>>')
-				putstream(font)
-				out('endobj')
+				out << ' >>'
+				out << ' '+ getstream(font)
+				out << ' endobj'
+				out(out)
 			end
 		end
 		@fontkeys.each do |k|
@@ -5595,40 +5725,40 @@ class TCPDF
 			if (type=='core')
 				#Standard font
 				obj_id = newobj()
-				out('<</Type /Font');
-				out('/Subtype /Type1');
-				out('/BaseFont /' + name)
-				out('/Name /F' + font['i'].to_s)
+				out = '<</Type /Font'
+				out << ' /Subtype /Type1'
+				out << ' /BaseFont /' + name
+				out << ' /Name /F' + font['i'].to_s
 				if (name.downcase != 'symbol' && name.downcase != 'zapfdingbats')
-					out('/Encoding /WinAnsiEncoding');
+					out << ' /Encoding /WinAnsiEncoding'
 				end
 				if name.downcase == 'helvetica'
 					# add default font for annotations
 					@annotation_fonts['helvetica'] = k
 				end
-				out('>>');
-				out('endobj');
+				out << ' >> endobj'
+				out(out)
 			elsif type == 'Type0'
 				putType0(font)
 			elsif (type=='Type1' || type=='TrueType')
 				#Additional Type1 or TrueType font
 				obj_id = newobj()
-				out('<</Type /Font');
-				out('/Subtype /' + type);
-				out('/BaseFont /' + name)
-				out('/Name /F' + font['i'].to_s)
-				out('/FirstChar 32 /LastChar 255');
-				out('/Widths ' + (@n+1).to_s + ' 0 R');
-				out('/FontDescriptor ' + (@n+2).to_s + ' 0 R');
+				out = '<</Type /Font'
+				out << ' /Subtype /' + type
+				out << ' /BaseFont /' + name
+				out << ' /Name /F' + font['i'].to_s
+				out << ' /FirstChar 32 /LastChar 255'
+				out << ' /Widths ' + (@n+1).to_s + ' 0 R'
+				out << ' /FontDescriptor ' + (@n+2).to_s + ' 0 R'
 				if (font['enc'])
 					if (!font['diff'].nil?)
-						out('/Encoding ' + (nf+font['diff']).to_s + ' 0 R');
+						out << ' /Encoding ' + (nf+font['diff']).to_s + ' 0 R'
 					else
-						out('/Encoding /WinAnsiEncoding');
+						out << ' /Encoding /WinAnsiEncoding'
 					end
 				end
-				out('>>');
-				out('endobj');
+				out << ' >> endobj'
+				out(out)
 				#Widths
 				newobj();
 				cw=font['cw']; # &
@@ -5636,8 +5766,7 @@ class TCPDF
 				32.upto(255) do |i|
 					s << cw[i.chr] + ' ';
 				end
-				out(s + ']');
-				out('endobj');
+				out(s + '] endobj')
 				#Descriptor
 				newobj();
 				s='<</Type /FontDescriptor /FontName /' + name;
@@ -5650,8 +5779,7 @@ class TCPDF
 				if !empty_string(font['file'])
 					s << ' /FontFile' + (type=='Type1' ? '' : '2') + ' ' + @font_files[font['file']]['n'] + ' 0 R'
 				end
-				out(s + '>>');
-				out('endobj');
+				out(s + '>> endobj')
 			else
 				#Allow for additional types
 				mtd='put' + type.downcase;
@@ -5669,6 +5797,7 @@ class TCPDF
 	# Outputs font widths
 	# @parameter array :font font data
 	# @parameter int :cidoffset offset for CID values
+	# @return PDF command string for font widths
 	# @author Nicola Asuni
 	# @access protected
 	# @since 4.4.000 (2008-12-07)
@@ -5761,7 +5890,7 @@ class TCPDF
 				w << ' ' + k.to_s + ' [ ' + ws.join(' ') + ' ]'
 			end
 		}
-		out('/W [' + w + ' ]')
+		return ('/W [' + w + ' ]')
 	end
 
 	def putType0(font)
@@ -5813,27 +5942,27 @@ class TCPDF
 			info = getImageBuffer(file)
 			newobj();
 			setImageSubBuffer(file, 'n', @n)
-			out('<</Type /XObject');
-			out('/Subtype /Image');
-			out('/Width ' + info['w'].to_s);
-			out('/Height ' + info['h'].to_s);
+			out = '<</Type /XObject'
+			out << ' /Subtype /Image'
+			out << ' /Width ' + info['w'].to_s
+			out << ' /Height ' + info['h'].to_s
 			if info.key?('masked')
-				out('/SMask ' + (@n - 1).to_s + ' 0 R')
+				out << ' /SMask ' + (@n - 1).to_s + ' 0 R'
 			end
 			if (info['cs']=='Indexed')
-				out('/ColorSpace [/Indexed /DeviceRGB ' + (info['pal'].length / 3 - 1).to_s + ' ' + (@n + 1).to_s + ' 0 R]')
+				out << ' /ColorSpace [/Indexed /DeviceRGB ' + (info['pal'].length / 3 - 1).to_s + ' ' + (@n + 1).to_s + ' 0 R]'
 			else
-				out('/ColorSpace /' + info['cs']);
+				out << ' /ColorSpace /' + info['cs']
 				if (info['cs']=='DeviceCMYK')
-					out('/Decode [1 0 1 0 1 0 1 0]');
+					out << ' /Decode [1 0 1 0 1 0 1 0]'
 				end
 			end
-			out('/BitsPerComponent ' + info['bpc'].to_s);
+			out << ' /BitsPerComponent ' + info['bpc'].to_s
 			if (!info['f'].nil?)
-				out('/Filter /' + info['f']);
+				out << ' /Filter /' + info['f']
 			end
 			if (!info['parms'].nil?)
-				out(info['parms']);
+				out << ' ' + info['parms']
 			end
 			if (!info['trns'].nil? and info['trns'].kind_of?(Array))
 				trns='';
@@ -5841,31 +5970,38 @@ class TCPDF
 				0.upto(count_info) do |i|
 					trns << info['trns'][i] + ' ' + info['trns'][i] + ' ';
 				end
-				out('/Mask [' + trns + ']');
+				out << ' /Mask [' + trns + ']'
 			end
-			out('/Length ' + info['data'].length.to_s + '>>');
-			putstream(info['data']);
-			out('endobj');
+			out << ' /Length ' + info['data'].length.to_s + '>>'
+			out << ' ' + getstream(info['data'])
+			out << ' endobj'
+			out(out)
 			#Palette
 			if (info['cs']=='Indexed')
 				newobj();
 				pal = @compress ? gzcompress(info['pal']) : info['pal']
-				out('<<' + filter + '/Length ' + pal.length.to_s + '>>');
-				putstream(pal);
-				out('endobj');
+				out('<<' + filter + '/Length ' + pal.length.to_s + '>> ' + getstream(pal) + ' endobj')
 			end
 		end
 	end
 
 	#
-	# Output object dictionary for images.
+	# Output Spot Colors Resources.
 	# @access protected
+	# @since 4.0.024 (2008-09-12)
 	#
-	def putxobjectdict()
-		@imagekeys.each do |file|
-			info = getImageBuffer(file)
-			out('/I' + info['i'].to_s + ' ' + info['n'].to_s + ' 0 R')
-		end
+	def putspotcolors()
+		@spot_colors.each { |name, color|
+			newobj()
+			@spot_colors[name]['n'] = @n
+			out = '[/Separation /' + name.gsub(' ', '#20')
+			out << ' /DeviceCMYK <<'
+			out << ' /Range [0 1 0 1 0 1 0 1] /C0 [0 0 0 0]'
+			out << ' ' + sprintf('/C1 [%.4f %.4f %.4f %.4f] ', color['c']/100, color['m']/100, color['y']/100, color['k']/100)
+			out << ' /FunctionType 2 /Domain [0 1] /N 1>>]'
+			out << ' endobj'
+			out(out)
+		}
 	end
 
 	#
@@ -5873,16 +6009,61 @@ class TCPDF
 	# @access protected
 	#
 	def putresourcedict()
-		out('/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]');
-		out('/Font <<');
+		out = '2 0 obj'
+		out << ' << /ProcSet [/PDF /Text /ImageB /ImageC /ImageI]'
+		out << ' /Font <<'
 		@fontkeys.each do |fontkey|
 			font = getFontBuffer(fontkey)
-			out('/F' + font['i'].to_s + ' ' + font['n'].to_s + ' 0 R');
+			out << ' /F' + font['i'].to_s + ' ' + font['n'].to_s + ' 0 R'
 		end
-		out('>>');
-		out('/XObject <<');
-		putxobjectdict();
-		out('>>');
+		out << ' >>'
+		out << ' /XObject <<'
+		@imagekeys.each do |file|
+			info = getImageBuffer(file)
+			out << ' /I' + info['i'].to_s + ' ' + info['n'].to_s + ' 0 R'
+		end
+		out << ' >>'
+=begin
+		# visibility
+		out << ' /Properties <</OC1 ' + @n_ocg_print.to_s + ' 0 R /OC2 ' + @n_ocg_view.to_s + ' 0 R>>'
+		# transparency
+		out << ' /ExtGState <<'
+		@extgstates.each_with_index { |extgstate, k| 
+			if extgstate['name']
+				out << ' /' + extgstate['name']
+			else
+				out << ' /GS' + k
+			end
+			out << ' ' + extgstate['n'] + ' 0 R'
+		}
+		out << ' >>'
+		# gradient patterns
+		if @gradients and !@gradients.empty?
+			out << ' /Pattern <<'
+			@gradients.each_with_index  {|grad, id|
+				out << ' /p' + id + ' ' + grad['pattern'] + ' 0 R'
+			}
+			out << ' >>'
+		end
+		# gradient shadings
+		if @gradients and !@gradients.empty?
+			out << ' /Shading <<'
+			@gradients.each_with_index  {|grad, id|
+				out << ' /Sh' + id + ' ' + grad['id'] + ' 0 R'
+			}
+			out << ' >>'
+		end
+		# spot colors
+		if @spot_colors and !@spot_colors.empty?
+			out << ' /ColorSpace <<'
+			@spot_colors.each  {|color|
+				out << ' /CS' + color['i'] + ' ' + color['n'] + ' 0 R'
+			}
+			out << ' >>'
+		end
+=end
+		out << ' >> endobj'
+		out(out)
 	end
 
 	#
@@ -5890,18 +6071,19 @@ class TCPDF
 	# @access protected
 	#
 	def putresources()
+		# putocg()
 		putfonts();
 		putimages();
+		putspotcolors()
 		#Resource dictionary
 		@offsets[2]=@bufferlen
-		out('2 0 obj');
-		out('<<');
 		putresourcedict();
-		out('>>');
-		out('endobj');
 		putbookmarks()
 		putEmbeddedFiles()
 		putannotsobjs()
+		# encryption
+
+		### T.B.D ### TCPDF 5.0.000 ###
 	end
 	
 	#
@@ -5910,39 +6092,43 @@ class TCPDF
 	# @access protected
 	#
 	def putinfo()
+		newobj()
+		out = '<<'
 		if !empty_string(@title)
 			# The document's title.
-			out('/Title ' + textstring(@title));
+			out << ' /Title ' + textstring(@title)
 		end
 		if !empty_string(@author)
 			# The name of the person who created the document.
-			out('/Author ' + textstring(@author));
+			out << ' /Author ' + textstring(@author)
 		end
 		if !empty_string(@subject)
 			# The subject of the document.
-			out('/Subject ' + textstring(@subject))
+			out << ' /Subject ' + textstring(@subject)
 		end
 		if !empty_string(@keywords)
 			# Keywords associated with the document.
-			out('/Keywords ' + textstring(@keywords));
+			out << ' /Keywords ' + textstring(@keywords)
 		end
 		if !empty_string(@creator)
 			# If the document was converted to PDF from another format, the name of the conforming product that created the original document from which it was converted.
-			out('/Creator ' + textstring(@creator));
+			out << ' /Creator ' + textstring(@creator)
 		end
 		if defined?(PDF_PRODUCER)
 			# If the document was converted to PDF from another format, the name of the conforming product that converted it to PDF.
-			out('/Producer ' + textstring(PDF_PRODUCER))
+			out << ' /Producer ' + textstring(PDF_PRODUCER)
 		else
 			# default producer
-			out('/Producer ' + textstring('TCPDF'))
+			out << ' /Producer ' + textstring('TCPDF')
 		end
 		# The date and time the document was created, in human-readable form
-		out('/CreationDate ' + datestring())
+		out << ' /CreationDate ' + datestring()
 		# The date and time the document was most recently modified, in human-readable form
-		out('/ModDate ' + datestring())
+		out << ' /ModDate ' + datestring()
 		# A name object indicating whether the document has been modified to include trapping information
-		# out('/Trapped /False')
+		# out << ' /Trapped /False'
+		out << ' >> endobj'
+		out(out)
 	end
 
 	#
@@ -5950,30 +6136,65 @@ class TCPDF
 	# @access protected
 	#
 	def putcatalog()
-		out('/Type /Catalog');
-		out('/Pages 1 0 R');
+		newobj()
+		out = '<< /Type /Catalog'
+		out << ' /Pages 1 0 R'
 		if (@zoom_mode=='fullpage')
-			out('/OpenAction [3 0 R /Fit]');
+			out << ' /OpenAction [3 0 R /Fit]'
 		elsif (@zoom_mode=='fullwidth')
-			out('/OpenAction [3 0 R /FitH null]');
+			out << ' /OpenAction [3 0 R /FitH null]'
 		elsif (@zoom_mode=='real')
-			out('/OpenAction [3 0 R /XYZ null null 1]');
+			out << ' /OpenAction [3 0 R /XYZ null null 1]'
 		elsif (!@zoom_mode.is_a?(String))
-			out('/OpenAction [3 0 R /XYZ null null ' + (@zoom_mode/100) + ']');
+			out << ' /OpenAction [3 0 R /XYZ null null ' + (@zoom_mode/100) + ']'
 		end
 		if @layout_mode and !empty_string(@layout_mode)
-			out('/PageLayout /' + @layout_mode + '')
+			out << ' /PageLayout /' + @layout_mode
 		end
 		if @page_mode and !empty_string(@page_mode)
-			out('/PageMode /' + @page_mode)
+			out << ' /PageMode /' + @page_mode
 		end
+
+		if @l['a_meta_language']
+			out << ' /Lang /' + @l['a_meta_language']
+		end
+		out << ' /Names <<'
+		if !@javascript.empty? or !@js_objects.empty?
+			out << ' /JavaScript ' + @n_js + ' 0 R'
+		end
+		out << ' >>'
+
 		if @outlines.size > 0
-			out('/Outlines ' + @outline_root.to_s + ' 0 R')
-			out('/PageMode /UseOutlines')
+			out << ' /Outlines ' + @outline_root.to_s + ' 0 R'
+			out << ' /PageMode /UseOutlines'
 		end
+		out << ' ' + putviewerpreferences()
+
+		### T.B.D ### TCPDF 5.0.000 ###
+
+		out << ' >> endobj'
+		out(out)
+	end
+
+	#
+	# Output viewer preferences.
+	# @return string for viewer preferences
+	# @author Nicola asuni
+	# @since 3.1.000 (2008-06-09)
+	# @access protected
+	#
+	def putviewerpreferences() 
+		out = '/ViewerPreferences <<'
 		if @rtl
-			out('/ViewerPreferences << /Direction /R2L >>')
+			out << ' /Direction /R2L'
+		else
+			out << ' /Direction /L2R'
 		end
+
+		### T.B.D ### TCPDF 5.0.000 ###
+
+		out << ' >>'
+		return out
 	end
 
 	#
@@ -5981,9 +6202,16 @@ class TCPDF
 	# @access protected
 	#
 	def puttrailer()
-		out('/Size ' + (@n+1).to_s);
-		out('/Root ' + @n.to_s + ' 0 R');
-		out('/Info ' + (@n-1).to_s + ' 0 R');
+		out = 'trailer <<'
+		out << ' /Size ' + (@n+1).to_s
+		out << ' /Root ' + @n.to_s + ' 0 R'
+		out << ' /Info ' + (@n-1).to_s + ' 0 R'
+		#if @encrypted
+		#	out << ' /Encrypt ' + @enc_obj_id + ' 0 R'
+		#	out << ' /ID [()()]'
+		#end
+		out << ' >>'
+		out(out)
 	end
 
 	#
@@ -6003,18 +6231,13 @@ class TCPDF
 		putheader();
 		putpages();
 		putresources();
+
+		### T.B.D ### TCPDF 5.0.000 ###
+
 		#Info
-		newobj();
-		out('<<');
 		putinfo();
-		out('>>');
-		out('endobj');
 		#Catalog
-		newobj();
-		out('<<');
 		putcatalog();
-		out('>>');
-		out('endobj');
 		#Cross-ref
 		o=@bufferlen
 		out('xref');
@@ -6038,10 +6261,7 @@ class TCPDF
 			end
 		end
 		#Trailer
-		out('trailer');
-		out('<<');
 		puttrailer();
-		out('>>');
 		out('startxref');
 		out(o);
 		out('%%EOF');
@@ -6326,7 +6546,7 @@ class TCPDF
 		end
 		return {'w' => w, 'h' => h, 'cs' => colspace, 'bpc' => bpc, 'f'=>'FlateDecode', 'parms' => parms, 'pal' => pal, 'trns' => trns, 'data' => data}
 	ensure
-		f.close
+		f.close unless f.nil?
 	end
 
 	#
@@ -6433,13 +6653,12 @@ class TCPDF
 	end
 
 	#
-	#
-	# Output a stream.
+	# Format output stream
 	# @param string :s string to output.
 	# @param int :n object reference for encryption mode
 	# @access protected
 	#
-	def putstream(s, n=0)
+	def getstream(s, n=0)
 		#if @encrypted
 		#	if n <= 0
 		#		# default to current object
@@ -6447,9 +6666,7 @@ class TCPDF
 		#	end
 		#	s = RC4(objectkey(n), s)
 		#end
-		out('stream');
-		out(s);
-		out('endstream');
+		return "stream\n" + s + "\nendstream"
 	end
 
 	#
@@ -6489,22 +6706,23 @@ class TCPDF
 		# Type0 Font
 		# A composite font composed of other fonts, organized hierarchically
 		obj_id = newobj()
-		out('<</Type /Font');
-		out('/Subtype /Type0');
-		out('/BaseFont /' + font['name'] + '');
-		out('/Name /F' + font['i'].to_s)
-		out('/Encoding /' + font['enc'])
-		out('/ToUnicode /Identity-H')
-		out('/DescendantFonts [' + (@n + 1).to_s + ' 0 R]');
-		out('>>');
-		out('endobj');
+		out = '<</Type /Font'
+		out << ' /Subtype /Type0'
+		out << ' /BaseFont /' + font['name'] + ''
+		out << ' /Name /F' + font['i'].to_s
+		out << ' /Encoding /' + font['enc']
+		out << ' /ToUnicode /Identity-H'
+		out << ' /DescendantFonts [' + (@n + 1).to_s + ' 0 R]'
+		out << ' >>'
+		out << ' endobj'
+		out(out)
 		
 		# CIDFontType2
 		# A CIDFont whose glyph descriptions are based on TrueType font technology
 		newobj();
-		out('<</Type /Font');
-		out('/Subtype /CIDFontType2');
-		out('/BaseFont /' + font['name'] + '');
+		out = '<</Type /Font'
+		out << ' /Subtype /CIDFontType2'
+		out << ' /BaseFont /' + font['name']
 		
 		# A dictionary containing entries that define the character collection of the CIDFont.
 
@@ -6512,37 +6730,35 @@ class TCPDF
 		cidinfo << ' /Ordering ' + datastring(font['cidinfo']['Ordering'])
 		cidinfo << ' /Supplement ' + font['cidinfo']['Supplement'].to_s
 
-		out('/CIDSystemInfo <<' + cidinfo + '>>')
-		out('/FontDescriptor ' + (@n + 1).to_s + ' 0 R')
-		out('/DW ' + font['dw'].to_s + '') # default width
-		putfontwidths(font, 0)
-		out('/CIDToGIDMap ' + (@n + 2).to_s + ' 0 R')
-
-		out('>>');
-		out('endobj');
+		out << ' /CIDSystemInfo <<' + cidinfo + '>>'
+		out << ' /FontDescriptor ' + (@n + 1).to_s + ' 0 R'
+		out << ' /DW ' + font['dw'].to_s + '' # default width
+		out << "\n" + putfontwidths(font, 0)
+		out << ' /CIDToGIDMap ' + (@n + 2).to_s + ' 0 R >> endobj'
+		out(out)
 		
 		# Font descriptor
 		# A font descriptor describing the CIDFont default metrics other than its glyph widths
 		newobj();
-		out('<</Type /FontDescriptor');
-		out('/FontName /' + font['name']);
+		out = '<</Type /FontDescriptor'
+		out << ' /FontName /' + font['name']
 		font['desc'].each do |key, value|
 			if value.is_a? Float
 				value = sprintf('%.3f', value)
 			end
-			out('/' + key.to_s + ' ' + value.to_s + '')
+			out << ' /' + key.to_s + ' ' + value.to_s
 		end
 		fontdir = false
 		if !empty_string(font['file'])
 			# A stream containing a TrueType font
-			out('/FontFile2 ' + @font_files[font['file']]['n'].to_s + ' 0 R');
+			out << ' /FontFile2 ' + @font_files[font['file']]['n'].to_s + ' 0 R'
 			fontdir = @font_files[font['file']]['fontdir']
 		end
-		out('>>');
-		out('endobj');
-		newobj();
+		out << ' >> endobj'
+		out(out)
 
 		if font['ctg'] and !empty_string(font['ctg'])
+			newobj()
 			# Embed CIDToGIDMap
 			# A specification of the mapping from CIDs to glyph indices
 			# search and get CTG font file to embedd
@@ -6562,19 +6778,20 @@ class TCPDF
 				Error('Font file not found: ' + ctgfile)
 			end
 			size = File.size(fontfile)
-			out('<</Length ' + size.to_s + '')
+			out = '<</Length ' + size.to_s + ''
 			if (fontfile[-2,2] == '.z') # check file extension
 				# Decompresses data encoded using the public-domain 
 				# zlib/deflate compression method, reproducing the 
 				# original text or binary data
-				out('/Filter /FlateDecode')
+				out << ' /Filter /FlateDecode'
 			end
-			out('>>')
+			out << ' >>'
 			open(fontfile, 'rb') do |f|
-				putstream(f.read())
+				out << ' ' + getstream(f.read())
 			end
+			out << ' endobj'
+			out(out)
 		end
-		out('endobj');
 
 		return obj_id
 	end
@@ -6614,29 +6831,29 @@ class TCPDF
 			longname = name
 		end
 		obj_id = newobj()
-		out('<</Type /Font')
-		out('/Subtype /Type0')
-		out('/BaseFont /' + longname)
-		out('/Name /F' + font['i'].to_s)
+		out = '<</Type /Font'
+		out << ' /Subtype /Type0'
+		out << ' /BaseFont /' + longname
+		out << ' /Name /F' + font['i'].to_s
 		if enc
-			out('/Encoding /' + enc)
+			out << ' /Encoding /' + enc
 		end
-		out('/DescendantFonts [' + (@n + 1).to_s + ' 0 R]')
-		out('>>')
-		out('endobj')
+		out << ' /DescendantFonts [' + (@n + 1).to_s + ' 0 R]'
+		out << ' >> endobj'
+		out(out)
 		newobj()
-		out('<</Type /Font')
-		out('/Subtype /CIDFontType0')
-		out('/BaseFont /' + name)
+		out = '<</Type /Font'
+		out << ' /Subtype /CIDFontType0'
+		out << ' /BaseFont /' + name
 		cidinfo = '/Registry ' + datastring(font['cidinfo']['Registry'])
 		cidinfo << ' /Ordering ' + datastring(font['cidinfo']['Ordering'])
 		cidinfo << ' /Supplement ' + font['cidinfo']['Supplement'].to_s
-		out('/CIDSystemInfo <<' + cidinfo + '>>')
-		out('/FontDescriptor ' + (@n + 1).to_s + ' 0 R')
-		out('/DW ' + font['dw'].to_s)
-		putfontwidths(font, cidoffset)
-		out('>>')
-		out('endobj')
+		out << ' /CIDSystemInfo <<' + cidinfo + '>>'
+		out << ' /FontDescriptor ' + (@n + 1).to_s + ' 0 R'
+		out << ' /DW ' + font['dw'].to_s
+		out << "\n" + putfontwidths(font, cidoffset)
+		out << ' >> endobj'
+		out(out)
 		newobj()
 		s = '<</Type /FontDescriptor /FontName /' + name
 		font['desc'].each {|k, v|
@@ -6647,8 +6864,7 @@ class TCPDF
 				s << ' /' + k + ' ' + v.to_s + ''
 			end
 		}
-		out(s + '>>')
-		out('endobj')
+		out(s + '>> endobj')
 
 		return obj_id
 	end
@@ -6968,6 +7184,20 @@ class TCPDF
 	alias_method :set_language_array, :SetLanguageArray
 
 	#
+	# Put visibility settings.
+	# @access protected
+	# @since 3.0.000 (2008-03-27)
+	#
+	def putocg()
+		newobj()
+		@n_ocg_print = @n
+		out('<< /Type /OCG /Name ' + textstring('print') + ' /Usage << /Print <</PrintState /ON>> /View <</ViewState /OFF>> >> >> endobj')
+		newobj()
+		@n_ocg_view = @n
+		out('<< /Type /OCG /Name ' + textstring('view') + ' /Usage << /Print <</PrintState /OFF>> /View <</ViewState /ON>> >> >> endobj')
+	end
+
+	#
 	# Set the default JPEG compression quality (1-100)
 	# @param int :quality JPEG quality, integer between 1 and 100
 	# @access public
@@ -6997,6 +7227,63 @@ class TCPDF
 	#
 	def GetCellHeightRatio()
 		return @cell_height_ratio
+	end
+
+	#
+	# Draw the sector of a circle.
+	# It can be used for instance to render pie charts.
+	# @param float :xc abscissa of the center.
+	# @param float :yc ordinate of the center.
+	# @param float :r radius.
+	# @param float :a start angle (in degrees).
+	# @param float :b end angle (in degrees).
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param float :cw: indicates whether to go clockwise (default: true).
+	# @param float :o: origin of angles (0 for 3 o'clock, 90 for noon, 180 for 9 o'clock, 270 for 6 o'clock). Default: 90.
+	# @author Maxime Delorme, Nicola Asuni
+	# @since 3.1.000 (2008-06-09)
+	# @access public
+	#
+	def PieSector(xc, yc, r, a, b, style='FD', cw=true, o=90)
+		PieSectorXY(xc, yc, r, r, a, b, style, cw, o)
+	end
+
+	#
+	# Draw the sector of an ellipse.
+	# It can be used for instance to render pie charts.
+	# @param float :xc abscissa of the center.
+	# @param float :yc ordinate of the center.
+	# @param float :rx the x-axis radius.
+	# @param float :ry the y-axis radius.
+	# @param float :a start angle (in degrees).
+	# @param float :b end angle (in degrees).
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param float :cw: indicates whether to go clockwise.
+	# @param float :o: origin of angles (0 for 3 o'clock, 90 for noon, 180 for 9 o'clock, 270 for 6 o'clock).
+	# @param integer :nc Number of curves used to draw a 90 degrees portion of arc.
+	# @author Maxime Delorme, Nicola Asuni
+	# @since 3.1.000 (2008-06-09)
+	# @access public
+	#
+	def PieSectorXY(xc, yc, rx, ry, a, b, style='FD', cw=false, o=0, nc=2)
+		if @rtl
+			xc = @w - xc
+		end
+		op = getPathPaintOperator(style)
+		### not use ###
+		#if op == 'f'
+		#	line_style = nil
+		#end
+		if cw
+			d = b
+			b = 360 - a + o
+			a = 360 - d + o
+		else
+			b += o
+			a += o
+		end
+		outellipticalarc(xc, yc, rx, ry, 0, a, b, true, nc)
+		out(op)
 	end
 
 	#
@@ -7547,11 +7834,11 @@ class TCPDF
 							t_x = mdiff
 						elsif (plalign == 'L') and @rtl
 							# left alignment on RTL document
-							if (revstrpos(pmid, '[( ').to_i == revstrpos(pmid, '[(').to_i) or (revstrpos(pmid, '[(' + 0.chr + 32.chr).to_i == revstrpos(pmid, '[(').to_i)
+							if revstrpos(pmid, '[(') and ((revstrpos(pmid, '[( ').to_i == revstrpos(pmid, '[(').to_i) or (revstrpos(pmid, '[(' + 0.chr + 32.chr).to_i == revstrpos(pmid, '[(').to_i))
 								# remove first space (if any)
 								linew -= one_space_width
 							end
-							if pmid.index('[(').to_i == revstrpos(pmid, '[(').to_i
+							if pmid.index('[(') and (pmid.index('[(').to_i == revstrpos(pmid, '[(').to_i)
 								# remove last space (if any)
 								linew -= one_space_width
 								if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
@@ -8197,11 +8484,11 @@ class TCPDF
 					t_x = mdiff
 				elsif (plalign == 'L') and @rtl
 					# left alignment on RTL document
-					if (revstrpos(pmid, '[( ').to_i == revstrpos(pmid, '[(').to_i) or (revstrpos(pmid, '[(' + 0.chr + 32.chr).to_i == revstrpos(pmid, '[(').to_i)
+					if revstrpos(pmid, '[(') and ((revstrpos(pmid, '[( ').to_i == revstrpos(pmid, '[(').to_i) or (revstrpos(pmid, '[(' + 0.chr + 32.chr).to_i == revstrpos(pmid, '[(').to_i))
 						# remove first space (if any)
 						linew -= one_space_width
 					end
-					if pmid.index('[(').to_i == revstrpos(pmid, '[(').to_i
+					if pmid.index('[(') and (pmid.index('[(').to_i == revstrpos(pmid, '[(').to_i)
 						# remove last space (if any)
 						linew -= one_space_width
 						if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
@@ -9125,8 +9412,13 @@ class TCPDF
 	# @param string :attrname image file name
 	#
 	def getImageFilename( attrname )
-		attrname = attrname.gsub(@@k_path_url, @@k_path_main)
+		testscrtype = URI.parse(attrname)
+		if testscrtype.query.nil? or testscrtype.query.empty?
+		# convert URL to server path
+			attrname = attrname.gsub(@@k_path_url, @@k_path_main)
+		end
 	end
+
 
 	#
 	# Process opening tags.
@@ -9266,10 +9558,17 @@ class TCPDF
 		when 'img'
 			if !tag['attribute']['src'].nil?
 				# replace relative path with real server path
+				### T.B.D ### TCPDF 5.0.000 ###
 				#if tag['attribute']['src'][0] == '/'
-				#	tag['attribute']['src'] = Rails.root.join('public') + tag['attribute']['src']
+				#	findroot = tag['attribute']['src'].index($_SERVER['DOCUMENT_ROOT'])
+				#	if (findroot == nil) or (findroot.to_i > 1)
+				#		tag['attribute']['src'] = Rails.root.join('public') + tag['attribute']['src']
+				#	end
 				#end
 				img_name = tag['attribute']['src']
+				### T.B.D ### TCPDF 5.0.000 ###
+				# tag['attribute']['src'] = CGI.escape(tag['attribute']['src'])
+				type = getImageFileType(tag['attribute']['src'])
 				tag['attribute']['src'] = getImageFilename(tag['attribute']['src'])
 				if tag['attribute']['width'].nil?
 					tag['attribute']['width'] = 0
@@ -9292,7 +9591,6 @@ class TCPDF
 				else
 					align = 'B'
 				end
-				type = getImageFileType(tag['attribute']['src'])
 				prevy = @y
 				xpos = GetX()
 				# eliminate marker spaces
@@ -9338,6 +9636,8 @@ class TCPDF
 				begin
 #				if (type == 'eps') or (type == 'ai')
 #					ImageEps(tag['attribute']['src'], xpos, @y, iw, ih, imglink, true, align, '', border, true)
+#				elseif type == 'svg'
+#					ImageSVG(tag['attribute']['src'], xpos, @y, iw, ih, imglink, align, '', border, true)
 #				else
 					result_img = Image(tag['attribute']['src'], xpos, @y, iw, ih, '', imglink, align, false, 300, '', false, false, border, false, false, true)
 #				end
@@ -9913,10 +10213,10 @@ class TCPDF
 		if supportedunits.include?(defaultunit)
 			unit = defaultunit
 		end
-		if htmlval.is_a? Integer
+		if htmlval.is_a? Numeric
 			value = htmlval.to_f
 		else
-			mnum = htmlval.scan(/[0-9\.]+/)
+			mnum = htmlval.scan(/[0-9\.\-\+]+/)
 			unless mnum.empty?
 				value = mnum[0].to_f
 				munit = htmlval.scan(/([a-z%]+)/)
@@ -10051,7 +10351,7 @@ class TCPDF
 			r = size / 6
 			lspace += 2 * r
 			if @rtl
-				@x = @w - @x - lspace
+				@x += lspace
 			else
 				@x -= lspace
 			end
@@ -10060,7 +10360,7 @@ class TCPDF
 			l = size / 3
 			lspace += l
 			if @rtl
-				@x = @w - @x - lspace
+				@x += lspace
 			else
 				@x -= lspace
 			end
@@ -10454,6 +10754,63 @@ class TCPDF
 
 		return (pos.nil? ? nil : length - pos - needle.length)
  	end
+
+	#
+	# Get the Path-Painting Operators.
+	# @param string :style Style of rendering. Possible values are:
+	# <ul>
+	#   <li>S or D: Stroke the path.</li>
+	#   <li>s or d: Close and stroke the path.</li>
+	#   <li>f or F: Fill the path, using the nonzero winding number rule to determine the region to fill.</li>
+	#   <li>f* or F*: Fill the path, using the even-odd rule to determine the region to fill.</li>
+	#   <li>B or FD or DF: Fill and then stroke the path, using the nonzero winding number rule to determine the region to fill.</li>
+	#   <li>B* or F*D or DF*: Fill and then stroke the path, using the even-odd rule to determine the region to fill.</li>
+	#   <li>b or fd or df: Close, fill, and then stroke the path, using the nonzero winding number rule to determine the region to fill.</li>
+	#   <li>b or f*d or df*: Close, fill, and then stroke the path, using the even-odd rule to determine the region to fill.</li>
+	#   <li>CNZ: Clipping mode using the even-odd rule to determine which regions lie inside the clipping path.</li>
+	#   <li>CEO: Clipping mode using the nonzero winding number rule to determine which regions lie inside the clipping path</li>
+	#   <li>n: End the path object without filling or stroking it.</li>
+	# </ul>
+	# @param string :default default style
+	# @param boolean :mode if true enable rasterization, false otherwise.
+	# @author Nicola Asuni
+	# @access protected
+	# @since 5.0.000 (2010-04-30)
+	#
+	def getPathPaintOperator(style, default='S')
+		op = ''
+		case style
+		when 'S', 'D'
+			op = 'S'
+		when 's', 'd'
+			op = 's'
+		when 'f', 'F'
+			op = 'f'
+		when 'f*', 'F*'
+			op = 'f*'
+		when 'B', 'FD', 'DF'
+			op = 'B'
+		when 'B*', 'F*D', 'DF*'
+			op = 'B*'
+		when 'b', 'fd', 'df'
+			op = 'b'
+		when 'b*', 'f*d', 'df*'
+			op = 'b*'
+		when 'CNZ'
+			op = 'W n'
+		when 'CEO'
+			op = 'W* n'
+		when 'n'
+			op = 'n'
+		else
+			if !default.empty?
+				op = getPathPaintOperator(default, '')
+			else
+				op = ''
+			end
+		end
+		return op
+	end
 
 	#
 	# Output anchor link.
@@ -11254,22 +11611,20 @@ class TCPDF
 		n = @n + 1
 		@outlines.each_with_index do |o, i|
 			newobj()
-			out('<</Title ' + textstring(o[:t]))
-			out('/Parent ' + (n + o[:parent]).to_s + ' 0 R')
-			out('/Prev ' + (n + o[:prev]).to_s + ' 0 R') if !o[:prev].nil?
-			out('/Next ' + (n + o[:next]).to_s + ' 0 R') if !o[:next].nil?
-			out('/First ' + (n + o[:first]).to_s + ' 0 R') if !o[:first].nil?
-			out('/Last ' + (n + o[:last]).to_s + ' 0 R') if !o[:last].nil?
-			out('/Dest [%d 0 R /XYZ 0 %.2f null]' % [1 + 2 * o[:p], @pagedim[o[:p]]['h'] - o[:y] * @k])
-			out('/Count 0>>')
-			out('endobj')
+			out = '<</Title ' + textstring(o[:t])
+			out << ' /Parent ' + (n + o[:parent]).to_s + ' 0 R'
+			out << ' /Prev ' + (n + o[:prev]).to_s + ' 0 R' if !o[:prev].nil?
+			out << ' /Next ' + (n + o[:next]).to_s + ' 0 R' if !o[:next].nil?
+			out << ' /First ' + (n + o[:first]).to_s + ' 0 R' if !o[:first].nil?
+			out << ' /Last ' + (n + o[:last]).to_s + ' 0 R' if !o[:last].nil?
+			out << ' ' + sprintf('/Dest [%d 0 R /XYZ 0 %.2f null]', 1 + 2 * o[:p], @pagedim[o[:p]]['h'] - o[:y] * @k)
+			out << ' /Count 0>> endobj'
+			out(out)
 		end
 		# Outline root
 		newobj()
 		@outline_root = @n
-		out('<</Type /Outlines /First ' + n.to_s + ' 0 R')
-		out('/Last ' + (n + lru[0]).to_s + ' 0 R>>')
-		out('endobj')
+		out('<</Type /Outlines /First ' + n.to_s + ' 0 R /Last ' + (n + lru[0]).to_s + ' 0 R>> endobj')
 	end
 
 	#

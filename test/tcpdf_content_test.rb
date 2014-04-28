@@ -94,17 +94,19 @@ class TcpdfPageTest < ActiveSupport::TestCase
     contents = pdf.getPageBuffer(1)
     contents.each_line {|line| content.push line.chomp }
 
-    assert_equal content.length,  14
+    assert_equal content.length,  15
     assert_equal content[4],  "425.20 274.96 m"                              # start point : x0, y0
-    assert_equal content[5],  "425.20 312.07 409.92 348.94 383.68 375.18 c"  # 1/8 circle  : x1, y1(control point 1), x2, y2(control point 2), x3, y3(end point and next start point)
-    assert_equal content[6],  "357.45 401.42 320.57 416.69 283.46 416.69 c"  # 2/8 circle
-    assert_equal content[7],  "246.36 416.69 209.48 401.42 183.24 375.18 c"  # 3/8 circle
-    assert_equal content[8],  "157.01 348.94 141.73 312.07 141.73 274.96 c"  # 4/8 circle
-    assert_equal content[9],  "141.73 237.86 157.01 200.98 183.24 174.74 c"  # 5/8 circle
-    assert_equal content[10], "209.48 148.50 246.36 133.23 283.46 133.23 c"  # 6/8 circle
-    assert_equal content[11], "320.57 133.23 357.45 148.50 383.68 174.74 c"  # 7/8 circle
-    assert_equal content[12], "409.92 200.98 425.20 237.86 425.20 274.96 c"  # 8/8 circle
-    assert_equal content[13], "S"
+
+    assert_equal content[5],  '425.20 308.27 413.45 340.54 392.04 366.06 c'  # 1/9 circle  : x1, y1(control point 1), x2, y2(control point 2), x3, y3(end point and next start point)
+    assert_equal content[6],  '370.62 391.58 340.88 408.76 308.08 414.54 c'  # 2/9 circle
+    assert_equal content[7],  '275.27 420.32 241.45 414.36 212.60 397.70 c'  # 3/9 circle
+    assert_equal content[8],  '183.75 381.05 161.67 354.74 150.28 323.44 c'  # 4/9 circle
+    assert_equal content[9],  '138.89 292.13 138.89 257.79 150.28 226.49 c'  # 5/9 circle
+    assert_equal content[10], '161.67 195.18 183.75 168.87 212.60 152.22 c'  # 6/9 circle
+    assert_equal content[11], '241.45 135.56 275.27 129.60 308.08 135.38 c'  # 7/9 circle
+    assert_equal content[12], '340.88 141.17 370.62 158.34 392.04 183.86 c'  # 8/9 circle
+    assert_equal content[13], '413.45 209.38 425.20 241.65 425.20 274.96 c'  # 9/9 circle
+    assert_equal content[14], 'S'
 
   end
 end
