@@ -451,6 +451,7 @@ class TCPDF
 		@strokecolor = ActiveSupport::OrderedHash.new
 		@bgcolor = ActiveSupport::OrderedHash.new
 		@pdfunit ||= 'mm'
+		@tocpage ||= false
 		@extgstates ||= []
 		@gradients ||= []
 		@bgtag ||= []
@@ -1237,16 +1238,39 @@ class TCPDF
 	end
 
 	#
+	# Adds a new TOC (Table Of Content) page to the document.
+	# @param string :orientation page orientation.
+	# @param boolean :keepmargins if true overwrites the default page margins with the current margins
+	# @access public
+	# @since 5.0.001 (2010-05-06)
+	# @see AddPage(), startPage(), endPage(), endTOCPage()
+	#
+	def addTOCPage(orientation='', format='', keepmargins=false)
+		AddPage(orientation, format, keepmargins, true)
+	end
+
+	#
+	# Terminate the current TOC (Table Of Content) page
+	# @access public
+	# @since 5.0.001 (2010-05-06)
+	# @see AddPage(), startPage(), endPage(), addTOCPage()
+	#
+	def endTOCPage()
+		endPage(true)
+	end
+
+	#
 	# Adds a new page to the document. If a page is already present, the Footer() method is called first to output the footer (if enabled). Then the page is added, the current position set to the top-left corner according to the left and top margins (or top-right if in RTL mode), and Header() is called to display the header (if enabled).
 	# The origin of the coordinate system is at the top-left corner (or top-right for RTL) and increasing ordinates go downwards.
 	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
 	# @param mixed :format The format used for pages. It can be either one of the following values (case insensitive) or a custom format in the form of a two-element array containing the width and the height (expressed in the unit given by unit).<ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
 	# @param boolean :keepmargins if true overwrites the default page margins with the current margin
+	# @param boolean :tocpage if true set the tocpage state to true (the added page will be used to display Table Of Content).
 	# @access public
 	# @since 1.0
-	# @see startPage(), endPage()
+	# @see startPage(), endPage(), addTOCPage(), endTOCPage()
 	#
-	def AddPage(orientation='', format='', keepmargins=false)
+	def AddPage(orientation='', format='', keepmargins=false, tocpage=false)
 		if @original_l_margin.nil? or keepmargins
 			@original_l_margin = @l_margin
 		end
@@ -1256,17 +1280,18 @@ class TCPDF
 		# terminate previous page
 		endPage()
 		# start new page
-		startPage(orientation, format)
+		startPage(orientation, format, tocpage)
 	end
 	  alias_method :add_page, :AddPage
 
 	#
 	# Terminate the current page
-	# @access protected
+	# @param boolean :tocpage if true set the tocpage state to false (end the page used to display Table Of Content).
+	# @access public
 	# @since 4.2.010 (2008-11-14)
-	# @see startPage(), AddPage()
+	# @see AddPage(), startPage(), addTOCPage(), endTOCPage()
 	#
-	def endPage()
+	def endPage(tocpage=false)
 		# check if page is already closed
 		if (@page == 0) or (@numpages > @page) or !@pageopen[@page]
 			return
@@ -1279,6 +1304,9 @@ class TCPDF
 		# mark page as closed
 		@pageopen[@page] = false
 		@in_footer = false
+		if tocpage
+			@tocpage = false
+		end
 	end
 	
 	#
@@ -1286,11 +1314,15 @@ class TCPDF
 	# The origin of the coordinate system is at the top-left corner and increasing ordinates go downwards.
 	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
 	# @param mixed :format The format used for pages. It can be either one of the following values (case insensitive) or a custom format in the form of a two-element array containing the width and the height (expressed in the unit given by unit).<ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
-	# @access protected
+	# @param boolean $tocpage if true set the tocpage state to true (the added page will be used to display Table of Content).
+	# @access public
 	# @since 4.2.010 (2008-11-14)
-	# @see endPage(), AddPage()
+	# @see AddPage(), endPage(), addTOCPage(), endTOCPage()
 	#
-	def startPage(orientation='', format='')
+	def startPage(orientation='', format='', tocpage=false)
+		if tocpage
+			@tocpage = true
+		end
 		if @numpages > @page
 			# this page has been already added
 			SetPage(@page + 1)
@@ -6670,6 +6702,16 @@ class TCPDF
 	end
 
 	#
+	# Output a stream.
+	# @param string :s string to output.
+	# @param int :n object reference for encryption mode
+	# @access protected
+	#
+	def putstream(s, n=0)
+		out(getstream(s, n))
+	end
+
+	#
 	# Output a string to the document.
 	# @param string :s string to output.
 	# @access protected
@@ -7424,10 +7466,16 @@ class TCPDF
 	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
 	# @access public
 	#
-	def writeHTML(html, ln=true, fill=false, reseth=false, cell=false, align='')
+	def writeHTML(html, ln=true, fill=0, reseth=false, cell=false, align='')
 		ln = false if ln == 0
 		reseth = false if reseth == 0
 		cell = false if cell == 0
+		case fill
+		when true
+			fill = 1 
+		when false
+			fill = 0 
+		end
 
 		gvars = getGraphicVars()
 		# store current values
@@ -7757,7 +7805,7 @@ class TCPDF
 					SetFillColorArray(dom[key]['bgcolor'])
 					wfill = 1
 				else
-					wfill = fill || 0
+					wfill = fill
 				end
 				if !dom[key]['fgcolor'].nil? and (dom[key]['fgcolor'].length > 0)
 					SetTextColorArray(dom[key]['fgcolor'])
@@ -11568,7 +11616,7 @@ class TCPDF
 		if page.nil?
 			page = PageNo()
 		end
-		@outlines.push :t => txt, :l => level, :y => y, :p => page
+		@outlines.push :t => txt.gsub(/<[^>]+>/, ''), :l => level, :y => y, :p => page
 	end
 
 	#
@@ -12079,6 +12127,109 @@ class TCPDF
 					else
 						ns = sfill + ' ' + ns
 						nu = sfillu + ' ' + nu
+					end
+					nu = UTF8ToUTF16BE(nu, false)
+					temppage = temppage.gsub(alias_au, nu)
+					if @is_unicode
+						temppage = temppage.gsub(alias_bu, nu)
+						temppage = temppage.gsub(alias_cu, nu)
+						temppage = temppage.gsub(alias_b, ns)
+						temppage = temppage.gsub(alias_c, ns)
+					end
+					temppage = temppage.gsub(alias_a, ns)
+				end
+				# save changes
+				setPageBuffer(p, temppage)
+			end
+			# move pages
+			Bookmark(toc_name, 0, 0, page_first)
+			0.upto(numpages - 1) do |i|
+				movePage(page_last, page)
+			end
+		end
+	end
+
+	#
+	# Output a Table Of Content Index (TOC) using HTML templates.
+	# Before calling this method you have to open the page using the addTOCPage() method.
+	# After calling this method you have to call endTOCPage() to close the TOC page.
+	# @param int :page page number where this TOC should be inserted (leave empty for current page).
+	# @param string :toc_name name to use for TOC bookmark.
+	# @param array :templates array of html templates. Use: #TOC_DESCRIPTION# for bookmark title, #TOC_PAGE_NUMBER# for page number.
+	# @parma boolean :correct_align if true correct the number alignment (numbers must be in monospaced font like courier and right aligned on LTR, or left aligned on RTL)
+	# @access public
+	# @author Nicola Asuni
+	# @since 5.0.001 (2010-05-06)
+	# @see addTOCPage(), endTOCPage(), addTOC()
+	#
+	def addHTMLTOC(page='', toc_name='TOC', templates=[], correct_align=true)
+		prev_htmlLinkColorArray = @html_link_color_array
+		prev_htmlLinkFontStyle = @html_link_font_style
+		# set new style for link
+		@html_link_color_array = []
+		@html_link_font_style = ''
+		page_first = GetPage()
+		@outlines.each_with_index do |outline, key|
+			if empty_string(page)
+				pagenum = outline[:p].to_s
+			else 
+				# placemark to be replaced with the correct number
+				pagenum = '{#' + outline[:p].to_s + '}'
+				if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+					pagenum = '{' + pagenum + '}'
+				end
+			end
+			# get HTML template
+			row = templates[outline[:l]]
+			# replace templates with current values
+			row = row.gsub('#TOC_DESCRIPTION#', outline[:t])
+			row = row.gsub('#TOC_PAGE_NUMBER#', pagenum)
+			# add link to page
+			row = '<a href="#' + outline[:p].to_s + '">' + row + '</a>'
+			# write bookmark entry
+			writeHTML(row, false, false, true, false, '')
+		end
+		# restore link styles
+		@html_link_color_array = prev_htmlLinkColorArray
+		@html_link_font_style = prev_htmlLinkFontStyle
+		# move TOC page and replace numbers
+		page_last = GetPage()
+		numpages = page_last - page_first + 1
+		if !empty_string(page)
+			page_first.upto(page_last) do |p|
+				# get page data
+				temppage = getPageBuffer(p)
+				1.upto(@numpages) do |n|
+					# update page numbers
+					k = '{#' + n.to_s + '}'
+					ku = '{' + k + '}'
+					alias_a = escape(k)
+					alias_au = escape('{' + k + '}')
+					if @is_unicode
+						alias_b = escape(UTF8ToLatin1(k))
+						alias_bu = escape(UTF8ToLatin1(ku))
+						alias_c = escape(utf8StrRev(k, false, @tmprtl))
+						alias_cu = escape(utf8StrRev(ku, false, @tmprtl))
+					end
+					if n >= page
+						np = n + numpages
+					else
+						np = n
+					end
+					ns = formatTOCPageNumber(np)
+					nu = ns
+					if correct_align
+						sdiff = k.length - ns.length
+						sdiffu = ku.length - ns.length
+						sfill = ' ' * sdiff
+						sfillu = ' ' * sdiffu
+						if @rtl 
+							ns = ns + sfill
+							nu = nu + sfillu
+						else
+							ns = sfill + ns
+							nu = sfillu + nu
+						end
 					end
 					nu = UTF8ToUTF16BE(nu, false)
 					temppage = temppage.gsub(alias_au, nu)
