@@ -9637,7 +9637,7 @@ class TCPDF
 				begin
 #				if (type == 'eps') or (type == 'ai')
 #					ImageEps(tag['attribute']['src'], xpos, @y, iw, ih, imglink, true, align, '', border, true)
-#				elseif type == 'svg'
+#				elsif type == 'svg'
 #					ImageSVG(tag['attribute']['src'], xpos, @y, iw, ih, imglink, align, '', border, true)
 #				else
 					result_img = Image(tag['attribute']['src'], xpos, @y, iw, ih, '', imglink, align, false, 300, '', false, false, border, false, false, true)
@@ -11660,6 +11660,159 @@ class TCPDF
 	end
 
 	#
+	# Format the page numbers on the Table Of Content.
+	# This method can be overriden for custom formats.
+	# @param int :num page number
+	# @access protected
+	# @since 4.5.001 (2009-01-04)
+	# @see addTOC(), addHTMLTOC()
+	#
+	def formatTOCPageNumber(num)
+		return number_with_delimiter(num, :delimiter => ",")
+	end
+
+	#
+	# Move a page to a previous position.
+	# @param int :frompage number of the source page
+	# @param int :topage number of the destination page (must be less than $frompage)
+	# @return true in case of success, false in case of error.
+	# @access public
+	# @since 4.5.000 (2009-01-02)
+	#
+	def movePage(frompage, topage)
+		if (frompage > @numpages) or (frompage <= topage)
+			return false
+		end
+		if frompage == @page
+			# close the page before moving it
+			endPage()
+		end
+		# move all page-related states
+		tmppage = @pages[frompage]
+		tmppagedim = @pagedim[frompage]
+		tmppagelen = @pagelen[frompage]
+		tmpintmrk = @intmrk[frompage]
+		if @footerpos[frompage]
+			tmpfooterpos = @footerpos[frompage]
+		end
+		if @footerlen[frompage]
+			tmpfooterlen = @footerlen[frompage]
+		end
+		if @transfmrk[frompage]
+			tmptransfmrk = @transfmrk[frompage]
+		end
+		if @page_annots[frompage]
+			tmpannots = @page_annots[frompage]
+		end
+		if @newpagegroup[frompage]
+			tmpnewpagegroup = @newpagegroup[frompage]
+		end
+		frompage.downto(topage + 1) do |i|
+			j = i - 1
+			# shift pages down
+			@pages[i] = @pages[j]
+			@pagedim[i] = @pagedim[j]
+			@pagelen[i] = @pagelen[j]
+			@intmrk[i] = @intmrk[j]
+			if @footerpos[j]
+				@footerpos[i] = @footerpos[j]
+			elsif footerpos[i]
+				@footerpos[i] = nil
+			end
+			if @footerlen[j]
+				@footerlen[i] = @footerlen[j]
+			elsif @footerlen[i]
+				@footerlen[i] = nil
+			end
+			if @transfmrk[j]
+				@transfmrk[i] = @transfmrk[j]
+			elsif @transfmrk[i]
+				@transfmrk[i] = nil
+			end
+			if @page_annots[j]
+				@page_annots[i] = @page_annots[j]
+			elsif @page_annots[i]
+				@page_annots[i] = nil
+			end
+			if @newpagegroup[j]
+				@newpagegroup[i] = @newpagegroup[j]
+			elsif @newpagegroup[i]
+				@newpagegroup[i] = nil
+			end
+		end
+		@pages[topage] = tmppage
+		@pagedim[topage] = tmppagedim
+		@pagelen[topage] = tmppagelen
+		@intmrk[topage] = tmpintmrk
+		if tmpfooterpos
+			@footerpos[topage] = tmpfooterpos
+		elsif @footerpos[topage]
+			@footerpos[topage] = nil
+		end
+		if tmpfooterlen
+			@footerlen[topage] = tmpfooterlen
+		elsif @footerlen[topage]
+			@footerlen[topage] = nil
+		end
+		if tmptransfmrk
+			@transfmrk[topage] = tmptransfmrk
+		elsif @transfmrk[topage]
+			@transfmrk[topage] = nil
+		end
+		if tmpannots
+			@page_annots[topage] = tmpannots
+		elsif @page_annots[topage]
+			@page_annots[topage] = nil
+		end
+		if tmpnewpagegroup
+			@newpagegroup[topage] = tmpnewpagegroup
+		elsif @newpagegroup[topage]
+			@newpagegroup[topage] = nil
+		end
+		# adjust outlines
+		tmpoutlines = @outlines
+		tmpoutlines.each_with_index do |outline, key|
+			if (outline[:p] >= topage) and (outline[:p] < frompage)
+				@outlines[key][:p] = outline[:p] + 1
+			elsif outline[:p] == frompage
+				@outlines[key][:p] = topage
+			end
+		end
+		# adjust links
+		tmplinks = @links
+		tmplinks.each_with_index do |link, key|
+			next if link.nil?
+			if (link[0] >= topage) and (link[0] < frompage)
+				@links[key][0] = link[0] + 1
+			elsif link[0] == frompage
+				@links[key][0] = topage
+			end
+		end
+		### T.B.D ### TCPDF 5.0.001 ###
+		# adjust javascript
+		#tmpjavascript = @javascript
+		#global jfrompage, jtopage
+		#jfrompage = frompage
+		#jtopage = topage
+		#@javascript = preg_replace_callback('/this\.addField\(\'([^\']*)\',\'([^\']*)\',([0-9]+)/',
+		#create_function('$matches', 'global $jfrompage, $jtopage;
+		#	pagenum = matches[3].to_i + 1
+		#	if (pagenum >= jtopage) and (pagenum < jfrompage)
+		#		newpage = pagenum + 1
+		#	elsif pagenum == jfrompage
+		#		newpage = jtopage
+		#	else
+		#		newpage = pagenum
+		#	end
+		#	newpage -= 1
+		#	return "this.addField(\'".$matches[1]."\',\'".$matches[2]."\',".$newpage."";'), $tmpjavascript);
+
+		# return to last page
+		LastPage(true)
+		return true
+	end
+
+	#
 	# Remove the specified page.
 	# @param int :page page to remove
 	# @return true in case of success, false in case of error.
@@ -11795,6 +11948,157 @@ class TCPDF
 		# return to last page
 		LastPage(true)
 		return true
+	end
+
+	#
+	# Output a Table of Content Index (TOC).
+	# Before calling this method you have to open the page using the addTOCPage() method.
+	# After calling this method you have to call endTOCPage() to close the TOC page.
+	# You can override this method to achieve different styles.
+	# @param int :page page number where this TOC should be inserted (leave empty for current page).
+	# @param string :numbersfont set the font for page numbers (please use monospaced font for better alignment).
+	# @param string :filler string used to fill the space between text and page number.
+	# @param string :toc_name name to use for TOC bookmark.
+	# @access public
+	# @author Nicola Asuni
+	# @since 4.5.000 (2009-01-02)
+	# @see addTOCPage(), endTOCPage(), addHTMLTOC()
+	#
+	def addTOC(page='', numbersfont='', filler='.', toc_name='TOC')
+		fontsize = @font_size_pt
+		fontfamily = @font_family
+		fontstyle = @font_style
+		w = @w - @l_margin - @r_margin
+		spacer = GetStringWidth(32.chr) * 4
+		page_first = GetPage()
+		lmargin = @l_margin
+		rmargin = @r_margin
+		x_start = GetX()
+		if empty_string(numbersfont)
+			numbersfont = @default_monospaced_font
+		end
+		if empty_string(filler)
+			filler = ' '
+		end
+		if empty_string(page)
+			gap = ' '
+		else
+			gap = ''
+		end
+		@outlines.each_with_index do |outline, key|
+			if @rtl
+				aligntext = 'R'
+				alignnum = 'L'
+			else
+				aligntext = 'L'
+				alignnum = 'R'
+			end
+			if outline[:l] == 0
+				SetFont(fontfamily, fontstyle + 'B', fontsize)
+			else
+				SetFont(fontfamily, fontstyle, fontsize - outline[:l])
+			end
+			indent = spacer * outline[:l]
+			if @rtl
+				@r_margin += indent
+				@x -= indent
+			else
+				@l_margin += indent
+				@x += indent
+			end
+			link = AddLink()
+			SetLink(link, 0, outline[:p])
+			# write the text
+			Write(0, outline[:t], link, 0, aligntext, false, 0, false, false, 0)
+			SetFont(numbersfont, fontstyle, fontsize)
+			if empty_string(page)
+				pagenum = outline[:p]
+			else
+				# placemark to be replaced with the correct number
+				pagenum = '{#' + outline[:p].to_s + '}'
+				if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+					pagenum = '{' + pagenum + '}'
+				end
+			end
+			numwidth = GetStringWidth(pagenum)
+			if @rtl
+				tw = @x - @l_margin
+			else
+				tw = @w - @r_margin - @x
+			end
+			fw = tw - numwidth - GetStringWidth(32.chr)
+			numfills = (fw / GetStringWidth(filler)).floor
+			if numfills > 0
+				rowfill = filler * numfills
+			else
+				rowfill = ''
+			end
+			if @rtl
+				pagenum = pagenum + gap + rowfill + ' '
+			else
+				pagenum = ' ' + rowfill + gap + pagenum
+			end
+			# write the number
+			Cell(tw, 0, pagenum, 0, 1, alignnum, 0, link, 0)
+			SetX(x_start)
+			@l_margin = lmargin
+			@r_margin = rmargin
+		end
+		page_last = GetPage()
+		numpages = page_last - page_first + 1
+		if !empty_string(page)
+			page_first.upto(page_last) do |p|
+				# get page data
+				temppage = getPageBuffer(p)
+				1.upto(@numpages) do |n|
+					# update page numbers
+					k = '{#' + n.to_s + '}'
+					ku = '{' + k + '}'
+					alias_a = escape(k)
+					alias_au = escape('{' + k + '}')
+					if @is_unicode
+						alias_b = escape(UTF8ToLatin1(k))
+						alias_bu = escape(UTF8ToLatin1(ku))
+						alias_c = escape(utf8StrRev(k, false, @tmprtl))
+						alias_cu = escape(utf8StrRev(ku, false, @tmprtl))
+					end
+					if n >= page
+						np = n + numpages
+					else
+						np = n
+					end
+					ns = formatTOCPageNumber(np)
+					nu = ns
+					sdiff = k.length - ns.length - 1
+					sdiffu = ku.length - ns.length - 1
+					sfill = filler * sdiff
+					sfillu = filler * sdiffu
+					if @rtl
+						ns = ns + ' ' + sfill
+						nu = nu + ' ' + sfillu
+					else
+						ns = sfill + ' ' + ns
+						nu = sfillu + ' ' + nu
+					end
+					nu = UTF8ToUTF16BE(nu, false)
+					temppage = temppage.gsub(alias_au, nu)
+					if @is_unicode
+						temppage = temppage.gsub(alias_bu, nu)
+						temppage = temppage.gsub(alias_cu, nu)
+						temppage = temppage.gsub(alias_b, ns)
+						temppage = temppage.gsub(alias_c, ns)
+					end
+					temppage = temppage.gsub(alias_a, ns)
+				end
+				# save changes
+				setPageBuffer(p, temppage)
+			end
+			# move pages
+			Bookmark(toc_name, 0, 0, page_first)
+			0.upto(numpages - 1) do |i|
+				movePage(page_last, page)
+			end
+		end
 	end
 
 	#
