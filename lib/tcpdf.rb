@@ -7780,8 +7780,10 @@ class TCPDF
 							end
 							if !dom[key]['block']
 								@y += (((curfontsize - fontsize) * @cell_height_ratio / @k) + curfontascent - fontascent - curfontdescent + fontdescent) / 2
-								minstartliney = [@y, minstartliney].min
-								maxbottomliney = [@y + ((fontsize * @cell_height_ratio) / @k), maxbottomliney].max
+								if (dom[key]['value'] != 'sup') and (dom[key]['value'] != 'sub')
+									minstartliney = [@y, minstartliney].min
+									maxbottomliney = [@y + ((fontsize * @cell_height_ratio) / @k), maxbottomliney].max
+								end
 							end
 							fontaligned = true
 						end
