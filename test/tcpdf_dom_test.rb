@@ -89,7 +89,7 @@ class TcpdfTest < ActiveSupport::TestCase
     assert_equal true, dom[6]['tag']
     assert_equal true, dom[6]['opening']
     assert_equal 'td', dom[6]['value']
-    assert_equal 10, dom[6]['width']
+    assert_equal "10", dom[6]['width']
 
   end
 end

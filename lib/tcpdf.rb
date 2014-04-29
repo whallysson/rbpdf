@@ -9171,7 +9171,7 @@ class TCPDF
 								dom[key]['fontsize'] = getHTMLUnitToUnits(fsize, dom[parentkey]['fontsize'], 'pt', true)
 							end
 						end
-						# line-height : numeric or percentage
+						# line-height
 						if dom[key]['style']['line-height']
 							lineheight = dom[key]['style']['line-height'].strip
 							case lineheight
@@ -9223,7 +9223,7 @@ class TCPDF
 						end
 						# check for width attribute
 						if !dom[key]['style']['width'].nil?
-							dom[key]['width'] = dom[key]['style']['width'].to_i
+							dom[key]['width'] = dom[key]['style']['width']
 						end
 						# check for height attribute
 						if !dom[key]['style']['height'].nil?
@@ -9363,7 +9363,7 @@ class TCPDF
 					end
 					# check for width attribute
 					if !dom[key]['attribute']['width'].nil?
-						dom[key]['width'] = dom[key]['attribute']['width'].to_i
+						dom[key]['width'] = dom[key]['attribute']['width']
 					end
 					# check for height attribute
 					if !dom[key]['attribute']['height'].nil?
@@ -10220,7 +10220,7 @@ class TCPDF
 			mnum = htmlval.scan(/[0-9\.\-\+]+/)
 			unless mnum.empty?
 				value = mnum[0].to_f
-				munit = htmlval.scan(/([a-z%]+)/)
+				munit = htmlval.scan(/[a-z%]+/)
 				unless munit.empty?
 					if supportedunits.include?(munit[0])
 						unit = munit[0]

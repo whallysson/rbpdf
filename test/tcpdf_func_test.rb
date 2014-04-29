@@ -16,11 +16,35 @@ class TcpdfTest < ActiveSupport::TestCase
     unit = pdf.getHTMLUnitToUnits(100.0, 1, 'pt', false)
     assert_in_delta unit, 35.27, 0.01
 
+    unit = pdf.getHTMLUnitToUnits("100.0", 1, 'pt', false)
+    assert_in_delta unit, 35.27, 0.01
+
     unit = pdf.getHTMLUnitToUnits("200", 1, '%', false)
     assert_equal unit, 2.0
 
     unit = pdf.getHTMLUnitToUnits("400%", 1, '%', false)
     assert_equal unit, 4.0
+
+    unit = pdf.getHTMLUnitToUnits("10", 1, '%', false)
+    assert_equal unit, 0.1
+
+    unit = pdf.getHTMLUnitToUnits("10mm", 1, '%', false)
+    assert_in_delta unit, 10, 0.01
+
+    unit = pdf.getHTMLUnitToUnits("10", 1, 'mm', false)
+    assert_in_delta unit, 10, 0.01
+
+    unit = pdf.getHTMLUnitToUnits(10, 1, 'mm', false)
+    assert_in_delta unit, 10, 0.01
+
+    unit = pdf.getHTMLUnitToUnits("1", 1, 'cm', false)
+    assert_in_delta unit, 10, 0.01
+
+    unit = pdf.getHTMLUnitToUnits(10, 1, 'em', false)
+    assert_equal unit, 10
+
+    unit = pdf.getHTMLUnitToUnits(10, 2, 'em', false)
+    assert_equal unit, 20
   end
 
   test "getSpaceString test" do
