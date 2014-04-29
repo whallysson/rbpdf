@@ -8418,7 +8418,7 @@ class TCPDF
 				end
 				if !@href.empty? and @href['url']
 					# HTML <a> Link
-					strrest = addHtmlLink(@href['url'], dom[key]['value'].strip, wfill, true, @href['color'], @href['style'], true)
+					strrest = addHtmlLink(@href['url'], dom[key]['value'], wfill, true, @href['color'], @href['style'], true)
 				else
 					# ****** write only until the end of the line and get the rest ******
 					strrest = Write(@lasth, dom[key]['value'], '', wfill, '', false, 0, true, firstblock, 0)
@@ -11616,7 +11616,7 @@ class TCPDF
 		if page.nil?
 			page = PageNo()
 		end
-		@outlines.push :t => txt.gsub(/<[^>]+>/, ''), :l => level, :y => y, :p => page
+		@outlines.push :t => txt, :l => level, :y => y, :p => page
 	end
 
 	#
@@ -11660,7 +11660,13 @@ class TCPDF
 		n = @n + 1
 		@outlines.each_with_index do |o, i|
 			newobj()
-			out = '<</Title ' + textstring(o[:t])
+			# covert HTML title to string
+			nltags = /<br[\s]?\/>|<\/(blockquote|dd|dl|div|dt|h1|h2|h3|h4|h5|h6|hr|li|ol|p|pre|ul|tcpdf|table|tr|td)>/mi
+			title = o[:t].gsub(nltags, "\n")
+			title = title.gsub(/[\r]+/mi, '')
+			title = title.gsub(/[\n]+/mi, "\n")
+			title = title.strip.gsub(/<[^>]+>/, '')
+			out = '<</Title ' + textstring(title)
 			out << ' /Parent ' + (n + o[:parent]).to_s + ' 0 R'
 			out << ' /Prev ' + (n + o[:prev]).to_s + ' 0 R' if !o[:prev].nil?
 			out << ' /Next ' + (n + o[:next]).to_s + ' 0 R' if !o[:next].nil?
