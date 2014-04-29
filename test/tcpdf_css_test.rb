@@ -98,6 +98,9 @@ class TcpdfCssTest < ActiveSupport::TestCase
 
     tag = pdf.getTagStyleFromCSS(dom, 2, {"0001h1"=>"color:navy;font-family:times;"}) # dom, key, css selector
     assert_equal("", tag)
+
+    tag = pdf.getTagStyleFromCSS(dom, 2, {"0001 h2"=>"color:navy;font-family:times;"}) # dom, key, css selector
+    assert_equal("", tag)
   end
 
   test "CSS Dom test" do
@@ -108,6 +111,7 @@ class TcpdfCssTest < ActiveSupport::TestCase
             <table> <tr> <th>abc</th> </tr>
                     <tr> <td>def</td> </tr> </table>'
     dom = pdf.getHtmlDomArray(html)
+    assert_equal 29, dom.length
     assert_equal 0, dom[0]['parent']  # Root
     assert_equal false, dom[0]['tag']
     assert_equal({}, dom[0]['attribute'])
@@ -122,6 +126,50 @@ class TcpdfCssTest < ActiveSupport::TestCase
     assert_equal({'border'=>'2px #ff0000 solid', 'style'=>';border:2px #ff0000 solid;'}, dom[6]['attribute'])
     assert_equal '2px #ff0000 solid', dom[6]['style']['border']
     assert_equal '2px #ff0000 solid', dom[6]['attribute']['border']
+  end
 
+  test "CSS Dom line-height test normal" do
+    pdf = TCPDF.new
+
+    html = '<style>  h2 { line-height: normal; } </style>
+            <h2>HTML TEST</h2>'
+    dom = pdf.getHtmlDomArray(html)
+    assert_equal 5, dom.length
+    assert_equal 0, dom[2]['parent']   # parent -> parent tag key
+    assert_equal 1, dom[2]['elkey']
+    assert_equal true, dom[2]['tag']
+    assert_equal true, dom[2]['opening']
+    assert_equal 'h2', dom[2]['value']
+    assert_equal 1.25, dom[2]['line-height']
+  end
+
+  test "CSS Dom line-height test numeric" do
+    pdf = TCPDF.new
+
+    html = '<style>  h2 { line-height: 1.4; } </style>
+            <h2>HTML TEST</h2>'
+    dom = pdf.getHtmlDomArray(html)
+    assert_equal 5, dom.length
+    assert_equal 0, dom[2]['parent']   # parent -> parent tag key
+    assert_equal 1, dom[2]['elkey']
+    assert_equal true, dom[2]['tag']
+    assert_equal true, dom[2]['opening']
+    assert_equal 'h2', dom[2]['value']
+    assert_equal 1.4, dom[2]['line-height']
+  end
+
+  test "CSS Dom line-height test percentage" do
+    pdf = TCPDF.new
+
+    html = '<style>  h2 { line-height: 10%; } </style>
+            <h2>HTML TEST</h2>'
+    dom = pdf.getHtmlDomArray(html)
+    assert_equal 5, dom.length
+    assert_equal 0, dom[2]['parent']   # parent -> parent tag key
+    assert_equal 1, dom[2]['elkey']
+    assert_equal true, dom[2]['tag']
+    assert_equal true, dom[2]['opening']
+    assert_equal 'h2', dom[2]['value']
+    assert_equal 0.1, dom[2]['line-height']
   end
 end

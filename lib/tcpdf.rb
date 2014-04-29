@@ -7686,7 +7686,7 @@ class TCPDF
 					fontascent = getFontAscent(fontname, fontstyle, fontsize)
 					fontdescent = getFontDescent(fontname, fontstyle, fontsize)
 					if (fontname != curfontname) or (fontstyle != curfontstyle) or (fontsize != curfontsize)
-						if (fontsize.is_a? Integer) and (fontsize >= 0) and (curfontsize.is_a? Integer) and (curfontsize >= 0) and (fontsize != curfontsize) and !@newline and (key < maxel - 1)
+						if fontsize.is_a?(Numeric) and (fontsize >= 0) and curfontsize.is_a?(Numeric) and (curfontsize >= 0) and (fontsize != curfontsize) and !@newline and (key < maxel - 1)
 							if !@newline and (@page > startlinepage)
 								# fix lines splitted over two pages
 								if !@footerlen[startlinepage].nil?
@@ -8319,7 +8319,7 @@ class TCPDF
 					putHtmlListBullet(@listnum, @lispacer, pfontsize)
 					SetFont(curfontname, curfontstyle, curfontsize)
 					@lasth = @font_size * @cell_height_ratio
-					if (pfontsize.is_a? Integer) and (pfontsize > 0) and (curfontsize.is_a? Integer) and (curfontsize > 0) and (pfontsize != curfontsize)
+					if pfontsize.is_a?(Numeric) and (pfontsize > 0) and curfontsize.is_a?(Numeric) and (curfontsize > 0) and (pfontsize != curfontsize)
 						pfontascent = getFontAscent(pfontname, pfontstyle, pfontsize)
 						pfontdescent = getFontDescent(pfontname, pfontstyle, pfontsize)
 						@y += ((pfontsize - curfontsize) * @cell_height_ratio / @k + pfontascent - curfontascent - pfontdescent + curfontdescent) / 2
@@ -9171,7 +9171,7 @@ class TCPDF
 								dom[key]['fontsize'] = getHTMLUnitToUnits(fsize, dom[parentkey]['fontsize'], 'pt', true)
 							end
 						end
-						# line-height
+						# line-height : numeric or percentage
 						if dom[key]['style']['line-height']
 							lineheight = dom[key]['style']['line-height'].strip
 							case lineheight
@@ -9179,9 +9179,10 @@ class TCPDF
 							when 'normal'
 								dom[key]['line-height'] = dom[0]['line-height']
 							else
-								if lineheight.is_a? Integer
-									lineheight = lineheight * 100
+								if lineheight =~ /^[\d]*[.]?[\d]+$/  # 1.2, .2, 0.33, etc..
+									lineheight = lineheight.to_f * 100
 								end
+
 								dom[key]['line-height'] = getHTMLUnitToUnits(lineheight, 1, '%', true)
 							end
 						end
@@ -10213,7 +10214,7 @@ class TCPDF
 		if supportedunits.include?(defaultunit)
 			unit = defaultunit
 		end
-		if htmlval.is_a? Numeric
+		if htmlval.is_a?(Numeric)
 			value = htmlval.to_f
 		else
 			mnum = htmlval.scan(/[0-9\.\-\+]+/)
