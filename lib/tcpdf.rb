@@ -1595,7 +1595,7 @@ class TCPDF
 		headerfont = GetHeaderFont()
 		headerdata = GetHeaderData()
 		if headerdata['logo'] and (headerdata['logo'] != @@k_blank_image)
-			result_img = Image(@@k_path_images + headerdata['logo'], GetX(), GetHeaderMargin(), headerdata['logo_width'])
+			result_img = Image(@@k_path_images + headerdata['logo'], '', '', headerdata['logo_width'])
 			if result_img != false
 				imgy = GetImageRBY()
 			else
@@ -4448,8 +4448,11 @@ class TCPDF
 				h = @page_break_trigger - y
 				w = h * ratio_wh
 			end
-			if (x + w) > (@w - @r_margin)
+			if !@rtl and ((x + w) > (@w - @r_margin))
 				w = @w - @r_margin - x
+				h = w / ratio_wh
+			elsif @rtl and ((x - w) < @l_margin)
+				w = x - @l_margin
 				h = w / ratio_wh
 			end
 		end
@@ -4558,18 +4561,18 @@ class TCPDF
 			if palign == 'L'
 				ximg = @l_margin
 			elsif palign == 'C'
-				ximg = (@w - w) / 2
+				ximg = (@w + @l_margin - @r_margin - w) / 2
 			elsif palign == 'R'
 				ximg = @w - @r_margin - w
 			else
-				ximg = @w - x - w
+				ximg = x - w
 			end
 			@img_rb_x = ximg
 		else
 			if palign == 'L'
 				ximg = @l_margin
 			elsif palign == 'C'
-				ximg = (@w - w) / 2
+				ximg = (@w + @l_margin - @r_margin - w) / 2
 			elsif palign == 'R'
 				ximg = @w - @r_margin - w
 			else
@@ -9641,13 +9644,13 @@ class TCPDF
 					align = 'B'
 				end
 				prevy = @y
-				xpos = GetX()
+				xpos = @x
 				# eliminate marker spaces
 				if !dom[key - 1].nil?
 					if (dom[key - 1]['value'] == ' ') or !dom[key - 1]['trimmed_space'].nil?
 						xpos -= GetStringWidth(32.chr)
 					elsif @rtl and (dom[key - 1]['value'] == '  ')
-						xpos -= 2 * GetStringWidth(32.chr)
+						xpos += 2 * GetStringWidth(32.chr)
 					end
 				end
 				imglink = ''
