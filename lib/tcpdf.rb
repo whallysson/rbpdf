@@ -3161,7 +3161,7 @@ class TCPDF
 		if empty_string(y)
 			y = @y
 		end
-
+		current_page = @page
 		if (y + h > @page_break_trigger) and !@in_footer and AcceptPageBreak()
 			if addpage
 				# Automatic page break
@@ -3185,7 +3185,8 @@ class TCPDF
 			end
 			return true
 		end
-		return false
+		# account for columns mode
+		return (current_page != @page)
 	end
 
   def BreakThePage?(h)
@@ -8114,7 +8115,6 @@ class TCPDF
 						@y -= yshift
 					end
 				end
-				pre_y = @y
 				pbrk = checkPageBreak(@lasth)
 				@newline = false
 				startlinex = @x
