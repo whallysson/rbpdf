@@ -9746,8 +9746,10 @@ class TCPDF
 			end
 			if @rtl
 				@r_margin += @listindent
+				@x -= @listindent
 			else
 				@l_margin += @listindent
+				@x += @listindent
 			end
 			@listindentlevel += 1
 			if @listnum == 1
