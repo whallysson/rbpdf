@@ -4024,7 +4024,6 @@ class TCPDF
 				shy = false;
 				# account for margin changes
 				if ((@y + @lasth) > @page_break_trigger) and !@in_footer
-					# AcceptPageBreak() may be overriden on extended classed to include margin changes
 					AcceptPageBreak()
 				end
 				w = getRemainingWidth()
@@ -4163,7 +4162,6 @@ class TCPDF
 					end
 					# account for margin changes
 					if (@y + @lasth > @page_break_trigger) and !@in_footer
-						# AcceptPageBreak() may be overriden on extended classed to include margin changes
 						AcceptPageBreak()
 					end
 					w = getRemainingWidth()
@@ -8116,12 +8114,19 @@ class TCPDF
 						@y -= yshift
 					end
 				end
-				@newline = false
+				pre_y = @y
 				pbrk = checkPageBreak(@lasth)
+				@newline = false
 				startlinex = @x
 				startliney = @y
-				minstartliney = startliney
-				maxbottomliney = startliney + @font_size * @cell_height_ratio
+				if dom[dom[key]['parent']]['value'] == 'sup'
+					startliney -= (0.3 * @font_size_pt) / @k
+				elsif dom[dom[key]['parent']]['value'] == 'sub'
+					startliney -= (@font_size_pt / 0.7) / @k
+				else
+					minstartliney = startliney
+					maxbottomliney = startliney + @font_size * @cell_height_ratio
+				end
 				startlinepage = @page
 				if !endlinepos.nil? and !pbrk
 					startlinepos = endlinepos
@@ -10280,27 +10285,23 @@ class TCPDF
 			end
 		end
 		case unit
-			# percentage
-		when '%'
-			retval = ((value * refsize) / 100)
-			# relative-size
-		when 'em'
-			retval = (value * refsize)
-		when 'ex'
+		when '%' # percentage
+			retval = (value * refsize) / 100
+		when 'em' # relative-size
+			retval = value * refsize
+		when 'ex' # height of lower case 'x' (about half the font-size)
 			retval = value * (refsize / 2)
-			# absolute-size
-		when 'in'
+		when 'in' # absolute-size
 			retval = (value * @dpi) / k
-		when 'cm'
+		when 'cm' # centimeters
 			retval = (value / 2.54 * @dpi) / k
-		when 'mm'
+		when 'mm' # millimeters
 			retval = (value / 25.4 * @dpi) / k
-		when 'pc'
-			# one pica is 12 points
+		when 'pc' # one pica is 12 points
 			retval = (value * 12) / k
-		when 'pt'
+		when 'pt' # points
 			retval = value / k
-		when 'px'
+		when 'px' # pixels
 			retval = pixelsToUnits(value)
 		end
 		return retval
