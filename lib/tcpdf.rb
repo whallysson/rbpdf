@@ -9547,12 +9547,6 @@ class TCPDF
 			# array of columns positions
 			dom[key]['cellpos'] = []
 		when 'hr'
-			wtmp = @w - @l_margin - @r_margin
-			if !tag['attribute']['width'].nil? and (tag['attribute']['width'] != '')
-				hrWidth = getHTMLUnitToUnits(tag['attribute']['width'], wtmp, 'px')
-			else
-				hrWidth = wtmp
-			end
 			if !tag['height'].nil? and (tag['height'] != '')
 				hrHeight = getHTMLUnitToUnits(tag['height'], 1, 'px')
 			else
@@ -9561,6 +9555,15 @@ class TCPDF
 			addHTMLVertSpace(hbz, (hrHeight / 2), cell, firstorlast)
 			x = GetX()
 			y = GetY()
+			wtmp = @w - @l_margin - @r_margin
+			if cell
+				wtmp -= 2 * @c_margin
+			end
+			if !tag['attribute']['width'].nil? and (tag['attribute']['width'] != '')
+				hrWidth = getHTMLUnitToUnits(tag['attribute']['width'], wtmp, 'px')
+			else
+				hrWidth = wtmp
+			end
 			prevlinewidth = GetLineWidth()
 			SetLineWidth(hrHeight)
 			Line(x, y, x + hrWidth, y)
