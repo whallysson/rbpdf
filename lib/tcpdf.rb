@@ -5345,6 +5345,7 @@ class TCPDF
 					end
 
 					lineendings = ['Square', 'Circle', 'Diamond', 'OpenArrow', 'ClosedArrow', 'None', 'Butt', 'ROpenArrow', 'RClosedArrow', 'Slash']
+					# Annotation types
 					case pl['opt']['subtype'].downcase
 					when 'text'
 						if !pl['opt']['open'].nil?
@@ -5416,7 +5417,7 @@ class TCPDF
 						end
 						tfit = ['FreeText', 'FreeTextCallout', 'FreeTextTypeWriter']
 						if !pl['opt']['it'].nil? and tfit.include?(pl['opt']['it'])
-							annots << ' /IT ' + pl['opt']['it']
+							annots << ' /IT /' + pl['opt']['it']
 						end
 						if !pl['opt']['rd'].nil? and pl['opt']['rd'].is_a?(Array)
 							l = pl['opt']['rd'][0] * @k
@@ -6242,8 +6243,8 @@ class TCPDF
 		out << ' /Root ' + @n.to_s + ' 0 R'
 		out << ' /Info ' + (@n-1).to_s + ' 0 R'
 		#if @encrypted
-		#	out << ' /Encrypt ' + @enc_obj_id + ' 0 R'
-		#	out << ' /ID [()()]'
+		#	out << ' /Encrypt ' + @encryptdata['objid'] + ' 0 R'
+		#	out << ' /ID [ <' + @file_id + '> <' + @file_id + '> ]'
 		#end
 		out << ' >>'
 		out(out)
@@ -6603,9 +6604,7 @@ class TCPDF
 	# @access protected
 	#
 	def datastring(s)
-		#if @encrypted
-		#	s = RC4(@objectkey(@n), s)
-		#end
+		s = encrypt_data(@n, s)
 		return '(' + escape(s) + ')'
 	end
 
@@ -6616,9 +6615,7 @@ class TCPDF
 	# @access protected
 	#
 	def dataannobjstring(s)
-		#if @encrypted
-		#	s = RC4(@objectkey(@annot_obj_id + 1), s)
-		#end
+		s = encrypt_data(@annot_obj_id + 1, s)
 		return '(' + escape(s) + ')'
 	end
 	#
@@ -6694,13 +6691,11 @@ class TCPDF
 	# @access protected
 	#
 	def getstream(s, n=0)
-		#if @encrypted
-		#	if n <= 0
-		#		# default to current object
-		#		n = @n
-		#	end
-		#	s = RC4(objectkey(n), s)
-		#end
+		if n <= 0
+			# default to current object
+			n = @n
+		end
+		s = encrypt_data(n, s)
 		return "stream\n" + s + "\nendstream"
 	end
 
@@ -10985,6 +10980,27 @@ class TCPDF
 		else
 			@@decoder.decode(string)
 		end
+	end
+
+	#
+	# Encrypt the input string.
+	# @param int :n object number
+	# @param string :s data string to encrypt
+	# @access protected
+	# @author Nicola Asuni
+	# @since 5.0.005 (2010-05-11)
+	#
+	def encrypt_data(n, s)
+		#unless @encrypted
+			return s
+		#end
+		#case @encryptdata['mode']
+		#when 0, 1:   # 0: RC4 40 bit, 1: RC4 128 bit 
+		#	s = _RC4(objectkey(n), s)
+		#when 2:      # AES 128 bit
+		#	s = _AES(objectkey(n), s)
+		#end
+		#return s
 	end
 
 	# BIDIRECTIONAL TEXT SECTION --------------------------
