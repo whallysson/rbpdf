@@ -229,7 +229,7 @@ class TCPDF
 	# @since 1.0
 	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or Portrait (default)</li><li>L or Landscape</li></ul>
 	# @param string :unit User measure unit. Possible values are:<ul><li>pt: point</li><li>mm: millimeter (default)</li><li>cm: centimeter</li><li>in: inch</li></ul><br />A point equals 1/72 of inch, that is to say about 0.35 mm (an inch being 2.54 cm). This is a very common unit in typography; font sizes are expressed in that unit.
-	# @param mixed :format The format used for pages. It can be either one of the following values (case insensitive) or a custom format in the form of a two-element array containing the width and the height (expressed in the unit given by unit).<ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
+	# @param mixed :format The format used for pages. It can be either:<b>A string indicating the page format:</b><ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul><b>An array containing page measures and advanced options:</b><ul><li>['format'] = page format name (one of the above);</li><li>['Rotate'] : The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.</li><li>['PZ'] : The page's preferred zoom (magnification) factor.</li><li>['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed:</li><li>['MediaBox']['llx'] : lower-left x coordinate in points</li><li>['MediaBox']['lly'] : lower-left y coordinate in points</li><li>['MediaBox']['urx'] : upper-right x coordinate in points</li><li>['MediaBox']['ury'] : upper-right y coordinate in points</li><li>['CropBox'] : the visible region of default user space:</li><li>['CropBox']['llx'] : lower-left x coordinate in points</li><li>['CropBox']['lly'] : lower-left y coordinate in points</li><li>['CropBox']['urx'] : upper-right x coordinate in points</li><li>['CropBox']['ury'] : upper-right y coordinate in points</li><li>['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment:</li><li>['BleedBox']['llx'] : lower-left x coordinate in points</li><li>['BleedBox']['lly'] : lower-left y coordinate in points</li><li>['BleedBox']['urx'] : upper-right x coordinate in points</li><li>['BleedBox']['ury'] : upper-right y coordinate in points</li><li>['TrimBox'] : the intended dimensions of the finished page after trimming:</li><li>['TrimBox']['llx'] : lower-left x coordinate in points</li><li>['TrimBox']['lly'] : lower-left y coordinate in points</li><li>['TrimBox']['urx'] : upper-right x coordinate in points</li><li>['TrimBox']['ury'] : upper-right y coordinate in points</li><li>['ArtBox'] : the extent of the page's meaningful content:</li><li>['ArtBox']['llx'] : lower-left x coordinate in points</li><li>['ArtBox']['lly'] : lower-left y coordinate in points</li><li>['ArtBox']['urx'] : upper-right x coordinate in points</li><li>['ArtBox']['ury'] : upper-right y coordinate in points</li><li>['BoxColorInfo'] :specify the colours and other visual characteristics that should be used in displaying guidelines on the screen for each of the possible page boundaries other than the MediaBox:</li><li>['BoxColorInfo'][BOXTYPE]['C'] : an array of three numbers in the range 0-255, representing the components in the DeviceRGB colour space.</li><li>['BoxColorInfo'][BOXTYPE]['W'] : the guideline width in default user units</li><li>['BoxColorInfo'][BOXTYPE]['S'] : the guideline style: S = Solid; D = Dashed</li><li>['BoxColorInfo'][BOXTYPE]['D'] : dash array defining a pattern of dashes and gaps to be used in drawing dashed guidelines</li><li>['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation</li><li>['trans']['Dur'] : The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.</li><li>['trans']['S'] : transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade</li><li>['trans']['D'] : The duration of the transition effect, in seconds.</li><li>['trans']['Dm'] : (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.</li><li>['trans']['M'] : (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.</li><li>['trans']['Di'] : (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.</li><li>['trans']['SS'] : (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0.</li><li>['trans']['B'] : (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.</li></ul>
 	# @param boolean :unicode TRUE means that the input text is unicode (default = true)
 	# @param String :encoding charset encoding; default is UTF-8
 	# @param boolean :diskcache if TRUE reduce the RAM memory usage by caching temporary data on filesystem (slower).
@@ -525,8 +525,74 @@ class TCPDF
 	end
 
 	#
+	# Get page dimensions from fromat name.
+	# @param mixed :format The format name. It can be: <ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
+	# @return array containing page width and height in points
+	# @access public
+	# @since 5.0.010 (2010-05-17)
+	#
+	def getPageSizeFromFormat(format)
+		# Page formats (45 standard ISO paper formats and 4 american common formats).
+		# Paper cordinates are calculated in this way: (inches * 72) where (1 inch = 2.54 cm)
+		case format.upcase
+		when '4A0'; pf = [4767.87,6740.79]
+		when '2A0'; pf = [3370.39,4767.87]
+		when 'A0'; pf = [2383.94,3370.39]
+		when 'A1'; pf = [1683.78,2383.94]
+		when 'A2'; pf = [1190.55,1683.78]
+		when 'A3'; pf = [841.89,1190.55]
+		when 'A4'; pf = [595.28,841.89]
+		when 'A5'; pf = [419.53,595.28]
+		when 'A6'; pf = [297.64,419.53]
+		when 'A7'; pf = [209.76,297.64]
+		when 'A8'; pf = [147.40,209.76]
+		when 'A9'; pf = [104.88,147.40]
+		when 'A10'; pf = [73.70,104.88]
+		when 'B0'; pf = [2834.65,4008.19]
+		when 'B1'; pf = [2004.09,2834.65]
+		when 'B2'; pf = [1417.32,2004.09]
+		when 'B3'; pf = [1000.63,1417.32]
+		when 'B4'; pf = [708.66,1000.63]
+		when 'B5'; pf = [498.90,708.66]
+		when 'B6'; pf = [354.33,498.90]
+		when 'B7'; pf = [249.45,354.33]
+		when 'B8'; pf = [175.75,249.45]
+		when 'B9'; pf = [124.72,175.75]
+		when 'B10'; pf = [87.87,124.72]
+		when 'C0'; pf = [2599.37,3676.54]
+		when 'C1'; pf = [1836.85,2599.37]
+		when 'C2'; pf = [1298.27,1836.85]
+		when 'C3'; pf = [918.43,1298.27]
+		when 'C4'; pf = [649.13,918.43]
+		when 'C5'; pf = [459.21,649.13]
+		when 'C6'; pf = [323.15,459.21]
+		when 'C7'; pf = [229.61,323.15]
+		when 'C8'; pf = [161.57,229.61]
+		when 'C9'; pf = [113.39,161.57]
+		when 'C10'; pf = [79.37,113.39]
+		when 'RA0'; pf = [2437.80,3458.27]
+		when 'RA1'; pf = [1729.13,2437.80]
+		when 'RA2'; pf = [1218.90,1729.13]
+		when 'RA3'; pf = [864.57,1218.90]
+		when 'RA4'; pf = [609.45,864.57]
+		when 'SRA0'; pf = [2551.18,3628.35]
+		when 'SRA1'; pf = [1814.17,2551.18]
+		when 'SRA2'; pf = [1275.59,1814.17]
+		when 'SRA3'; pf = [907.09,1275.59]
+		when 'SRA4'; pf = [637.80,907.09]
+		when 'LETTER'; pf = [612.00,792.00]
+		when 'LEGAL'; pf = [612.00,1008.00]
+		when 'EXECUTIVE'; pf = [521.86,756.00]
+		when 'FOLIO'; pf = [612.00,936.00]
+		else
+			pf = [595.28,841.89] # DEFAULT A4
+		end
+		return pf
+	end
+
+	#
 	# Set the page format
-	# @param mixed :format The format used for pages. It can be either one of the following values (case insensitive) or a custom format in the form of a two-element array containing the width and the height (expressed in the unit given by unit).<ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
+	# @param mixed :format The format used for pages. It can be either:<b>A string indicating the page format:</b><ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul><b>An array containing page measures and advanced options:</b><ul><li>['format'] = page format name (one of the above);</li><li>['Rotate'] : The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.</li><li>['PZ'] : The page's preferred zoom (magnification) factor.</li><li>['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed:</li><li>['MediaBox']['llx'] : lower-left x coordinate in points</li><li>['MediaBox']['lly'] : lower-left y coordinate in points</li><li>['MediaBox']['urx'] : upper-right x coordinate in points</li><li>['MediaBox']['ury'] : upper-right y coordinate in points</li><li>['CropBox'] : the visible region of default user space:</li><li>['CropBox']['llx'] : lower-left x coordinate in points</li><li>['CropBox']['lly'] : lower-left y coordinate in points</li><li>['CropBox']['urx'] : upper-right x coordinate in points</li><li>['CropBox']['ury'] : upper-right y coordinate in points</li><li>['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment:</li><li>['BleedBox']['llx'] : lower-left x coordinate in points</li><li>['BleedBox']['lly'] : lower-left y coordinate in points</li><li>['BleedBox']['urx'] : upper-right x coordinate in points</li><li>['BleedBox']['ury'] : upper-right y coordinate in points</li><li>['TrimBox'] : the intended dimensions of the finished page after trimming:</li><li>['TrimBox']['llx'] : lower-left x coordinate in points</li><li>['TrimBox']['lly'] : lower-left y coordinate in points</li><li>['TrimBox']['urx'] : upper-right x coordinate in points</li><li>['TrimBox']['ury'] : upper-right y coordinate in points</li><li>['ArtBox'] : the extent of the page's meaningful content:</li><li>['ArtBox']['llx'] : lower-left x coordinate in points</li><li>['ArtBox']['lly'] : lower-left y coordinate in points</li><li>['ArtBox']['urx'] : upper-right x coordinate in points</li><li>['ArtBox']['ury'] : upper-right y coordinate in points</li><li>['BoxColorInfo'] :specify the colours and other visual characteristics that should be used in displaying guidelines on the screen for each of the possible page boundaries other than the MediaBox:</li><li>['BoxColorInfo'][BOXTYPE]['C'] : an array of three numbers in the range 0-255, representing the components in the DeviceRGB colour space.</li><li>['BoxColorInfo'][BOXTYPE]['W'] : the guideline width in default user units</li><li>['BoxColorInfo'][BOXTYPE]['S'] : the guideline style: S = Solid; D = Dashed</li><li>['BoxColorInfo'][BOXTYPE]['D'] : dash array defining a pattern of dashes and gaps to be used in drawing dashed guidelines</li><li>['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation</li><li>['trans']['Dur'] : The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.</li><li>['trans']['S'] : transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade</li><li>['trans']['D'] : The duration of the transition effect, in seconds.</li><li>['trans']['Dm'] : (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.</li><li>['trans']['M'] : (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.</li><li>['trans']['Di'] : (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.</li><li>['trans']['SS'] : (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0.</li><li>['trans']['B'] : (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.</li></ul>
 	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
 	# @access public
 	# @since 3.0.015 (2008-06-06)
@@ -534,66 +600,151 @@ class TCPDF
 	def setPageFormat(format, orientation="P")
 		# Page format
 		if format.is_a?(String)
-			# Page formats (45 standard ISO paper formats and 4 american common formats).
-			# Paper cordinates are calculated in this way: (inches * 72) where (1 inch = 2.54 cm)
-			case format.upcase
-			when '4A0'; format = [4767.87,6740.79]
-			when '2A0'; format = [3370.39,4767.87]
-			when 'A0'; format = [2383.94,3370.39]
-			when 'A1'; format = [1683.78,2383.94]
-			when 'A2'; format = [1190.55,1683.78]
-			when 'A3'; format = [841.89,1190.55]
-			when 'A4'; format = [595.28,841.89] # default
-			when 'A5'; format = [419.53,595.28]
-			when 'A6'; format = [297.64,419.53]
-			when 'A7'; format = [209.76,297.64]
-			when 'A8'; format = [147.40,209.76]
-			when 'A9'; format = [104.88,147.40]
-			when 'A10'; format = [73.70,104.88]
-			when 'B0'; format = [2834.65,4008.19]
-			when 'B1'; format = [2004.09,2834.65]
-			when 'B2'; format = [1417.32,2004.09]
-			when 'B3'; format = [1000.63,1417.32]
-			when 'B4'; format = [708.66,1000.63]
-			when 'B5'; format = [498.90,708.66]
-			when 'B6'; format = [354.33,498.90]
-			when 'B7'; format = [249.45,354.33]
-			when 'B8'; format = [175.75,249.45]
-			when 'B9'; format = [124.72,175.75]
-			when 'B10'; format = [87.87,124.72]
-			when 'C0'; format = [2599.37,3676.54]
-			when 'C1'; format = [1836.85,2599.37]
-			when 'C2'; format = [1298.27,1836.85]
-			when 'C3'; format = [918.43,1298.27]
-			when 'C4'; format = [649.13,918.43]
-			when 'C5'; format = [459.21,649.13]
-			when 'C6'; format = [323.15,459.21]
-			when 'C7'; format = [229.61,323.15]
-			when 'C8'; format = [161.57,229.61]
-			when 'C9'; format = [113.39,161.57]
-			when 'C10'; format = [79.37,113.39]
-			when 'RA0'; format = [2437.80,3458.27]
-			when 'RA1'; format = [1729.13,2437.80]
-			when 'RA2'; format = [1218.90,1729.13]
-			when 'RA3'; format = [864.57,1218.90]
-			when 'RA4'; format = [609.45,864.57]
-			when 'SRA0'; format = [2551.18,3628.35]
-			when 'SRA1'; format = [1814.17,2551.18]
-			when 'SRA2'; format = [1275.59,1814.17]
-			when 'SRA3'; format = [907.09,1275.59]
-			when 'SRA4'; format = [637.80,907.09]
-			when 'LETTER'; format = [612.00,792.00]
-			when 'LEGAL'; format = [612.00,1008.00]
-			when 'EXECUTIVE'; format = [521.86,756.00]
-			when 'FOLIO'; format = [612.00,936.00]
-			end
-			@fw_pt = format[0]
-			@fh_pt = format[1]
+			# get page measures from format name
+			pf = getPageSizeFromFormat(format)
+			@fw_pt = pf[0]
+			@fh_pt = pf[1]
 		else
-			@fw_pt = format[0] * @k
-			@fh_pt = format[1] * @k
+			# the boundaries of the physical medium on which the page shall be displayed or printed
+			if format['MediaBox']
+				setPageBoxes(@page, 'MediaBox', format['MediaBox']['llx'], format['MediaBox']['lly'], format['MediaBox']['urx'], format['MediaBox']['ury'])
+				@fw_pt = (format['MediaBox']['urx'] - format['MediaBox']['llx']) * @k
+				@fh_pt = (format['MediaBox']['ury'] - format['MediaBox']['lly']) * @k
+			else
+				if format[0] and format[0].is_a?(Numeric) and format[1] and format[1].is_a?(Numeric)
+					pf = [format[0], format[1]]
+				else
+					if format['format'].nil?
+						# default value
+						format['format'] = 'A4'
+					end
+					pf = getPageSizeFromFormat(format['format'])
+				end
+				setPageBoxes(@page, 'MediaBox', 0, 0, pf[0], pf[1])
+				@fw_pt = pf[0] * @k
+				@fh_pt = pf[1] * @k
+			end
+			# the visible region of default user space
+			if format['CropBox']
+				setPageBoxes(@page, 'CropBox', format['CropBox']['llx'], format['CropBox']['lly'], format['CropBox']['urx'], format['CropBox']['ury'])
+			end
+			# the region to which the contents of the page shall be clipped when output in a production environment
+			if format['BleedBox']
+				setPageBoxes(@page, 'BleedBox', format['BleedBox']['llx'], format['BleedBox']['lly'], format['BleedBox']['urx'], format['BleedBox']['ury'])
+			end
+			# the intended dimensions of the finished page after trimming
+			if format['TrimBox']
+				setPageBoxes(@page, 'TrimBox', format['TrimBox']['llx'], format['TrimBox']['lly'], format['TrimBox']['urx'], format['TrimBox']['ury'])
+			end
+			# the page's meaningful content (including potential white space)
+			if format['ArtBox']
+				setPageBoxes(@page, 'ArtBox', format['ArtBox']['llx'], format['ArtBox']['lly'], format['ArtBox']['urx'], format['ArtBox']['ury'])
+			end
+			# specify the colours and other visual characteristics that should be used in displaying guidelines on the screen for the various page boundaries
+			if format['BoxColorInfo']
+				@pagedim[@page]['BoxColorInfo'] = format['BoxColorInfo']
+			end
+			if format['Rotate'] and ((format['Rotate'] % 90) == 0)
+				# The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.
+				@pagedim[@page]['Rotate'] = format['Rotate'].to_i
+			end
+			if format['PZ']
+				# The page's preferred zoom (magnification) factor
+				@pagedim[@page]['PZ'] = format['PZ'].to_f
+			end
+			if format['trans']
+				@pagedim[@page]['trans'] = {}
+				# The style and duration of the visual transition to use when moving from another page to the given page during a presentation
+				if format['trans']['Dur']
+					# The page's display duration
+					@pagedim[@page]['trans']['Dur'] = format['trans']['Dur'].to_f
+				end
+				stansition_styles = ['Split', 'Blinds', 'Box', 'Wipe', 'Dissolve', 'Glitter', 'R', 'Fly', 'Push', 'Cover', 'Uncover', 'Fade']
+				if format['trans']['S'] and stansition_styles.include?(format['trans']['S'])
+					# The transition style that shall be used when moving to this page from another during a presentation
+					@pagedim[@page]['trans']['S'] = format['trans']['S']
+					valid_effect = ['Split', 'Blinds']
+					valid_vals = ['H', 'V']
+					if format['trans']['Dm'] and valid_effect.include?(format['trans']['S']) and valid_vals.include?(format['trans']['Dm'])
+						@pagedim[@page]['trans']['Dm'] = format['trans']['Dm']
+					end
+					valid_effect = ['Split', 'Box', 'Fly']
+					valid_vals = ['I', 'O']
+					if format['trans']['M'] and valid_effect.include?(format['trans']['S']) and valid_vals.include?(format['trans']['M'])
+						@pagedim[@page]['trans']['M'] = format['trans']['M']
+					end
+					valid_effect = ['Wipe', 'Glitter', 'Fly', 'Cover', 'Uncover', 'Push']
+					if format['trans']['Di'] and valid_effect.include?(format['trans']['S'])
+						if (((format['trans']['Di'] == 90) or (format['trans']['Di'] == 180)) and (format['trans']['S'] == 'Wipe')) or ((format['trans']['Di'] == 315) and (format['trans']['S'] == 'Glitter')) or ((format['trans']['Di'] == 0) or (format['trans']['Di'] == 270))
+							@pagedim[@page]['trans']['Di'] = format['trans']['Di'].to_i
+						end
+					end
+					if format['trans']['SS'] and (format['trans']['S'] == 'Fly')
+						@pagedim[@page]['trans']['SS'] = format['trans']['SS'].to_f
+					end
+					if format['trans']['B'] and (format['trans']['B'] === true) and (format['trans']['S'] == 'Fly')
+						@pagedim[@page]['trans']['B'] = 'true'
+					end
+				else
+					@pagedim[@page]['trans']['S'] = 'R'
+				end
+				if format['trans']['D']
+					# The duration of the transition effect, in seconds
+					@pagedim[@page]['trans']['D'] = format['trans']['D'].to_f
+				else
+					@pagedim[@page]['trans']['D'] = 1
+				end
+			end
 		end
 		setPageOrientation(orientation)
+	end
+
+	#
+	# Set page boundaries.
+	# @param int :page page number
+	# @param string :type valid values are: <ul><li>'MediaBox' : the boundaries of the physical medium on which the page shall be displayed or printed;</li>
+	# @param float :llx lower-left x coordinate in user units</li>
+	# @param float :lly lower-left y coordinate in user units</li>
+	# @param float :urx upper-right x coordinate in user units</li>
+	# @param float :ury upper-right y coordinate in user units</li>
+	# @access public
+	# @since 5.0.010 (2010-05-17)
+	#
+	def setPageBoxes(page, type, llx, lly, urx, ury)
+		if @pagedim[@page].nil?
+			# initialize array
+			@pagedim[@page] = {}
+		end
+		pageboxes = ['MediaBox', 'CropBox', 'BleedBox', 'TrimBox', 'ArtBox']
+		unless pageboxes.include?(type)
+			return
+		end
+		@pagedim[page][type] = {}
+		@pagedim[page][type]['llx'] = llx * @k
+		@pagedim[page][type]['lly'] = lly * @k
+		@pagedim[page][type]['urx'] = urx * @k
+		@pagedim[page][type]['ury'] = ury * @k
+	end
+
+	#
+	# Swap X and Y coordinates of page boxes (change page boxes orientation).
+	# @param int :page page number
+	# @access protected
+	# @since 5.0.010 (2010-05-17)
+	#
+	def swapPageBoxCoordinates(page)
+		pageboxes = ['MediaBox', 'CropBox', 'BleedBox', 'TrimBox', 'ArtBox']
+		pageboxes.each {|type|
+			# swap X and Y coordinates
+			if @pagedim[page][type]
+				tmp = @pagedim[page][type]['llx']
+				@pagedim[page][type]['llx'] = @pagedim[page][type]['lly']
+				@pagedim[page][type]['lly'] = tmp
+				tmp = @pagedim[page][type]['urx']
+				@pagedim[page][type]['urx'] = @pagedim[page][type]['ury']
+				@pagedim[page][type]['ury'] = tmp
+			end
+		}
 	end
 
 	#
@@ -605,6 +756,34 @@ class TCPDF
 	# @since 3.0.015 (2008-06-06)
 	#
 	def setPageOrientation(orientation, autopagebreak='', bottommargin='')
+		if @pagedim[@page].nil? or @pagedim[@page]['MediaBox'].nil?
+			# the boundaries of the physical medium on which the page shall be displayed or printed
+			setPageBoxes(@page, 'MediaBox', 0, 0, (@fw_pt / @k), (@fh_pt / @k))
+		end
+		if @pagedim[@page]['CropBox'].nil?
+			# the visible region of default user space
+			setPageBoxes(@page, 'CropBox', @pagedim[@page]['MediaBox']['llx'], @pagedim[@page]['MediaBox']['lly'], @pagedim[@page]['MediaBox']['urx'], @pagedim[@page]['MediaBox']['ury'])
+		end
+		if @pagedim[@page]['BleedBox'].nil?
+			# the region to which the contents of the page shall be clipped when output in a production environment
+			setPageBoxes(@page, 'BleedBox', @pagedim[@page]['CropBox']['llx'], @pagedim[@page]['CropBox']['lly'], @pagedim[@page]['CropBox']['urx'], @pagedim[@page]['CropBox']['ury'])
+		end
+		if @pagedim[@page]['TrimBox'].nil?
+			# the intended dimensions of the finished page after trimming
+			setPageBoxes(@page, 'TrimBox', @pagedim[@page]['CropBox']['llx'], @pagedim[@page]['CropBox']['lly'], @pagedim[@page]['CropBox']['urx'], @pagedim[@page]['CropBox']['ury'])
+		end
+		if @pagedim[@page]['ArtBox'].nil?
+			# the page's meaningful content (including potential white space)
+			setPageBoxes(@page, 'ArtBox', @pagedim[@page]['CropBox']['llx'], @pagedim[@page]['CropBox']['lly'], @pagedim[@page]['CropBox']['urx'], @pagedim[@page]['CropBox']['ury'])
+		end
+		if @pagedim[@page]['Rotate'].nil?
+			# The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.
+			@pagedim[@page]['Rotate'] = 0
+		end
+		if @pagedim[@page]['PZ'].nil?
+			# The page's preferred zoom (magnification) factor
+			@pagedim[@page]['PZ'] = 1
+		end
 		if @fw_pt > @fh_pt
 			# landscape
 			default_orientation = 'L'
@@ -623,6 +802,7 @@ class TCPDF
 			@cur_orientation = orientation
 			@w_pt = @fh_pt
 			@h_pt = @fw_pt
+			swapPageBoxCoordinates(@page)
 		else
 			@cur_orientation = default_orientation
 			@w_pt = @fw_pt
@@ -647,7 +827,19 @@ class TCPDF
 		end
 		SetAutoPageBreak(autopagebreak, bottommargin)
 		# store page dimensions
-		@pagedim[@page] = {'w' => @w_pt, 'h' => @h_pt, 'wk' => @w, 'hk' => @h, 'tm' => @t_margin, 'bm' => bottommargin, 'lm' => @l_margin, 'rm' => @r_margin, 'pb' => autopagebreak, 'or' => @cur_orientation, 'olm' => @original_l_margin, 'orm' => @original_r_margin}
+		@pagedim[@page]['w'] = @w_pt
+		@pagedim[@page]['h'] = @h_pt
+		@pagedim[@page]['wk'] = @w
+		@pagedim[@page]['hk'] = @h
+		@pagedim[@page]['tm'] = @t_margin
+		@pagedim[@page]['bm'] = bottommargin
+		@pagedim[@page]['lm'] = @l_margin
+		@pagedim[@page]['rm'] = @r_margin
+		@pagedim[@page]['pb'] = autopagebreak
+		@pagedim[@page]['or'] = @cur_orientation
+		@pagedim[@page]['olm'] = @original_l_margin
+		@pagedim[@page]['orm'] = @original_r_margin
+		@pagedim[@page]
 	end
 
 	#
@@ -750,6 +942,22 @@ class TCPDF
 	end
   alias_method :get_image_scale, :GetImageScale
   
+	#
+	# Returns an array of page dimensions:
+	# <ul><li>@pagedim[@page]['w'] = page width in points</li><li>@pagedim[@page]['h'] = height in points</li><li>@pagedim[@page]['wk'] = page width in user units</li><li>@pagedim[@page]['hk'] = page height in user units</li><li>@pagedim[@page]['tm'] = top margin</li><li>@pagedim[@page]['bm'] = bottom margin</li><li>@pagedim[@page]['lm'] = left margin</li><li>@pagedim[@page]['rm'] = right margin</li><li>@pagedim[@page]['pb'] = auto page break</li><li>@pagedim[@page]['or'] = page orientation</li><li>@pagedim[@page]['olm'] = original left margin</li><li>@pagedim[@page]['orm'] = original right margin</li><li>@pagedim[@page]['Rotate'] = The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.</li><li>@pagedim[@page]['PZ'] = The page's preferred zoom (magnification) factor.</li><li>@pagedim[@page]['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation<ul><li>@pagedim[@page]['trans']['Dur'] = The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.</li><li>@pagedim[@page]['trans']['S'] = transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade</li><li>@pagedim[@page]['trans']['D'] = The duration of the transition effect, in seconds.</li><li>@pagedim[@page]['trans']['Dm'] = (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.</li><li>@pagedim[@page]['trans']['M'] = (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.</li><li>@pagedim[@page]['trans']['Di'] = (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.</li><li>@pagedim[@page]['trans']['SS'] = (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0. </li><li>@pagedim[@page]['trans']['B'] = (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.</li></ul></li><li>@pagedim[@page]['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed<ul><li>@pagedim[@page]['MediaBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['MediaBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['MediaBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['MediaBox']['ury'] = upper-right y coordinate in points</li></ul></li><li>@pagedim[@page]['CropBox'] : the visible region of default user space<ul><li>@pagedim[@page]['CropBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['CropBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['CropBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['CropBox']['ury'] = upper-right y coordinate in points</li></ul></li><li>@pagedim[@page]['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment<ul><li>@pagedim[@page]['BleedBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['BleedBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['BleedBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['BleedBox']['ury'] = upper-right y coordinate in points</li></ul></li><li>@pagedim[@page]['TrimBox'] : the intended dimensions of the finished page after trimming<ul><li>@pagedim[@page]['TrimBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['TrimBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['TrimBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['TrimBox']['ury'] = upper-right y coordinate in points</li></ul></li><li>@pagedim[@page]['ArtBox'] : the extent of the page's meaningful content<ul><li>@pagedim[@page]['ArtBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['ArtBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['ArtBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['ArtBox']['ury'] = upper-right y coordinate in points</li></ul></li></ul>
+	# @param int :pagenum page number (empty = current page)
+	# @return array of page dimensions.
+	# @author Nicola Asuni
+	# @access public
+	# @since 4.5.027 (2009-03-16)
+	#
+	def GetPageDimensions(pagenum='')
+		if pagenum.empty?
+			pagenum = @page
+		end
+		return @pagedim[pagenum]
+	end
+
 	#
 	# Returns the page width in units.
 	# @return int page width.
@@ -1176,8 +1384,8 @@ class TCPDF
 			@page = pnum
 			@w_pt = @pagedim[@page]['w']
 			@h_pt = @pagedim[@page]['h']
-			@w = @w_pt / @k
-			@h = @h_pt / @k
+			@w = @pagedim[@page]['wk']
+			@h = @pagedim[@page]['hk']
 			@t_margin = @pagedim[@page]['tm']
 			@b_margin = @pagedim[@page]['bm']
 			@original_l_margin = @pagedim[@page]['olm']
@@ -1263,7 +1471,7 @@ class TCPDF
 	# Adds a new page to the document. If a page is already present, the Footer() method is called first to output the footer (if enabled). Then the page is added, the current position set to the top-left corner according to the left and top margins (or top-right if in RTL mode), and Header() is called to display the header (if enabled).
 	# The origin of the coordinate system is at the top-left corner (or top-right for RTL) and increasing ordinates go downwards.
 	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
-	# @param mixed :format The format used for pages. It can be either one of the following values (case insensitive) or a custom format in the form of a two-element array containing the width and the height (expressed in the unit given by unit).<ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
+	# @param mixed :format The format used for pages. It can be either:<b>A string indicating the page format:</b><ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul><b>An array containing page measures and advanced options:</b><ul><li>['format'] = page format name (one of the above);</li><li>['Rotate'] : The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.</li><li>['PZ'] : The page's preferred zoom (magnification) factor.</li><li>['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed:</li><li>['MediaBox']['llx'] : lower-left x coordinate in points</li><li>['MediaBox']['lly'] : lower-left y coordinate in points</li><li>['MediaBox']['urx'] : upper-right x coordinate in points</li><li>['MediaBox']['ury'] : upper-right y coordinate in points</li><li>['CropBox'] : the visible region of default user space:</li><li>['CropBox']['llx'] : lower-left x coordinate in points</li><li>['CropBox']['lly'] : lower-left y coordinate in points</li><li>['CropBox']['urx'] : upper-right x coordinate in points</li><li>['CropBox']['ury'] : upper-right y coordinate in points</li><li>['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment:</li><li>['BleedBox']['llx'] : lower-left x coordinate in points</li><li>['BleedBox']['lly'] : lower-left y coordinate in points</li><li>['BleedBox']['urx'] : upper-right x coordinate in points</li><li>['BleedBox']['ury'] : upper-right y coordinate in points</li><li>['TrimBox'] : the intended dimensions of the finished page after trimming:</li><li>['TrimBox']['llx'] : lower-left x coordinate in points</li><li>['TrimBox']['lly'] : lower-left y coordinate in points</li><li>['TrimBox']['urx'] : upper-right x coordinate in points</li><li>['TrimBox']['ury'] : upper-right y coordinate in points</li><li>['ArtBox'] : the extent of the page's meaningful content:</li><li>['ArtBox']['llx'] : lower-left x coordinate in points</li><li>['ArtBox']['lly'] : lower-left y coordinate in points</li><li>['ArtBox']['urx'] : upper-right x coordinate in points</li><li>['ArtBox']['ury'] : upper-right y coordinate in points</li><li>['BoxColorInfo'] :specify the colours and other visual characteristics that should be used in displaying guidelines on the screen for each of the possible page boundaries other than the MediaBox:</li><li>['BoxColorInfo'][BOXTYPE]['C'] : an array of three numbers in the range 0-255, representing the components in the DeviceRGB colour space.</li><li>['BoxColorInfo'][BOXTYPE]['W'] : the guideline width in default user units</li><li>['BoxColorInfo'][BOXTYPE]['S'] : the guideline style: S = Solid; D = Dashed</li><li>['BoxColorInfo'][BOXTYPE]['D'] : dash array defining a pattern of dashes and gaps to be used in drawing dashed guidelines</li><li>['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation</li><li>['trans']['Dur'] : The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.</li><li>['trans']['S'] : transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade</li><li>['trans']['D'] : The duration of the transition effect, in seconds.</li><li>['trans']['Dm'] : (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.</li><li>['trans']['M'] : (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.</li><li>['trans']['Di'] : (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.</li><li>['trans']['SS'] : (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0.</li><li>['trans']['B'] : (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.</li></ul>
 	# @param boolean :keepmargins if true overwrites the default page margins with the current margin
 	# @param boolean :tocpage if true set the tocpage state to true (the added page will be used to display Table Of Content).
 	# @access public
@@ -1313,8 +1521,8 @@ class TCPDF
 	# Starts a new page to the document. The page must be closed using the endPage() function.
 	# The origin of the coordinate system is at the top-left corner and increasing ordinates go downwards.
 	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
-	# @param mixed :format The format used for pages. It can be either one of the following values (case insensitive) or a custom format in the form of a two-element array containing the width and the height (expressed in the unit given by unit).<ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
-	# @param boolean $tocpage if true set the tocpage state to true (the added page will be used to display Table of Content).
+	# @param mixed :format The format used for pages. It can be either:<b>A string indicating the page format:</b><ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul><b>An array containing page measures and advanced options:</b><ul><li>['format'] = page format name (one of the above);</li><li>['Rotate'] : The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.</li><li>['PZ'] : The page's preferred zoom (magnification) factor.</li><li>['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed:</li><li>['MediaBox']['llx'] : lower-left x coordinate in points</li><li>['MediaBox']['lly'] : lower-left y coordinate in points</li><li>['MediaBox']['urx'] : upper-right x coordinate in points</li><li>['MediaBox']['ury'] : upper-right y coordinate in points</li><li>['CropBox'] : the visible region of default user space:</li><li>['CropBox']['llx'] : lower-left x coordinate in points</li><li>['CropBox']['lly'] : lower-left y coordinate in points</li><li>['CropBox']['urx'] : upper-right x coordinate in points</li><li>['CropBox']['ury'] : upper-right y coordinate in points</li><li>['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment:</li><li>['BleedBox']['llx'] : lower-left x coordinate in points</li><li>['BleedBox']['lly'] : lower-left y coordinate in points</li><li>['BleedBox']['urx'] : upper-right x coordinate in points</li><li>['BleedBox']['ury'] : upper-right y coordinate in points</li><li>['TrimBox'] : the intended dimensions of the finished page after trimming:</li><li>['TrimBox']['llx'] : lower-left x coordinate in points</li><li>['TrimBox']['lly'] : lower-left y coordinate in points</li><li>['TrimBox']['urx'] : upper-right x coordinate in points</li><li>['TrimBox']['ury'] : upper-right y coordinate in points</li><li>['ArtBox'] : the extent of the page's meaningful content:</li><li>['ArtBox']['llx'] : lower-left x coordinate in points</li><li>['ArtBox']['lly'] : lower-left y coordinate in points</li><li>['ArtBox']['urx'] : upper-right x coordinate in points</li><li>['ArtBox']['ury'] : upper-right y coordinate in points</li><li>['BoxColorInfo'] :specify the colours and other visual characteristics that should be used in displaying guidelines on the screen for each of the possible page boundaries other than the MediaBox:</li><li>['BoxColorInfo'][BOXTYPE]['C'] : an array of three numbers in the range 0-255, representing the components in the DeviceRGB colour space.</li><li>['BoxColorInfo'][BOXTYPE]['W'] : the guideline width in default user units</li><li>['BoxColorInfo'][BOXTYPE]['S'] : the guideline style: S = Solid; D = Dashed</li><li>['BoxColorInfo'][BOXTYPE]['D'] : dash array defining a pattern of dashes and gaps to be used in drawing dashed guidelines</li><li>['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation</li><li>['trans']['Dur'] : The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.</li><li>['trans']['S'] : transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade</li><li>['trans']['D'] : The duration of the transition effect, in seconds.</li><li>['trans']['Dm'] : (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.</li><li>['trans']['M'] : (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.</li><li>['trans']['Di'] : (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.</li><li>['trans']['SS'] : (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0.</li><li>['trans']['B'] : (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.</li></ul>
+	# @param boolean :tocpage if true set the tocpage state to true (the added page will be used to display Table of Content).
 	# @access public
 	# @since 4.2.010 (2008-11-14)
 	# @see AddPage(), endPage(), addTOCPage(), endTOCPage()
@@ -5071,14 +5279,85 @@ class TCPDF
 			temppage = temppage.gsub(@epsmarker, '')
 			#Page
 			@page_obj_id[n] = newobj()
-			out = '<</Type /Page'
+			out = '<<'
+			out << ' /Type /Page'
 			out << ' /Parent 1 0 R'
-			out << ' ' + sprintf('/MediaBox [0 0 %.2f %.2f]', @pagedim[n]['w'], @pagedim[n]['h'])
-			out << ' /Group << /Type /Group /S /Transparency /CS /DeviceRGB >>'
+			out << ' /LastModified ' + datestring()
 			out << ' /Resources 2 0 R'
+
+			boxes = ['MediaBox', 'CropBox', 'BleedBox', 'TrimBox', 'ArtBox']
+			boxes.each { |box|
+				out << ' /' + box
+				out << sprintf(' [%.2f %.2f %.2f %.2f]', @pagedim[n][box]['llx'], @pagedim[n][box]['lly'], @pagedim[n][box]['urx'], @pagedim[n][box]['ury'])
+			}
+			if @pagedim[n]['BoxColorInfo'] and !@pagedim[n]['BoxColorInfo'].empty?
+				out << ' /BoxColorInfo <<'
+				boxes.each { |box|
+					if @pagedim[n]['BoxColorInfo'][box]
+						out << ' /' + box + ' <<'
+						if @pagedim[n]['BoxColorInfo'][box]['C']
+							color = @pagedim[n]['BoxColorInfo'][box]['C']
+							out <<= ' /C ['
+							out << sprintf(' %.3f %.3f %.3f', color[0]/255, color[1]/255, color[2]/255)
+							out << ' ]'
+						end
+						if @pagedim[n]['BoxColorInfo'][box]['W']
+							out << ' /W ' + (@pagedim[n]['BoxColorInfo'][box]['W'] * @k).to_s
+						end
+						if @pagedim[n]['BoxColorInfo'][box]['S']
+							out << ' /S /' + @pagedim[n]['BoxColorInfo'][box]['S']
+						end
+						if @pagedim[n]['BoxColorInfo'][box]['D']
+							dashes = @pagedim[n]['BoxColorInfo'][box]['D']
+							out << ' /D ['
+							dashes.each { |dash|
+								out << sprintf(' %.3f', dash * @k)
+							}
+							out << ' ]'
+						end
+						out << ' >>'
+					end
+				}
+				out << ' >>'
+			end
+			out << ' /Contents ' + (@n + 1).to_s + ' 0 R'
+			out << ' /Rotate ' + @pagedim[n]['Rotate'].to_s
+			out << ' /Group << /Type /Group /S /Transparency /CS /DeviceRGB >>'
+			if @pagedim[n]['trans'] and !@pagedim[n]['trans'].empty?
+				# page transitions
+				if @pagedim[n]['trans']['Dur']
+					out << ' /Dur ' + @pagedim[n]['trans']['Dur']
+				end
+				out << ' /Trans <<'
+				out << ' /Type /Trans'
+				if @pagedim[n]['trans']['S']
+					out << ' /S /' + @pagedim[n]['trans']['S']
+				end
+				if @pagedim[n]['trans']['D']
+					out << ' /D ' + @pagedim[n]['trans']['D'].to_s
+				end
+				if @pagedim[n]['trans']['Dm']
+					out << ' /Dm /' + @pagedim[n]['trans']['Dm']
+				end
+				if @pagedim[n]['trans']['M']
+					out << ' /M /' + @pagedim[n]['trans']['M']
+				end
+				if @pagedim[n]['trans']['Di']
+					out << ' /Di ' + @pagedim[n]['trans']['Di']
+				end
+				if @pagedim[n]['trans']['SS']
+					out << ' /SS ' + @pagedim[n]['trans']['SS']
+				end
+				if @pagedim[n]['trans']['B']
+					out << ' /B ' + @pagedim[n]['trans']['B']
+				end
+				out << ' >>'
+			end
+			out << getannotsrefs(n)
+			out << ' /PZ ' + @pagedim[n]['PZ'].to_s
+			out << ' >> endobj'
+
 			out(out)
-			putannotsrefs(n)
-			out('/Contents ' + (@n+1).to_s + ' 0 R>> endobj')
 			#Page content
 			p=(@compress) ? gzcompress(temppage) : temppage
 			newobj();
@@ -5090,7 +5369,7 @@ class TCPDF
 		end
 		#Pages root
 		@offsets[1]=@bufferlen
-		out = '1 0 obj <</Type /Pages  /Kids ['
+		out = '1 0 obj << /Type /Pages  /Kids ['
 		@page_obj_id.each { |page_obj|
 			out << ' ' + page_obj.to_s + ' 0 R' unless page_obj.nil?
 		}
@@ -5103,13 +5382,26 @@ class TCPDF
 	# @param int :n page number
 	# @access protected
 	# @author Nicola Asuni
+	# @deprecated
 	# @since 4.7.000 (2008-08-29)
 	#
 	def putannotsrefs(n)
+		out(getannotsrefs(n))
+	end
+
+	#
+	# Get references to page annotations.
+	# @param int :n page number
+	# @return string
+	# @access protected
+	# @author Nicola Asuni
+	# @since 5.0.010 (2010-05-17)
+	#
+	def getannotsrefs(n)
 		unless @page_annots[n] or (@sign and @signature_data['cert_type'])
-			return
+			return ''
 		end
-		out = '/Annots ['
+		out = ' /Annots ['
 		if @page_annots[n]
 			num_annots = @page_annots[n].length
 			0.upto(num_annots - 1) do |i|
@@ -5127,7 +5419,7 @@ class TCPDF
 			out << ' ' + @sig_annot_ref
 		end
 		out << ' ]'
-		out(out)
+		return out
 	end
 
 	#
@@ -6315,9 +6607,10 @@ class TCPDF
 	end
 
 	#
+	# Initialize a new page
 	# beginpage
 	# @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
-	# @param mixed :format The format used for pages. It can be either one of the following values (case insensitive) or a custom format in the form of a two-element array containing the width and the height (expressed in the unit given by unit).<ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
+	# @param mixed :format The format used for pages. It can be either:<b>A string indicating the page format:</b><ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul><b>An array containing page measures and advanced options:</b><ul><li>['format'] = page format name (one of the above);</li><li>['Rotate'] : The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.</li><li>['PZ'] : The page's preferred zoom (magnification) factor.</li><li>['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed:</li><li>['MediaBox']['llx'] : lower-left x coordinate in points</li><li>['MediaBox']['lly'] : lower-left y coordinate in points</li><li>['MediaBox']['urx'] : upper-right x coordinate in points</li><li>['MediaBox']['ury'] : upper-right y coordinate in points</li><li>['CropBox'] : the visible region of default user space:</li><li>['CropBox']['llx'] : lower-left x coordinate in points</li><li>['CropBox']['lly'] : lower-left y coordinate in points</li><li>['CropBox']['urx'] : upper-right x coordinate in points</li><li>['CropBox']['ury'] : upper-right y coordinate in points</li><li>['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment:</li><li>['BleedBox']['llx'] : lower-left x coordinate in points</li><li>['BleedBox']['lly'] : lower-left y coordinate in points</li><li>['BleedBox']['urx'] : upper-right x coordinate in points</li><li>['BleedBox']['ury'] : upper-right y coordinate in points</li><li>['TrimBox'] : the intended dimensions of the finished page after trimming:</li><li>['TrimBox']['llx'] : lower-left x coordinate in points</li><li>['TrimBox']['lly'] : lower-left y coordinate in points</li><li>['TrimBox']['urx'] : upper-right x coordinate in points</li><li>['TrimBox']['ury'] : upper-right y coordinate in points</li><li>['ArtBox'] : the extent of the page's meaningful content:</li><li>['ArtBox']['llx'] : lower-left x coordinate in points</li><li>['ArtBox']['lly'] : lower-left y coordinate in points</li><li>['ArtBox']['urx'] : upper-right x coordinate in points</li><li>['ArtBox']['ury'] : upper-right y coordinate in points</li><li>['BoxColorInfo'] :specify the colours and other visual characteristics that should be used in displaying guidelines on the screen for each of the possible page boundaries other than the MediaBox:</li><li>['BoxColorInfo'][BOXTYPE]['C'] : an array of three numbers in the range 0-255, representing the components in the DeviceRGB colour space.</li><li>['BoxColorInfo'][BOXTYPE]['W'] : the guideline width in default user units</li><li>['BoxColorInfo'][BOXTYPE]['S'] : the guideline style: S = Solid; D = Dashed</li><li>['BoxColorInfo'][BOXTYPE]['D'] : dash array defining a pattern of dashes and gaps to be used in drawing dashed guidelines</li><li>['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation</li><li>['trans']['Dur'] : The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.</li><li>['trans']['S'] : transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade</li><li>['trans']['D'] : The duration of the transition effect, in seconds.</li><li>['trans']['Dm'] : (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.</li><li>['trans']['M'] : (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.</li><li>['trans']['Di'] : (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.</li><li>['trans']['SS'] : (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0.</li><li>['trans']['B'] : (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.</li></ul>
 	# @access protected
 	#
 	def beginpage(orientation='', format='')
@@ -6326,13 +6619,18 @@ class TCPDF
 		# initialize array for graphics tranformation positions inside a page buffer
 		@state=2;
 		if empty_string(orientation)
-			unless @cur_orientation.nil?
+			if @cur_orientation
 				orientation = @cur_orientation
+			elsif @fw_pt > @fh_pt
+				# landscape
+				orientation = 'L'
 			else
+				# portrait
 				orientation = 'P'
 			end
 		end
 		if empty_string(format)
+			@pagedim[@page] = @pagedim[@page - 1]
 			setPageOrientation(orientation)
 		else
 			setPageFormat(format, orientation)
@@ -6397,7 +6695,7 @@ class TCPDF
 	#
 	def dounderlinew(x, y, w)
 		linew = - @current_font['ut'] / 1000.0 * @font_size_pt
-		return sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - y + (linew / 2)) * @k, w * @k, linew)
+		return sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - y) * @k + linew, w * @k, linew)
 	end
 
 	#
@@ -6422,7 +6720,7 @@ class TCPDF
 	#
 	def dolinethroughw(x, y, w)
 		linew = - @current_font['ut'] / 1000.0 * @font_size_pt
-		return sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - y + (@font_size / 3) + (linew / 2)) * @k, w * @k, linew)
+		return sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - y) * @k + linew + (@font_size_pt / 3), w * @k, linew)
 	end
 
 	#
@@ -6448,7 +6746,7 @@ class TCPDF
 	#
 	def dooverlinew(x, y, w)
 		linew = - @current_font['ut'] / 1000.0 * @font_size_pt
-		return sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - y + @font_ascent - (linew / 2)) * @k, w * @k, linew)
+		return sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - y + @font_ascent) * @k - linew, w * @k, linew)
 	end
 
 	#
@@ -11755,7 +12053,7 @@ class TCPDF
 	#
 	# Move a page to a previous position.
 	# @param int :frompage number of the source page
-	# @param int :topage number of the destination page (must be less than $frompage)
+	# @param int :topage number of the destination page (must be less than :frompage)
 	# @return true in case of success, false in case of error.
 	# @access public
 	# @since 4.5.000 (2009-01-02)
