@@ -3398,8 +3398,12 @@ class TCPDF
 			end
 			return true
 		end
-		# account for columns mode
-		return (current_page != @page)
+		if current_page != @page
+			# account for columns mode
+			@newline = true
+			return true
+		end
+		return false
 	end
 
   def BreakThePage?(h)
@@ -3872,9 +3876,13 @@ class TCPDF
 		else
 			y = GetY()
 		end
-		# check for page break
-		checkPageBreak(h)
-		y = GetY()
+		resth = 0
+		if !@in_footer and (y + h > @page_break_trigger)
+			# spit cell in two pages
+			newh = @page_break_trigger - y
+			resth = h - newh # cell to be printed on the next page
+			h = newh
+		end
 		# get current page number
 		startpage = @page
 
@@ -3940,6 +3948,12 @@ class TCPDF
 		currentY = @y
 		# get latest page number
 		end_page = @page
+		if (resth > 0) and (endpage == startpage)
+			# add new page to print the remaining cell portion
+			AddPage()
+			currentY = @y
+			endpage = @page
+		end
 
 		# check if a new page has been created
 		if end_page > startpage
@@ -3947,16 +3961,22 @@ class TCPDF
 			for page in startpage..end_page
 				SetPage(page)
 				if page == startpage
+					# first page
 					@y = starty # put cursor at the beginning of cell on the first page
-					h = GetPageHeight() - starty - GetBreakMargin()
+					h = @h - starty - @b_margin
 					cborder = getBorderMode(border, position='start')
 				elsif page == end_page
+					# last page
 					@y = @t_margin # put cursor at the beginning of last page
 					h = currentY - @t_margin
+					if resth > h
+						h = resth
+					end
 					cborder = getBorderMode(border, position='end')
 				else
 					@y = @t_margin # put cursor at the beginning of the current page
-					h = GetPageHeight() - @t_margin - GetBreakMargin()
+					h = @h - @t_margin - @b_margin
+					resth -= h
 					cborder = getBorderMode(border, position='middle')
 				end
 				nx = x
