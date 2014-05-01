@@ -795,18 +795,19 @@ class TCPDF
 		if orientation.empty?
 			orientation = default_orientation
 		else
-			orientation = orientation[0, 1]
-			orientation = orientation.upcase
+			orientation = orientation[0, 1].upcase
 		end
 		if valid_orientations.include?(orientation) and (orientation != default_orientation)
 			@cur_orientation = orientation
 			@w_pt = @fh_pt
 			@h_pt = @fw_pt
-			swapPageBoxCoordinates(@page)
 		else
 			@cur_orientation = default_orientation
 			@w_pt = @fw_pt
 			@h_pt = @fh_pt
+		end
+		if @pagedim[@page]['MediaBox']['urx'] != @w_pt
+			swapPageBoxCoordinates(@page)
 		end
 		@w = @w_pt / @k
 		@h = @h_pt / @k
@@ -10787,6 +10788,12 @@ class TCPDF
 			'bgcolor' => @bgcolor,
 			'fgcolor' => @fgcolor,
 			'htmlvspace' => @htmlvspace,
+			'listindent' => @listindent,
+			'listindentlevel' => @listindentlevel,
+			'listnum' => @listnum,
+			'listordered' => @listordered,
+			'listcount' => @listcount,
+			'lispacer' => @lispacer,
 			'lasth' => @lasth
 		}
 		return grapvars
@@ -10819,6 +10826,12 @@ class TCPDF
 		@bgcolor = gvars['bgcolor']
 		@fgcolor = gvars['fgcolor']
 		@htmlvspace = gvars['htmlvspace']
+		@listindent = gvars['listindent']
+		@listindentlevel = gvars['listindentlevel']
+		@listnum = gvars['listnum']
+		@listordered = gvars['listordered']
+		@listcount = gvars['listcount']
+		@lispacer = gvars['lispacer']
 		#@lasth = gvars['lasth']
 		out('' + @linestyle_width + ' ' + @linestyle_cap + ' ' + @linestyle_join + ' ' + @linestyle_dash + ' ' + @draw_color + ' ' + @fill_color + '')
 		unless empty_string(@font_family)
