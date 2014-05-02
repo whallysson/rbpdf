@@ -8805,7 +8805,11 @@ class TCPDF
 					end
 				else
 					# closing tag
+					prev_numpages = @numpages
 					closeHTMLTagHandler(dom, key, cell, maxbottomliney)
+					if prev_numpages > @numpages
+						startlinepage = @page
+					end
 				end
 			elsif dom[key]['value'].length > 0
 				# print list-item
@@ -9810,7 +9814,9 @@ class TCPDF
 						end
 					end
 					if (dom[key]['value'] == 'small') or (dom[key]['value'] == 'sup') or (dom[key]['value'] == 'sub')
-						dom[key]['fontsize'] = dom[key]['fontsize'] * @@k_small_ratio
+						if dom[key]['attribute']['size'].nil? and (dom[key]['style'].nil? or dom[key]['style']['font-size'].nil?)
+							dom[key]['fontsize'] = dom[key]['fontsize'] * @@k_small_ratio
+						end
 					end
 					if (dom[key]['value'] == 'strong') or (dom[key]['value'] == 'b')
 						dom[key]['fontstyle'] << 'B'
@@ -10514,11 +10520,11 @@ class TCPDF
 						@c_margin = @old_c_margin
 					end
 					@lasth = @font_size * @cell_height_ratio
+					if (@page == @numpages - 1) and @pageopen[@numpages]
+						# remove last blank page
+						deletePage(@numpages)
+					end
 					if !@thead_margins['top'].nil?
-						if (@thead_margins['top'] == @t_margin) and (@page == (@numpages - 1))
-							# remove last page containing only THEAD
-							deletePage(@numpages)
-						end
 						# restore top margin
 						@t_margin = @thead_margins['top']
 						@pagedim[@page]['tm'] = @t_margin
