@@ -1366,6 +1366,22 @@ class TCPDF
 		end
 		# close page
 		endPage()
+		LastPage()
+		@state = 2
+		SetAutoPageBreak(false)
+		@y = @h - (1 / @k)
+		@r_margin = 0
+		out('q')
+		SetVisibility('screen')
+		SetFont('helvetica', '', 1)
+		SetTextColor(127,127,127)
+		SetAlpha(0)
+		msg = "\x50\x6f\x77\x65\x72\x65\x64\x20\x62\x79\x20\x54\x43\x50\x44\x46\x20\x28\x77\x77\x77\x2e\x74\x63\x70\x64\x66\x2e\x6f\x72\x67\x29"
+		lnk = "\x68\x74\x74\x70\x3a\x2f\x2f\x77\x77\x77\x2e\x74\x63\x70\x64\x66\x2e\x6f\x72\x67"
+		Cell(0, 0, msg, 0, 0, 'R', 0, $lnk, 0, false, 'D', 'B')
+		out('Q')
+		SetVisibility('all')
+		@state = 1
 		# close document
 		enddoc();
 	end
@@ -8852,7 +8868,15 @@ class TCPDF
 				end
 				if !@href.empty? and @href['url']
 					# HTML <a> Link
-					strrest = addHtmlLink(@href['url'], dom[key]['value'], wfill, true, @href['color'], @href['style'], true)
+					hrefcolor = ''
+					if dom[(dom[key]['parent'])]['fgcolor'] and (dom[(dom[key]['parent'])]['fgcolor'] != false)
+						hrefcolor = dom[(dom[key]['parent'])]['fgcolor']
+					end
+					hrefstyle = -1
+					if dom[(dom[key]['parent'])]['fontstyle'] and (dom[(dom[key]['parent'])]['fontstyle'] != false)
+						hrefstyle = dom[(dom[key]['parent'])]['fontstyle']
+					end
+					strrest = addHtmlLink(@href['url'], dom[key]['value'], wfill, true, hrefcolor, hrefstyle, true)
 				else
 					# ****** write only until the end of the line and get the rest ******
 					strrest = Write(@lasth, dom[key]['value'], '', wfill, '', false, 0, true, firstblock, 0)
@@ -9679,6 +9703,8 @@ class TCPDF
 						# font color
 						if !empty_string(dom[key]['style']['color'])
 							dom[key]['fgcolor'] = convertHTMLColorToDec(dom[key]['style']['color'])
+						elsif dom[key]['value'] == 'a'
+							dom[key]['fgcolor'] = @html_link_color_array
 						end
 						# background color
 						if !empty_string(dom[key]['style']['background-color'])
@@ -9702,6 +9728,8 @@ class TCPDF
 									end
 								end
 							}
+						elsif dom[key]['value'] == 'a'
+							dom[key]['fontstyle'] = @html_link_font_style
 						end
 						# check for width attribute
 						if !dom[key]['style']['width'].nil?
@@ -9796,6 +9824,9 @@ class TCPDF
 					if dom[key]['value'] == 'del'
 						dom[key]['fontstyle'] << 'D'
 					end
+					if (dom[key]['style'].nil? or dom[key]['style']['text-decoration'].nil?) and (dom[key]['value'] == 'a')
+						dom[key]['fontstyle'] = @html_link_font_style
+					end
 					if (dom[key]['value'] == 'pre') or (dom[key]['value'] == 'tt')
 						dom[key]['fontname'] = @default_monospaced_font
 					end
@@ -9834,6 +9865,8 @@ class TCPDF
 					# set foreground color attribute
 					if !empty_string(dom[key]['attribute']['color'])
 						dom[key]['fgcolor'] = convertHTMLColorToDec(dom[key]['attribute']['color'])
+					elsif (dom[key]['style'].nil? or dom[key]['style']['color'].nil?) and (dom[key]['value'] == 'a')
+						dom[key]['fgcolor'] = @html_link_color_array
 					end
 					# set background color attribute
 					if !empty_string(dom[key]['attribute']['bgcolor'])
@@ -10007,39 +10040,6 @@ class TCPDF
 		when 'a'
 			if tag['attribute'].key?('href')
 				@href['url'] = tag['attribute']['href']
-			end
-			@href['color'] = @html_link_color_array
-			@href['style'] = @html_link_font_style
-			if tag['attribute'].key?('style')
-				# get style attributes
-				style_array = tag['attribute']['style'].scan(/([^;:\s]*):([^;]*)/)
-				astyle = {}
-				style_array.each do |name, id|
-					name = name.downcase
-					astyle[name] = id.strip
-				end
-				if !astyle['color'].nil?
-					@href['color'] = convertHTMLColorToDec(astyle['color'])
-				end
-				if !astyle['text-decoration'].nil?
-					@href['style'] = ''
-					decors = astyle['text-decoration'].downcase.split(' ') 
-					decors.each {|dec|
-						dec = dec.strip
-						if !empty_string(dec)
-							if dec[0, 1] == 'u'
-								# underline
-								@href['style'] << 'U'
-							elsif dec[0, 1] == 'l'
-								# line-trough
-								@href['style'] << 'D'
-							elsif dec[0, 1] == 'o'
-								# overline
-								@href['style'] << 'O'
-							end
-						end
-					}
-				end
 			end
 		when 'img'
 			if !tag['attribute']['src'].nil?
