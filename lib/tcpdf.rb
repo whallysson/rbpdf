@@ -1378,7 +1378,7 @@ class TCPDF
 		SetAlpha(0)
 		msg = "\x50\x6f\x77\x65\x72\x65\x64\x20\x62\x79\x20\x54\x43\x50\x44\x46\x20\x28\x77\x77\x77\x2e\x74\x63\x70\x64\x66\x2e\x6f\x72\x67\x29"
 		lnk = "\x68\x74\x74\x70\x3a\x2f\x2f\x77\x77\x77\x2e\x74\x63\x70\x64\x66\x2e\x6f\x72\x67"
-		Cell(0, 0, msg, 0, 0, 'R', 0, $lnk, 0, false, 'D', 'B')
+		Cell(0, 0, msg, 0, 0, 'R', 0, lnk, 0, false, 'D', 'B')
 		out('Q')
 		SetVisibility('all')
 		@state = 1
@@ -3966,9 +3966,17 @@ class TCPDF
 		currentY = @y
 		# get latest page number
 		end_page = @page
-		if (resth > 0) and (endpage == startpage)
-			# add new page to print the remaining cell portion
-			AddPage()
+		if resth > 0
+			skip = endpage - startpage
+			tmpresth = resth
+			while tmpresth > 0
+				if skip <= 0
+					# add a page (or trig AcceptPageBreak() for multicolumn mode)
+					checkPageBreak(@page_break_trigger + 1)
+				end
+				tmpresth -= (@h - @t_margin - @b_margin)
+				skip -= 1
+			end
 			currentY = @y
 			endpage = @page
 		end
