@@ -8869,7 +8869,7 @@ class TCPDF
 				if !@href.empty? and @href['url']
 					# HTML <a> Link
 					hrefcolor = ''
-					if dom[(dom[key]['parent'])]['fgcolor'] and (dom[(dom[key]['parent'])]['fgcolor'] != false)
+					if dom[(dom[key]['parent'])]['fgcolor'] and !dom[(dom[key]['parent'])]['fgcolor'].empty?
 						hrefcolor = dom[(dom[key]['parent'])]['fgcolor']
 					end
 					hrefstyle = -1
@@ -9831,9 +9831,14 @@ class TCPDF
 						dom[key]['fontname'] = @default_monospaced_font
 					end
 					if (dom[key]['value'][0,1] == 'h') and (dom[key]['value'][1,1].to_i > 0) and (dom[key]['value'][1,1].to_i < 7)
-						headsize = (4 - dom[key]['value'][1,1].to_i) * 2
-						dom[key]['fontsize'] = dom[0]['fontsize'] + headsize
-						dom[key]['fontstyle'] << 'B'
+						# headings h1, h2, h3, h4, h5, h6
+						if dom[key]['attribute']['size'].nil? and (dom[key]['style'].nil? or dom[key]['style']['font-size'].nil?)
+							headsize = (4 - dom[key]['value'][1,1].to_i) * 2
+							dom[key]['fontsize'] = dom[0]['fontsize'] + headsize
+						end
+						if dom[key]['style'].nil? or dom[key]['style']['font-weight'].nil?
+							dom[key]['fontstyle'] << 'B'
+						end
 					end
 					if dom[key]['value'] == 'table'
 						dom[key]['rows'] = 0 # number of rows
@@ -11350,7 +11355,7 @@ class TCPDF
 	#
 	# Returns an associative array (keys: R,G,B) from an html color name or a six-digit or three-digit hexadecimal color representation (i.e. #3FE5AA or #7FF).
 	# @param string :color html color 
-	# @return array RGB color or false in case of error.
+	# @return array RGB color or empty array in case of error.
 	# @access public
 	#
 	def convertHTMLColorToDec(color = "#FFFFFF")
@@ -11361,11 +11366,12 @@ class TCPDF
 			color = color[(dotpos + 1)..-1]
 		end
 		if color.length == 0
-			return false
+			return []
 		end
 		returncolor = ActiveSupport::OrderedHash.new
+		#  RGB ARRAY
 		if color[0,3] == 'rgb' 
-			codes = color.sub(/^rgb\(/, "")
+			codes = color.sub(/^rgb\(/, '')
 			codes = codes.gsub(')', '')
 			returncolor = codes.split(',', 3)
 			returncolor[0] = returncolor[0].to_i
@@ -11373,16 +11379,28 @@ class TCPDF
 			returncolor[2] = returncolor[2].to_i
 			return returncolor
 		end
+		# CMYK ARRAY
+		if color[0,4] == 'cmyk' 
+			codes = color.sub(/^cmyk\(/, '')
+			codes = codes.gsub(')', '')
+			returncolor[0] = returncolor[0].to_i
+			returncolor[1] = returncolor[1].to_i
+			returncolor[2] = returncolor[2].to_i
+			returncolor[3] = returncolor[3].to_i
+			return returncolor
+		end
+		# COLOR NAME
 		if color[0].chr != "#"
 			# decode color name
 			if @@webcolor[color]
 				color_code = @@webcolor[color]
 			else
-				return false
+				return []
 			end
 		else
 			color_code = color.sub(/^#/, "")
 		end
+		# RGB VALUE
 		case color_code.length
 		when 3
 			# three-digit hexadecimal representation
@@ -11398,7 +11416,7 @@ class TCPDF
 			returncolor['G'] = color_code[2,2].hex
 			returncolor['B'] = color_code[4,2].hex
 		else
-			returncolor = false
+			returncolor = []
 		end
 		return returncolor
 	end
