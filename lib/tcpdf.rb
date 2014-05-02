@@ -335,6 +335,7 @@ class TCPDF
 		@orientation_changes ||= []
 		@page ||= 0
 		@htmlvspace ||= 0
+		@open_marked_content ||= false
 		@spot_colors ||= {}
 		@lisymbol ||= ''
 		@epsmarker ||= 'x#!#EPS#!#x'
@@ -377,6 +378,7 @@ class TCPDF
 		@newline ||= true
 		@endlinex ||= 0
 		@newpagegroup ||= []
+		@visibility ||= 'all'
 		@linestyle_width ||= ''
 		@linestyle_cap ||= '0 J'
 		@linestyle_join ||= '0 j'
@@ -6375,20 +6377,22 @@ class TCPDF
 			out << ' /I' + info['i'].to_s + ' ' + info['n'].to_s + ' 0 R'
 		end
 		out << ' >>'
-=begin
 		# visibility
 		out << ' /Properties <</OC1 ' + @n_ocg_print.to_s + ' 0 R /OC2 ' + @n_ocg_view.to_s + ' 0 R>>'
 		# transparency
 		out << ' /ExtGState <<'
 		@extgstates.each_with_index { |extgstate, k| 
+			if extgstate
 			if extgstate['name']
 				out << ' /' + extgstate['name']
 			else
-				out << ' /GS' + k
+				out << ' /GS' + k.to_s
 			end
-			out << ' ' + extgstate['n'] + ' 0 R'
+			out << ' ' + extgstate['n'].to_s + ' 0 R'
+			end
 		}
 		out << ' >>'
+=begin
 		# gradient patterns
 		if @gradients and !@gradients.empty?
 			out << ' /Pattern <<'
@@ -6423,7 +6427,8 @@ class TCPDF
 	# @access protected
 	#
 	def putresources()
-		# putocg()
+		putextgstates()
+		putocg()
 		putfonts();
 		putimages();
 		putspotcolors()
@@ -6521,6 +6526,10 @@ class TCPDF
 			out << ' /PageMode /UseOutlines'
 		end
 		out << ' ' + putviewerpreferences()
+		p = @n_ocg_print.to_s + ' 0 R'
+		v = @n_ocg_view.to_s + ' 0 R'
+		as = '<</Event /Print /OCGs [' + p + ' ' + v + '] /Category [/Print]>> <</Event /View /OCGs [' + p + ' ' + v + '] /Category [/View]>>'
+		out << ' /OCProperties <</OCGs [' + p + ' ' + v + '] /D <</ON [' + p + '] /OFF [' + v + '] /AS [' + as + ']>>>>'
 
 		### T.B.D ### TCPDF 5.0.000 ###
 
@@ -7557,6 +7566,103 @@ class TCPDF
 		newobj()
 		@n_ocg_view = @n
 		out('<< /Type /OCG /Name ' + textstring('view') + ' /Usage << /Print <</PrintState /OFF>> /View <</ViewState /ON>> >> >> endobj')
+	end
+
+	#
+	# Set the visibility of the successive elements.
+	# This can be useful, for instance, to put a background
+	# image or color that will show on screen but won't print.
+	# @param string :v visibility mode. Legal values are: all, print, screen.
+	# @access public
+	# @since 3.0.000 (2008-03-27)
+	#
+	def SetVisibility(v)
+		if @open_marked_content
+			# close existing open marked-content
+			out('EMC')
+			@open_marked_content = false
+		end
+		case v
+		when 'print'
+			out('/OC /OC1 BDC')
+			@open_marked_content = true
+		when 'screen'
+			out('/OC /OC2 BDC')
+			@open_marked_content = true
+		when 'all'
+			out('')
+		else
+			Error('Incorrect visibility: ' + v)
+		end
+		@visibility = v
+	end
+
+	#
+	# Add transparency parameters to the current extgstate
+	# @param array :params parameters
+	# @return the number of extgstates
+	# @access protected
+	# @since 3.0.000 (2008-03-27)
+	#
+	def addExtGState(parms)
+		n = @extgstates.length + 1
+		# check if this ExtGState already exist
+		1.upto(n - 1) do |i|
+			if @extgstates[i] and (@extgstates[i]['parms'] == parms)
+				# return reference to existing ExtGState
+				return i
+			end
+		end
+		@extgstates[n] ||= {}
+		@extgstates[n]['parms'] = parms
+		return n
+	end
+
+	#
+	# Add an extgstate
+	# @param array :gs extgstate
+	# @access protected
+	# @since 3.0.000 (2008-03-27)
+	#
+	def setExtGState(gs)
+		out(sprintf('/GS%d gs', gs))
+	end
+	#
+	# Put extgstates for object transparency
+	# @param array :gs extgstate
+	# @access protected
+	# @since 3.0.000 (2008-03-27)
+	#
+	def putextgstates()
+		ne = @extgstates.length
+		1.upto(ne) do |i|
+			newobj()
+			@extgstates[i] ||= {}
+			@extgstates[i]['n'] = @n
+			out = '<< /Type /ExtGState'
+			if @extgstates[i]['parms']
+				@extgstates[i]['parms'].each {|k, v|
+					if v.is_a? Float
+						v = sprintf('%.2f', v)
+					end
+					out << ' /' + k + ' ' + v.to_s
+				}
+			end
+			out << ' >> endobj'
+			out(out)
+		end
+	end
+
+	#
+	# Set alpha for stroking (CA) and non-stroking (ca) operations.
+	# @param float :alpha real value from 0 (transparent) to 1 (opaque)
+	# @param string :bm blend mode, one of the following: Normal, Multiply, Screen, Overlay, Darken, Lighten, ColorDodge, ColorBurn, HardLight, SoftLight, Difference, Exclusion, Hue, Saturation, Color, Luminosity
+	# @access public
+	# @since 3.0.000 (2008-03-27)
+	#
+	def SetAlpha(alpha, bm='Normal')
+		gs = addExtGState({'ca' => alpha, 'CA' => alpha, 'BM' => '/' + bm, 'AIS' => 'false'})
+		setExtGState(gs)
 	end
 
 	#
@@ -12085,6 +12191,16 @@ class TCPDF
 	#
 	def formatTOCPageNumber(num)
 		return number_with_delimiter(num, :delimiter => ",")
+	end
+
+	#
+	# Returns the current page number formatted as a string.
+	# @access public
+	# @since 4.2.005 (2008-11-06)
+	# @see PaneNo(), formatPageNumber()
+	#
+	def PageNoFormatted()
+		return formatPageNumber(PageNo())
 	end
 
 	#
