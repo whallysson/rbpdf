@@ -72,7 +72,7 @@ class TcpdfPageTest < ActiveSupport::TestCase
     assert_equal content.length,  8
     assert_equal content[6],  " 0 J 0 j [] 0 d 0 G 0 g"
 
-    assert_equal content[7],  "BT 31.19 792.37 Td 0 Tr 0.00 w [(\x00C\x00h\x00a\x00p\x00t\x00e\x00r)] TJ ET "
+    assert_equal content[7],  "BT 31.19 792.37 Td 0 Tr 0.00 w [(\x00C\x00h\x00a\x00p\x00t\x00e\x00r)] TJ ET"
 
     #################################################
     # 0 J 0 j [] 0 d 0 G 0 g                        # getCellCode

@@ -2090,32 +2090,32 @@ class TCPDF
 	#
 	def SetDrawColor(col1=0, col2=-1, col3=-1, col4=-1)
 		# set default values
-		unless col1.is_a? Integer
+		unless col1.is_a?(Numeric)
 			col1 = 0
 		end
-		unless col2.is_a? Integer
+		unless col2.is_a?(Numeric)
 			col2 = 0
 		end
-		unless col3.is_a? Integer
+		unless col3.is_a?(Numeric)
 			col3 = 0
 		end
-		unless col4.is_a? Integer
+		unless col4.is_a?(Numeric)
 			col4 = 0
 		end
 		#Set color for all stroking operations
 		if (col2 == -1) and (col3 == -1) and (col4 == -1)
 			# Grey scale
-			@draw_color = sprintf('%.3f G', col1 / 255)
+			@draw_color = sprintf('%.3f G', col1 / 255.0)
 			@strokecolor['G'] = col1
 		elsif col4 == -1
 			# RGB
-			@draw_color = sprintf('%.3f %.3f %.3f RG', col1 / 255, col2 / 255, col3 / 255)
+			@draw_color = sprintf('%.3f %.3f %.3f RG', col1 / 255.0, col2 / 255.0, col3 / 255.0)
 			@strokecolor['R'] = col1
 			@strokecolor['G'] = col2
 			@strokecolor['B'] = col3
 		else
 			# CMYK
-			@draw_color = sprintf('%.3f %.3f %.3f %.3f K', col1 / 100, col2 / 100, col3 / 100, col4 / 100)
+			@draw_color = sprintf('%.3f %.3f %.3f %.3f K', col1 / 100.0, col2 / 100.0, col3 / 100.0, col4 / 100.0)
 			@strokecolor['C'] = col1
 			@strokecolor['M'] = col2
 			@strokecolor['Y'] = col3
@@ -2160,16 +2160,16 @@ class TCPDF
 	#
 	def SetFillColor(col1=0, col2=-1, col3=-1, col4=-1)
 		# set default values
-		unless col1.is_a? Integer
+		unless col1.is_a?(Numeric)
 			col1 = 0
 		end
-		unless col2.is_a? Integer
+		unless col2.is_a?(Numeric)
 			col2 = -1
 		end
-		unless col3.is_a? Integer
+		unless col3.is_a?(Numeric)
 			col3 = -1
 		end
-		unless col4.is_a? Integer
+		unless col4.is_a?(Numeric)
 			col4 = -1
 		end
 
@@ -2248,16 +2248,16 @@ class TCPDF
 	#
 	def SetTextColor(col1=0, col2=-1, col3=-1, col4=-1)
 		# set default values
-		unless col1.is_a? Integer
+		unless col1.is_a?(Numeric)
 			col1 = 0
 		end
-		unless col2.is_a? Integer
+		unless col2.is_a?(Numeric)
 			col2 = -1
 		end
-		unless col3.is_a? Integer
+		unless col3.is_a?(Numeric)
 			col3 = -1
 		end
-		unless col4.is_a? Integer
+		unless col4.is_a?(Numeric)
 			col4 = -1
 		end
 
@@ -2704,17 +2704,19 @@ class TCPDF
 	# @since 2.1.000 (2008-01-08)
 	#
 	def Ellipse(x0, y0, rx, ry='', angle=0, astart=0, afinish=360, style='', line_style=nil, fill_color=nil, nc=2)
+		style = '' if style.nil?
 		if empty_string(ry) or (ry == 0)
 			ry = rx
 		end
-		if style and (nil != style.index('F')) and fill_color
+		if (nil != style.index('F')) and fill_color
 			SetFillColorArray(fill_color)
 		end
 		op = getPathPaintOperator(style)
 		if op == 'f'
 			line_style = nil
 		end
-		if line_style
+
+		if line_style and !line_style.empty?
 			SetLineStyle(line_style)
 		end
 		outellipticalarc(x0, y0, rx, ry, angle, astart, afinish, false, nc)
@@ -2837,6 +2839,366 @@ class TCPDF
 		Ellipse(x0, y0, r, r, 0, angstr, angend, style, line_style, fill_color, nc)
 	end
 	alias_method :circle, :Circle
+
+	#
+	# Draws a polygonal line
+	# @param array :p Points 0 to (:np - 1). Array with values (x0, y0, x1, y1,..., x(np-1), y(np - 1))
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :line_style Line style of polygon. Array with keys among the following:
+	# <ul>
+	#       <li>all: Line style of all lines. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	#       <li>0 to (:np - 1): Line style of each line. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	# </ul>
+	# If a key is not present or is null, not draws the line. Default value is default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+	# @param boolean :closed if true the polygon is closes, otherwise will remain open
+	# @access public
+	# @since 4.8.003 (2009-09-15)
+	#
+	def PolyLine(p, style='', line_style=nil, fill_color=nil)
+		Polygon(p, style, line_style, fill_color, false)
+	end
+
+	#
+	# Draws a polygon.
+	# @param array :p Points 0 to (np - 1). Array with values (x0, y0, x1, y1,..., x(np-1), y(np - 1))
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :line_style Line style of polygon. Array with keys among the following:
+	# <ul>
+	#       <li>all: Line style of all lines. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	#       <li>0 to (:np - 1): Line style of each line. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	# </ul>
+	# If a key is not present or is null, not draws the line. Default value is default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+	# @param boolean :closed if true the polygon is closes, otherwise will remain open
+	# @access public
+	# @since 2.1.000 (2008-01-08)
+	#
+	def Polygon(p, style='', line_style=nil, fill_color=nil, closed=true)
+		style = '' if style.nil?
+		nc = p.length # number of coordinates
+		np = nc / 2 # number of points
+		if closed
+			# close polygon by adding the first 2 points at the end (one line)
+			0.upto(3) do |i|
+				p[nc + i] = p[i]
+			end
+			# copy style for the last added line
+			if line_style
+				if line_style.is_a? Array and line_style[0]
+					line_style[np] = line_style[0]
+				elsif line_style.is_a? Hash and line_style['all']
+					line_style[np] = line_style['all']
+				end
+			end
+			nc += 4
+		end
+		if (nil != style.index('F')) and fill_color
+			SetFillColorArray(fill_color)
+		end
+		op = getPathPaintOperator(style)
+		if op == 'f'
+			line_style = []
+		end
+		draw = true
+		if line_style
+			if line_style.is_a? Hash and line_style['all']
+				SetLineStyle(line_style['all'])
+			else
+				draw = false
+				if op == 'B'
+					# draw fill
+					op = 'f'
+					outPoint(p[0], p[1])
+					2.step(nc - 1, 2) do |i|
+						outLine(p[i], p[i + 1])
+					end
+					out(op)
+				end
+				# draw outline
+				outPoint(p[0], p[1])
+				2.step(nc - 1, 2) do |i|
+					line_num = i / 2 - 1
+					if line_style[line_num]
+						if line_style[line_num] != 0
+							if line_style[line_num].is_a? Hash
+								out('S')
+								SetLineStyle(line_style[line_num])
+								outPoint(p[i - 2], p[i - 1])
+								outLine(p[i], p[i + 1])
+								out('S')
+								outPoint(p[i], p[i + 1])
+							else
+								outLine(p[i], p[i + 1])
+							end
+						end
+					else
+						outLine(p[i], p[i + 1])
+					end
+				end
+				out(op)
+			end
+		end
+		if draw
+			outPoint(p[0], p[1])
+			2.step(nc - 1, 2) do |i|
+				outLine(p[i], p[i + 1])
+			end
+			out(op)
+		end
+	end
+
+	#
+	# Draws a regular polygon.
+	# @param float :x0 Abscissa of center point.
+	# @param float :y0 Ordinate of center point.
+	# @param float :r: Radius of inscribed circle.
+	# @param integer :ns Number of sides.
+	# @param float :angle Angle oriented (anti-clockwise). Default value: 0.
+	# @param boolean :draw_circle Draw inscribed circle or not. Default value: false.
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :line_style Line style of polygon sides. Array with keys among the following:
+	# <ul>
+	#       <li>all: Line style of all sides. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	#       <li>0 to (:ns - 1): Line style of each side. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	# </ul>
+	# If a key is not present or is null, not draws the side. Default value is default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(red, green, blue). Default value: default color (empty array).
+	# @param string :circle_style Style of rendering of inscribed circle (if draws). Possible values are:
+	# <ul>
+	#       <li>D or empty string: Draw (default).</li>
+	#       <li>F: Fill.</li>
+	#       <li>DF or FD: Draw and fill.</li>
+	#       <li>CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).</li>
+	#       <li>CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).</li>
+	# </ul>
+	# @param array :circle_outLine_style Line style of inscribed circle (if draws). Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :circle_fill_color Fill color of inscribed circle (if draws). Format: array(red, green, blue). Default value: default color (empty array).
+	# @access public
+	# @since 2.1.000 (2008-01-08)
+	#
+	def RegularPolygon(x0, y0, r, ns, angle=0, draw_circle=false, style='', line_style=nil, fill_color=nil, circle_style='', circle_outLine_style=nil, circle_fill_color=nil)
+		draw_circle = false if draw_circle == 0
+		if 3 > ns
+			ns = 3
+		end
+		if draw_circle
+			Circle(x0, y0, r, 0, 360, circle_style, circle_outLine_style, circle_fill_color)
+		end
+		p = []
+		0.upto(ns -1) do |i|
+			a = angle + i * 360 / ns
+			a_rad = a * ::Math::PI / 180 # deg2rad
+			p.push x0 + (r * ::Math.sin(a_rad))
+			p.push y0 + (r * ::Math.cos(a_rad))
+		end
+		Polygon(p, style, line_style, fill_color)
+	end
+
+	#
+	# Draws a star polygon
+	# @param float :x0 Abscissa of center point.
+	# @param float :y0 Ordinate of center point.
+	# @param float :r Radius of inscribed circle.
+	# @param integer :nv Number of vertices.
+	# @param integer :ng Number of gap (if (:ng % :nv = 1) then is a regular polygon).
+	# @param float :angle: Angle oriented (anti-clockwise). Default value: 0.
+	# @param boolean :draw_circle: Draw inscribed circle or not. Default value is false.
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :line_style Line style of polygon sides. Array with keys among the following:
+	# <ul>
+	#       <li>all: Line style of all sides. Array like for
+	# {@link SetLineStyle SetLineStyle}.</li>
+	#       <li>0 to (n - 1): Line style of each side. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	# </ul>
+	# If a key is not present or is null, not draws the side. Default value is default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(red, green, blue). Default value: default color (empty array).
+	# @param string :circle_style Style of rendering of inscribed circle (if draws). Possible values are:
+	# <ul>
+	#       <li>D or empty string: Draw (default).</li>
+	#       <li>F: Fill.</li>
+	#       <li>DF or FD: Draw and fill.</li>
+	#       <li>CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).</li>
+	#       <li>CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).</li>
+	# </ul>
+	# @param array :circle_outLine_style Line style of inscribed circle (if draws). Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :circle_fill_color Fill color of inscribed circle (if draws). Format: array(red, green, blue). Default value: default color (empty array).
+	# @access public
+	# @since 2.1.000 (2008-01-08)
+	#
+	def StarPolygon(x0, y0, r, nv, ng, angle=0, draw_circle=false, style='', line_style=nil, fill_color=nil, circle_style='', circle_outLine_style=nil, circle_fill_color=nil)
+		draw_circle = false if draw_circle == 0
+		if nv < 2
+			nv = 2
+		end
+		if draw_circle
+			Circle(x0, y0, r, 0, 360, circle_style, circle_outLine_style, circle_fill_color)
+		end
+		p2 = []
+		visited = []
+		0.upto(nv -1) do |i|
+			a = angle + i * 360 / nv
+			a_rad = a * ::Math::PI / 180 # deg2rad
+			p2.push x0 + r * ::Math.sin(a_rad)
+			p2.push y0 + r * ::Math.cos(a_rad)
+			visited.push false
+		end
+		p = []
+		i = 0
+		while true
+			p.push p2[i * 2]
+			p.push p2[i * 2 + 1]
+			visited[i] = true
+			i += ng
+			i %= nv
+			break if visited[i]
+		end
+		Polygon(p, style, line_style, fill_color)
+	end
+
+	#
+	# Draws a rounded rectangle.
+	# @param float :x Abscissa of upper-left corner.
+	# @param float :y Ordinate of upper-left corner.
+	# @param float :w Width.
+	# @param float :h Height.
+	# @param float :r the radius of the circle used to round off the corners of the rectangle.
+	# @param string :round_corner Draws rounded corner or not. String with a 0 (not rounded i-corner) or 1 (rounded i-corner) in i-position. Positions are, in order and begin to 0: top left, top right, bottom right and bottom left. Default value: all rounded corner ("1111").
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :border_style Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+	# @access public
+	# @since 2.1.000 (2008-01-08)
+	#
+	def RoundedRect(x, y, w, h, r, round_corner='1111', style='', border_style=nil, fill_color=nil)
+		RoundedRectXY(x, y, w, h, r, r, round_corner, style, border_style, fill_color)
+	end
+
+	#
+	# Draws a rounded rectangle.
+	# @param float :x Abscissa of upper-left corner.
+	# @param float :y Ordinate of upper-left corner.
+	# @param float :w Width.
+	# @param float :h Height.
+	# @param float :rx the x-axis radius of the ellipse used to round off the corners of the rectangle.
+	# @param float :ry the y-axis radius of the ellipse used to round off the corners of the rectangle.
+	# @param string :round_corner Draws rounded corner or not. String with a 0 (not rounded i-corner) or 1 (rounded i-corner) in i-position. Positions are, in order and begin to 0: top left, top right, bottom right and bottom left. Default value: all rounded corner ("1111").
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :border_style Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+	# @access public
+	# @since 4.9.019 (2010-04-22)
+	#
+	def RoundedRectXY(x, y, w, h, rx, ry, round_corner='1111', style='', border_style=nil, fill_color=nil)
+		style = '' if style.nil?
+		if (round_corner == '0000') or ((rx == ry) and (rx == 0))
+			# Not rounded
+			Rect(x, y, w, h, style, border_style, fill_color)
+			return
+		end
+		# Rounded
+		if (nil != style.index('F')) and fill_color
+			SetFillColorArray(fill_color)
+		end
+		op = getPathPaintOperator(style)
+		if op == 'f'
+			border_style = []
+		end
+		if border_style
+			SetLineStyle(border_style)
+		end
+		myArc = 4 / 3 * (::Math.sqrt(2) - 1)
+		outPoint(x + rx, y)
+		xc = x + w - rx
+		yc = y + ry
+		outLine(xc, y)
+		if round_corner[0,1] == '1'
+			outCurve(xc + (rx * myArc), yc - ry, xc + rx, yc - (ry * myArc), xc + rx, yc)
+		else
+			outLine(x + w, y)
+		end
+		xc = x + w - rx
+		yc = y + h - ry
+		outLine(x + w, yc)
+		if round_corner[1,1] == '1'
+			outCurve(xc + rx, yc + (ry * myArc), xc + (rx * myArc), yc + ry, xc, yc + ry)
+		else
+			outLine(x + w, y + h)
+		end
+		xc = x + rx
+		yc = y + h - ry
+		outLine(xc, y + h)
+		if round_corner[2,1] == '1'
+			outCurve(xc - (rx * myArc), yc + ry, xc - rx, yc + (ry * myArc), xc - rx, yc)
+		else
+			outLine(x, y + h)
+		end
+		xc = x + rx
+		yc = y + ry
+		outLine(x, yc)
+		if round_corner[3,1] == '1'
+			outCurve(xc - rx, yc - (ry * myArc), xc - (rx * myArc), yc - ry, xc, yc - ry)
+		else
+			outLine(x, y)
+			outLine(x + rx, y)
+		end
+		out(op)
+	end
+
+	#
+	# Draws a grahic arrow.
+	# @parameter float :x0 Abscissa of first point.
+	# @parameter float :y0 Ordinate of first point.
+	# @parameter float :x0 Abscissa of second point.
+	# @parameter float :y1 Ordinate of second point.
+	# @parameter int :head_style (0 = draw only arrowhead arms, 1 = draw closed arrowhead, but no fill, 2 = closed and filled arrowhead, 3 = filled arrowhead)
+	# @parameter float :arm_size length of arrowhead arms
+	# @parameter int :arm_angle angle between an arm and the shaft
+	# @author Piotr Galecki, Nicola Asuni, Andy Meier
+	# @since 4.6.018 (2009-07-10)
+	#
+	def Arrow(x0, y0, x1, y1, head_style=0, arm_size=5, arm_angle=15)
+		# getting arrow direction angle
+		# 0 deg angle is when both arms go along X axis. angle grows clockwise.
+		dir_angle = ::Math.atan2(y0 - y1, x0 - x1)
+		if dir_angle < 0
+			dir_angle += 2 * ::Math::PI
+		end
+		arm_angle = arm_angle * ::Math::PI / 180 # deg2rad
+		sx1 = x1
+		sy1 = y1
+		if head_style > 0
+			# calculate the stopping point for the arrow shaft
+			sx1 = x1 + (arm_size - @line_width) * ::Math.cos(dir_angle)
+			sy1 = y1 + (arm_size - @line_width) * ::Math.sin(dir_angle)
+		end
+		# main arrow line / shaft
+		Line(x0, y0, sx1, sy1)
+		# left arrowhead arm tip
+		x2L = x1 + (arm_size * ::Math.cos(dir_angle + arm_angle))
+		y2L = y1 + (arm_size * ::Math.sin(dir_angle + arm_angle))
+		# right arrowhead arm tip
+		x2R = x1 + (arm_size * ::Math.cos(dir_angle - arm_angle))
+		y2R = y1 + (arm_size * ::Math.sin(dir_angle - arm_angle))
+		mode = 'D'
+		style = []
+		case head_style
+		when 0
+			# draw only arrowhead arms
+			mode = 'D'
+			style = [1, 1, 0]
+		when 1
+			# draw closed arrowhead, but no fill
+			mode = 'D'
+		when 2
+			# closed and filled arrowhead
+			mode = 'DF'
+		when 3
+			# filled arrowhead
+			mode = 'F'
+		end
+		Polygon([x2L, y2L, x1, y1, x2R, y2R], mode, style, nil)
+	end
 
 	#
 	# Imports a TrueType, Type1, core, or CID0 font and makes it available.
@@ -3460,7 +3822,7 @@ class TCPDF
 			end
 		end
 		checkPageBreak(h)
-		out(getCellCode(w, h, txt, border, ln, align, fill, link, stretch, ignore_min_height, calign, valign) + ' ')
+		out(getCellCode(w, h, txt, border, ln, align, fill, link, stretch, ignore_min_height, calign, valign))
 	end
   alias_method :cell, :Cell
 
@@ -6715,6 +7077,7 @@ class TCPDF
 	# @access protected
 	#
 	def endpage()
+		SetVisibility('all')
 		@state=1;
 	end
 
