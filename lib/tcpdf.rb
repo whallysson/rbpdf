@@ -1240,6 +1240,20 @@ class TCPDF
   alias_method :set_creator, :SetCreator
 
 	#
+	# Create a new page group.
+	# NOTE: call this function before calling AddPage()
+	# @param int :page starting group page (leave empty for next page).
+	# @access public
+	# @since 3.0.000 (2008-03-27)
+	#
+	def startPageGroup(page='')
+		if page.empty?
+			page = @page + 1
+		end
+		@newpagegroup[page] = true
+	end
+
+	#
 	# Defines an alias for the total number of pages.
 	# It will be substituted as the document is closed.
 	# @param string :alias The alias.
@@ -5626,7 +5640,7 @@ class TCPDF
 					pagegroupnum = 0
 				end
 				pagegroupnum += 1
-				@pagegroups.each_with_index { |v, k|
+				@pagegroups.each { |k, v|
 					# replace total pages group numbers
 					vs = formatPageNumber(v)
 					vu = UTF8ToUTF16BE(vs, false)
@@ -5635,7 +5649,7 @@ class TCPDF
 					if @is_unicode
 						alias_gb = escape(UTF8ToLatin1(k))
 						alias_gbu = escape(UTF8ToLatin1('{' + k + '}'))
-						alias_gc = escape(utf8StrRev(k, false, @tmprtl))
+						alias_gc = escape(utf8StrRev(k.dup, false, @tmprtl))
 						alias_gcu = escape(utf8StrRev('{' + k + '}', false, @tmprtl))
 					end
 					temppage = temppage.gsub(alias_gau, vu)
