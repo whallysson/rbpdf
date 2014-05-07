@@ -4246,6 +4246,9 @@ class TCPDF
 	# @see SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), Cell(), Write(), SetAutoPageBreak()
 	#
 	def MultiCell(w, h, txt, border=0, align='J', fill=0, ln=1, x='', y='', reseth=true, stretch=0, ishtml=false, autopadding=true, maxh=0)
+		w = 0 unless w.is_a?(Numeric)
+		h = 0 unless h.is_a?(Numeric)
+
 		if empty_string(@lasth) or reseth
 			# set row height
 			@lasth = @font_size * @cell_height_ratio
