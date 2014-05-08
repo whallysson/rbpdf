@@ -4453,6 +4453,28 @@ class TCPDF
   alias_method :get_x, :GetX
 
 	#
+	# Returns the absolute X value of current position.
+	# @return float
+	# @since 1.2
+	# @see SetY(), GetX(), SetX()
+	#
+	def GetAbsX()
+		return @x
+	end
+  alias_method :get_abs_x, :GetAbsX
+
+	#
+	# Returns the ordinate of the current position.
+	# @return float
+	# @since 1.0
+	# @see SetY(), GetX(), SetX()
+	#
+	def GetY()
+		return @y;
+	end
+  alias_method :get_y, :GetY
+
+	#
 	# Defines the abscissa of the current position.
 	# If the passed value is negative, it is relative to the right of the page (or left if language is RTL).
 	# @param float :x The value of the abscissa.
@@ -4478,28 +4500,6 @@ class TCPDF
 		end
 	end
   alias_method :set_x, :SetX
-
-	#
-	# Returns the ordinate of the current position.
-	# @return float
-	# @since 1.0
-	# @see SetY(), GetX(), SetX()
-	#
-	def GetY()
-		return @y;
-	end
-  alias_method :get_y, :GetY
-
-	#
-	# Returns the absolute X value of current position.
-	# @return float
-	# @since 1.2
-	# @see SetY(), GetX(), SetX()
-	#
-	def GetAbsX()
-		return @x
-	end
-  alias_method :get_abs_x, :GetAbsX
 
 	#
 	# Moves the current abscissa back to the left margin and sets the ordinate.
