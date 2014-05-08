@@ -2225,809 +2225,6 @@ class TCPDF
 	end
 
 	#
-	# Defines the line width. By default, the value equals 0.2 mm. The method can be called before the first page is created and the value is retained from page to page.
-	# @param float :width The width.
-	# @access public
-	# @since 1.0
-	# @see Line(), Rect(), Cell(), MultiCell()
-	#
-	def SetLineWidth(width)
-		#Set line width
-		@line_width = width;
-		@linestyle_width = sprintf('%.2f w', width * @k)
-		if (@page>0)
-			out(@linestyle_width)
-		end
-	end
-  alias_method :set_line_width, :SetLineWidth
-
-	#
-	# Returns the current the line width.
-	# @return int Line width
-	# @access public
-	# @since 2.1.000 (2008-01-07)
-	# @see Line(), SetLineWidth()
-	#
-	def GetLineWidth()
-		return @line_width
-	end
-  alias_method :get_line_width, :GetLineWidth
-
-	#
-	# Set line style.
-	# @param hash :style Line style. Array with keys among the following:
-	# <ul>
-	#        <li>width (float): Width of the line in user units.</li>
-	#        <li>cap (string): Type of cap to put on the line. Possible values are: butt, round, square. The difference between "square" and "butt" is that "square" projects a flat end past the end of the line.</li>
-	#        <li>join (string): Type of join. Possible values are: miter, round, bevel.</li>
-	#        <li>dash (mixed): Dash pattern. Is 0 (without dash) or string with series of length values, which are the lengths of the on and off dashes. For example: "2" represents 2 on, 2 off, 2 on, 2 off, ...; "2,1" is 2 on, 1 off, 2 on, 1 off, ...</li>
-	#        <li>phase (integer): Modifier on the dash pattern which is used to shift the point at which the pattern starts.</li>
-	#        <li>color (array): Draw color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K).</li>
-	# </ul>
-	# @access public
-	# @since 2.1.000 (2008-01-08)
-	#
-	def SetLineStyle(style)
-		unless style.is_a? Hash
-			return
-		end
-		if !style['width'].nil?
-			width = style['width']
-			width_prev = @line_width
-			SetLineWidth(width)
-			@line_width = width_prev
-		end
-		if !style['cap'].nil?
-			cap = style['cap']
-			ca = {'butt' => 0, 'round'=> 1, 'square' => 2}
-			if !ca[cap].nil?
-				@linestyle_cap = ca[cap].to_s + ' J'
-				out(@linestyle_cap)
-			end
-		end
-		if !style['join'].nil?
-			join = style['join']
-			ja = {'miter' => 0, 'round' => 1, 'bevel' => 2}
-			if !ja[join].nil?
-				@linestyle_join = ja[join].to_s + ' j'
-				out(@linestyle_join);
-			end
-		end
-		if !style['dash'].nil?
-			dash = style['dash']
-			dash_string = ''
-			if dash != 0 and dash != ''
-				if dash =~ /^.+,/
-					tab = dash.split(',')
-				else
-					tab = [dash]
-				end
-				dash_string = ''
-				tab.each_with_index { |v, i|
-					if i != 0
-						dash_string << ' '
-					end
-					dash_string << sprintf("%.2f", v.to_f)
-				}
-			end
-			phase = 0
-			@linestyle_dash = sprintf("[%s] %.2f d", dash_string, phase)
-			out(@linestyle_dash)
-		end
-		if !style['color'].nil?
-			color = style['color']
-			SetDrawColorArray(color)
-		end
-	end
-
-	#
-	# Draws a line between two points.
-	# @param float :x1 Abscissa of first point
-	# @param float :y1 Ordinate of first point
-	# @param float :x2 Abscissa of second point
-	# @param float :y2 Ordinate of second point
-	# @param hash :style Line style. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-	# @access public
-	# @since 1.0
-	# @see SetLineWidth(), SetDrawColor(), SetLineStyle()
-	#
-	def Line(x1, y1, x2, y2, style=nil)
-		if style.is_a? Hash
-			SetLineStyle(style)
-		end
-		outPoint(x1, y1)
-		outLine(x2, y2)
-		out('S')
-	end
-  alias_method :line, :Line
-                
-	#
-	# Begin a new subpath by moving the current point to coordinates (x, y), omitting any connecting line segment.
-	# @param float :x Abscissa of point.
-	# @param float :y Ordinate of point.
-	# @access protected
-	# @since 2.1.000 (2008-01-08)
-	#
-	def outPoint(x, y)
-		out(sprintf("%.2f %.2f m", x * @k, (@h - y) * @k))
-	end
-
-	#
-	# Append a straight line segment from the current point to the point (x, y).
-	# The new current point shall be (x, y).
-	# @param float :x Abscissa of end point.
-	# @param float :y Ordinate of end point.
-	# @access protected
-	# @since 2.1.000 (2008-01-08)
-	#
-	def outLine(x, y)
-		out(sprintf("%.2f %.2f l", x * @k, (@h - y) * @k))
-	end
-
-	#
-	# Append a rectangle to the current path as a complete subpath, with lower-left corner (x, y) and dimensions widthand height in user space.
-	# @param float :x Abscissa of upper-left corner (or upper-right corner for RTL language).
-	# @param float :y Ordinate of upper-left corner (or upper-right corner for RTL language).
-	# @param float :w Width.
-	# @param float :h Height.
-	# @param string :op options
-	# @access protected
-	# @since 2.1.000 (2008-01-08)
-	#
-	def outRect(x, y, w, h, op)
-		out(sprintf('%.2f %.2f %.2f %.2f re %s', x * @k, (@h - y) * @k, w * @k, -h * @k, op))
-	end
-
-	#
-	# Append a cubic Bezier curve to the current path. The curve shall extend from the current point to the point (x3, y3), using (x1, y1) and (x2, y2) as the Bezier control points.
-	# The new current point shall be (x3, y3).
-	# @param float :x1 Abscissa of control point 1.
-	# @param float :y1 Ordinate of control point 1.
-	# @param float :x2 Abscissa of control point 2.
-	# @param float :y2 Ordinate of control point 2.
-	# @param float :x3 Abscissa of end point.
-	# @param float :y3 Ordinate of end point.
-	# @access protected
-	# @since 2.1.000 (2008-01-08)
-	#
-	def outCurve(x1, y1, x2, y2, x3, y3)
-		out(sprintf("%.2f %.2f %.2f %.2f %.2f %.2f c", x1 * @k, (@h - y1) * @k, x2 * @k, (@h - y2) * @k, x3 * @k, (@h - y3) * @k))
-	end
-
-	#
-	# Append a cubic Bezier curve to the current path. The curve shall extend from the current point to the point (x3, y3), using the current point and (x2, y2) as the Bezier control points.
-	# The new current point shall be (x3, y3).
-	# @param float :x2 Abscissa of control point 2.
-	# @param float :y2 Ordinate of control point 2.
-	# @param float :x3 Abscissa of end point.
-	# @param float :y3 Ordinate of end point.
-	# @access protected
-	# @since 4.9.019 (2010-04-26)
-	#
-	def outCurveV(x2, y2, x3, y3)
-		out(sprintf('%.2f %.2f %.2f %.2f v', x2 * @k, (@h - y2) * @k, x3 * @k, (@h - y3) * @k))
-	end
-
-	#
-	# Append a cubic Bezier curve to the current path. The curve shall extend from the current point to the point (x3, y3), using (x1, y1) and (x3, y3) as the Bezier control points.
-	# The new current point shall be (x3, y3).
-	# @param float :x1 Abscissa of control point 1.
-	# @param float :y1 Ordinate of control point 1.
-	# @param float :x2 Abscissa of control point 2.
-	# @param float :y2 Ordinate of control point 2.
-	# @param float :x3 Abscissa of end point.
-	# @param float :y3 Ordinate of end point.
-	# @access protected
-	# @since 4.9.019 (2010-04-26)
-	#
-	def outCurveY(x1, y1, x3, y3)
-		out(sprintf('%.2f %.2f %.2f %.2f y', x1 * @k, (@h - y1) * @k, x3 * @k, (@h - y3) * @k))
-	end
-
-	#
-	# Draws a rectangle.
-	# @param float :x Abscissa of upper-left corner (or upper-right corner for RTL language).
-	# @param float :y Ordinate of upper-left corner (or upper-right corner for RTL language).
-	# @param float :w Width.
-	# @param float :h Height.
-	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-	# <ul>
-	#        <li>all: Line style of all borders. Array like for {@link SetLineStyle SetLineStyle}.</li>
-	#        <li>L, T, R, B or combinations: Line style of left, top, right or bottom border. Array like for {@link SetLineStyle SetLineStyle}.</li>
-	# </ul>
-	# If a key is not present or is null, not draws the border. Default value: default line style (empty array).
-	# @param array :border_style Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-	# @access public
-	# @since 1.0
-	# @see SetLineStyle()
-	#
-	def Rect(x, y, w, h, style='', border_style={}, fill_color={})
-		if style.index('F') != nil and !fill_color.empty?
-			SetFillColorArray(fill_color)
-		end
-		op = getPathPaintOperator(style)
-		if !border_style or !border_style['all'].nil?
-			if !border_style['all'].nil? and border_style['all']
-				SetLineStyle(border_style['all'])
-				border_style = {}
-			end
-		end
-		outRect(x, y, w, h, op)
-
-		if border_style
-			border_style2 = {}
-			border_style.each { |line, value|
-				length = line.length
-				0.upto(length - 1) do |i|
-					border_style2[line[i]] = value
-				end
-			}
-			border_style = border_style2
-			if !border_style['L'].nil? and border_style['L']
-				Line(x, y, x, y + h, border_style['L'])
-			end
-			if !border_style['T'].nil? and border_style['T']
-				Line(x, y, x + w, y, border_style['T'])
-			end
-			if !border_style['R'].nil? and border_style['R']
-				Line(x + w, y, x + w, y + h, border_style['R'])
-			end
-			if !border_style['B'].nil? and border_style['B']
-				Line(x, y + h, x + w, y + h, border_style['B'])
-			end
-		end
-	end
-  alias_method :rect, :Rect
-
-	#
-	# Draws a Bezier curve.
-	# The Bezier curve is a tangent to the line between the control points at
-	# either end of the curve.
-	# @param float :x0 Abscissa of start point.
-	# @param float :y0 Ordinate of start point.
-	# @param float :x1 Abscissa of control point 1.
-	# @param float :y1 Ordinate of control point 1.
-	# @param float :x2 Abscissa of control point 2.
-	# @param float :y2 Ordinate of control point 2.
-	# @param float :x3 Abscissa of end point.
-	# @param float :y3 Ordinate of end point.
-	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-	# @param array :line_style Line style of curve. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-	# @access public
-	# @see SetLineStyle()
-	# @since 2.1.000 (2008-01-08)
-	#
-	def Curve(x0, y0, x1, y1, x2, y2, x3, y3, style='', line_style=nil, fill_color=nil)
-		if style and (style.index('F') != nil) and fill_color
-			SetFillColorArray(fill_color)
-		end
-		op = getPathPaintOperator(style)
-		if line_style
-			SetLineStyle(line_style)
-		end
-		outPoint(x0, y0)
-		outCurve(x1, y1, x2, y2, x3, y3)
-		out(op)
-	end
-
-	#
-	# Draws an ellipse.
-	# An ellipse is formed from n Bezier curves.
-	# @param float :x0 Abscissa of center point.
-	# @param float :y0 Ordinate of center point.
-	# @param float :rx Horizontal radius.
-	# @param float :ry Vertical radius (if ry = 0 then is a circle, see {@link Circle Circle}). Default value: 0.
-	# @param float :angle: Angle oriented (anti-clockwise). Default value: 0.
-	# @param float :astart: Angle start of draw line. Default value: 0.
-	# @param float :afinish: Angle finish of draw line. Default value: 360.
-	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-	# @param array :line_style Line style of ellipse. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-	# @param integer :nc Number of curves used to draw a 90 degrees portion of ellipse.
-	# @author Nicola Asuni
-	# @access public
-	# @since 2.1.000 (2008-01-08)
-	#
-	def Ellipse(x0, y0, rx, ry='', angle=0, astart=0, afinish=360, style='', line_style=nil, fill_color=nil, nc=2)
-		style = '' if style.nil?
-		if empty_string(ry) or (ry == 0)
-			ry = rx
-		end
-		if (nil != style.index('F')) and fill_color
-			SetFillColorArray(fill_color)
-		end
-		op = getPathPaintOperator(style)
-		if op == 'f'
-			line_style = nil
-		end
-
-		if line_style and !line_style.empty?
-			SetLineStyle(line_style)
-		end
-		outellipticalarc(x0, y0, rx, ry, angle, astart, afinish, false, nc)
-		out(op)
-	end
-
-	#
-	# Append an elliptical arc to the current path.
-	# An ellipse is formed from n Bezier curves.
-	# @param float :xc Abscissa of center point.
-	# @param float :yc Ordinate of center point.
-	# @param float :rx Horizontal radius.
-	# @param float :ry Vertical radius (if ry = 0 then is a circle, see {@link Circle Circle}). Default value: 0.
-	# @param float :xang: Angle between the X-axis and the major axis of the ellipse. Default value: 0.
-	# @param float :angs: Angle start of draw line. Default value: 0.
-	# @param float :angf: Angle finish of draw line. Default value: 360.
-	# @param boolean :pie if true do not mark the border point (used to draw pie sectors).
-	# @param integer :nc Number of curves used to draw a 90 degrees portion of ellipse.
-	# @author Nicola Asuni
-	# @access protected
-	# @since 4.9.019 (2010-04-26)
-	#
-	def outellipticalarc(xc, yc, rx, ry, xang=0, angs=0, angf=360, pie=false, nc=2)
-		k = @k
-		if nc < 2
-			nc = 2
-		end
-		if pie
-			# center of the arc
-			outPoint(xc, yc)
-		end
-		xang = xang * ::Math::PI / 180 # deg2rad
-		angs = angs * ::Math::PI / 180 # deg2rad
-		angf = angf * ::Math::PI / 180 # deg2rad
-		as = ::Math.atan2((::Math.sin(angs) / ry), (::Math.cos(angs) / rx))
-		af = ::Math.atan2((::Math.sin(angf) / ry), (::Math.cos(angf) / rx))
-		if as < 0
-			as += (2 * ::Math::PI)
-		end
-		if af < 0
-			af += (2 * ::Math::PI)
-		end
-		if as > af
-			# reverse rotation go clockwise
-			as -= (2 * ::Math::PI)
-		end
-		total_angle = af - as
-		if nc < 2
-			nc = 2
-		end
-		# total arcs to draw
-		nc *= (2 * total_angle.abs / ::Math::PI)
-		nc = nc.round + 1
-		# angle of each arc
-		arcang = total_angle / nc
-		# center point in PDF coordiantes
-		x0 = xc
-		y0 = @h - yc
-		# starting angle
-		ang = as
-		alpha = ::Math.sin(arcang) * (::Math.sqrt(4 + 3 * (::Math.tan(arcang / 2) ** 2)) - 1) / 3
-		cos_xang = ::Math.cos(xang)
-		sin_xang = ::Math.sin(xang)
-		cos_ang = ::Math.cos(ang)
-		sin_ang = ::Math.sin(ang)
-		# first arc point
-		px1 = x0 + (rx * cos_xang * cos_ang) - (ry * sin_xang * sin_ang)
-		py1 = y0 + (rx * sin_xang * cos_ang) + (ry * cos_xang * sin_ang)
-		# first Bezier control point
-		qx1 = alpha * ((-rx * cos_xang * sin_ang) - (ry * sin_xang * cos_ang))
-		qy1 = alpha * ((-rx * sin_xang * sin_ang) + (ry * cos_xang * cos_ang))
-		if pie
-			outLine(px1, @h - py1)
-		else
-			outPoint(px1, @h - py1)
-		end
-		# draw arcs
-		1.upto(nc) do |i|
-			# starting angle
-			ang = as + i * arcang
-			cos_xang = ::Math.cos(xang)
-			sin_xang = ::Math.sin(xang)
-			cos_ang = ::Math.cos(ang)
-			sin_ang = ::Math.sin(ang)
-			# second arc point
-			px2 = x0 + (rx * cos_xang * cos_ang) - (ry * sin_xang * sin_ang)
-			py2 = y0 + (rx * sin_xang * cos_ang) + (ry * cos_xang * sin_ang)
-			# second Bezier control point
-			qx2 = alpha * ((-rx * cos_xang * sin_ang) - (ry * sin_xang * cos_ang))
-			qy2 = alpha * ((-rx * sin_xang * sin_ang) + (ry * cos_xang * cos_ang))
-			# draw arc
-			outCurve(px1 + qx1, @h - (py1 + qy1), px2 - qx2, @h - (py2 - qy2), px2, @h - py2)
-			# move to next point
-			px1 = px2
-			py1 = py2
-			qx1 = qx2
-			qy1 = qy2
-		end
-		if pie
-			outLine(xc, yc)
-		end
-	end
-
-	#
-	# Draws a circle.
-	# A circle is formed from n Bezier curves.
-	# @param float :x0 Abscissa of center point.
-	# @param float :y0 Ordinate of center point.
-	# @param float :r Radius.
-	# @param float :angstr: Angle start of draw line. Default value: 0.
-	# @param float :angend: Angle finish of draw line. Default value: 360.
-	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-	# @param array :line_style Line style of circle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-	# @param array :fill_color Fill color. Format: array(red, green, blue). Default value: default color (empty array).
-	# @param integer :nc Number of curves used to draw a 90 degrees portion of circle.
-	# @access public
-	# @since 2.1.000 (2008-01-08)
-	#
-	def Circle(x0, y0, r, angstr=0, angend=360, style='', line_style=nil, fill_color=nil, nc=2)
-		Ellipse(x0, y0, r, r, 0, angstr, angend, style, line_style, fill_color, nc)
-	end
-	alias_method :circle, :Circle
-
-	#
-	# Draws a polygonal line
-	# @param array :p Points 0 to (:np - 1). Array with values (x0, y0, x1, y1,..., x(np-1), y(np - 1))
-	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-	# @param array :line_style Line style of polygon. Array with keys among the following:
-	# <ul>
-	#       <li>all: Line style of all lines. Array like for {@link SetLineStyle SetLineStyle}.</li>
-	#       <li>0 to (:np - 1): Line style of each line. Array like for {@link SetLineStyle SetLineStyle}.</li>
-	# </ul>
-	# If a key is not present or is null, not draws the line. Default value is default line style (empty array).
-	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-	# @param boolean :closed if true the polygon is closes, otherwise will remain open
-	# @access public
-	# @since 4.8.003 (2009-09-15)
-	#
-	def PolyLine(p, style='', line_style=nil, fill_color=nil)
-		Polygon(p, style, line_style, fill_color, false)
-	end
-
-	#
-	# Draws a polygon.
-	# @param array :p Points 0 to (np - 1). Array with values (x0, y0, x1, y1,..., x(np-1), y(np - 1))
-	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-	# @param array :line_style Line style of polygon. Array with keys among the following:
-	# <ul>
-	#       <li>all: Line style of all lines. Array like for {@link SetLineStyle SetLineStyle}.</li>
-	#       <li>0 to (:np - 1): Line style of each line. Array like for {@link SetLineStyle SetLineStyle}.</li>
-	# </ul>
-	# If a key is not present or is null, not draws the line. Default value is default line style (empty array).
-	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-	# @param boolean :closed if true the polygon is closes, otherwise will remain open
-	# @access public
-	# @since 2.1.000 (2008-01-08)
-	#
-	def Polygon(p, style='', line_style=nil, fill_color=nil, closed=true)
-		style = '' if style.nil?
-		nc = p.length # number of coordinates
-		np = nc / 2 # number of points
-		if closed
-			# close polygon by adding the first 2 points at the end (one line)
-			0.upto(3) do |i|
-				p[nc + i] = p[i]
-			end
-			# copy style for the last added line
-			if line_style
-				if line_style.is_a? Array and line_style[0]
-					line_style[np] = line_style[0]
-				elsif line_style.is_a? Hash and line_style['all']
-					line_style[np] = line_style['all']
-				end
-			end
-			nc += 4
-		end
-		if (nil != style.index('F')) and fill_color
-			SetFillColorArray(fill_color)
-		end
-		op = getPathPaintOperator(style)
-		if op == 'f'
-			line_style = []
-		end
-		draw = true
-		if line_style
-			if line_style.is_a? Hash and line_style['all']
-				SetLineStyle(line_style['all'])
-			else
-				draw = false
-				if op == 'B'
-					# draw fill
-					op = 'f'
-					outPoint(p[0], p[1])
-					2.step(nc - 1, 2) do |i|
-						outLine(p[i], p[i + 1])
-					end
-					out(op)
-				end
-				# draw outline
-				outPoint(p[0], p[1])
-				2.step(nc - 1, 2) do |i|
-					line_num = i / 2 - 1
-					if line_style[line_num]
-						if line_style[line_num] != 0
-							if line_style[line_num].is_a? Hash
-								out('S')
-								SetLineStyle(line_style[line_num])
-								outPoint(p[i - 2], p[i - 1])
-								outLine(p[i], p[i + 1])
-								out('S')
-								outPoint(p[i], p[i + 1])
-							else
-								outLine(p[i], p[i + 1])
-							end
-						end
-					else
-						outLine(p[i], p[i + 1])
-					end
-				end
-				out(op)
-			end
-		end
-		if draw
-			outPoint(p[0], p[1])
-			2.step(nc - 1, 2) do |i|
-				outLine(p[i], p[i + 1])
-			end
-			out(op)
-		end
-	end
-
-	#
-	# Draws a regular polygon.
-	# @param float :x0 Abscissa of center point.
-	# @param float :y0 Ordinate of center point.
-	# @param float :r: Radius of inscribed circle.
-	# @param integer :ns Number of sides.
-	# @param float :angle Angle oriented (anti-clockwise). Default value: 0.
-	# @param boolean :draw_circle Draw inscribed circle or not. Default value: false.
-	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-	# @param array :line_style Line style of polygon sides. Array with keys among the following:
-	# <ul>
-	#       <li>all: Line style of all sides. Array like for {@link SetLineStyle SetLineStyle}.</li>
-	#       <li>0 to (:ns - 1): Line style of each side. Array like for {@link SetLineStyle SetLineStyle}.</li>
-	# </ul>
-	# If a key is not present or is null, not draws the side. Default value is default line style (empty array).
-	# @param array :fill_color Fill color. Format: array(red, green, blue). Default value: default color (empty array).
-	# @param string :circle_style Style of rendering of inscribed circle (if draws). Possible values are:
-	# <ul>
-	#       <li>D or empty string: Draw (default).</li>
-	#       <li>F: Fill.</li>
-	#       <li>DF or FD: Draw and fill.</li>
-	#       <li>CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).</li>
-	#       <li>CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).</li>
-	# </ul>
-	# @param array :circle_outLine_style Line style of inscribed circle (if draws). Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-	# @param array :circle_fill_color Fill color of inscribed circle (if draws). Format: array(red, green, blue). Default value: default color (empty array).
-	# @access public
-	# @since 2.1.000 (2008-01-08)
-	#
-	def RegularPolygon(x0, y0, r, ns, angle=0, draw_circle=false, style='', line_style=nil, fill_color=nil, circle_style='', circle_outLine_style=nil, circle_fill_color=nil)
-		draw_circle = false if draw_circle == 0
-		if 3 > ns
-			ns = 3
-		end
-		if draw_circle
-			Circle(x0, y0, r, 0, 360, circle_style, circle_outLine_style, circle_fill_color)
-		end
-		p = []
-		0.upto(ns -1) do |i|
-			a = angle + i * 360 / ns
-			a_rad = a * ::Math::PI / 180 # deg2rad
-			p.push x0 + (r * ::Math.sin(a_rad))
-			p.push y0 + (r * ::Math.cos(a_rad))
-		end
-		Polygon(p, style, line_style, fill_color)
-	end
-
-	#
-	# Draws a star polygon
-	# @param float :x0 Abscissa of center point.
-	# @param float :y0 Ordinate of center point.
-	# @param float :r Radius of inscribed circle.
-	# @param integer :nv Number of vertices.
-	# @param integer :ng Number of gap (if (:ng % :nv = 1) then is a regular polygon).
-	# @param float :angle: Angle oriented (anti-clockwise). Default value: 0.
-	# @param boolean :draw_circle: Draw inscribed circle or not. Default value is false.
-	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-	# @param array :line_style Line style of polygon sides. Array with keys among the following:
-	# <ul>
-	#       <li>all: Line style of all sides. Array like for
-	# {@link SetLineStyle SetLineStyle}.</li>
-	#       <li>0 to (n - 1): Line style of each side. Array like for {@link SetLineStyle SetLineStyle}.</li>
-	# </ul>
-	# If a key is not present or is null, not draws the side. Default value is default line style (empty array).
-	# @param array :fill_color Fill color. Format: array(red, green, blue). Default value: default color (empty array).
-	# @param string :circle_style Style of rendering of inscribed circle (if draws). Possible values are:
-	# <ul>
-	#       <li>D or empty string: Draw (default).</li>
-	#       <li>F: Fill.</li>
-	#       <li>DF or FD: Draw and fill.</li>
-	#       <li>CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).</li>
-	#       <li>CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).</li>
-	# </ul>
-	# @param array :circle_outLine_style Line style of inscribed circle (if draws). Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-	# @param array :circle_fill_color Fill color of inscribed circle (if draws). Format: array(red, green, blue). Default value: default color (empty array).
-	# @access public
-	# @since 2.1.000 (2008-01-08)
-	#
-	def StarPolygon(x0, y0, r, nv, ng, angle=0, draw_circle=false, style='', line_style=nil, fill_color=nil, circle_style='', circle_outLine_style=nil, circle_fill_color=nil)
-		draw_circle = false if draw_circle == 0
-		if nv < 2
-			nv = 2
-		end
-		if draw_circle
-			Circle(x0, y0, r, 0, 360, circle_style, circle_outLine_style, circle_fill_color)
-		end
-		p2 = []
-		visited = []
-		0.upto(nv -1) do |i|
-			a = angle + i * 360 / nv
-			a_rad = a * ::Math::PI / 180 # deg2rad
-			p2.push x0 + r * ::Math.sin(a_rad)
-			p2.push y0 + r * ::Math.cos(a_rad)
-			visited.push false
-		end
-		p = []
-		i = 0
-		while true
-			p.push p2[i * 2]
-			p.push p2[i * 2 + 1]
-			visited[i] = true
-			i += ng
-			i %= nv
-			break if visited[i]
-		end
-		Polygon(p, style, line_style, fill_color)
-	end
-
-	#
-	# Draws a rounded rectangle.
-	# @param float :x Abscissa of upper-left corner.
-	# @param float :y Ordinate of upper-left corner.
-	# @param float :w Width.
-	# @param float :h Height.
-	# @param float :r the radius of the circle used to round off the corners of the rectangle.
-	# @param string :round_corner Draws rounded corner or not. String with a 0 (not rounded i-corner) or 1 (rounded i-corner) in i-position. Positions are, in order and begin to 0: top left, top right, bottom right and bottom left. Default value: all rounded corner ("1111").
-	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-	# @param array :border_style Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-	# @access public
-	# @since 2.1.000 (2008-01-08)
-	#
-	def RoundedRect(x, y, w, h, r, round_corner='1111', style='', border_style=nil, fill_color=nil)
-		RoundedRectXY(x, y, w, h, r, r, round_corner, style, border_style, fill_color)
-	end
-
-	#
-	# Draws a rounded rectangle.
-	# @param float :x Abscissa of upper-left corner.
-	# @param float :y Ordinate of upper-left corner.
-	# @param float :w Width.
-	# @param float :h Height.
-	# @param float :rx the x-axis radius of the ellipse used to round off the corners of the rectangle.
-	# @param float :ry the y-axis radius of the ellipse used to round off the corners of the rectangle.
-	# @param string :round_corner Draws rounded corner or not. String with a 0 (not rounded i-corner) or 1 (rounded i-corner) in i-position. Positions are, in order and begin to 0: top left, top right, bottom right and bottom left. Default value: all rounded corner ("1111").
-	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-	# @param array :border_style Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-	# @access public
-	# @since 4.9.019 (2010-04-22)
-	#
-	def RoundedRectXY(x, y, w, h, rx, ry, round_corner='1111', style='', border_style=nil, fill_color=nil)
-		style = '' if style.nil?
-		if (round_corner == '0000') or ((rx == ry) and (rx == 0))
-			# Not rounded
-			Rect(x, y, w, h, style, border_style, fill_color)
-			return
-		end
-		# Rounded
-		if (nil != style.index('F')) and fill_color
-			SetFillColorArray(fill_color)
-		end
-		op = getPathPaintOperator(style)
-		if op == 'f'
-			border_style = []
-		end
-		if border_style
-			SetLineStyle(border_style)
-		end
-		myArc = 4 / 3 * (::Math.sqrt(2) - 1)
-		outPoint(x + rx, y)
-		xc = x + w - rx
-		yc = y + ry
-		outLine(xc, y)
-		if round_corner[0,1] == '1'
-			outCurve(xc + (rx * myArc), yc - ry, xc + rx, yc - (ry * myArc), xc + rx, yc)
-		else
-			outLine(x + w, y)
-		end
-		xc = x + w - rx
-		yc = y + h - ry
-		outLine(x + w, yc)
-		if round_corner[1,1] == '1'
-			outCurve(xc + rx, yc + (ry * myArc), xc + (rx * myArc), yc + ry, xc, yc + ry)
-		else
-			outLine(x + w, y + h)
-		end
-		xc = x + rx
-		yc = y + h - ry
-		outLine(xc, y + h)
-		if round_corner[2,1] == '1'
-			outCurve(xc - (rx * myArc), yc + ry, xc - rx, yc + (ry * myArc), xc - rx, yc)
-		else
-			outLine(x, y + h)
-		end
-		xc = x + rx
-		yc = y + ry
-		outLine(x, yc)
-		if round_corner[3,1] == '1'
-			outCurve(xc - rx, yc - (ry * myArc), xc - (rx * myArc), yc - ry, xc, yc - ry)
-		else
-			outLine(x, y)
-			outLine(x + rx, y)
-		end
-		out(op)
-	end
-
-	#
-	# Draws a grahic arrow.
-	# @parameter float :x0 Abscissa of first point.
-	# @parameter float :y0 Ordinate of first point.
-	# @parameter float :x0 Abscissa of second point.
-	# @parameter float :y1 Ordinate of second point.
-	# @parameter int :head_style (0 = draw only arrowhead arms, 1 = draw closed arrowhead, but no fill, 2 = closed and filled arrowhead, 3 = filled arrowhead)
-	# @parameter float :arm_size length of arrowhead arms
-	# @parameter int :arm_angle angle between an arm and the shaft
-	# @author Piotr Galecki, Nicola Asuni, Andy Meier
-	# @since 4.6.018 (2009-07-10)
-	#
-	def Arrow(x0, y0, x1, y1, head_style=0, arm_size=5, arm_angle=15)
-		# getting arrow direction angle
-		# 0 deg angle is when both arms go along X axis. angle grows clockwise.
-		dir_angle = ::Math.atan2(y0 - y1, x0 - x1)
-		if dir_angle < 0
-			dir_angle += 2 * ::Math::PI
-		end
-		arm_angle = arm_angle * ::Math::PI / 180 # deg2rad
-		sx1 = x1
-		sy1 = y1
-		if head_style > 0
-			# calculate the stopping point for the arrow shaft
-			sx1 = x1 + (arm_size - @line_width) * ::Math.cos(dir_angle)
-			sy1 = y1 + (arm_size - @line_width) * ::Math.sin(dir_angle)
-		end
-		# main arrow line / shaft
-		Line(x0, y0, sx1, sy1)
-		# left arrowhead arm tip
-		x2L = x1 + (arm_size * ::Math.cos(dir_angle + arm_angle))
-		y2L = y1 + (arm_size * ::Math.sin(dir_angle + arm_angle))
-		# right arrowhead arm tip
-		x2R = x1 + (arm_size * ::Math.cos(dir_angle - arm_angle))
-		y2R = y1 + (arm_size * ::Math.sin(dir_angle - arm_angle))
-		mode = 'D'
-		style = []
-		case head_style
-		when 0
-			# draw only arrowhead arms
-			mode = 'D'
-			style = [1, 1, 0]
-		when 1
-			# draw closed arrowhead, but no fill
-			mode = 'D'
-		when 2
-			# closed and filled arrowhead
-			mode = 'DF'
-		when 3
-			# filled arrowhead
-			mode = 'F'
-		end
-		Polygon([x2L, y2L, x1, y1, x2R, y2R], mode, style, nil)
-	end
-
-	#
 	# Imports a TrueType, Type1, core, or CID0 font and makes it available.
 	# It is necessary to generate a font definition file first with the makefont.rb utility.
 	# The definition file (and the font file itself when embedding) must be present either in the current directory or in the one indicated by FPDF_FONTPATH if the constant is defined. If it could not be found, the error "Could not include font definition file" is generated.
@@ -8030,6 +7227,814 @@ class TCPDF
 	  alias_method :transform, :Transform
 		
 	# END TRANSFORMATIONS SECTION -------------------------
+
+	# START GRAPHIC FUNCTIONS SECTION ---------------------
+	# The following section is based on the code provided by David Hernandez Sanz
+
+	#
+	# Defines the line width. By default, the value equals 0.2 mm. The method can be called before the first page is created and the value is retained from page to page.
+	# @param float :width The width.
+	# @access public
+	# @since 1.0
+	# @see Line(), Rect(), Cell(), MultiCell()
+	#
+	def SetLineWidth(width)
+		#Set line width
+		@line_width = width;
+		@linestyle_width = sprintf('%.2f w', width * @k)
+		if (@page>0)
+			out(@linestyle_width)
+		end
+	end
+  alias_method :set_line_width, :SetLineWidth
+
+	#
+	# Returns the current the line width.
+	# @return int Line width
+	# @access public
+	# @since 2.1.000 (2008-01-07)
+	# @see Line(), SetLineWidth()
+	#
+	def GetLineWidth()
+		return @line_width
+	end
+  alias_method :get_line_width, :GetLineWidth
+
+	#
+	# Set line style.
+	# @param hash :style Line style. Array with keys among the following:
+	# <ul>
+	#        <li>width (float): Width of the line in user units.</li>
+	#        <li>cap (string): Type of cap to put on the line. Possible values are: butt, round, square. The difference between "square" and "butt" is that "square" projects a flat end past the end of the line.</li>
+	#        <li>join (string): Type of join. Possible values are: miter, round, bevel.</li>
+	#        <li>dash (mixed): Dash pattern. Is 0 (without dash) or string with series of length values, which are the lengths of the on and off dashes. For example: "2" represents 2 on, 2 off, 2 on, 2 off, ...; "2,1" is 2 on, 1 off, 2 on, 1 off, ...</li>
+	#        <li>phase (integer): Modifier on the dash pattern which is used to shift the point at which the pattern starts.</li>
+	#        <li>color (array): Draw color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K).</li>
+	# </ul>
+	# @access public
+	# @since 2.1.000 (2008-01-08)
+	#
+	def SetLineStyle(style)
+		unless style.is_a? Hash
+			return
+		end
+		if !style['width'].nil?
+			width = style['width']
+			width_prev = @line_width
+			SetLineWidth(width)
+			@line_width = width_prev
+		end
+		if !style['cap'].nil?
+			cap = style['cap']
+			ca = {'butt' => 0, 'round'=> 1, 'square' => 2}
+			if !ca[cap].nil?
+				@linestyle_cap = ca[cap].to_s + ' J'
+				out(@linestyle_cap)
+			end
+		end
+		if !style['join'].nil?
+			join = style['join']
+			ja = {'miter' => 0, 'round' => 1, 'bevel' => 2}
+			if !ja[join].nil?
+				@linestyle_join = ja[join].to_s + ' j'
+				out(@linestyle_join);
+			end
+		end
+		if !style['dash'].nil?
+			dash = style['dash']
+			dash_string = ''
+			if dash != 0 and dash != ''
+				if dash =~ /^.+,/
+					tab = dash.split(',')
+				else
+					tab = [dash]
+				end
+				dash_string = ''
+				tab.each_with_index { |v, i|
+					if i != 0
+						dash_string << ' '
+					end
+					dash_string << sprintf("%.2f", v.to_f)
+				}
+			end
+			phase = 0
+			@linestyle_dash = sprintf("[%s] %.2f d", dash_string, phase)
+			out(@linestyle_dash)
+		end
+		if !style['color'].nil?
+			color = style['color']
+			SetDrawColorArray(color)
+		end
+	end
+
+	#
+	# Begin a new subpath by moving the current point to coordinates (x, y), omitting any connecting line segment.
+	# @param float :x Abscissa of point.
+	# @param float :y Ordinate of point.
+	# @access protected
+	# @since 2.1.000 (2008-01-08)
+	#
+	def outPoint(x, y)
+		out(sprintf("%.2f %.2f m", x * @k, (@h - y) * @k))
+	end
+
+	#
+	# Append a straight line segment from the current point to the point (x, y).
+	# The new current point shall be (x, y).
+	# @param float :x Abscissa of end point.
+	# @param float :y Ordinate of end point.
+	# @access protected
+	# @since 2.1.000 (2008-01-08)
+	#
+	def outLine(x, y)
+		out(sprintf("%.2f %.2f l", x * @k, (@h - y) * @k))
+	end
+
+	#
+	# Append a rectangle to the current path as a complete subpath, with lower-left corner (x, y) and dimensions widthand height in user space.
+	# @param float :x Abscissa of upper-left corner (or upper-right corner for RTL language).
+	# @param float :y Ordinate of upper-left corner (or upper-right corner for RTL language).
+	# @param float :w Width.
+	# @param float :h Height.
+	# @param string :op options
+	# @access protected
+	# @since 2.1.000 (2008-01-08)
+	#
+	def outRect(x, y, w, h, op)
+		out(sprintf('%.2f %.2f %.2f %.2f re %s', x * @k, (@h - y) * @k, w * @k, -h * @k, op))
+	end
+
+	#
+	# Append a cubic Bezier curve to the current path. The curve shall extend from the current point to the point (x3, y3), using (x1, y1) and (x2, y2) as the Bezier control points.
+	# The new current point shall be (x3, y3).
+	# @param float :x1 Abscissa of control point 1.
+	# @param float :y1 Ordinate of control point 1.
+	# @param float :x2 Abscissa of control point 2.
+	# @param float :y2 Ordinate of control point 2.
+	# @param float :x3 Abscissa of end point.
+	# @param float :y3 Ordinate of end point.
+	# @access protected
+	# @since 2.1.000 (2008-01-08)
+	#
+	def outCurve(x1, y1, x2, y2, x3, y3)
+		out(sprintf("%.2f %.2f %.2f %.2f %.2f %.2f c", x1 * @k, (@h - y1) * @k, x2 * @k, (@h - y2) * @k, x3 * @k, (@h - y3) * @k))
+	end
+
+	#
+	# Append a cubic Bezier curve to the current path. The curve shall extend from the current point to the point (x3, y3), using the current point and (x2, y2) as the Bezier control points.
+	# The new current point shall be (x3, y3).
+	# @param float :x2 Abscissa of control point 2.
+	# @param float :y2 Ordinate of control point 2.
+	# @param float :x3 Abscissa of end point.
+	# @param float :y3 Ordinate of end point.
+	# @access protected
+	# @since 4.9.019 (2010-04-26)
+	#
+	def outCurveV(x2, y2, x3, y3)
+		out(sprintf('%.2f %.2f %.2f %.2f v', x2 * @k, (@h - y2) * @k, x3 * @k, (@h - y3) * @k))
+	end
+
+	#
+	# Append a cubic Bezier curve to the current path. The curve shall extend from the current point to the point (x3, y3), using (x1, y1) and (x3, y3) as the Bezier control points.
+	# The new current point shall be (x3, y3).
+	# @param float :x1 Abscissa of control point 1.
+	# @param float :y1 Ordinate of control point 1.
+	# @param float :x2 Abscissa of control point 2.
+	# @param float :y2 Ordinate of control point 2.
+	# @param float :x3 Abscissa of end point.
+	# @param float :y3 Ordinate of end point.
+	# @access protected
+	# @since 4.9.019 (2010-04-26)
+	#
+	def outCurveY(x1, y1, x3, y3)
+		out(sprintf('%.2f %.2f %.2f %.2f y', x1 * @k, (@h - y1) * @k, x3 * @k, (@h - y3) * @k))
+	end
+
+	#
+	# Draws a line between two points.
+	# @param float :x1 Abscissa of first point
+	# @param float :y1 Ordinate of first point
+	# @param float :x2 Abscissa of second point
+	# @param float :y2 Ordinate of second point
+	# @param hash :style Line style. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @access public
+	# @since 1.0
+	# @see SetLineWidth(), SetDrawColor(), SetLineStyle()
+	#
+	def Line(x1, y1, x2, y2, style=nil)
+		if style.is_a? Hash
+			SetLineStyle(style)
+		end
+		outPoint(x1, y1)
+		outLine(x2, y2)
+		out('S')
+	end
+  alias_method :line, :Line
+                
+	#
+	# Draws a rectangle.
+	# @param float :x Abscissa of upper-left corner (or upper-right corner for RTL language).
+	# @param float :y Ordinate of upper-left corner (or upper-right corner for RTL language).
+	# @param float :w Width.
+	# @param float :h Height.
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# <ul>
+	#        <li>all: Line style of all borders. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	#        <li>L, T, R, B or combinations: Line style of left, top, right or bottom border. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	# </ul>
+	# If a key is not present or is null, not draws the border. Default value: default line style (empty array).
+	# @param array :border_style Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+	# @access public
+	# @since 1.0
+	# @see SetLineStyle()
+	#
+	def Rect(x, y, w, h, style='', border_style={}, fill_color={})
+		if style.index('F') != nil and !fill_color.empty?
+			SetFillColorArray(fill_color)
+		end
+		op = getPathPaintOperator(style)
+		if !border_style or !border_style['all'].nil?
+			if !border_style['all'].nil? and border_style['all']
+				SetLineStyle(border_style['all'])
+				border_style = {}
+			end
+		end
+		outRect(x, y, w, h, op)
+
+		if border_style
+			border_style2 = {}
+			border_style.each { |line, value|
+				length = line.length
+				0.upto(length - 1) do |i|
+					border_style2[line[i]] = value
+				end
+			}
+			border_style = border_style2
+			if !border_style['L'].nil? and border_style['L']
+				Line(x, y, x, y + h, border_style['L'])
+			end
+			if !border_style['T'].nil? and border_style['T']
+				Line(x, y, x + w, y, border_style['T'])
+			end
+			if !border_style['R'].nil? and border_style['R']
+				Line(x + w, y, x + w, y + h, border_style['R'])
+			end
+			if !border_style['B'].nil? and border_style['B']
+				Line(x, y + h, x + w, y + h, border_style['B'])
+			end
+		end
+	end
+  alias_method :rect, :Rect
+
+	#
+	# Draws a Bezier curve.
+	# The Bezier curve is a tangent to the line between the control points at
+	# either end of the curve.
+	# @param float :x0 Abscissa of start point.
+	# @param float :y0 Ordinate of start point.
+	# @param float :x1 Abscissa of control point 1.
+	# @param float :y1 Ordinate of control point 1.
+	# @param float :x2 Abscissa of control point 2.
+	# @param float :y2 Ordinate of control point 2.
+	# @param float :x3 Abscissa of end point.
+	# @param float :y3 Ordinate of end point.
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :line_style Line style of curve. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+	# @access public
+	# @see SetLineStyle()
+	# @since 2.1.000 (2008-01-08)
+	#
+	def Curve(x0, y0, x1, y1, x2, y2, x3, y3, style='', line_style=nil, fill_color=nil)
+		if style and (style.index('F') != nil) and fill_color
+			SetFillColorArray(fill_color)
+		end
+		op = getPathPaintOperator(style)
+		if line_style
+			SetLineStyle(line_style)
+		end
+		outPoint(x0, y0)
+		outCurve(x1, y1, x2, y2, x3, y3)
+		out(op)
+	end
+
+	#
+	# Draws an ellipse.
+	# An ellipse is formed from n Bezier curves.
+	# @param float :x0 Abscissa of center point.
+	# @param float :y0 Ordinate of center point.
+	# @param float :rx Horizontal radius.
+	# @param float :ry Vertical radius (if ry = 0 then is a circle, see {@link Circle Circle}). Default value: 0.
+	# @param float :angle: Angle oriented (anti-clockwise). Default value: 0.
+	# @param float :astart: Angle start of draw line. Default value: 0.
+	# @param float :afinish: Angle finish of draw line. Default value: 360.
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :line_style Line style of ellipse. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+	# @param integer :nc Number of curves used to draw a 90 degrees portion of ellipse.
+	# @author Nicola Asuni
+	# @access public
+	# @since 2.1.000 (2008-01-08)
+	#
+	def Ellipse(x0, y0, rx, ry='', angle=0, astart=0, afinish=360, style='', line_style=nil, fill_color=nil, nc=2)
+		style = '' if style.nil?
+		if empty_string(ry) or (ry == 0)
+			ry = rx
+		end
+		if (nil != style.index('F')) and fill_color
+			SetFillColorArray(fill_color)
+		end
+		op = getPathPaintOperator(style)
+		if op == 'f'
+			line_style = nil
+		end
+
+		if line_style and !line_style.empty?
+			SetLineStyle(line_style)
+		end
+		outellipticalarc(x0, y0, rx, ry, angle, astart, afinish, false, nc)
+		out(op)
+	end
+
+	#
+	# Append an elliptical arc to the current path.
+	# An ellipse is formed from n Bezier curves.
+	# @param float :xc Abscissa of center point.
+	# @param float :yc Ordinate of center point.
+	# @param float :rx Horizontal radius.
+	# @param float :ry Vertical radius (if ry = 0 then is a circle, see {@link Circle Circle}). Default value: 0.
+	# @param float :xang: Angle between the X-axis and the major axis of the ellipse. Default value: 0.
+	# @param float :angs: Angle start of draw line. Default value: 0.
+	# @param float :angf: Angle finish of draw line. Default value: 360.
+	# @param boolean :pie if true do not mark the border point (used to draw pie sectors).
+	# @param integer :nc Number of curves used to draw a 90 degrees portion of ellipse.
+	# @author Nicola Asuni
+	# @access protected
+	# @since 4.9.019 (2010-04-26)
+	#
+	def outellipticalarc(xc, yc, rx, ry, xang=0, angs=0, angf=360, pie=false, nc=2)
+		k = @k
+		if nc < 2
+			nc = 2
+		end
+		if pie
+			# center of the arc
+			outPoint(xc, yc)
+		end
+		xang = xang * ::Math::PI / 180 # deg2rad
+		angs = angs * ::Math::PI / 180 # deg2rad
+		angf = angf * ::Math::PI / 180 # deg2rad
+		as = ::Math.atan2((::Math.sin(angs) / ry), (::Math.cos(angs) / rx))
+		af = ::Math.atan2((::Math.sin(angf) / ry), (::Math.cos(angf) / rx))
+		if as < 0
+			as += (2 * ::Math::PI)
+		end
+		if af < 0
+			af += (2 * ::Math::PI)
+		end
+		if as > af
+			# reverse rotation go clockwise
+			as -= (2 * ::Math::PI)
+		end
+		total_angle = af - as
+		if nc < 2
+			nc = 2
+		end
+		# total arcs to draw
+		nc *= (2 * total_angle.abs / ::Math::PI)
+		nc = nc.round + 1
+		# angle of each arc
+		arcang = total_angle / nc
+		# center point in PDF coordiantes
+		x0 = xc
+		y0 = @h - yc
+		# starting angle
+		ang = as
+		alpha = ::Math.sin(arcang) * (::Math.sqrt(4 + 3 * (::Math.tan(arcang / 2) ** 2)) - 1) / 3
+		cos_xang = ::Math.cos(xang)
+		sin_xang = ::Math.sin(xang)
+		cos_ang = ::Math.cos(ang)
+		sin_ang = ::Math.sin(ang)
+		# first arc point
+		px1 = x0 + (rx * cos_xang * cos_ang) - (ry * sin_xang * sin_ang)
+		py1 = y0 + (rx * sin_xang * cos_ang) + (ry * cos_xang * sin_ang)
+		# first Bezier control point
+		qx1 = alpha * ((-rx * cos_xang * sin_ang) - (ry * sin_xang * cos_ang))
+		qy1 = alpha * ((-rx * sin_xang * sin_ang) + (ry * cos_xang * cos_ang))
+		if pie
+			outLine(px1, @h - py1)
+		else
+			outPoint(px1, @h - py1)
+		end
+		# draw arcs
+		1.upto(nc) do |i|
+			# starting angle
+			ang = as + i * arcang
+			cos_xang = ::Math.cos(xang)
+			sin_xang = ::Math.sin(xang)
+			cos_ang = ::Math.cos(ang)
+			sin_ang = ::Math.sin(ang)
+			# second arc point
+			px2 = x0 + (rx * cos_xang * cos_ang) - (ry * sin_xang * sin_ang)
+			py2 = y0 + (rx * sin_xang * cos_ang) + (ry * cos_xang * sin_ang)
+			# second Bezier control point
+			qx2 = alpha * ((-rx * cos_xang * sin_ang) - (ry * sin_xang * cos_ang))
+			qy2 = alpha * ((-rx * sin_xang * sin_ang) + (ry * cos_xang * cos_ang))
+			# draw arc
+			outCurve(px1 + qx1, @h - (py1 + qy1), px2 - qx2, @h - (py2 - qy2), px2, @h - py2)
+			# move to next point
+			px1 = px2
+			py1 = py2
+			qx1 = qx2
+			qy1 = qy2
+		end
+		if pie
+			outLine(xc, yc)
+		end
+	end
+
+	#
+	# Draws a circle.
+	# A circle is formed from n Bezier curves.
+	# @param float :x0 Abscissa of center point.
+	# @param float :y0 Ordinate of center point.
+	# @param float :r Radius.
+	# @param float :angstr: Angle start of draw line. Default value: 0.
+	# @param float :angend: Angle finish of draw line. Default value: 360.
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :line_style Line style of circle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(red, green, blue). Default value: default color (empty array).
+	# @param integer :nc Number of curves used to draw a 90 degrees portion of circle.
+	# @access public
+	# @since 2.1.000 (2008-01-08)
+	#
+	def Circle(x0, y0, r, angstr=0, angend=360, style='', line_style=nil, fill_color=nil, nc=2)
+		Ellipse(x0, y0, r, r, 0, angstr, angend, style, line_style, fill_color, nc)
+	end
+	alias_method :circle, :Circle
+
+	#
+	# Draws a polygonal line
+	# @param array :p Points 0 to (:np - 1). Array with values (x0, y0, x1, y1,..., x(np-1), y(np - 1))
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :line_style Line style of polygon. Array with keys among the following:
+	# <ul>
+	#       <li>all: Line style of all lines. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	#       <li>0 to (:np - 1): Line style of each line. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	# </ul>
+	# If a key is not present or is null, not draws the line. Default value is default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+	# @param boolean :closed if true the polygon is closes, otherwise will remain open
+	# @access public
+	# @since 4.8.003 (2009-09-15)
+	#
+	def PolyLine(p, style='', line_style=nil, fill_color=nil)
+		Polygon(p, style, line_style, fill_color, false)
+	end
+
+	#
+	# Draws a polygon.
+	# @param array :p Points 0 to (np - 1). Array with values (x0, y0, x1, y1,..., x(np-1), y(np - 1))
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :line_style Line style of polygon. Array with keys among the following:
+	# <ul>
+	#       <li>all: Line style of all lines. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	#       <li>0 to (:np - 1): Line style of each line. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	# </ul>
+	# If a key is not present or is null, not draws the line. Default value is default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+	# @param boolean :closed if true the polygon is closes, otherwise will remain open
+	# @access public
+	# @since 2.1.000 (2008-01-08)
+	#
+	def Polygon(p, style='', line_style=nil, fill_color=nil, closed=true)
+		style = '' if style.nil?
+		nc = p.length # number of coordinates
+		np = nc / 2 # number of points
+		if closed
+			# close polygon by adding the first 2 points at the end (one line)
+			0.upto(3) do |i|
+				p[nc + i] = p[i]
+			end
+			# copy style for the last added line
+			if line_style
+				if line_style.is_a? Array and line_style[0]
+					line_style[np] = line_style[0]
+				elsif line_style.is_a? Hash and line_style['all']
+					line_style[np] = line_style['all']
+				end
+			end
+			nc += 4
+		end
+		if (nil != style.index('F')) and fill_color
+			SetFillColorArray(fill_color)
+		end
+		op = getPathPaintOperator(style)
+		if op == 'f'
+			line_style = []
+		end
+		draw = true
+		if line_style
+			if line_style.is_a? Hash and line_style['all']
+				SetLineStyle(line_style['all'])
+			else
+				draw = false
+				if op == 'B'
+					# draw fill
+					op = 'f'
+					outPoint(p[0], p[1])
+					2.step(nc - 1, 2) do |i|
+						outLine(p[i], p[i + 1])
+					end
+					out(op)
+				end
+				# draw outline
+				outPoint(p[0], p[1])
+				2.step(nc - 1, 2) do |i|
+					line_num = i / 2 - 1
+					if line_style[line_num]
+						if line_style[line_num] != 0
+							if line_style[line_num].is_a? Hash
+								out('S')
+								SetLineStyle(line_style[line_num])
+								outPoint(p[i - 2], p[i - 1])
+								outLine(p[i], p[i + 1])
+								out('S')
+								outPoint(p[i], p[i + 1])
+							else
+								outLine(p[i], p[i + 1])
+							end
+						end
+					else
+						outLine(p[i], p[i + 1])
+					end
+				end
+				out(op)
+			end
+		end
+		if draw
+			outPoint(p[0], p[1])
+			2.step(nc - 1, 2) do |i|
+				outLine(p[i], p[i + 1])
+			end
+			out(op)
+		end
+	end
+
+	#
+	# Draws a regular polygon.
+	# @param float :x0 Abscissa of center point.
+	# @param float :y0 Ordinate of center point.
+	# @param float :r: Radius of inscribed circle.
+	# @param integer :ns Number of sides.
+	# @param float :angle Angle oriented (anti-clockwise). Default value: 0.
+	# @param boolean :draw_circle Draw inscribed circle or not. Default value: false.
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :line_style Line style of polygon sides. Array with keys among the following:
+	# <ul>
+	#       <li>all: Line style of all sides. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	#       <li>0 to (:ns - 1): Line style of each side. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	# </ul>
+	# If a key is not present or is null, not draws the side. Default value is default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(red, green, blue). Default value: default color (empty array).
+	# @param string :circle_style Style of rendering of inscribed circle (if draws). Possible values are:
+	# <ul>
+	#       <li>D or empty string: Draw (default).</li>
+	#       <li>F: Fill.</li>
+	#       <li>DF or FD: Draw and fill.</li>
+	#       <li>CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).</li>
+	#       <li>CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).</li>
+	# </ul>
+	# @param array :circle_outLine_style Line style of inscribed circle (if draws). Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :circle_fill_color Fill color of inscribed circle (if draws). Format: array(red, green, blue). Default value: default color (empty array).
+	# @access public
+	# @since 2.1.000 (2008-01-08)
+	#
+	def RegularPolygon(x0, y0, r, ns, angle=0, draw_circle=false, style='', line_style=nil, fill_color=nil, circle_style='', circle_outLine_style=nil, circle_fill_color=nil)
+		draw_circle = false if draw_circle == 0
+		if 3 > ns
+			ns = 3
+		end
+		if draw_circle
+			Circle(x0, y0, r, 0, 360, circle_style, circle_outLine_style, circle_fill_color)
+		end
+		p = []
+		0.upto(ns -1) do |i|
+			a = angle + i * 360 / ns
+			a_rad = a * ::Math::PI / 180 # deg2rad
+			p.push x0 + (r * ::Math.sin(a_rad))
+			p.push y0 + (r * ::Math.cos(a_rad))
+		end
+		Polygon(p, style, line_style, fill_color)
+	end
+
+	#
+	# Draws a star polygon
+	# @param float :x0 Abscissa of center point.
+	# @param float :y0 Ordinate of center point.
+	# @param float :r Radius of inscribed circle.
+	# @param integer :nv Number of vertices.
+	# @param integer :ng Number of gap (if (:ng % :nv = 1) then is a regular polygon).
+	# @param float :angle: Angle oriented (anti-clockwise). Default value: 0.
+	# @param boolean :draw_circle: Draw inscribed circle or not. Default value is false.
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :line_style Line style of polygon sides. Array with keys among the following:
+	# <ul>
+	#       <li>all: Line style of all sides. Array like for
+	# {@link SetLineStyle SetLineStyle}.</li>
+	#       <li>0 to (n - 1): Line style of each side. Array like for {@link SetLineStyle SetLineStyle}.</li>
+	# </ul>
+	# If a key is not present or is null, not draws the side. Default value is default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(red, green, blue). Default value: default color (empty array).
+	# @param string :circle_style Style of rendering of inscribed circle (if draws). Possible values are:
+	# <ul>
+	#       <li>D or empty string: Draw (default).</li>
+	#       <li>F: Fill.</li>
+	#       <li>DF or FD: Draw and fill.</li>
+	#       <li>CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).</li>
+	#       <li>CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).</li>
+	# </ul>
+	# @param array :circle_outLine_style Line style of inscribed circle (if draws). Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :circle_fill_color Fill color of inscribed circle (if draws). Format: array(red, green, blue). Default value: default color (empty array).
+	# @access public
+	# @since 2.1.000 (2008-01-08)
+	#
+	def StarPolygon(x0, y0, r, nv, ng, angle=0, draw_circle=false, style='', line_style=nil, fill_color=nil, circle_style='', circle_outLine_style=nil, circle_fill_color=nil)
+		draw_circle = false if draw_circle == 0
+		if nv < 2
+			nv = 2
+		end
+		if draw_circle
+			Circle(x0, y0, r, 0, 360, circle_style, circle_outLine_style, circle_fill_color)
+		end
+		p2 = []
+		visited = []
+		0.upto(nv -1) do |i|
+			a = angle + i * 360 / nv
+			a_rad = a * ::Math::PI / 180 # deg2rad
+			p2.push x0 + r * ::Math.sin(a_rad)
+			p2.push y0 + r * ::Math.cos(a_rad)
+			visited.push false
+		end
+		p = []
+		i = 0
+		while true
+			p.push p2[i * 2]
+			p.push p2[i * 2 + 1]
+			visited[i] = true
+			i += ng
+			i %= nv
+			break if visited[i]
+		end
+		Polygon(p, style, line_style, fill_color)
+	end
+
+	#
+	# Draws a rounded rectangle.
+	# @param float :x Abscissa of upper-left corner.
+	# @param float :y Ordinate of upper-left corner.
+	# @param float :w Width.
+	# @param float :h Height.
+	# @param float :r the radius of the circle used to round off the corners of the rectangle.
+	# @param string :round_corner Draws rounded corner or not. String with a 0 (not rounded i-corner) or 1 (rounded i-corner) in i-position. Positions are, in order and begin to 0: top left, top right, bottom right and bottom left. Default value: all rounded corner ("1111").
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :border_style Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+	# @access public
+	# @since 2.1.000 (2008-01-08)
+	#
+	def RoundedRect(x, y, w, h, r, round_corner='1111', style='', border_style=nil, fill_color=nil)
+		RoundedRectXY(x, y, w, h, r, r, round_corner, style, border_style, fill_color)
+	end
+
+	#
+	# Draws a rounded rectangle.
+	# @param float :x Abscissa of upper-left corner.
+	# @param float :y Ordinate of upper-left corner.
+	# @param float :w Width.
+	# @param float :h Height.
+	# @param float :rx the x-axis radius of the ellipse used to round off the corners of the rectangle.
+	# @param float :ry the y-axis radius of the ellipse used to round off the corners of the rectangle.
+	# @param string :round_corner Draws rounded corner or not. String with a 0 (not rounded i-corner) or 1 (rounded i-corner) in i-position. Positions are, in order and begin to 0: top left, top right, bottom right and bottom left. Default value: all rounded corner ("1111").
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param array :border_style Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+	# @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+	# @access public
+	# @since 4.9.019 (2010-04-22)
+	#
+	def RoundedRectXY(x, y, w, h, rx, ry, round_corner='1111', style='', border_style=nil, fill_color=nil)
+		style = '' if style.nil?
+		if (round_corner == '0000') or ((rx == ry) and (rx == 0))
+			# Not rounded
+			Rect(x, y, w, h, style, border_style, fill_color)
+			return
+		end
+		# Rounded
+		if (nil != style.index('F')) and fill_color
+			SetFillColorArray(fill_color)
+		end
+		op = getPathPaintOperator(style)
+		if op == 'f'
+			border_style = []
+		end
+		if border_style
+			SetLineStyle(border_style)
+		end
+		myArc = 4 / 3 * (::Math.sqrt(2) - 1)
+		outPoint(x + rx, y)
+		xc = x + w - rx
+		yc = y + ry
+		outLine(xc, y)
+		if round_corner[0,1] == '1'
+			outCurve(xc + (rx * myArc), yc - ry, xc + rx, yc - (ry * myArc), xc + rx, yc)
+		else
+			outLine(x + w, y)
+		end
+		xc = x + w - rx
+		yc = y + h - ry
+		outLine(x + w, yc)
+		if round_corner[1,1] == '1'
+			outCurve(xc + rx, yc + (ry * myArc), xc + (rx * myArc), yc + ry, xc, yc + ry)
+		else
+			outLine(x + w, y + h)
+		end
+		xc = x + rx
+		yc = y + h - ry
+		outLine(xc, y + h)
+		if round_corner[2,1] == '1'
+			outCurve(xc - (rx * myArc), yc + ry, xc - rx, yc + (ry * myArc), xc - rx, yc)
+		else
+			outLine(x, y + h)
+		end
+		xc = x + rx
+		yc = y + ry
+		outLine(x, yc)
+		if round_corner[3,1] == '1'
+			outCurve(xc - rx, yc - (ry * myArc), xc - (rx * myArc), yc - ry, xc, yc - ry)
+		else
+			outLine(x, y)
+			outLine(x + rx, y)
+		end
+		out(op)
+	end
+
+	#
+	# Draws a grahic arrow.
+	# @parameter float :x0 Abscissa of first point.
+	# @parameter float :y0 Ordinate of first point.
+	# @parameter float :x0 Abscissa of second point.
+	# @parameter float :y1 Ordinate of second point.
+	# @parameter int :head_style (0 = draw only arrowhead arms, 1 = draw closed arrowhead, but no fill, 2 = closed and filled arrowhead, 3 = filled arrowhead)
+	# @parameter float :arm_size length of arrowhead arms
+	# @parameter int :arm_angle angle between an arm and the shaft
+	# @author Piotr Galecki, Nicola Asuni, Andy Meier
+	# @since 4.6.018 (2009-07-10)
+	#
+	def Arrow(x0, y0, x1, y1, head_style=0, arm_size=5, arm_angle=15)
+		# getting arrow direction angle
+		# 0 deg angle is when both arms go along X axis. angle grows clockwise.
+		dir_angle = ::Math.atan2(y0 - y1, x0 - x1)
+		if dir_angle < 0
+			dir_angle += 2 * ::Math::PI
+		end
+		arm_angle = arm_angle * ::Math::PI / 180 # deg2rad
+		sx1 = x1
+		sy1 = y1
+		if head_style > 0
+			# calculate the stopping point for the arrow shaft
+			sx1 = x1 + (arm_size - @line_width) * ::Math.cos(dir_angle)
+			sy1 = y1 + (arm_size - @line_width) * ::Math.sin(dir_angle)
+		end
+		# main arrow line / shaft
+		Line(x0, y0, sx1, sy1)
+		# left arrowhead arm tip
+		x2L = x1 + (arm_size * ::Math.cos(dir_angle + arm_angle))
+		y2L = y1 + (arm_size * ::Math.sin(dir_angle + arm_angle))
+		# right arrowhead arm tip
+		x2R = x1 + (arm_size * ::Math.cos(dir_angle - arm_angle))
+		y2R = y1 + (arm_size * ::Math.sin(dir_angle - arm_angle))
+		mode = 'D'
+		style = []
+		case head_style
+		when 0
+			# draw only arrowhead arms
+			mode = 'D'
+			style = [1, 1, 0]
+		when 1
+			# draw closed arrowhead, but no fill
+			mode = 'D'
+		when 2
+			# closed and filled arrowhead
+			mode = 'DF'
+		when 3
+			# filled arrowhead
+			mode = 'F'
+		end
+		Polygon([x2L, y2L, x1, y1, x2R, y2R], mode, style, nil)
+	end
+
+	# END GRAPHIC FUNCTIONS SECTION -----------------------
 
 	# BIDIRECTIONAL TEXT SECTION --------------------------
 
