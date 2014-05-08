@@ -8952,46 +8952,6 @@ class TCPDF
   alias_method :write_html, :writeHTML
 
 	#
-	# Returns the current font size.
-	# @return current font size
-	# @access public
-	# @since 3.2.000 (2008-06-23)
-	#
-	def GetFontSize()
-		return @font_size
-	end
-
-	#
-	# Returns the current font size in points unit.
-	# @return current font size in points unit
-	# @access public
-	# @since 3.2.000 (2008-06-23)
-	#
-	def GetFontSizePt()
-		return @font_size_pt
-	end
-
-	#
-	# Returns the current font family name.
-	# @return string current font family name
-	# @access public
-	# @since 4.3.008 (2008-12-05)
-	#
-	def GetFontFamily()
-		return @font_family
-	end
-
-	#
-	# Returns the current font style.
-	# @return string current font style
-	# @access public
-	# @since 4.3.008 (2008-12-05)
-	#
-	def GetFontStyle()
-		return @font_style
-	end
-
-	#
 	# Prints a cell (rectangular area) with optional borders, background color and html text string. The upper-left corner of the cell corresponds to the current position. After the call, the current position moves to the right or to the next line.<br />
 	# If automatic page breaking is enabled and the cell goes beyond the limit, a page break is done before outputting.
 	# @param float :w Cell width. If 0, the cell extends up to the right margin.
@@ -12625,6 +12585,46 @@ class TCPDF
 	def GetOriginalMargins()
 		ret = { 'left' => @original_l_margin, 'right' => @original_r_margin }
 		return ret
+	end
+
+	#
+	# Returns the current font size.
+	# @return current font size
+	# @access public
+	# @since 3.2.000 (2008-06-23)
+	#
+	def GetFontSize()
+		return @font_size
+	end
+
+	#
+	# Returns the current font size in points unit.
+	# @return current font size in points unit
+	# @access public
+	# @since 3.2.000 (2008-06-23)
+	#
+	def GetFontSizePt()
+		return @font_size_pt
+	end
+
+	#
+	# Returns the current font family name.
+	# @return string current font family name
+	# @access public
+	# @since 4.3.008 (2008-12-05)
+	#
+	def GetFontFamily()
+		return @font_family
+	end
+
+	#
+	# Returns the current font style.
+	# @return string current font style
+	# @access public
+	# @since 4.3.008 (2008-12-05)
+	#
+	def GetFontStyle()
+		return @font_style
 	end
 
 	#
