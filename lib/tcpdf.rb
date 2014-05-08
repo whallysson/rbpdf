@@ -1632,93 +1632,6 @@ class TCPDF
 	end
 
 	#
-	# Rotate object.
-	# @param float :angle angle in degrees for counter-clockwise rotation
-	# @param int :x abscissa of the rotation center. Default is current x position
-	# @param int :y ordinate of the rotation center. Default is current y position
-	# @access public
-	# @since 2.1.000 (2008-01-07)
-	# @see StartTransform(), StopTransform()
-	#
-	def Rotate(angle, x="", y="")
-		if (x == '')
-			x = @x
-		end
-  	
-		if (y == '')
-			y = @y
-		end
-  	
-		y = (@h - y) * @k
-		x *= @k
-
-		# calculate elements of transformation matrix
-		tm = []
-		tm[0] = ::Math::cos(angle * ::Math::PI / 180) # deg2rad
-		tm[1] = ::Math::sin(angle * ::Math::PI / 180) # deg2rad
-		tm[2] = -tm[1]
-		tm[3] = tm[0]
-		tm[4] = x + tm[1] * y - tm[0] * x
-		tm[5] = y - tm[0] * y - tm[1] * x
-
-		# generate the transformation matrix
-		Transform(tm)
-	end
-    alias_method :rotate, :Rotate
-  
-	#
-	# Starts a 2D tranformation saving current graphic state.
-	# This function must be called before scaling, mirroring, translation, rotation and skewing.
-	# Use StartTransform() before, and StopTransform() after the transformations to restore the normal behavior.
-	# @access public
-	# @since 2.1.000 (2008-01-07)
-	# @see StartTransform(), StopTransform()
-	#
-	def StartTransform
-		out('q');
-		@transfmrk[@page] = @pagelen[@page]
-		@transfmatrix_key += 1
-		@transfmatrix[@transfmatrix_key] = []
-	end
-	  alias_method :start_transform, :StartTransform
-	
-	#
-	# Stops a 2D tranformation restoring previous graphic state.
-	# This function must be called after scaling, mirroring, translation, rotation and skewing.
-	# Use StartTransform() before, and StopTransform() after the transformations to restore the normal behavior.
-	# @access public
-	# @since 2.1.000 (2008-01-07)
-	# @see StartTransform(), StopTransform()
-	#
-	def StopTransform
-		out('Q');
-		if @transfmatrix[@transfmatrix_key]
-			@transfmatrix[@transfmatrix_key].pop
-			@transfmatrix_key -= 1
-		end
-		@transfmrk[@page] = nil
-	end
-	  alias_method :stop_transform, :StopTransform
-	
-	#
-	# Apply graphic transformations.
-	# @param array :tm transformation matrix
-	# @access protected
-	# @since 2.1.000 (2008-01-07)
-	# @see StartTransform(), StopTransform()
-	#
-	def Transform(tm)
-		out(sprintf('%.3f %.3f %.3f %.3f %.3f %.3f cm', tm[0], tm[1], tm[2], tm[3], tm[4], tm[5]))
-		# add tranformation matrix
-		@transfmatrix[@transfmatrix_key].push 'a' => tm[0], 'b' => tm[1], 'c' => tm[2], 'd' => tm[3], 'e' => tm[4], 'f' => tm[5]
-		# update tranformation mark
-		if !@transfmrk[@page].nil?
-			@transfmrk[@page] = @pagelen[@page]
-		end
-	end
-	  alias_method :transform, :Transform
-		
-	#
  	# Set header data.
 	# @param string :ln header image logo
 	# @param string :lw header image logo width in mm
@@ -11841,6 +11754,8 @@ class TCPDF
 		end
 	end
 
+	# ENCRYPTION METHODS ----------------------------------
+
 	#
 	# Encrypt the input string.
 	# @param int :n object number
@@ -11861,6 +11776,99 @@ class TCPDF
 		#end
 		#return s
 	end
+
+	# END OF ENCRYPTION FUNCTIONS -------------------------
+
+	# START TRANSFORMATIONS SECTION -----------------------
+
+	#
+	# Starts a 2D tranformation saving current graphic state.
+	# This function must be called before scaling, mirroring, translation, rotation and skewing.
+	# Use StartTransform() before, and StopTransform() after the transformations to restore the normal behavior.
+	# @access public
+	# @since 2.1.000 (2008-01-07)
+	# @see StartTransform(), StopTransform()
+	#
+	def StartTransform
+		out('q');
+		@transfmrk[@page] = @pagelen[@page]
+		@transfmatrix_key += 1
+		@transfmatrix[@transfmatrix_key] = []
+	end
+	  alias_method :start_transform, :StartTransform
+	
+	#
+	# Stops a 2D tranformation restoring previous graphic state.
+	# This function must be called after scaling, mirroring, translation, rotation and skewing.
+	# Use StartTransform() before, and StopTransform() after the transformations to restore the normal behavior.
+	# @access public
+	# @since 2.1.000 (2008-01-07)
+	# @see StartTransform(), StopTransform()
+	#
+	def StopTransform
+		out('Q');
+		if @transfmatrix[@transfmatrix_key]
+			@transfmatrix[@transfmatrix_key].pop
+			@transfmatrix_key -= 1
+		end
+		@transfmrk[@page] = nil
+	end
+	  alias_method :stop_transform, :StopTransform
+	
+	#
+	# Rotate object.
+	# @param float :angle angle in degrees for counter-clockwise rotation
+	# @param int :x abscissa of the rotation center. Default is current x position
+	# @param int :y ordinate of the rotation center. Default is current y position
+	# @access public
+	# @since 2.1.000 (2008-01-07)
+	# @see StartTransform(), StopTransform()
+	#
+	def Rotate(angle, x="", y="")
+		if (x == '')
+			x = @x
+		end
+  	
+		if (y == '')
+			y = @y
+		end
+  	
+		y = (@h - y) * @k
+		x *= @k
+
+		# calculate elements of transformation matrix
+		tm = []
+		tm[0] = ::Math::cos(angle * ::Math::PI / 180) # deg2rad
+		tm[1] = ::Math::sin(angle * ::Math::PI / 180) # deg2rad
+		tm[2] = -tm[1]
+		tm[3] = tm[0]
+		tm[4] = x + tm[1] * y - tm[0] * x
+		tm[5] = y - tm[0] * y - tm[1] * x
+
+		# generate the transformation matrix
+		Transform(tm)
+	end
+    alias_method :rotate, :Rotate
+  
+	#
+	# Apply graphic transformations.
+	# @param array :tm transformation matrix
+	# @access protected
+	# @since 2.1.000 (2008-01-07)
+	# @see StartTransform(), StopTransform()
+	#
+	def Transform(tm)
+		out(sprintf('%.3f %.3f %.3f %.3f %.3f %.3f cm', tm[0], tm[1], tm[2], tm[3], tm[4], tm[5]))
+		# add tranformation matrix
+		@transfmatrix[@transfmatrix_key].push 'a' => tm[0], 'b' => tm[1], 'c' => tm[2], 'd' => tm[3], 'e' => tm[4], 'f' => tm[5]
+		# update tranformation mark
+		if !@transfmrk[@page].nil?
+			@transfmrk[@page] = @pagelen[@page]
+		end
+	end
+	  alias_method :transform, :Transform
+		
+	# END TRANSFORMATIONS SECTION -------------------------
 
 	# BIDIRECTIONAL TEXT SECTION --------------------------
 
@@ -12561,6 +12569,10 @@ class TCPDF
 		@outline_root = @n
 		out('<</Type /Outlines /First ' + n.to_s + ' 0 R /Last ' + (n + lru[0]).to_s + ' 0 R>> endobj')
 	end
+
+	# --- JAVASCRIPT ------------------------------------------------------
+	# --- FORM FIELDS -----------------------------------------------------
+	# --- END FORMS FIELDS ------------------------------------------------
 
 	#
 	# Return the current page in the group.
