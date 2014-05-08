@@ -6518,6 +6518,15 @@ class TCPDF
 		return a[0]
 	end
 
+	#
+	# Add \ before \, ( and )
+	# @access protected
+	#
+	def escape(s)
+		# Add \ before \, ( and )
+		s.gsub('\\','\\\\\\').gsub('(','\\(').gsub(')','\\)').gsub(13.chr, '\r')
+	end
+
  	#
 	# Format a data string for meta information
 	# @param string :s data string to escape.
@@ -6594,15 +6603,6 @@ class TCPDF
 			end
 		end
 		return escape(s);
-	end
-
-	#
-	# Add \ before \, ( and )
-	# @access protected
-	#
-	def escape(s)
-		# Add \ before \, ( and )
-		s.gsub('\\','\\\\\\').gsub('(','\\(').gsub(')','\\)').gsub(13.chr, '\r')
 	end
 
 	#
