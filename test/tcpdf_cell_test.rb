@@ -4,7 +4,7 @@ class TcpdfTest < ActiveSupport::TestCase
 
   test "getCellCode" do
     pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
-    pdf.AddPage()
+    pdf.add_page()
     code = pdf.getCellCode(10)
     assert_equal code, " 0 J 0 j [] 0 d 0 G 0 g\n"
     # 0 J 0 j [] 0 d 0 G 0 rg       # getCellCode
@@ -13,7 +13,7 @@ class TcpdfTest < ActiveSupport::TestCase
 
   test "getCellCode link url align test" do
     pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
-    pdf.AddPage()
+    pdf.add_page()
     content = []
     contents = pdf.getCellCode(10, 10, 'abc', 'LTRB', 0, '', 0, 'http://example.com')
     contents.each_line {|line| content.push line.chomp }
@@ -33,7 +33,7 @@ class TcpdfTest < ActiveSupport::TestCase
 
   test "getCellCode link page test" do
     pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
-    pdf.AddPage()
+    pdf.add_page()
     content = []
     contents = pdf.getCellCode(10, 10, 'abc', 0, 0, '', 0, 1)
     contents.each_line {|line| content.push line.chomp }

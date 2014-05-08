@@ -2,24 +2,24 @@ require 'test_helper'
 
 class TcpdfFormatTest < ActiveSupport::TestCase
 
-  test "setPageOrientation" do
+  test "set_page_orientation" do
     pdf = TCPDF.new
 
-    pagedim = pdf.setPageOrientation('')
+    pagedim = pdf.set_page_orientation('')
     assert_equal pagedim['or'], 'P'
     assert_equal pagedim['pb'], true
     assert_equal pagedim['olm'], nil
     assert_equal pagedim['orm'], nil
     assert_in_delta pagedim['bm'], 20, 0.1
 
-    pagedim = pdf.setPageOrientation('P')
+    pagedim = pdf.set_page_orientation('P')
     assert_equal pagedim['or'], 'P'
 
-    pagedim = pdf.setPageOrientation('L', false)
+    pagedim = pdf.set_page_orientation('L', false)
     assert_equal pagedim['or'], 'L'
     assert_equal pagedim['pb'], false
 
-    pagedim = pdf.setPageOrientation('P', true, 5)
+    pagedim = pdf.set_page_orientation('P', true, 5)
     assert_equal pagedim['or'], 'P'
     assert_equal pagedim['pb'], true
     assert_equal pagedim['bm'], 5

@@ -525,6 +525,7 @@ class TCPDF
       setPageOrientation(@cur_orientation)
     end
   end
+  alias_method :set_page_unit, :setPageUnit
 
   #
   # Get page dimensions from fromat name.
@@ -591,6 +592,7 @@ class TCPDF
     end
     return pf
   end
+  alias_method :get_page_size_from_format, :getPageSizeFromFormat
 
   #
   # Change the format of the current page
@@ -730,6 +732,7 @@ class TCPDF
     @pagedim[page][type]['urx'] = urx * @k
     @pagedim[page][type]['ury'] = ury * @k
   end
+  alias_method :set_page_boxes, :setPageBoxes
 
   #
   # Swap X and Y coordinates of page boxes (change page boxes orientation).
@@ -848,6 +851,7 @@ class TCPDF
     @pagedim[@page]['orm'] = @original_r_margin
     @pagedim[@page]
   end
+  alias_method :set_page_orientation, :setPageOrientation
 
   #
   # Enable or disable Right-To-Left language mode
@@ -856,14 +860,14 @@ class TCPDF
   # @access public
   # @since 2.0.000 (2008-01-03)
   #
-  def SetRTL(enable, resetx=true)
+  def setRTL(enable, resetx=true)
     enable = enable ? true : false
     resetx = resetx and (enable != @rtl)
     @rtl = enable
     @tmprtl = false
     Ln(0) if resetx
   end
-  alias_method :set_rtl, :SetRTL
+  alias_method :set_rtl, :setRTL
 
   #
   # Return the RTL status
@@ -871,10 +875,10 @@ class TCPDF
   # @access public
   # @since 4.0.012 (2008-07-24)
   #
-  def GetRTL()
+  def getRTL()
     return @rtl
   end
-  alias_method :get_rtl, :GetRTL
+  alias_method :get_rtl, :getRTL
 
   #
   # Force temporary RTL language direction
@@ -882,7 +886,7 @@ class TCPDF
   # @access public
   # @since 2.1.000 (2008-01-09)
   #
-  def SetTempRTL(mode)
+  def setTempRTL(mode)
     newmode = false
     case mode
     when 'ltr', 'LTR', 'L'
@@ -892,7 +896,7 @@ class TCPDF
     end
     @tmprtl = newmode
   end
-  alias_method :set_temp_rtl, :SetTempRTL
+  alias_method :set_temp_rtl, :setTempRTL
 
   #
   # Return the current temporary RTL status
@@ -903,6 +907,7 @@ class TCPDF
   def isRTLTextDir()
     return (@rtl or (@tmprtl == 'R'))
   end
+  alias_method :is_rtl_text_dir, :isRTLTextDir
 
   #
   # Set the last cell height.
@@ -911,10 +916,10 @@ class TCPDF
   # @access public
   # @since 1.53.0.TC034
   #
-  def SetLastH(h)
+  def setLastH(h)
     @lasth = h
   end
-  alias_method :set_last_h, :SetLastH
+  alias_method :set_last_h, :setLastH
 
   #
   # Get the last cell height.
@@ -922,33 +927,45 @@ class TCPDF
   # @access public
   # @since 4.0.017 (2008-08-05)
   #
-  def GetLastH()
+  def getLastH()
     return @lasth
   end
-  alias_method :get_last_h, :GetLastH
+  alias_method :get_last_h, :getLastH
 
   #
   # Set the adjusting factor to convert pixels to user units.
   # @param float :scale adjusting factor to convert pixels to user units.
   # @author Nicola Asuni
+  # @access public
   # @since 1.5.2
   #
-  def SetImageScale(scale)
+  def setImageScale(scale)
     @img_scale = scale;
   end
-  alias_method :set_image_scale, :SetImageScale
+  alias_method :set_image_scale, :setImageScale
+
+  def SetImageScale(scale)
+    warn "[DEPRECATION] 'SetImageScale' is deprecated. Please use 'set_image_scale' instead."
+    setImageScale(scale)
+  end
   
   #
   # Returns the adjusting factor to convert pixels to user units.
   # @return float adjusting factor to convert pixels to user units.
   # @author Nicola Asuni
+  # @access public
   # @since 1.5.2
   #
-  def GetImageScale()
+  def getImageScale()
     return @img_scale;
   end
-  alias_method :get_image_scale, :GetImageScale
+  alias_method :get_image_scale, :getImageScale
   
+  def GetImageScale()
+    warn "[DEPRECATION] 'GetImageScale' is deprecated. Please use 'get_image_scale' instead."
+    getImageScale()
+  end
+
   #
   # Returns an array of page dimensions:
   # <ul><li>@pagedim[@page]['w'] = page width in points</li><li>@pagedim[@page]['h'] = height in points</li><li>@pagedim[@page]['wk'] = page width in user units</li><li>@pagedim[@page]['hk'] = page height in user units</li><li>@pagedim[@page]['tm'] = top margin</li><li>@pagedim[@page]['bm'] = bottom margin</li><li>@pagedim[@page]['lm'] = left margin</li><li>@pagedim[@page]['rm'] = right margin</li><li>@pagedim[@page]['pb'] = auto page break</li><li>@pagedim[@page]['or'] = page orientation</li><li>@pagedim[@page]['olm'] = original left margin</li><li>@pagedim[@page]['orm'] = original right margin</li><li>@pagedim[@page]['Rotate'] = The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.</li><li>@pagedim[@page]['PZ'] = The page's preferred zoom (magnification) factor.</li><li>@pagedim[@page]['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation<ul><li>@pagedim[@page]['trans']['Dur'] = The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.</li><li>@pagedim[@page]['trans']['S'] = transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade</li><li>@pagedim[@page]['trans']['D'] = The duration of the transition effect, in seconds.</li><li>@pagedim[@page]['trans']['Dm'] = (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.</li><li>@pagedim[@page]['trans']['M'] = (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.</li><li>@pagedim[@page]['trans']['Di'] = (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.</li><li>@pagedim[@page]['trans']['SS'] = (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0. </li><li>@pagedim[@page]['trans']['B'] = (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.</li></ul></li><li>@pagedim[@page]['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed<ul><li>@pagedim[@page]['MediaBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['MediaBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['MediaBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['MediaBox']['ury'] = upper-right y coordinate in points</li></ul></li><li>@pagedim[@page]['CropBox'] : the visible region of default user space<ul><li>@pagedim[@page]['CropBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['CropBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['CropBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['CropBox']['ury'] = upper-right y coordinate in points</li></ul></li><li>@pagedim[@page]['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment<ul><li>@pagedim[@page]['BleedBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['BleedBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['BleedBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['BleedBox']['ury'] = upper-right y coordinate in points</li></ul></li><li>@pagedim[@page]['TrimBox'] : the intended dimensions of the finished page after trimming<ul><li>@pagedim[@page]['TrimBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['TrimBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['TrimBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['TrimBox']['ury'] = upper-right y coordinate in points</li></ul></li><li>@pagedim[@page]['ArtBox'] : the extent of the page's meaningful content<ul><li>@pagedim[@page]['ArtBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['ArtBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['ArtBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['ArtBox']['ury'] = upper-right y coordinate in points</li></ul></li></ul>
@@ -958,35 +975,48 @@ class TCPDF
   # @access public
   # @since 4.5.027 (2009-03-16)
   #
-  def GetPageDimensions(pagenum='')
+  def getPageDimensions(pagenum='')
     if pagenum.empty?
       pagenum = @page
     end
     return @pagedim[pagenum]
   end
+  alias_method :get_page_dimensions, :getPageDimensions
 
   #
   # Returns the page width in units.
   # @return int page width.
   # @author Nicola Asuni
+  # @access public
   # @since 1.5.2
   #
-  def GetPageWidth()
+  def getPageWidth()
     return @w;
   end
-  alias_method :get_page_width, :GetPageWidth
+  alias_method :get_page_width, :getPageWidth
+
+  def GetPageWidth()
+    warn "[DEPRECATION] 'GetPageWidth' is deprecated. Please use 'get_page_width' instead."
+    getPageWidth()
+  end
   
   #
   # Returns the page height in units.
   # @return int page height.
   # @author Nicola Asuni
+  # @access public
   # @since 1.5.2
   #
-  def GetPageHeight()
+  def getPageHeight()
     return @h;
   end
-  alias_method :get_page_height, :GetPageHeight
+  alias_method :get_page_height, :getPageHeight
   
+  def GetPageHeight()
+    warn "[DEPRECATION] 'GetPageHeight' is deprecated. Please use 'get_page_height' instead."
+    getPageHeight()
+  end
+
   #
   # Returns the page break margin.
   # @param int :pagenum page number (empty = current page)
@@ -996,24 +1026,35 @@ class TCPDF
   # @since 1.5.2
   # @see getPageDimensions()
   #
-  def GetBreakMargin(pagenum='')
+  def getBreakMargin(pagenum='')
     if pagenum.empty?
       return @b_margin
     end
     return @pagedim[pagenum]['bm']
   end
-  alias_method :get_break_margin, :GetBreakMargin
+  alias_method :get_break_margin, :getBreakMargin
+
+  def GetBreakMargin(pagenum='')
+    warn "[DEPRECATION] 'GetBreakMargin' is deprecated. Please use 'get_break_margin' instead."
+    getBreakMargin(pagenum)
+  end
 
   #
   # Returns the scale factor (number of points in user unit).
   # @return int scale factor.
   # @author Nicola Asuni
+  # @access public
   # @since 1.5.2
   #
-  def GetScaleFactor()
+  def getScaleFactor()
     return @k;
   end
-  alias_method :get_scale_factor, :GetScaleFactor
+  alias_method :get_scale_factor, :getScaleFactor
+
+  def GetScaleFactor()
+    warn "[DEPRECATION] 'GetScaleFactor' is deprecated. Please use 'get_scale_factor' instead."
+    getScaleFactor()
+  end
 
   #
   # Defines the left, top and right margins.
@@ -1044,6 +1085,7 @@ class TCPDF
   #
   # Defines the left margin. The method can be called before creating the first page. If the current abscissa gets out of page, it is brought back to the margin.
   # @param float :margin The margin.
+  # @access public
   # @since 1.4
   # @see SetTopMargin(), SetRightMargin(), SetAutoPageBreak(), SetMargins()
   #
@@ -1059,6 +1101,7 @@ class TCPDF
   #
   # Defines the top margin. The method can be called before creating the first page.
   # @param float :margin The margin.
+  # @access public
   # @since 1.5
   # @see SetLeftMargin(), SetRightMargin(), SetAutoPageBreak(), SetMargins()
   #
@@ -1074,6 +1117,7 @@ class TCPDF
   #
   # Defines the right margin. The method can be called before creating the first page.
   # @param float :margin The margin.
+  # @access public
   # @since 1.5
   # @see SetLeftMargin(), SetTopMargin(), SetAutoPageBreak(), SetMargins()
   #
@@ -1088,6 +1132,7 @@ class TCPDF
   #
   # Set the internal Cell padding.
   # @param float :pad internal padding.
+  # @access public
   # @since 2.1.000 (2008-01-09)
   # @see Cell(), SetLeftMargin(), SetTopMargin(), SetAutoPageBreak(), SetMargins()
   #
@@ -1100,6 +1145,7 @@ class TCPDF
   # Enables or disables the automatic page breaking mode. When enabling, the second parameter is the distance from the bottom of the page that defines the triggering limit. By default, the mode is on and the margin is 2 cm.
   # @param boolean :auto Boolean indicating if mode should be on or off.
   # @param float :margin Distance from the bottom of the page.
+  # @access public
   # @since 1.0
   # @see Cell(), MultiCell(), AcceptPageBreak()
   #
@@ -1167,6 +1213,7 @@ class TCPDF
   # Activates or deactivates page compression. When activated, the internal representation of each page is compressed, which leads to a compression ratio of about 2 for the resulting document. Compression is on by default.
   # Note: the Zlib extension is required for this feature. If not present, compression will be turned off.
   # @param boolean :compress Boolean indicating if compression must be enabled.
+  # @access public
   # @since 1.4
   #
   def SetCompression(compress)
@@ -1182,6 +1229,7 @@ class TCPDF
   #
   # Defines the title of the document.
   # @param string :title The title.
+  # @access public
   # @since 1.2
   # @see SetAuthor(), SetCreator(), SetKeywords(), SetSubject()
   #
@@ -1194,6 +1242,7 @@ class TCPDF
   #
   # Defines the subject of the document.
   # @param string :subject The subject.
+  # @access public
   # @since 1.2
   # @see SetAuthor(), SetCreator(), SetKeywords(), SetTitle()
   #
@@ -1206,6 +1255,7 @@ class TCPDF
   #
   # Defines the author of the document.
   # @param string :author The name of the author.
+  # @access public
   # @since 1.2
   # @see SetCreator(), SetKeywords(), SetSubject(), SetTitle()
   #
@@ -1218,6 +1268,7 @@ class TCPDF
   #
   # Associates keywords with the document, generally in the form 'keyword1 keyword2 ...'.
   # @param string :keywords The list of keywords.
+  # @access public
   # @since 1.2
   # @see SetAuthor(), SetCreator(), SetSubject(), SetTitle()
   #
@@ -1230,6 +1281,7 @@ class TCPDF
   #
   # Defines the creator of the document. This is typically the name of the application that generates the PDF.
   # @param string :creator The name of the creator.
+  # @access public
   # @since 1.2
   # @see SetAuthor(), SetKeywords(), SetSubject(), SetTitle()
   #
@@ -1256,6 +1308,7 @@ class TCPDF
   #
   # This method begins the generation of the PDF document. It is not necessary to call it explicitly because AddPage() does it automatically.
   # Note: no page is created by this method
+  # @access public
   # @since 1.0
   # @see AddPage(), Close()
   #
@@ -1280,21 +1333,21 @@ class TCPDF
     end
     # close page
     endPage()
-    LastPage()
+    lastPage()
     @state = 2
     SetAutoPageBreak(false)
     @y = @h - (1 / @k)
     @r_margin = 0
     out('q')
-    SetVisibility('screen')
+    setVisibility('screen')
     SetFont('helvetica', '', 1)
     SetTextColor(127,127,127)
-    SetAlpha(0)
+    setAlpha(0)
     msg = "\x50\x6f\x77\x65\x72\x65\x64\x20\x62\x79\x20\x54\x43\x50\x44\x46\x20\x28\x77\x77\x77\x2e\x74\x63\x70\x64\x66\x2e\x6f\x72\x67\x29"
     lnk = "\x68\x74\x74\x70\x3a\x2f\x2f\x77\x77\x77\x2e\x74\x63\x70\x64\x66\x2e\x6f\x72\x67"
     Cell(0, 0, msg, 0, 0, 'R', 0, lnk, 0, false, 'D', 'B')
     out('Q')
-    SetVisibility('all')
+    setVisibility('all')
     @state = 1
     # close document
     enddoc();
@@ -1307,9 +1360,9 @@ class TCPDF
   # @param boolean :resetmargins if true reset left, right, top margins and Y position.
   # @access public
   # @since 2.1.000 (2008-01-07)
-  # @see GetPage(), LastPage(), GetNumPages()
+  # @see getPage(), lastPage(), getNumPages()
   #
-  def SetPage(pnum, resetmargins=false)
+  def setPage(pnum, resetmargins=false)
     if pnum == @page
       return
     end
@@ -1348,39 +1401,43 @@ class TCPDF
       Error('Wrong page number on setPage() function.')
     end
   end
+  alias_method :set_page, :setPage
 
   #
   # Reset pointer to the last document page.
   # @param boolean :resetmargins if true reset left, right, top margins and Y position.
   # @access public
   # @since 2.0.000 (2008-01-04)
-  # @see SetPage(), GetPage(), GetNumPages()
+  # @see setPage(), getPage(), getNumPages()
   #
-  def LastPage(resetmargins=false)
-    SetPage(GetNumPages(), resetmargins)
+  def lastPage(resetmargins=false)
+    setPage(getNumPages(), resetmargins)
   end
+  alias_method :last_page, :lastPage
 
   #
   # Get current document page number.
   # @return int page number
   # @access public
   # @since 2.1.000 (2008-01-07)
-  # @see SetPage(), LastPage(), GetNumPages()
+  # @see setPage(), lastPage(), getNumPages()
   #
-  def GetPage()
+  def getPage()
     return @page
   end
+  alias_method :get_page, :getPage
 
   #
   # Get the total number of insered pages.
   # @return int number of pages
   # @access public
   # @since 2.1.000 (2008-01-07)
-  # @see SetPage(), GetPage(), LastPage()
+  # @see setPage(), getPage(), lastPage()
   #
-  def GetNumPages()
+  def getNumPages()
     return @numpages
   end
+  alias_method :get_num_pages, :getNumPages
 
   #
   # Adds a new TOC (Table Of Content) page to the document.
@@ -1393,6 +1450,7 @@ class TCPDF
   def addTOCPage(orientation='', format='', keepmargins=false)
     AddPage(orientation, format, keepmargins, true)
   end
+  alias_method :add_toc_page, :addTOCPage
 
   #
   # Terminate the current TOC (Table Of Content) page
@@ -1403,6 +1461,7 @@ class TCPDF
   def endTOCPage()
     endPage(true)
   end
+  alias_method :end_toc_page, :endTOCPage
 
   #
   # Adds a new page to the document. If a page is already present, the Footer() method is called first to output the footer (if enabled). Then the page is added, the current position set to the top-left corner according to the left and top margins (or top-right if in RTL mode), and Header() is called to display the header (if enabled).
@@ -1427,7 +1486,7 @@ class TCPDF
     # start new page
     startPage(orientation, format, tocpage)
   end
-    alias_method :add_page, :AddPage
+  alias_method :add_page, :AddPage
 
   #
   # Terminate the current page
@@ -1453,6 +1512,7 @@ class TCPDF
       @tocpage = false
     end
   end
+  alias_method :end_page, :endPage
   
   #
   # Starts a new page to the document. The page must be closed using the endPage() function.
@@ -1470,7 +1530,7 @@ class TCPDF
     end
     if @numpages > @page
       # this page has been already added
-      SetPage(@page + 1)
+      setPage(@page + 1)
       SetY(@t_margin)
       return
     end
@@ -1489,16 +1549,17 @@ class TCPDF
     # restore graphic settings
     setGraphicVars(gvars)
     # mark this point
-    SetPageMark()
+    setPageMark()
     # print page header
     setHeader()
     # restore graphic settings
     setGraphicVars(gvars)
     # mark this point
-    SetPageMark()
+    setPageMark()
     # print table header (if any)
     setTableHeader()
   end
+  alias_method :start_page, :startPage
 
   #
   # Set start-writing mark on current page stream used to put borders and fills.
@@ -1508,10 +1569,11 @@ class TCPDF
   # @access public
   # @since 4.0.016 (2008-07-30)
   #
-  def SetPageMark()
+  def setPageMark()
     @intmrk[@page] = @pagelen[@page]
     setContentMark()
   end
+  alias_method :set_page_mark, :setPageMark
 
   #
   # Set start-writing mark on selected page.
@@ -1537,15 +1599,21 @@ class TCPDF
   # @param string :lw header image logo width in mm
   # @param string :ht string to print as title on document header
   # @param string :hs string to print on document header
+  # @access public
   #
-  def SetHeaderData(ln="", lw=0, ht="", hs="")
+  def setHeaderData(ln="", lw=0, ht="", hs="")
     @header_logo = ln || ""
     @header_logo_width = lw || 0
     @header_title = ht || ""
     @header_string = hs || ""
   end
-    alias_method :set_header_data, :SetHeaderData
+  alias_method :set_header_data, :setHeaderData
   
+  def SetHeaderData(ln="", lw=0, ht="", hs="")
+    warn "[DEPRECATION] 'SetHeaderData' is deprecated. Please use 'set_header_data' instead."
+    setHeaderData(ln, lw, ht, hs)
+  end
+
   #
   # Returns header data:
   # <ul><li>:ret['logo'] = logo image</li><li>:ret['logo_width'] = width of the image logo in user units</li><li>:ret['title'] = header title</li><li>:ret['string'] = header description string</li></ul>
@@ -1553,7 +1621,7 @@ class TCPDF
   # @access public
   # @since 4.0.012 (2008-07-24)
   #
-  def GetHeaderData()
+  def getHeaderData()
     ret = {}
     ret['logo'] = @header_logo
     ret['logo_width'] = @header_logo_width
@@ -1561,7 +1629,7 @@ class TCPDF
     ret['string'] = @header_string
     return ret
   end
-    alias_method :get_header_data, :GetHeaderData
+  alias_method :get_header_data, :getHeaderData
 
   #
   # Set header margin.
@@ -1569,21 +1637,26 @@ class TCPDF
   # @param int :hm distance in user units
   # @access public
   #
-  def SetHeaderMargin(hm=10)
+  def setHeaderMargin(hm=10)
     @header_margin = hm;
   end
-    alias_method :set_header_margin, :SetHeaderMargin
+  alias_method :set_header_margin, :setHeaderMargin
   
+  def SetHeaderMargin(hm=10)
+    warn "[DEPRECATION] 'SetHeaderMargin' is deprecated. Please use 'set_header_margin' instead."
+    setHeaderMargin(hm)
+  end
+
   #
   # Returns header margin in user units.
   # @return float
   # @since 4.0.012 (2008-07-24)
   # @access public
   #
-  def GetHeaderMargin()
+  def getHeaderMargin()
     return @header_margin
   end
-    alias_method :get_header_margin, :GetHeaderMargin
+  alias_method :get_header_margin, :getHeaderMargin
 
   #
   # Set footer margin.
@@ -1591,57 +1664,76 @@ class TCPDF
   # @param int :fm distance in millimeters
   # @access public
   #
-  def SetFooterMargin(fm=10)
+  def setFooterMargin(fm=10)
     @footer_margin = fm;
   end
-    alias_method :set_footer_margin, :SetFooterMargin
+  alias_method :set_footer_margin, :setFooterMargin
   
+  def SetFooterMargin(fm=10)
+    warn "[DEPRECATION] 'SetFooterMargin' is deprecated. Please use 'set_footer_margin' instead."
+    setFooterMargin(fm)
+  end
+
   #
   # Returns footer margin in user units.
   # @return float
   # @since 4.0.012 (2008-07-24)
   # @access public
   #
-  def GetFooterMargin()
+  def getFooterMargin()
     return @footer_margin
   end
-    alias_method :get_footer_margin, :GetFooterMargin
+  alias_method :get_footer_margin, :getFooterMargin
 
   #
   # Set a flag to print page header.
   # @param boolean :val set to true to print the page header (default), false otherwise. 
+  # @access public
   #
-  def SetPrintHeader(val=true)
+  def setPrintHeader(val=true)
     @print_header = val;
   end
-    alias_method :set_print_header, :SetPrintHeader
+  alias_method :set_print_header, :setPrintHeader
   
+  def SetPrintHeader(val=true)
+    warn "[DEPRECATION] 'SetPrintHeader' is deprecated. Please use 'set_print_header' instead."
+    setPrintHeader(val)
+  end
+
   #
   # Set a flag to print page footer.
   # @param boolean :value set to true to print the page footer (default), false otherwise. 
+  # @access public
   #
-  def SetPrintFooter(val=true)
+  def setPrintFooter(val=true)
     @print_footer = val;
   end
-    alias_method :set_print_footer, :SetPrintFooter
+  alias_method :set_print_footer, :setPrintFooter
   
+  def SetPrintFooter(val=true)
+    warn "[DEPRECATION] 'SetPrintFooter' is deprecated. Please use 'set_print_footer' instead."
+    setPrintFooter(val)
+  end
+
   #
   # Return the right-bottom (or left-bottom for RTL) corner X coordinate of last inserted image
   # @return float 
   # @access public
   #
-  def GetImageRBX()
+  def getImageRBX()
     return @img_rb_x
   end
+  alias_method :get_image_rbx, :getImageRBX
 
   #
   # Return the right-bottom (or left-bottom for RTL) corner Y coordinate of last inserted image
   # @return float 
   # @access public
   #
-  def GetImageRBY()
+  def getImageRBY()
     return @img_rb_y
   end
+  alias_method :get_image_rby, :getImageRBY
 
   #
   # This method is used to render the page header.
@@ -1649,13 +1741,13 @@ class TCPDF
   # @access public
   #
   def Header()
-    ormargins = GetOriginalMargins()
-    headerfont = GetHeaderFont()
-    headerdata = GetHeaderData()
+    ormargins = getOriginalMargins()
+    headerfont = getHeaderFont()
+    headerdata = getHeaderData()
     if headerdata['logo'] and (headerdata['logo'] != @@k_blank_image)
       result_img = Image(@@k_path_images + headerdata['logo'], '', '', headerdata['logo_width'])
       if result_img != false
-        imgy = GetImageRBY()
+        imgy = getImageRBY()
       else
         Write(@lasth, File.basename(headerdata['logo']), '', false, '', false, 0, false)
         imgy = GetY()
@@ -1663,10 +1755,10 @@ class TCPDF
     else
       imgy = GetY()
     end
-    cell_height = ((GetCellHeightRatio() * headerfont[2]) / GetScaleFactor()).round(2)
+    cell_height = ((getCellHeightRatio() * headerfont[2]) / getScaleFactor()).round(2)
 
     # set starting margin for text data cell
-    if GetRTL()
+    if getRTL()
       header_x = ormargins['right'] + (headerdata['logo_width'] * 1.1)
     else
       header_x = ormargins['left'] + (headerdata['logo_width'] * 1.1)
@@ -1682,17 +1774,17 @@ class TCPDF
     MultiCell(0, cell_height, headerdata['string'], 0, '', 0, 1, '', '', true, 0, false)
 
     # print an ending header line
-    SetLineStyle({'width' => 0.85 / GetScaleFactor(), 'cap' => 'butt', 'join' => 'miter', 'dash' => 0, 'color' => [0, 0, 0]})
-    SetY((2.835 / GetScaleFactor()) + (imgy > GetY() ? imgy : GetY()))
+    SetLineStyle({'width' => 0.85 / getScaleFactor(), 'cap' => 'butt', 'join' => 'miter', 'dash' => 0, 'color' => [0, 0, 0]})
+    SetY((2.835 / getScaleFactor()) + (imgy > GetY() ? imgy : GetY()))
 
-    if GetRTL()
+    if getRTL()
       SetX(ormargins['right'])
     else
       SetX(ormargins['left'])
     end
     Cell(0, 0, '', 'T', 0, 'C')
   end
-    alias_method :header, :Header
+  alias_method :header, :Header
   
   #
   # This method is used to render the page footer. 
@@ -1700,27 +1792,27 @@ class TCPDF
   #
   def Footer()
     cur_y = GetY()
-    ormargins = GetOriginalMargins()
+    ormargins = getOriginalMargins()
     SetTextColor(0, 0, 0)
     # set style for cell border
-    line_width = 0.85 / GetScaleFactor()
+    line_width = 0.85 / getScaleFactor()
     SetLineStyle({'width' => line_width, 'cap' => 'butt', 'join' => 'miter', 'dash' => 0, 'color' => [0, 0, 0]})
     # print document barcode
-    #barcode = GetBarcode()
+    #barcode = getBarcode()
     #if !barcode.empty?
     #  Ln(line_width)
-    #  barcode_width = ((GetPageWidth() - ormargins['left'] - ormargins['right']) / 3).round
-    #  write1DBarcode(barcode, 'C128B', GetX(), cur_y + line_width, barcode_width, ((GetFooterMargin() / 3) - line_width), 0.3, '', '')
+    #  barcode_width = ((getPageWidth() - ormargins['left'] - ormargins['right']) / 3).round
+    #  write1DBarcode(barcode, 'C128B', GetX(), cur_y + line_width, barcode_width, ((getFooterMargin() / 3) - line_width), 0.3, '', '')
     #end
     w_page = (@l.nil? or @l['w_page'].nil?) ? '' : @l['w_page']
     if @pagegroups.empty?
-      pagenumtxt = w_page + ' ' + GetAliasNumPage() + ' / ' + GetAliasNbPages()
+      pagenumtxt = w_page + ' ' + getAliasNumPage() + ' / ' + getAliasNbPages()
     else
-      pagenumtxt = w_page + ' ' + GetPageNumGroupAlias() + ' / ' + GetPageGroupAlias()
+      pagenumtxt = w_page + ' ' + getPageNumGroupAlias() + ' / ' + getPageGroupAlias()
     end
     SetY(cur_y)
     # Print page number
-    if GetRTL()
+    if getRTL()
       SetX(ormargins['right'])
       Cell(0, 0, pagenumtxt, 'T', 0, 'L')
     else
@@ -1728,7 +1820,7 @@ class TCPDF
       Cell(0, 0, pagenumtxt, 'T', 0, 'R')
     end
   end
-    alias_method :footer, :Footer
+  alias_method :footer, :Footer
   
   #
   # This method is used to render the page header. 
@@ -1857,6 +1949,7 @@ class TCPDF
   #
   # Returns the current page number.
   # @return int page number
+  # @access public
   # @since 1.0
   # @see alias_nb_pages()
   #
@@ -1884,12 +1977,14 @@ class TCPDF
       @spot_colors[name] = {'i' => i, 'c' => c, 'm' => m, 'y' => y, 'k' => k}
     end
   end
+  alias_method :add_spot_color, :AddSpotColor
 
   #
   # Defines the color used for all drawing operations (lines, rectangles and cell borders). 
   # It can be expressed in RGB components or gray scale. 
   # The method can be called before the first page is created and the value is retained from page to page.
   # @param array or ordered hash :color array(or ordered hash) of colors
+  # @access public
   # @since 3.1.000 (2008-6-11)
   # @see SetDrawColor()
   #
@@ -1905,6 +2000,7 @@ class TCPDF
       end
     end
   end
+  alias_method :set_draw_color_array, :SetDrawColorArray
 
   #
   # Defines the color used for all drawing operations (lines, rectangles and cell borders). It can be expressed in RGB components or gray scale. The method can be called before the first page is created and the value is retained from page to page.
@@ -1912,6 +2008,7 @@ class TCPDF
   # @param int :col2 Green color for RGB, or Magenta color for CMYK. Value between 0 and 255
   # @param int :col3 Blue color for RGB, or Yellow color for CMYK. Value between 0 and 255
   # @param int :col4 Key (Black) color for CMYK. Value between 0 and 255
+  # @access public
   # @since 1.3
   # @see SetFillColor(), SetTextColor(), Line(), Rect(), Cell(), MultiCell()
   #
@@ -1975,6 +2072,7 @@ class TCPDF
       end
     end
   end
+  alias_method :set_fill_color_array, :SetFillColorArray
 
   #
   # Defines the color used for all filling operations (filled rectangles and cell backgrounds). It can be expressed in RGB components or gray scale. The method can be called before the first page is created and the value is retained from page to page.
@@ -1982,6 +2080,7 @@ class TCPDF
   # @param int :col2 Green color for RGB, or Magenta color for CMYK. Value between 0 and 255
   # @param int :col3 Blue color for RGB, or Yellow color for CMYK. Value between 0 and 255
   # @param int :col4 Key (Black) color for CMYK. Value between 0 and 255
+  # @access public
   # @since 1.3
   # @see SetDrawColor(), SetTextColor(), Rect(), Cell(), MultiCell()
   #
@@ -2063,6 +2162,7 @@ class TCPDF
       end
     end
   end
+  alias_method :set_text_color_array, :SetTextColorArray
 
   #
   # Defines the color used for text. It can be expressed in RGB components or gray scale. The method can be called before the first page is created and the value is retained from page to page.
@@ -2070,6 +2170,7 @@ class TCPDF
   # @param int :col2 Green color for RGB, or Magenta color for CMYK. Value between 0 and 255
   # @param int :col3 Blue color for RGB, or Yellow color for CMYK. Value between 0 and 255
   # @param int :col4 Key (Black) color for CMYK. Value between 0 and 255
+  # @access public
   # @since 1.3
   # @see SetDrawColor(), SetFillColor(), Text(), Cell(), MultiCell()
   #
@@ -2181,6 +2282,7 @@ class TCPDF
     end
     return w
   end
+  alias_method :get_arr_string_width, :GetArrStringWidth
 
   #
   # Returns the length of the char in user unit for the current font.
@@ -2209,6 +2311,7 @@ class TCPDF
     end
     return (w * @font_size / 1000.0)
   end
+  alias_method :get_char_width, :GetCharWidth
 
   #
   # Returns the numbero of characters in a string.
@@ -2223,6 +2326,7 @@ class TCPDF
     end 
     return s.length
   end
+  alias_method :get_num_chars, :GetNumChars
 
   #
   # Imports a TrueType, Type1, core, or CID0 font and makes it available.
@@ -2505,6 +2609,7 @@ class TCPDF
     end
     return descent
   end
+  alias_method :get_font_descent, :getFontDescent
 
   #
   # Return the font ascent value
@@ -2527,6 +2632,7 @@ class TCPDF
     end
     return ascent
   end
+  alias_method :get_font_ascent, :getFontAscent
 
   #
   # Defines the default monospaced font.
@@ -2537,6 +2643,7 @@ class TCPDF
   def SetDefaultMonospacedFont(font)
     @default_monospaced_font = font
   end
+  alias_method :set_default_monospaced_font, :SetDefaultMonospacedFont
 
   #
   # Creates a new internal link and returns its identifier. An internal link is a clickable area which directs to another place within the document.<br />
@@ -2671,6 +2778,7 @@ class TCPDF
     end
     @annot_obj_id += 1
   end
+  alias_method :annotation, :Annotation
 
   #
   # Embedd the attached files.
@@ -2811,6 +2919,7 @@ class TCPDF
   end
 
   def BreakThePage?(h)
+    warn "[DEPRECATION] 'BreakThePage/break_the_page' is deprecated. Please don't Use."
     if ((@y + h) > @page_break_trigger and !@in_footer and AcceptPageBreak())
       true
     else
@@ -2818,6 +2927,7 @@ class TCPDF
     end
   end
   alias_method :break_the_page?, :BreakThePage?
+
   #
   # Prints a cell (rectangular area) with optional borders, background color and character string. The upper-left corner of the cell corresponds to the current position. The text can be aligned or centered. After the call, the current position moves to the right or to the next line. It is possible to put a link on the text.<br />
   # If automatic page breaking is enabled and the cell goes beyond the limit, a page break is done before outputting.
@@ -2876,6 +2986,7 @@ class TCPDF
     txt.force_encoding('UTF-8') if txt.respond_to?(:force_encoding)
     return txt
   end
+  alias_method :remove_shy, :removeSHY
 
   #
   # Returns the PDF string code to print a cell (rectangular area) with optional borders, background color and character string. The upper-left corner of the cell corresponds to the current position. The text can be aligned or centered. After the call, the current position moves to the right or to the next line. It is possible to put a link on the text.<br />
@@ -3374,7 +3485,7 @@ class TCPDF
     if end_page > startpage
       # design borders around HTML cells.
       for page in startpage..end_page
-        SetPage(page)
+        setPage(page)
         if page == startpage
           # first page
           @y = starty # put cursor at the beginning of cell on the first page
@@ -3453,7 +3564,7 @@ class TCPDF
       end
     else
       # go left or right by case
-      SetPage(startpage)
+      setPage(startpage)
       @y = y
       SetX(x + w)
     end
@@ -3548,6 +3659,7 @@ class TCPDF
   # @param boolean :firstblock if true the string is the starting of a line.
   # @param float :maxh maximum height. The remaining unprinted text will be returned. It should be >= :h and less then remaining space to the bottom of the page, or 0 for disable this feature.
   # @return mixed Return the number of cells or the remaining string if :firstline = true.
+  # @access public
   # @since 1.5
   #
   def Write(h, txt, link=nil, fill=0, align='', ln=false, stretch=0, firstline=false, firstblock=false, maxh=0)
@@ -3906,6 +4018,7 @@ class TCPDF
   # @param int :start the starting element of :strarr.
   # @param int :last first element that will not be returned.
   # @return Return part of a string (UTF-8)
+  # @access public
   #
   def UTF8ArrSubString(strarr, start=0, last=strarr.size)
     string = ""
@@ -3914,6 +4027,7 @@ class TCPDF
     end
     return string
   end
+  alias_method :utf8_arr_sub_string, :UTF8ArrSubString
 
   #
   # Extract a slice of the :uniarr array and return it as string.
@@ -3931,6 +4045,7 @@ class TCPDF
     end
     return string
   end
+  alias_method :uni_arr_sub_string, :UniArrSubString
 
   #
   # Convert an array of UTF8 values to array of unicode characters
@@ -3946,12 +4061,14 @@ class TCPDF
     end
     return string
   end
+  alias_method :utf8_array_to_uni_array, :UTF8ArrayToUniArray
 
   #
   # Returns the unicode caracter specified by UTF-8 value
   # @param int :c UTF-8 value (UCS4)
   # @return Returns the specified character. (UTF-8)
   # @author Miguel Perez, Nicola Asuni
+  # @access public
   # @since 2.3.000 (2008-03-05)
   #
   def unichr(c)
@@ -3979,6 +4096,7 @@ class TCPDF
   # @param string :imgfile image file name
   # @param hash :iminfo array of image information returned by getimagesize() function.
   # @return string image type
+  # @access public
   # @since 4.8.017 (2009-11-27)
   #
   def getImageFileType(imgfile, iminfo={})
@@ -3998,6 +4116,7 @@ class TCPDF
     end
     return type
   end
+  alias_method :get_image_file_type, :getImageFileType
 
   #
   # Puts an image in the page. 
@@ -4440,6 +4559,7 @@ class TCPDF
   # Returns the relative X value of current position.
   # The value is relative to the left border for LTR languages and to the right border for RTL languages.
   # @return float
+  # @access public
   # @since 1.2
   # @see SetX(), GetY(), SetY()
   #
@@ -4455,6 +4575,7 @@ class TCPDF
   #
   # Returns the absolute X value of current position.
   # @return float
+  # @access public
   # @since 1.2
   # @see SetY(), GetX(), SetX()
   #
@@ -4466,6 +4587,7 @@ class TCPDF
   #
   # Returns the ordinate of the current position.
   # @return float
+  # @access public
   # @since 1.0
   # @see SetY(), GetX(), SetX()
   #
@@ -4563,7 +4685,7 @@ class TCPDF
   def Output(name='', dest='')
     #Output PDF to some destination
     #Finish document if necessary
-    LastPage()
+    lastPage()
     if (@state < 3)
       Close();
     end
@@ -6413,7 +6535,7 @@ class TCPDF
   # @access protected
   #
   def endpage()
-    SetVisibility('all')
+    setVisibility('all')
     @state=1;
   end
 
@@ -6915,21 +7037,26 @@ class TCPDF
   # @access public
   # @since 1.1
   #
-  def SetHeaderFont(font)
+  def setHeaderFont(font)
     @header_font = font;
   end
-  alias_method :set_header_font, :SetHeaderFont
+  alias_method :set_header_font, :setHeaderFont
   
+  def SetHeaderFont(font)
+    warn "[DEPRECATION] 'SetHeaderFont' is deprecated. Please use 'set_header_font' instead."
+    setHeaderFont(font)
+  end
+
   #
   # Get header font.
   # @return array()
   # @access public
   # @since 4.0.012 (2008-07-24)
   #
-  def GetHeaderFont()
+  def getHeaderFont()
     return @header_font
   end
-  alias_method :get_header_font, :GetHeaderFont
+  alias_method :get_header_font, :getHeaderFont
 
   #
   # Set footer font.
@@ -6937,28 +7064,33 @@ class TCPDF
   # @access public
   # @since 1.1
   #
-  def SetFooterFont(font)
+  def setFooterFont(font)
     @footer_font = font;
   end
-  alias_method :set_footer_font, :SetFooterFont
+  alias_method :set_footer_font, :setFooterFont
   
+  def SetFooterFont(font)
+    warn "[DEPRECATION] 'SetFooterFont' is deprecated. Please use 'set_footer_font' instead."
+    setFooterFont(font)
+  end
+
   #
   # Get Footer font.
   # @return array()
   # @access public
   # @since 4.0.012 (2008-07-24)
   #
-  def GetFooterFont(font)
+  def getFooterFont(font)
     return @footer_font
   end
-  alias_method :get_footer_font, :GetFooterFont
+  alias_method :get_footer_font, :getFooterFont
 
   #
   # Set language array.
   # @param array :language
   # @since 1.1
   #
-  def SetLanguageArray(language)
+  def setLanguageArray(language)
     @l = language;
     if @l['a_meta_dir']
       @rtl = (@l['a_meta_dir'] == 'rtl') ? true : false
@@ -6966,18 +7098,29 @@ class TCPDF
       @rtl = false
     end
   end
-  alias_method :set_language_array, :SetLanguageArray
+  alias_method :set_language_array, :setLanguageArray
+
+  def SetLanguageArray(language)
+    warn "[DEPRECATION] 'SetLanguageArray' is deprecated. Please use 'set_language_array' instead."
+    setLanguageArray(language)
+  end
 
   #
   # Returns the PDF data.
   #
-  def GetPDFData()
+  def getPDFData()
     if (@state < 3)
       Close();
     end
     return @buffer;
   end
+  alias_method :get_pdf_data, :getPDFData
   
+  def GetPDFData()
+    warn "[DEPRECATION] 'GetPDFData' is deprecated. Please use 'get_pdf_data' instead."
+    getPDFData()
+  end
+
   #
   # Output anchor link.
   # @param string :url link URL or internal link (i.e.: <a href="#23">link to page 23</a>)
@@ -7016,6 +7159,7 @@ class TCPDF
     SetTextColorArray(prevcolor)
     return ret
   end
+  alias_method :add_html_link, :addHtmlLink
   
   #
   # Returns an associative array (keys: R,G,B) from an html color name or a six-digit or three-digit hexadecimal color representation (i.e. #3FE5AA or #7FF).
@@ -7085,6 +7229,7 @@ class TCPDF
     end
     return returncolor
   end
+  alias_method :convert_html_color_to_dec, :convertHTMLColorToDec
   
   #
   # Converts pixels to Units.
@@ -7096,6 +7241,7 @@ class TCPDF
   def pixelsToUnits(px)
     return (px.to_f / (@img_scale * @k))
   end
+  alias_method :pixels_to_units, :pixelsToUnits
     
   #
   # Reverse function for htmlentities.
@@ -7103,6 +7249,7 @@ class TCPDF
   #
   # @param :text_to_convert Text to convert.
   # @return string converted
+  # @access public
   #
   def unhtmlentities(string)
     if @@decoder.nil?
@@ -7153,7 +7300,7 @@ class TCPDF
     @transfmatrix_key += 1
     @transfmatrix[@transfmatrix_key] = []
   end
-    alias_method :start_transform, :StartTransform
+  alias_method :start_transform, :StartTransform
   
   #
   # Stops a 2D tranformation restoring previous graphic state.
@@ -7171,7 +7318,7 @@ class TCPDF
     end
     @transfmrk[@page] = nil
   end
-    alias_method :stop_transform, :StopTransform
+  alias_method :stop_transform, :StopTransform
   
   #
   # Rotate object.
@@ -7206,7 +7353,7 @@ class TCPDF
     # generate the transformation matrix
     Transform(tm)
   end
-    alias_method :rotate, :Rotate
+  alias_method :rotate, :Rotate
   
   #
   # Apply graphic transformations.
@@ -7224,8 +7371,7 @@ class TCPDF
       @transfmrk[@page] = @pagelen[@page]
     end
   end
-    alias_method :transform, :Transform
-    
+
   # END TRANSFORMATIONS SECTION -------------------------
 
   # START GRAPHIC FUNCTIONS SECTION ---------------------
@@ -7326,6 +7472,7 @@ class TCPDF
       SetDrawColorArray(color)
     end
   end
+  alias_method :set_line_style, :SetLineStyle
 
   #
   # Begin a new subpath by moving the current point to coordinates (x, y), omitting any connecting line segment.
@@ -7518,6 +7665,7 @@ class TCPDF
     outCurve(x1, y1, x2, y2, x3, y3)
     out(op)
   end
+  alias_method :curve, :Curve
 
   #
   # Draws an ellipse.
@@ -7556,6 +7704,7 @@ class TCPDF
     outellipticalarc(x0, y0, rx, ry, angle, astart, afinish, false, nc)
     out(op)
   end
+  alias_method :ellipse, :Ellipse
 
   #
   # Append an elliptical arc to the current path.
@@ -7692,6 +7841,7 @@ class TCPDF
   def PolyLine(p, style='', line_style=nil, fill_color=nil)
     Polygon(p, style, line_style, fill_color, false)
   end
+  alias_method :poly_line, :PolyLine
 
   #
   # Draws a polygon.
@@ -7781,6 +7931,7 @@ class TCPDF
       out(op)
     end
   end
+  alias_method :polygon, :Polygon
 
   #
   # Draws a regular polygon.
@@ -7828,6 +7979,7 @@ class TCPDF
     end
     Polygon(p, style, line_style, fill_color)
   end
+  alias_method :regular_polygon, :RegularPolygon
 
   #
   # Draws a star polygon
@@ -7889,6 +8041,7 @@ class TCPDF
     end
     Polygon(p, style, line_style, fill_color)
   end
+  alias_method :star_polygon, :StarPolygon
 
   #
   # Draws a rounded rectangle.
@@ -7907,6 +8060,7 @@ class TCPDF
   def RoundedRect(x, y, w, h, r, round_corner='1111', style='', border_style=nil, fill_color=nil)
     RoundedRectXY(x, y, w, h, r, r, round_corner, style, border_style, fill_color)
   end
+  alias_method :rounded_rect, :RoundedRect
 
   #
   # Draws a rounded rectangle.
@@ -7978,6 +8132,7 @@ class TCPDF
     end
     out(op)
   end
+  alias_method :rounded_rect_xy, :RoundedRectXY
 
   #
   # Draws a grahic arrow.
@@ -7989,6 +8144,7 @@ class TCPDF
   # @parameter float :arm_size length of arrowhead arms
   # @parameter int :arm_angle angle between an arm and the shaft
   # @author Piotr Galecki, Nicola Asuni, Andy Meier
+  # @access public
   # @since 4.6.018 (2009-07-10)
   #
   def Arrow(x0, y0, x1, y1, head_style=0, arm_size=5, arm_angle=15)
@@ -8033,6 +8189,7 @@ class TCPDF
     end
     Polygon([x2L, y2L, x1, y1, x2R, y2R], mode, style, nil)
   end
+  alias_method :arrow, :Arrow
 
   # END GRAPHIC FUNCTIONS SECTION -----------------------
 
@@ -8044,6 +8201,7 @@ class TCPDF
   # @param bool :setbom  if true set the Byte Order Mark (BOM = 0xFEFF)
   # @param bool :forcertl if true forces RTL text direction
   # @return string (UTF-16BE)
+  # @access protected
   # @author Nicola Asuni
   # @since 2.1.000 (2008-01-08)
   #
@@ -8073,6 +8231,7 @@ class TCPDF
   # @param bool :forcertl if 'R' forces RTL, if 'L' forces LTR
   # @return array of unicode chars (UCS4)
   # @author Nicola Asuni
+  # @access protected
   # @since 2.4.000 (2008-03-06)
   #
   def utf8Bidi(ta, str='', forcertl=false)
@@ -8672,6 +8831,7 @@ class TCPDF
     end
     @outlines.push :t => txt, :l => level, :y => y, :p => page
   end
+  alias_method :bookmark, :Bookmark
 
   #
   # Create a bookmark PDF string.
@@ -8753,6 +8913,7 @@ class TCPDF
     end
     @newpagegroup[page] = true
   end
+  alias_method :start_page_group, :startPageGroup
 
   #
   # Defines an alias for the total number of pages.
@@ -8760,7 +8921,7 @@ class TCPDF
   # @param string :alias The alias.
   # @access public
   # @since 1.4
-  # @see GetAliasNbPages(), PageNo(), Footer()
+  # @see getAliasNbPages(), PageNo(), Footer()
   #
   def AliasNbPages(alias_nb ='{nb}')
     @alias_nb_pages = alias_nb
@@ -8775,12 +8936,13 @@ class TCPDF
   # @since 4.0.018 (2008-08-08)
   # @see AliasNbPages(), PageNo(), Footer()
   #
-  def GetAliasNbPages()
+  def getAliasNbPages()
     if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
       return '{' + @alias_nb_pages + '}'
     end
     return @alias_nb_pages
   end
+  alias_method :get_alias_nb_pages, :getAliasNbPages
 
   #
   # Defines an alias for the page number.
@@ -8794,6 +8956,7 @@ class TCPDF
     # Define an alias for total number of pages
     @alias_num_page = alias_num
   end
+  alias_method :alias_num_page, :AliasNumPage
                 
   #
   # Returns the string alias used for the page number.
@@ -8803,12 +8966,13 @@ class TCPDF
   # @since 4.5.000 (2009-01-02)
   # @see AliasNbPages(), PageNo(), Footer()
   #
-  def GetAliasNumPage()
+  def getAliasNumPage()
     if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
       return '{' + @alias_num_page + '}'
     end
     return @alias_num_page
   end
+  alias_method :get_alias_num_page, :getAliasNumPage
 
   #
   # Return the current page in the group.
@@ -8819,6 +8983,7 @@ class TCPDF
   def getGroupPageNo()
     return @pagegroups[@currpagegroup]
   end
+  alias_method :get_group_page_no, :getGroupPageNo
 
   #
   # Returns the current group page number formatted as a string.
@@ -8829,6 +8994,7 @@ class TCPDF
   def getGroupPageNoFormatted()
     return formatPageNumber(getGroupPageNo())
   end
+  alias_method :get_group_page_no_formatted, :getGroupPageNoFormatted
 
   #
   # Return the alias of the current page group
@@ -8838,12 +9004,13 @@ class TCPDF
   # @access public
   # @since 3.0.000 (2008-03-27)
   #
-  def GetPageGroupAlias()
+  def getPageGroupAlias()
     if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont1')
       return '{' + @currpagegroup + '}'
     end
     return @currpagegroup
   end
+  alias_method :get_page_group_alias, :getPageGroupAlias
 
   #
   # Return the alias for the page number on the current page group
@@ -8853,12 +9020,13 @@ class TCPDF
   # @access public
   # @since 4.5.000 (2009-01-02)
   #
-  def GetPageNumGroupAlias()
+  def getPageNumGroupAlias()
     if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
       return '{' + @currpagegroup.gsub('{nb', '{pnb') +'}'
     end
     return @currpagegroup.gsub('{nb', '{pnb')
   end
+  alias_method :get_page_num_group_alias, :getPageNumGroupAlias
 
   #
   # Format the page numbers.
@@ -8892,6 +9060,7 @@ class TCPDF
   def PageNoFormatted()
     return formatPageNumber(PageNo())
   end
+  alias_method :page_no_formatted, :PageNoFormatted
 
   #
   # Put visibility settings.
@@ -8915,7 +9084,7 @@ class TCPDF
   # @access public
   # @since 3.0.000 (2008-03-27)
   #
-  def SetVisibility(v)
+  def setVisibility(v)
     if @open_marked_content
       # close existing open marked-content
       out('EMC')
@@ -8935,6 +9104,7 @@ class TCPDF
     end
     @visibility = v
   end
+  alias_method :set_visibility, :setVisibility
 
   #
   # Add transparency parameters to the current extgstate
@@ -8999,10 +9169,11 @@ class TCPDF
   # @access public
   # @since 3.0.000 (2008-03-27)
   #
-  def SetAlpha(alpha, bm='Normal')
+  def setAlpha(alpha, bm='Normal')
     gs = addExtGState({'ca' => alpha, 'CA' => alpha, 'BM' => '/' + bm, 'AIS' => 'false'})
     setExtGState(gs)
   end
+  alias_method :set_alpha, :setAlpha
 
   #
   # Set the default JPEG compression quality (1-100)
@@ -9010,12 +9181,13 @@ class TCPDF
   # @access public
   # @since 3.0.000 (2008-03-27)
   #
-  def SetJPEGQuality(quality)
+  def setJPEGQuality(quality)
     if (quality < 1) or (quality > 100)
       quality = 75
     end
     @jpeg_quality = quality
   end
+  alias_method :set_jpeg_quality, :setJPEGQuality
 
   #
   # Set the height of cell repect font height.
@@ -9023,18 +9195,20 @@ class TCPDF
   # @access public
   # @since 3.0.014 (2008-06-04)
   #
-  def SetCellHeightRatio(h) 
+  def setCellHeightRatio(h) 
     @cell_height_ratio = h 
   end
+  alias_method :set_cell_height_ratio, :setCellHeightRatio
 
   #
   # return the height of cell repect font height.
   # @access public
   # @since 4.0.012 (2008-07-24)
   #
-  def GetCellHeightRatio()
+  def getCellHeightRatio()
     return @cell_height_ratio
   end
+  alias_method :get_cell_height_ratio, :getCellHeightRatio
 
   #
   # Draw the sector of a circle.
@@ -9054,6 +9228,7 @@ class TCPDF
   def PieSector(xc, yc, r, a, b, style='FD', cw=true, o=90)
     PieSectorXY(xc, yc, r, r, a, b, style, cw, o)
   end
+  alias_method :pie_sector, :PieSector
 
   #
   # Draw the sector of an ellipse.
@@ -9092,25 +9267,33 @@ class TCPDF
     outellipticalarc(xc, yc, rx, ry, 0, a, b, true, nc)
     out(op)
   end
+  alias_method :pie_sector_xy, :PieSectorXY
 
   #
   # Set document barcode.
   # @param string :bc barcode
   # @access public
   #
-  def SetBarcode(bc="")
+  def setBarcode(bc="")
     @barcode = bc;
   end
+  alias_method :set_barcode, :setBarcode
   
+  def SetBarcode(bc="")
+     warn "[DEPRECATION] 'SetBarcode' is deprecated. Please use 'set_barcode' instead."
+     setBarcode(bc)
+  end
+
   #
   # Get current barcode.
   # @return string
   # @access public
   # @since 4.0.012 (2008-07-24)
   #
-  def GetBarcode()
+  def getBarcode()
     return @barcode
   end
+  alias_method :get_barcode, :getBarcode
   
   #
   # Print Barcode.
@@ -9123,6 +9306,7 @@ class TCPDF
   # @param string :font font for text
   # @param int :xres x resolution
   # @param string :code code to print
+  # @access public
   #
   def writeBarcode(x, y, w, h, type, style, font, xres, code)
     require(File.dirname(__FILE__) + "/barcode/barcode.rb");
@@ -9176,6 +9360,7 @@ class TCPDF
     obj = nil
     unlink(tmpName);
   end
+  alias_method :write_barcode, :writeBarcode
   
   #
   # Returns an array containing original margins:
@@ -9187,10 +9372,11 @@ class TCPDF
   # @access public
   # @since 4.0.012 (2008-07-24)
   #
-  def GetOriginalMargins()
+  def getOriginalMargins()
     ret = { 'left' => @original_l_margin, 'right' => @original_r_margin }
     return ret
   end
+  alias_method :get_original_margins, :getOriginalMargins
 
   #
   # Returns the current font size.
@@ -9198,9 +9384,10 @@ class TCPDF
   # @access public
   # @since 3.2.000 (2008-06-23)
   #
-  def GetFontSize()
+  def getFontSize()
     return @font_size
   end
+  alias_method :get_font_size, :getFontSize
 
   #
   # Returns the current font size in points unit.
@@ -9208,9 +9395,10 @@ class TCPDF
   # @access public
   # @since 3.2.000 (2008-06-23)
   #
-  def GetFontSizePt()
+  def getFontSizePt()
     return @font_size_pt
   end
+  alias_method :get_font_size_pt, :getFontSizePt
 
   #
   # Returns the current font family name.
@@ -9218,9 +9406,10 @@ class TCPDF
   # @access public
   # @since 4.3.008 (2008-12-05)
   #
-  def GetFontFamily()
+  def getFontFamily()
     return @font_family
   end
+  alias_method :get_font_family, :getFontFamily
 
   #
   # Returns the current font style.
@@ -9228,9 +9417,10 @@ class TCPDF
   # @access public
   # @since 4.3.008 (2008-12-05)
   #
-  def GetFontStyle()
+  def getFontStyle()
     return @font_style
   end
+  alias_method :get_font_style, :getFontStyle
 
   # --- HTML PARSER FUNCTIONS ---
 
@@ -9477,6 +9667,7 @@ class TCPDF
   # <ul><li>dom[key]['tag'] = true if tag, false otherwise;</li><li>dom[key]['value'] = tag name or text;</li><li>dom[key]['opening'] = true if opening tag, false otherwise;</li><li>dom[key]['attribute'] = array of attributes (attribute name is the key);</li><li>dom[key]['style'] = array of style attributes (attribute name is the key);</li><li>dom[key]['parent'] = id of parent element;</li><li>dom[key]['fontname'] = font family name;</li><li>dom[key]['fontstyle'] = font style;</li><li>dom[key]['fontsize'] = font size in points;</li><li>dom[key]['bgcolor'] = RGB array of background color;</li><li>dom[key]['fgcolor'] = RGB array of foreground color;</li><li>dom[key]['width'] = width in pixels;</li><li>dom[key]['height'] = height in pixels;</li><li>dom[key]['align'] = text alignment;</li><li>dom[key]['cols'] = number of colums in table;</li><li>dom[key]['rows'] = number of rows in table;</li></ul>
   # @param string :html html code
   # @return array
+  # @access protected
   # @since 3.2.000 (2008-06-20)
   #
   def getHtmlDomArray(html)
@@ -11272,7 +11463,7 @@ class TCPDF
     firstorlast = (key == 1)
     # check for text direction attribute
     if !tag['attribute']['dir'].nil?
-      SetTempRTL(tag['attribute']['dir'])
+      setTempRTL(tag['attribute']['dir'])
     else
       @tmprtl = false
     end
@@ -11658,7 +11849,7 @@ class TCPDF
         if (@num_columns > 1) and (dom[(dom[key]['parent'])]['endy'] >= (@page_break_trigger - @lasth)) and (@y < dom[(dom[key]['parent'])]['endy'])
           Ln(0, cell)
         else
-          SetPage(dom[(dom[key]['parent'])]['endpage']);
+          setPage(dom[(dom[key]['parent'])]['endpage']);
           @y = dom[(dom[key]['parent'])]['endy']
           if !dom[table_el]['attribute']['cellspacing'].nil?
             cellspacing = getHTMLUnitToUnits(dom[table_el]['attribute']['cellspacing'], 1, 'px')
@@ -11740,10 +11931,10 @@ class TCPDF
             if end_page > startpage
               # design borders around HTML cells.
               startpage.upto(end_page) do |page|
-                SetPage(page)
+                setPage(page)
                 if page == startpage
                   @y = parent['starty'] # put cursor at the beginning of row on the first page
-                  ch = GetPageHeight() - parent['starty'] - GetBreakMargin()
+                  ch = getPageHeight() - parent['starty'] - getBreakMargin()
                   cborder = getBorderMode(border, position='start')
                 elsif page == end_page
                   @y = @t_margin # put cursor at the beginning of last page
@@ -11751,7 +11942,7 @@ class TCPDF
                   cborder = getBorderMode(border, position='end')
                 else
                   @y = @t_margin # put cursor at the beginning of the current page
-                  ch = GetPageHeight() - @t_margin - GetBreakMargin()
+                  ch = getPageHeight() - @t_margin - getBreakMargin()
                   cborder = getBorderMode(border, position='middle')
                 end
                 if !cellpos['bgcolor'].nil? and (cellpos['bgcolor'] != false)
@@ -11781,7 +11972,7 @@ class TCPDF
                 end
               end
             else
-              SetPage(startpage)
+              setPage(startpage)
               if !cellpos['bgcolor'].nil? and (cellpos['bgcolor'] != false)
                 SetFillColorArray(cellpos['bgcolor'])
                 fill = 1
@@ -11967,6 +12158,7 @@ class TCPDF
       @r_margin = outer
     end
   end
+  alias_method :set_booklet, :SetBooklet
 
   #
   # Swap the left and right margins.
@@ -12001,6 +12193,7 @@ class TCPDF
   def setHtmlVSpace(tagvs)
     @tagvspaces = tagvs
   end
+  alias_method :set_html_v_space, :setHtmlVSpace
 
   #
   # convert HTML string containing value and unit of measure to user's units or points.
@@ -12060,6 +12253,7 @@ class TCPDF
     end
     return retval
   end
+  alias_method :get_html_unit_to_units, :getHTMLUnitToUnits
 
   #
   # Returns the Roman representation of an integer number
@@ -12124,6 +12318,7 @@ class TCPDF
     end
     return roman
   end
+  alias_method :int_to_roman, :intToRoman
 
   #
   # Output an HTML list bullet or ordered item symbol
@@ -12690,9 +12885,10 @@ class TCPDF
     #  return "this.addField(\'".$matches[1]."\',\'".$matches[2]."\',".$newpage."";'), $tmpjavascript);
 
     # return to last page
-    LastPage(true)
+    lastPage(true)
     return true
   end
+  alias_method :move_page, :movePage
 
   #
   # Remove the specified page.
@@ -12828,9 +13024,10 @@ class TCPDF
     #@javascript = "this.addField(\'" + $1 + "\',\'" + $2 + "\'," + newpage + ""
 
     # return to last page
-    LastPage(true)
+    lastPage(true)
     return true
   end
+  alias_method :delete_page, :deletePage
 
   #
   # Output a Table of Content Index (TOC).
@@ -12852,7 +13049,7 @@ class TCPDF
     fontstyle = @font_style
     w = @w - @l_margin - @r_margin
     spacer = GetStringWidth(32.chr) * 4
-    page_first = GetPage()
+    page_first = getPage()
     lmargin = @l_margin
     rmargin = @r_margin
     x_start = GetX()
@@ -12926,7 +13123,7 @@ class TCPDF
       @l_margin = lmargin
       @r_margin = rmargin
     end
-    page_last = GetPage()
+    page_last = getPage()
     numpages = page_last - page_first + 1
     if !empty_string(page)
       page_first.upto(page_last) do |p|
@@ -12982,6 +13179,7 @@ class TCPDF
       end
     end
   end
+  alias_method :add_toc, :addTOC
 
   #
   # Output a Table Of Content Index (TOC) using HTML templates.
@@ -13002,7 +13200,7 @@ class TCPDF
     # set new style for link
     @html_link_color_array = []
     @html_link_font_style = ''
-    page_first = GetPage()
+    page_first = getPage()
     @outlines.each_with_index do |outline, key|
       if empty_string(page)
         pagenum = outline[:p].to_s
@@ -13027,7 +13225,7 @@ class TCPDF
     @html_link_color_array = prev_htmlLinkColorArray
     @html_link_font_style = prev_htmlLinkFontStyle
     # move TOC page and replace numbers
-    page_last = GetPage()
+    page_last = getPage()
     numpages = page_last - page_first + 1
     if !empty_string(page)
       page_first.upto(page_last) do |p|
@@ -13085,6 +13283,7 @@ class TCPDF
       end
     end
   end
+  alias_method :add_html_toc, :addHTMLTOC
 
   #
   # Stores a copy of the current TCPDF object used for undo operation.
@@ -13102,6 +13301,7 @@ class TCPDF
     # clone current object
     @objcopy = objclone(self)
   end
+  alias_method :start_transaction, :startTransaction
 
   #
   # Delete the copy of the current TCPDF object used for undo operation.
@@ -13114,6 +13314,7 @@ class TCPDF
       @objcopy = nil
     end
   end
+  alias_method :commit_transaction, :commitTransaction
 
   #
   # This method allows to undo the latest transaction by returning the latest saved TCPDF object with startTransaction().
@@ -13144,6 +13345,7 @@ class TCPDF
     end
     return self
   end
+  alias_method :rollback_transaction, :rollbackTransaction
 
   #
   # Creates a copy of a class object
@@ -13250,6 +13452,7 @@ class TCPDF
     @textrendermode = textrendermode
     @textstrokewidth = stroke * @k
   end
+  alias_method :set_text_rendering_mode, :setTextRenderingMode
 
   #
   # Get the Path-Painting Operators.

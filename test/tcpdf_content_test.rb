@@ -5,14 +5,14 @@ class TcpdfPageTest < ActiveSupport::TestCase
   test "Basic Page content test" do
     pdf = TCPDF.new
 
-    page = pdf.GetPage
+    page = pdf.get_page
     assert_equal 0, page
 
-    width = pdf.GetPageWidth
+    width = pdf.get_page_width
 
-    pdf.SetPrintHeader(false)
-    pdf.AddPage
-    page = pdf.GetPage
+    pdf.set_print_header(false)
+    pdf.add_page
+    page = pdf.get_page
     assert_equal 1, page
 
     content = []
@@ -26,7 +26,7 @@ class TcpdfPageTest < ActiveSupport::TestCase
     assert_equal content[3],  "BT /F1 12.00 Tf ET "
 
     ###########################
-    #  0 J 0 j [] 0 d 0 G 0 g # AddPage,startPage,setGraphicVars(SetFillColor)
+    #  0 J 0 j [] 0 d 0 G 0 g # add_page,start_page,setGraphicVars(set_fill_color)
     #  BT /F1 12.00 Tf ET     #
     #  0 J 0 j [] 0 d 0 G 0 g #
     #  BT /F1 12.00 Tf ET     #
@@ -34,8 +34,8 @@ class TcpdfPageTest < ActiveSupport::TestCase
     # ''                   # @linestyle_width    : Line width.
     # 0 J                  # @linestyle_cap      : Type of cap to put on the line. [butt:0, round:1, square:2]
     # 0 j                  # @linestyle_join     : Type of join. [miter:0, round:1, bevel:2]
-    # [] 0 d               # @linestyle_dash     : Line dash pattern. (see SetLineStyle)
-    # 0 G                  # @draw_color         : Drawing color. (see SetDrawColor)
+    # [] 0 d               # @linestyle_dash     : Line dash pattern. (see set_line_style)
+    # 0 G                  # @draw_color         : Drawing color. (see set_draw_color)
     # 0 g                  # Set colors
     ########################
     # BT                   # Begin Text.
@@ -43,7 +43,7 @@ class TcpdfPageTest < ActiveSupport::TestCase
     # ET                   # End Text.
     ########################
 
-    pdf.SetFont('freesans', 'BI', 18)
+    pdf.set_font('freesans', 'BI', 18)
     content = []
     contents = pdf.getPageBuffer(page)
     contents.each_line {|line| content.push line.chomp }
@@ -56,7 +56,7 @@ class TcpdfPageTest < ActiveSupport::TestCase
     #   /F2 18.00 Tf       # 18.00 point size font.
     # ET                   # End Text.
     ########################
-    pdf.SetFont('freesans', 'B', 20)
+    pdf.set_font('freesans', 'B', 20)
     content = []
     contents = pdf.getPageBuffer(page)
     contents.each_line {|line| content.push line.chomp }
@@ -64,7 +64,7 @@ class TcpdfPageTest < ActiveSupport::TestCase
     assert_equal content.length,  6
     assert_equal content[5],  "BT /F3 20.00 Tf ET "
 
-    pdf.Cell(0, 10, 'Chapter', 0, 1, 'L')
+    pdf.cell(0, 10, 'Chapter', 0, 1, 'L')
     content = []
     contents = pdf.getPageBuffer(page)
     contents.each_line {|line| content.push line.chomp }
@@ -84,12 +84,12 @@ class TcpdfPageTest < ActiveSupport::TestCase
     #################################################
   end
 
-  test "Circle content" do
+  test "circle content" do
     pdf = TCPDF.new
 
-    pdf.SetPrintHeader(false)
-    pdf.AddPage
-    pdf.Circle(100, 200, 50)
+    pdf.set_print_header(false)
+    pdf.add_page
+    pdf.circle(100, 200, 50)
     content = []
     contents = pdf.getPageBuffer(1)
     contents.each_line {|line| content.push line.chomp }

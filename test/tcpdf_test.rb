@@ -2,232 +2,232 @@ require 'test_helper'
 
 class TcpdfTest < ActiveSupport::TestCase
 
-  test "SetX potision" do
+  test "set_x potision" do
     pdf = TCPDF.new
-    width = pdf.GetPageWidth
+    width = pdf.get_page_width
 
-    pdf.SetX(5)
-    x     = pdf.GetX
-    abs_x = pdf.GetAbsX
+    pdf.set_x(5)
+    x     = pdf.get_x
+    abs_x = pdf.get_abs_x
     assert_equal 5, x
     assert_equal 5, abs_x
 
-    pdf.SetX(-4)
-    x     = pdf.GetX
-    abs_x = pdf.GetAbsX
+    pdf.set_x(-4)
+    x     = pdf.get_x
+    abs_x = pdf.get_abs_x
     assert_equal width - 4, x
     assert_equal width - 4, abs_x
 
-    pdf.SetRTL(true) # Right to Left
+    pdf.set_rtl(true) # Right to Left
 
-    pdf.SetX(5)
-    x     = pdf.GetX
-    abs_x = pdf.GetAbsX
+    pdf.set_x(5)
+    x     = pdf.get_x
+    abs_x = pdf.get_abs_x
     assert_equal 5, x
     assert_equal width - 5, abs_x
 
-    pdf.SetX(-4)
-    x     = pdf.GetX
-    abs_x = pdf.GetAbsX
+    pdf.set_x(-4)
+    x     = pdf.get_x
+    abs_x = pdf.get_abs_x
     assert_equal width - 4, x
     assert_equal 4, abs_x
   end
 
-  test "SetY potision" do
+  test "set_y potision" do
     pdf = TCPDF.new
-    width = pdf.GetPageWidth
+    width = pdf.get_page_width
 
-    pdf.SetLeftMargin(10)
-    pdf.SetY(20)
-    x     = pdf.GetX
-    abs_x = pdf.GetAbsX
-    y     = pdf.GetY
+    pdf.set_left_margin(10)
+    pdf.set_y(20)
+    x     = pdf.get_x
+    abs_x = pdf.get_abs_x
+    y     = pdf.get_y
     assert_equal 10, x
     assert_equal 10, abs_x
     assert_equal 20, y
 
-    pdf.SetLeftMargin(30)
-    pdf.SetY(20)
-    x     = pdf.GetX
-    abs_x = pdf.GetAbsX
-    y     = pdf.GetY
+    pdf.set_left_margin(30)
+    pdf.set_y(20)
+    x     = pdf.get_x
+    abs_x = pdf.get_abs_x
+    y     = pdf.get_y
     assert_equal 30, x
     assert_equal 30, abs_x
     assert_equal 20, y
 
-    pdf.SetRTL(true) # Right to Left
+    pdf.set_rtl(true) # Right to Left
 
-    pdf.SetRightMargin(10)
-    pdf.SetY(20)
-    x     = pdf.GetX
-    abs_x = pdf.GetAbsX
-    y     = pdf.GetY
+    pdf.set_right_margin(10)
+    pdf.set_y(20)
+    x     = pdf.get_x
+    abs_x = pdf.get_abs_x
+    y     = pdf.get_y
     assert_equal 10, x
     assert_equal width - 10, abs_x
     assert_equal 20, y
 
-    pdf.SetRightMargin(30)
-    pdf.SetY(20)
-    x     = pdf.GetX
-    abs_x = pdf.GetAbsX
-    y     = pdf.GetY
+    pdf.set_right_margin(30)
+    pdf.set_y(20)
+    x     = pdf.get_x
+    abs_x = pdf.get_abs_x
+    y     = pdf.get_y
     assert_equal 30, x
     assert_equal width - 30, abs_x
     assert_equal 20, y
   end
 
-  test "AddPage potision" do
+  test "add_page potision" do
     pdf = TCPDF.new
-    width = pdf.GetPageWidth
+    width = pdf.get_page_width
 
-    pdf.AddPage
-    x     = pdf.GetX
-    abs_x = pdf.GetAbsX
-    y     = pdf.GetY
+    pdf.add_page
+    x     = pdf.get_x
+    abs_x = pdf.get_abs_x
+    y     = pdf.get_y
     assert_in_delta 10.00125, x, 0.00001
     assert_in_delta 10.00125, abs_x, 0.00001
     assert_in_delta 10.00125, y, 0.00001
 
-    pdf.SetRTL(true) # Right to Left
+    pdf.set_rtl(true) # Right to Left
 
-    pdf.AddPage
-    x     = pdf.GetX
-    abs_x = pdf.GetAbsX
-    y     = pdf.GetY
+    pdf.add_page
+    x     = pdf.get_x
+    abs_x = pdf.get_abs_x
+    y     = pdf.get_y
     assert_in_delta 10.00125, x, 0.00001
     assert_in_delta width - 10.00125, abs_x, 0.00001
     assert_in_delta 10.00125, y, 0.00001
 
-    pdf.SetPage(1)
-    page = pdf.GetPage
+    pdf.set_page(1)
+    page = pdf.get_page
     assert_equal 1, page
-    pdf.SetY(20)
-    y     = pdf.GetY
+    pdf.set_y(20)
+    y     = pdf.get_y
     assert_equal 20, y
-    pdf.AddPage
-    y     = pdf.GetY
+    pdf.add_page
+    y     = pdf.get_y
     assert_in_delta 10.00125, y, 0.00001
 
   end
 
-  test "AddPage" do
+  test "add_page" do
     pdf = TCPDF.new
 
-    page = pdf.GetPage
+    page = pdf.get_page
     assert_equal 0, page
-    pages = pdf.GetNumPages
+    pages = pdf.get_num_pages
     assert_equal 0, pages
 
-    pdf.AddPage
-    page = pdf.GetPage
+    pdf.add_page
+    page = pdf.get_page
     assert_equal 1, page
-    pages = pdf.GetNumPages
+    pages = pdf.get_num_pages
     assert_equal 1, pages
 
-    pdf.AddPage
-    page = pdf.GetPage
+    pdf.add_page
+    page = pdf.get_page
     assert_equal 2, page
-    pages = pdf.GetNumPages
+    pages = pdf.get_num_pages
     assert_equal 2, pages
 
-    pdf.SetPage(1)
-    page = pdf.GetPage
+    pdf.set_page(1)
+    page = pdf.get_page
     assert_equal 1, page
 
-    pdf.AddPage
-    page = pdf.GetPage
+    pdf.add_page
+    page = pdf.get_page
     assert_equal 2, page
-    pages = pdf.GetNumPages
+    pages = pdf.get_num_pages
     assert_equal 2, pages
 
-    pdf.AddPage
-    page = pdf.GetPage
+    pdf.add_page
+    page = pdf.get_page
     assert_equal 3, page
-    pages = pdf.GetNumPages
+    pages = pdf.get_num_pages
     assert_equal 3, pages
 
-    pdf.SetPage(1)
-    page = pdf.GetPage
+    pdf.set_page(1)
+    page = pdf.get_page
     assert_equal 1, page
 
-    pdf.LastPage
-    page = pdf.GetPage
+    pdf.last_page
+    page = pdf.get_page
     assert_equal 3, page
-    pages = pdf.GetNumPages
+    pages = pdf.get_num_pages
     assert_equal 3, pages
   end
 
-  test "AddPage SetPage Under Error" do
+  test "add_page set_page Under Error" do
     pdf = TCPDF.new
 
-    page = pdf.GetPage
+    page = pdf.get_page
     assert_equal 0, page
-    pages = pdf.GetNumPages
+    pages = pdf.get_num_pages
     assert_equal 0, pages
 
-    pdf.AddPage
-    page = pdf.GetPage
+    pdf.add_page
+    page = pdf.get_page
     assert_equal 1, page
-    pages = pdf.GetNumPages
+    pages = pdf.get_num_pages
     assert_equal 1, pages
 
-    assert_raise(RuntimeError) {pdf.SetPage(0)} # Page under size
+    assert_raise(RuntimeError) {pdf.set_page(0)} # Page under size
   end
 
-  test "AddPage SetPage Over Error" do
+  test "add_page set_page Over Error" do
     pdf = TCPDF.new
 
-    page = pdf.GetPage
+    page = pdf.get_page
     assert_equal 0, page
-    pages = pdf.GetNumPages
+    pages = pdf.get_num_pages
     assert_equal 0, pages
 
-    pdf.AddPage
-    page = pdf.GetPage
+    pdf.add_page
+    page = pdf.get_page
     assert_equal 1, page
-    pages = pdf.GetNumPages
+    pages = pdf.get_num_pages
     assert_equal 1, pages
 
-    pdf.AddPage
-    page = pdf.GetPage
+    pdf.add_page
+    page = pdf.get_page
     assert_equal 2, page
-    pages = pdf.GetNumPages
+    pages = pdf.get_num_pages
     assert_equal 2, pages
 
-    pdf.SetPage(1)
-    page = pdf.GetPage
+    pdf.set_page(1)
+    page = pdf.get_page
     assert_equal 1, page
 
-    assert_raise(RuntimeError) {pdf.SetPage(3)} # Page over size
+    assert_raise(RuntimeError) {pdf.set_page(3)} # Page over size
   end
 
   test "deletePage test" do
     pdf = TCPDF.new
 
-    pdf.AddPage
-    pdf.Write(0, "Page 1")
+    pdf.add_page
+    pdf.write(0, "Page 1")
 
-    page = pdf.GetPage
+    page = pdf.get_page
     assert_equal 1, page
-    pages = pdf.GetNumPages
+    pages = pdf.get_num_pages
     assert_equal 1, pages
 
     contents1 = pdf.getPageBuffer(1)
 
-    pdf.AddPage
-    pdf.Write(0, "Page 2")
+    pdf.add_page
+    pdf.write(0, "Page 2")
 
-    page = pdf.GetPage
+    page = pdf.get_page
     assert_equal 2, page
-    pages = pdf.GetNumPages
+    pages = pdf.get_num_pages
     assert_equal 2, pages
 
     contents2 = pdf.getPageBuffer(2)
 
     pdf.deletePage(1)
-    page = pdf.GetPage
+    page = pdf.get_page
     assert_equal 1, page
-    pages = pdf.GetNumPages
+    pages = pdf.get_num_pages
     assert_equal 1, pages
 
     contents3 = pdf.getPageBuffer(1)
