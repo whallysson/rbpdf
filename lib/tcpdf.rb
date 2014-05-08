@@ -5833,6 +5833,182 @@ class TCPDF
 	end
 
 	#
+	# Adds unicode fonts.<br>
+	# Based on PDF Reference 1.3 (section 5)
+	# @parameter array :font font data
+	# @return int font object ID
+	# @access protected
+	# @author Nicola Asuni
+	# @since 1.52.0.TC005 (2005-01-05)
+	#
+	def puttruetypeunicode(font)
+		# Type0 Font
+		# A composite font composed of other fonts, organized hierarchically
+		obj_id = newobj()
+		out = '<</Type /Font'
+		out << ' /Subtype /Type0'
+		out << ' /BaseFont /' + font['name'] + ''
+		out << ' /Name /F' + font['i'].to_s
+		out << ' /Encoding /' + font['enc']
+		out << ' /ToUnicode /Identity-H'
+		out << ' /DescendantFonts [' + (@n + 1).to_s + ' 0 R]'
+		out << ' >>'
+		out << ' endobj'
+		out(out)
+		
+		# CIDFontType2
+		# A CIDFont whose glyph descriptions are based on TrueType font technology
+		newobj();
+		out = '<</Type /Font'
+		out << ' /Subtype /CIDFontType2'
+		out << ' /BaseFont /' + font['name']
+		
+		# A dictionary containing entries that define the character collection of the CIDFont.
+
+		cidinfo = '/Registry ' + datastring(font['cidinfo']['Registry'])
+		cidinfo << ' /Ordering ' + datastring(font['cidinfo']['Ordering'])
+		cidinfo << ' /Supplement ' + font['cidinfo']['Supplement'].to_s
+
+		out << ' /CIDSystemInfo <<' + cidinfo + '>>'
+		out << ' /FontDescriptor ' + (@n + 1).to_s + ' 0 R'
+		out << ' /DW ' + font['dw'].to_s + '' # default width
+		out << "\n" + putfontwidths(font, 0)
+		out << ' /CIDToGIDMap ' + (@n + 2).to_s + ' 0 R >> endobj'
+		out(out)
+		
+		# Font descriptor
+		# A font descriptor describing the CIDFont default metrics other than its glyph widths
+		newobj();
+		out = '<</Type /FontDescriptor'
+		out << ' /FontName /' + font['name']
+		font['desc'].each do |key, value|
+			if value.is_a? Float
+				value = sprintf('%.3f', value)
+			end
+			out << ' /' + key.to_s + ' ' + value.to_s
+		end
+		fontdir = false
+		if !empty_string(font['file'])
+			# A stream containing a TrueType font
+			out << ' /FontFile2 ' + @font_files[font['file']]['n'].to_s + ' 0 R'
+			fontdir = @font_files[font['file']]['fontdir']
+		end
+		out << ' >> endobj'
+		out(out)
+
+		if font['ctg'] and !empty_string(font['ctg'])
+			newobj()
+			# Embed CIDToGIDMap
+			# A specification of the mapping from CIDs to glyph indices
+			# search and get CTG font file to embedd
+			ctgfile = font['ctg'].downcase
+
+			# search and get ctg font file to embedd
+			fontfile = ''
+			# search files on various directories
+			if (fontdir != false) and File.exists?(fontdir + ctgfile)
+				fontfile = fontdir + ctgfile
+			elsif fontfile = getfontpath(ctgfile)
+			elsif File.exists?(ctgfile)
+				fontfile = ctgfile
+			end
+
+			if empty_string(fontfile)
+				Error('Font file not found: ' + ctgfile)
+			end
+			size = File.size(fontfile)
+			out = '<</Length ' + size.to_s + ''
+			if (fontfile[-2,2] == '.z') # check file extension
+				# Decompresses data encoded using the public-domain 
+				# zlib/deflate compression method, reproducing the 
+				# original text or binary data
+				out << ' /Filter /FlateDecode'
+			end
+			out << ' >>'
+			open(fontfile, 'rb') do |f|
+				out << ' ' + getstream(f.read())
+			end
+			out << ' endobj'
+			out(out)
+		end
+
+		return obj_id
+	end
+
+	#
+	# Output CID-0 fonts.
+	# A Type 0 CIDFont contains glyph descriptions based on the Adobe Type 1 font format
+	# @param array :font font data
+	# @return int font object ID
+	# @access protected
+	# @author Andrew Whitehead, Nicola Asuni, Yukihiro Nakadaira
+	# @since 3.2.000 (2008-06-23)
+	#
+	def putcidfont0(font)
+		cidoffset = 0
+		if font['cw'][1].nil?
+			cidoffset = 31
+		end
+		if font['cidinfo']['uni2cid']
+			# convert unicode to cid.
+			uni2cid = font['cidinfo']['uni2cid']
+			cw = {}
+			font['cw'].each { |uni, width|
+				if uni2cid[uni]
+					cw[(uni2cid[uni] + cidoffset)] = width
+				elsif uni < 256
+					cw[uni] = width
+				end # else unknown character
+			}
+			font = font.merge({'cw' => cw})
+		end
+		name = font['name']
+		enc = font['enc']
+		if enc
+			longname = name + '-' + enc
+		else
+			longname = name
+		end
+		obj_id = newobj()
+		out = '<</Type /Font'
+		out << ' /Subtype /Type0'
+		out << ' /BaseFont /' + longname
+		out << ' /Name /F' + font['i'].to_s
+		if enc
+			out << ' /Encoding /' + enc
+		end
+		out << ' /DescendantFonts [' + (@n + 1).to_s + ' 0 R]'
+		out << ' >> endobj'
+		out(out)
+		newobj()
+		out = '<</Type /Font'
+		out << ' /Subtype /CIDFontType0'
+		out << ' /BaseFont /' + name
+		cidinfo = '/Registry ' + datastring(font['cidinfo']['Registry'])
+		cidinfo << ' /Ordering ' + datastring(font['cidinfo']['Ordering'])
+		cidinfo << ' /Supplement ' + font['cidinfo']['Supplement'].to_s
+		out << ' /CIDSystemInfo <<' + cidinfo + '>>'
+		out << ' /FontDescriptor ' + (@n + 1).to_s + ' 0 R'
+		out << ' /DW ' + font['dw'].to_s
+		out << "\n" + putfontwidths(font, cidoffset)
+		out << ' >> endobj'
+		out(out)
+		newobj()
+		s = '<</Type /FontDescriptor /FontName /' + name
+		font['desc'].each {|k, v|
+			if k != 'Style'
+				if fdv.is_a? Float
+					fdv = sprintf('%.3f', fdv)
+				end
+				s << ' /' + k + ' ' + v.to_s + ''
+			end
+		}
+		out(s + '>> endobj')
+
+		return obj_id
+	end
+
+	#
 	# Output images.
 	# @access protected
 	#
@@ -6476,182 +6652,6 @@ class TCPDF
 		else
 			setBuffer(s.to_s + "\n")
 		end
-	end
-
-	#
-	# Adds unicode fonts.<br>
-	# Based on PDF Reference 1.3 (section 5)
-	# @parameter array :font font data
-	# @return int font object ID
-	# @access protected
-	# @author Nicola Asuni
-	# @since 1.52.0.TC005 (2005-01-05)
-	#
-	def puttruetypeunicode(font)
-		# Type0 Font
-		# A composite font composed of other fonts, organized hierarchically
-		obj_id = newobj()
-		out = '<</Type /Font'
-		out << ' /Subtype /Type0'
-		out << ' /BaseFont /' + font['name'] + ''
-		out << ' /Name /F' + font['i'].to_s
-		out << ' /Encoding /' + font['enc']
-		out << ' /ToUnicode /Identity-H'
-		out << ' /DescendantFonts [' + (@n + 1).to_s + ' 0 R]'
-		out << ' >>'
-		out << ' endobj'
-		out(out)
-		
-		# CIDFontType2
-		# A CIDFont whose glyph descriptions are based on TrueType font technology
-		newobj();
-		out = '<</Type /Font'
-		out << ' /Subtype /CIDFontType2'
-		out << ' /BaseFont /' + font['name']
-		
-		# A dictionary containing entries that define the character collection of the CIDFont.
-
-		cidinfo = '/Registry ' + datastring(font['cidinfo']['Registry'])
-		cidinfo << ' /Ordering ' + datastring(font['cidinfo']['Ordering'])
-		cidinfo << ' /Supplement ' + font['cidinfo']['Supplement'].to_s
-
-		out << ' /CIDSystemInfo <<' + cidinfo + '>>'
-		out << ' /FontDescriptor ' + (@n + 1).to_s + ' 0 R'
-		out << ' /DW ' + font['dw'].to_s + '' # default width
-		out << "\n" + putfontwidths(font, 0)
-		out << ' /CIDToGIDMap ' + (@n + 2).to_s + ' 0 R >> endobj'
-		out(out)
-		
-		# Font descriptor
-		# A font descriptor describing the CIDFont default metrics other than its glyph widths
-		newobj();
-		out = '<</Type /FontDescriptor'
-		out << ' /FontName /' + font['name']
-		font['desc'].each do |key, value|
-			if value.is_a? Float
-				value = sprintf('%.3f', value)
-			end
-			out << ' /' + key.to_s + ' ' + value.to_s
-		end
-		fontdir = false
-		if !empty_string(font['file'])
-			# A stream containing a TrueType font
-			out << ' /FontFile2 ' + @font_files[font['file']]['n'].to_s + ' 0 R'
-			fontdir = @font_files[font['file']]['fontdir']
-		end
-		out << ' >> endobj'
-		out(out)
-
-		if font['ctg'] and !empty_string(font['ctg'])
-			newobj()
-			# Embed CIDToGIDMap
-			# A specification of the mapping from CIDs to glyph indices
-			# search and get CTG font file to embedd
-			ctgfile = font['ctg'].downcase
-
-			# search and get ctg font file to embedd
-			fontfile = ''
-			# search files on various directories
-			if (fontdir != false) and File.exists?(fontdir + ctgfile)
-				fontfile = fontdir + ctgfile
-			elsif fontfile = getfontpath(ctgfile)
-			elsif File.exists?(ctgfile)
-				fontfile = ctgfile
-			end
-
-			if empty_string(fontfile)
-				Error('Font file not found: ' + ctgfile)
-			end
-			size = File.size(fontfile)
-			out = '<</Length ' + size.to_s + ''
-			if (fontfile[-2,2] == '.z') # check file extension
-				# Decompresses data encoded using the public-domain 
-				# zlib/deflate compression method, reproducing the 
-				# original text or binary data
-				out << ' /Filter /FlateDecode'
-			end
-			out << ' >>'
-			open(fontfile, 'rb') do |f|
-				out << ' ' + getstream(f.read())
-			end
-			out << ' endobj'
-			out(out)
-		end
-
-		return obj_id
-	end
-
-	#
-	# Output CID-0 fonts.
-	# A Type 0 CIDFont contains glyph descriptions based on the Adobe Type 1 font format
-	# @param array :font font data
-	# @return int font object ID
-	# @access protected
-	# @author Andrew Whitehead, Nicola Asuni, Yukihiro Nakadaira
-	# @since 3.2.000 (2008-06-23)
-	#
-	def putcidfont0(font)
-		cidoffset = 0
-		if font['cw'][1].nil?
-			cidoffset = 31
-		end
-		if font['cidinfo']['uni2cid']
-			# convert unicode to cid.
-			uni2cid = font['cidinfo']['uni2cid']
-			cw = {}
-			font['cw'].each { |uni, width|
-				if uni2cid[uni]
-					cw[(uni2cid[uni] + cidoffset)] = width
-				elsif uni < 256
-					cw[uni] = width
-				end # else unknown character
-			}
-			font = font.merge({'cw' => cw})
-		end
-		name = font['name']
-		enc = font['enc']
-		if enc
-			longname = name + '-' + enc
-		else
-			longname = name
-		end
-		obj_id = newobj()
-		out = '<</Type /Font'
-		out << ' /Subtype /Type0'
-		out << ' /BaseFont /' + longname
-		out << ' /Name /F' + font['i'].to_s
-		if enc
-			out << ' /Encoding /' + enc
-		end
-		out << ' /DescendantFonts [' + (@n + 1).to_s + ' 0 R]'
-		out << ' >> endobj'
-		out(out)
-		newobj()
-		out = '<</Type /Font'
-		out << ' /Subtype /CIDFontType0'
-		out << ' /BaseFont /' + name
-		cidinfo = '/Registry ' + datastring(font['cidinfo']['Registry'])
-		cidinfo << ' /Ordering ' + datastring(font['cidinfo']['Ordering'])
-		cidinfo << ' /Supplement ' + font['cidinfo']['Supplement'].to_s
-		out << ' /CIDSystemInfo <<' + cidinfo + '>>'
-		out << ' /FontDescriptor ' + (@n + 1).to_s + ' 0 R'
-		out << ' /DW ' + font['dw'].to_s
-		out << "\n" + putfontwidths(font, cidoffset)
-		out << ' >> endobj'
-		out(out)
-		newobj()
-		s = '<</Type /FontDescriptor /FontName /' + name
-		font['desc'].each {|k, v|
-			if k != 'Style'
-				if fdv.is_a? Float
-					fdv = sprintf('%.3f', fdv)
-				end
-				s << ' /' + k + ' ' + v.to_s + ''
-			end
-		}
-		out(s + '>> endobj')
-
-		return obj_id
 	end
 
 	#
