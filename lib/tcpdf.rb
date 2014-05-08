@@ -7772,305 +7772,6 @@ class TCPDF
 	alias_method :set_language_array, :SetLanguageArray
 
 	#
-	# Put visibility settings.
-	# @access protected
-	# @since 3.0.000 (2008-03-27)
-	#
-	def putocg()
-		newobj()
-		@n_ocg_print = @n
-		out('<< /Type /OCG /Name ' + textstring('print') + ' /Usage << /Print <</PrintState /ON>> /View <</ViewState /OFF>> >> >> endobj')
-		newobj()
-		@n_ocg_view = @n
-		out('<< /Type /OCG /Name ' + textstring('view') + ' /Usage << /Print <</PrintState /OFF>> /View <</ViewState /ON>> >> >> endobj')
-	end
-
-	#
-	# Set the visibility of the successive elements.
-	# This can be useful, for instance, to put a background
-	# image or color that will show on screen but won't print.
-	# @param string :v visibility mode. Legal values are: all, print, screen.
-	# @access public
-	# @since 3.0.000 (2008-03-27)
-	#
-	def SetVisibility(v)
-		if @open_marked_content
-			# close existing open marked-content
-			out('EMC')
-			@open_marked_content = false
-		end
-		case v
-		when 'print'
-			out('/OC /OC1 BDC')
-			@open_marked_content = true
-		when 'screen'
-			out('/OC /OC2 BDC')
-			@open_marked_content = true
-		when 'all'
-			out('')
-		else
-			Error('Incorrect visibility: ' + v)
-		end
-		@visibility = v
-	end
-
-	#
-	# Add transparency parameters to the current extgstate
-	# @param array :params parameters
-	# @return the number of extgstates
-	# @access protected
-	# @since 3.0.000 (2008-03-27)
-	#
-	def addExtGState(parms)
-		n = @extgstates.length + 1
-		# check if this ExtGState already exist
-		1.upto(n - 1) do |i|
-			if @extgstates[i] and (@extgstates[i]['parms'] == parms)
-				# return reference to existing ExtGState
-				return i
-			end
-		end
-		@extgstates[n] ||= {}
-		@extgstates[n]['parms'] = parms
-		return n
-	end
-
-	#
-	# Add an extgstate
-	# @param array :gs extgstate
-	# @access protected
-	# @since 3.0.000 (2008-03-27)
-	#
-	def setExtGState(gs)
-		out(sprintf('/GS%d gs', gs))
-	end
-	#
-	# Put extgstates for object transparency
-	# @param array :gs extgstate
-	# @access protected
-	# @since 3.0.000 (2008-03-27)
-	#
-	def putextgstates()
-		ne = @extgstates.length
-		1.upto(ne) do |i|
-			newobj()
-			@extgstates[i] ||= {}
-			@extgstates[i]['n'] = @n
-			out = '<< /Type /ExtGState'
-			if @extgstates[i]['parms']
-				@extgstates[i]['parms'].each {|k, v|
-					if v.is_a? Float
-						v = sprintf('%.2f', v)
-					end
-					out << ' /' + k + ' ' + v.to_s
-				}
-			end
-			out << ' >> endobj'
-			out(out)
-		end
-	end
-
-	#
-	# Set alpha for stroking (CA) and non-stroking (ca) operations.
-	# @param float :alpha real value from 0 (transparent) to 1 (opaque)
-	# @param string :bm blend mode, one of the following: Normal, Multiply, Screen, Overlay, Darken, Lighten, ColorDodge, ColorBurn, HardLight, SoftLight, Difference, Exclusion, Hue, Saturation, Color, Luminosity
-	# @access public
-	# @since 3.0.000 (2008-03-27)
-	#
-	def SetAlpha(alpha, bm='Normal')
-		gs = addExtGState({'ca' => alpha, 'CA' => alpha, 'BM' => '/' + bm, 'AIS' => 'false'})
-		setExtGState(gs)
-	end
-
-	#
-	# Set the default JPEG compression quality (1-100)
-	# @param int :quality JPEG quality, integer between 1 and 100
-	# @access public
-	# @since 3.0.000 (2008-03-27)
-	#
-	def SetJPEGQuality(quality)
-		if (quality < 1) or (quality > 100)
-			quality = 75
-		end
-		@jpeg_quality = quality
-	end
-
-	#
-	# Set the height of cell repect font height.
-	# @param int :h cell proportion respect font height (typical value = 1.25).
-	# @access public
-	# @since 3.0.014 (2008-06-04)
-	#
-	def SetCellHeightRatio(h) 
-		@cell_height_ratio = h 
-	end
-
-	#
-	# return the height of cell repect font height.
-	# @access public
-	# @since 4.0.012 (2008-07-24)
-	#
-	def GetCellHeightRatio()
-		return @cell_height_ratio
-	end
-
-	#
-	# Draw the sector of a circle.
-	# It can be used for instance to render pie charts.
-	# @param float :xc abscissa of the center.
-	# @param float :yc ordinate of the center.
-	# @param float :r radius.
-	# @param float :a start angle (in degrees).
-	# @param float :b end angle (in degrees).
-	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-	# @param float :cw: indicates whether to go clockwise (default: true).
-	# @param float :o: origin of angles (0 for 3 o'clock, 90 for noon, 180 for 9 o'clock, 270 for 6 o'clock). Default: 90.
-	# @author Maxime Delorme, Nicola Asuni
-	# @since 3.1.000 (2008-06-09)
-	# @access public
-	#
-	def PieSector(xc, yc, r, a, b, style='FD', cw=true, o=90)
-		PieSectorXY(xc, yc, r, r, a, b, style, cw, o)
-	end
-
-	#
-	# Draw the sector of an ellipse.
-	# It can be used for instance to render pie charts.
-	# @param float :xc abscissa of the center.
-	# @param float :yc ordinate of the center.
-	# @param float :rx the x-axis radius.
-	# @param float :ry the y-axis radius.
-	# @param float :a start angle (in degrees).
-	# @param float :b end angle (in degrees).
-	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-	# @param float :cw: indicates whether to go clockwise.
-	# @param float :o: origin of angles (0 for 3 o'clock, 90 for noon, 180 for 9 o'clock, 270 for 6 o'clock).
-	# @param integer :nc Number of curves used to draw a 90 degrees portion of arc.
-	# @author Maxime Delorme, Nicola Asuni
-	# @since 3.1.000 (2008-06-09)
-	# @access public
-	#
-	def PieSectorXY(xc, yc, rx, ry, a, b, style='FD', cw=false, o=0, nc=2)
-		if @rtl
-			xc = @w - xc
-		end
-		op = getPathPaintOperator(style)
-		### not use ###
-		#if op == 'f'
-		#	line_style = nil
-		#end
-		if cw
-			d = b
-			b = 360 - a + o
-			a = 360 - d + o
-		else
-			b += o
-			a += o
-		end
-		outellipticalarc(xc, yc, rx, ry, 0, a, b, true, nc)
-		out(op)
-	end
-
-	#
- 	# Set document barcode.
-	# @param string :bc barcode
-	# @access public
-	#
-	def SetBarcode(bc="")
-		@barcode = bc;
-	end
-	
-	#
-	# Get current barcode.
-	# @return string
-	# @access public
-	# @since 4.0.012 (2008-07-24)
-	#
-	def GetBarcode()
-		return @barcode
-	end
-	
-	#
- 	# Print Barcode.
-	# @param int :x x position in user units
-	# @param int :y y position in user units
-	# @param int :w width in user units
-	# @param int :h height position in user units
-	# @param string :type type of barcode (I25, C128A, C128B, C128C, C39)
-	# @param string :style barcode style
-	# @param string :font font for text
-	# @param int :xres x resolution
-	# @param string :code code to print
-	#
-	def writeBarcode(x, y, w, h, type, style, font, xres, code)
-		require(File.dirname(__FILE__) + "/barcode/barcode.rb");
-		require(File.dirname(__FILE__) + "/barcode/i25object.rb");
-		require(File.dirname(__FILE__) + "/barcode/c39object.rb");
-		require(File.dirname(__FILE__) + "/barcode/c128aobject.rb");
-		require(File.dirname(__FILE__) + "/barcode/c128bobject.rb");
-		require(File.dirname(__FILE__) + "/barcode/c128cobject.rb");
-		
-		if (code.empty?)
-			return;
-		end
-		
-		if (style.empty?)
-			style  = BCS_ALIGN_LEFT;
-			style |= BCS_IMAGE_PNG;
-			style |= BCS_TRANSPARENT;
-			#:style |= BCS_BORDER;
-			#:style |= BCS_DRAW_TEXT;
-			#:style |= BCS_STRETCH_TEXT;
-			#:style |= BCS_REVERSE_COLOR;
-		end
-		if (font.empty?) then font = BCD_DEFAULT_FONT; end
-		if (xres.empty?) then xres = BCD_DEFAULT_XRES; end
-		
-		scale_factor = 1.5 * xres * @k;
-		bc_w = (w * scale_factor).round #width in points
-		bc_h = (h * scale_factor).round #height in points
-		
-		case (type.upcase)
-			when "I25"
-				obj = I25Object.new(bc_w, bc_h, style, code);
-			when "C128A"
-				obj = C128AObject.new(bc_w, bc_h, style, code);
-			when "C128B"
-				obj = C128BObject.new(bc_w, bc_h, style, code);
-			when "C128C"
-				obj = C128CObject.new(bc_w, bc_h, style, code);
-			when "C39"
-				obj = C39Object.new(bc_w, bc_h, style, code);
-		end
-		
-		obj.SetFont(font);   
-		obj.DrawObject(xres);
-		
-		#use a temporary file....
-		tmpName = tempnam(@@k_path_cache,'img');
-		imagepng(obj.getImage(), tmpName);
-		Image(tmpName, x, y, w, h, 'png');
-		obj.DestroyObject();
-		obj = nil
-		unlink(tmpName);
-	end
-	
-	#
-	# Returns an array containing original margins:
-	# <ul>
-	#   <li>:ret['left'] = left  margin</li>
-	#   <li>:ret['right'] = right margin</li>
-	# </ul>
-	# @return array containing all margins measures 
-	# @access public
-	# @since 4.0.012 (2008-07-24)
-	#
-	def GetOriginalMargins()
-		ret = { 'left' => @original_l_margin, 'right' => @original_r_margin }
-		return ret
-	end
-
-	#
  	# Returns the PDF data.
 	#
 	def GetPDFData()
@@ -12625,6 +12326,305 @@ class TCPDF
 	#
 	def PageNoFormatted()
 		return formatPageNumber(PageNo())
+	end
+
+	#
+	# Put visibility settings.
+	# @access protected
+	# @since 3.0.000 (2008-03-27)
+	#
+	def putocg()
+		newobj()
+		@n_ocg_print = @n
+		out('<< /Type /OCG /Name ' + textstring('print') + ' /Usage << /Print <</PrintState /ON>> /View <</ViewState /OFF>> >> >> endobj')
+		newobj()
+		@n_ocg_view = @n
+		out('<< /Type /OCG /Name ' + textstring('view') + ' /Usage << /Print <</PrintState /OFF>> /View <</ViewState /ON>> >> >> endobj')
+	end
+
+	#
+	# Set the visibility of the successive elements.
+	# This can be useful, for instance, to put a background
+	# image or color that will show on screen but won't print.
+	# @param string :v visibility mode. Legal values are: all, print, screen.
+	# @access public
+	# @since 3.0.000 (2008-03-27)
+	#
+	def SetVisibility(v)
+		if @open_marked_content
+			# close existing open marked-content
+			out('EMC')
+			@open_marked_content = false
+		end
+		case v
+		when 'print'
+			out('/OC /OC1 BDC')
+			@open_marked_content = true
+		when 'screen'
+			out('/OC /OC2 BDC')
+			@open_marked_content = true
+		when 'all'
+			out('')
+		else
+			Error('Incorrect visibility: ' + v)
+		end
+		@visibility = v
+	end
+
+	#
+	# Add transparency parameters to the current extgstate
+	# @param array :params parameters
+	# @return the number of extgstates
+	# @access protected
+	# @since 3.0.000 (2008-03-27)
+	#
+	def addExtGState(parms)
+		n = @extgstates.length + 1
+		# check if this ExtGState already exist
+		1.upto(n - 1) do |i|
+			if @extgstates[i] and (@extgstates[i]['parms'] == parms)
+				# return reference to existing ExtGState
+				return i
+			end
+		end
+		@extgstates[n] ||= {}
+		@extgstates[n]['parms'] = parms
+		return n
+	end
+
+	#
+	# Add an extgstate
+	# @param array :gs extgstate
+	# @access protected
+	# @since 3.0.000 (2008-03-27)
+	#
+	def setExtGState(gs)
+		out(sprintf('/GS%d gs', gs))
+	end
+	#
+	# Put extgstates for object transparency
+	# @param array :gs extgstate
+	# @access protected
+	# @since 3.0.000 (2008-03-27)
+	#
+	def putextgstates()
+		ne = @extgstates.length
+		1.upto(ne) do |i|
+			newobj()
+			@extgstates[i] ||= {}
+			@extgstates[i]['n'] = @n
+			out = '<< /Type /ExtGState'
+			if @extgstates[i]['parms']
+				@extgstates[i]['parms'].each {|k, v|
+					if v.is_a? Float
+						v = sprintf('%.2f', v)
+					end
+					out << ' /' + k + ' ' + v.to_s
+				}
+			end
+			out << ' >> endobj'
+			out(out)
+		end
+	end
+
+	#
+	# Set alpha for stroking (CA) and non-stroking (ca) operations.
+	# @param float :alpha real value from 0 (transparent) to 1 (opaque)
+	# @param string :bm blend mode, one of the following: Normal, Multiply, Screen, Overlay, Darken, Lighten, ColorDodge, ColorBurn, HardLight, SoftLight, Difference, Exclusion, Hue, Saturation, Color, Luminosity
+	# @access public
+	# @since 3.0.000 (2008-03-27)
+	#
+	def SetAlpha(alpha, bm='Normal')
+		gs = addExtGState({'ca' => alpha, 'CA' => alpha, 'BM' => '/' + bm, 'AIS' => 'false'})
+		setExtGState(gs)
+	end
+
+	#
+	# Set the default JPEG compression quality (1-100)
+	# @param int :quality JPEG quality, integer between 1 and 100
+	# @access public
+	# @since 3.0.000 (2008-03-27)
+	#
+	def SetJPEGQuality(quality)
+		if (quality < 1) or (quality > 100)
+			quality = 75
+		end
+		@jpeg_quality = quality
+	end
+
+	#
+	# Set the height of cell repect font height.
+	# @param int :h cell proportion respect font height (typical value = 1.25).
+	# @access public
+	# @since 3.0.014 (2008-06-04)
+	#
+	def SetCellHeightRatio(h) 
+		@cell_height_ratio = h 
+	end
+
+	#
+	# return the height of cell repect font height.
+	# @access public
+	# @since 4.0.012 (2008-07-24)
+	#
+	def GetCellHeightRatio()
+		return @cell_height_ratio
+	end
+
+	#
+	# Draw the sector of a circle.
+	# It can be used for instance to render pie charts.
+	# @param float :xc abscissa of the center.
+	# @param float :yc ordinate of the center.
+	# @param float :r radius.
+	# @param float :a start angle (in degrees).
+	# @param float :b end angle (in degrees).
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param float :cw: indicates whether to go clockwise (default: true).
+	# @param float :o: origin of angles (0 for 3 o'clock, 90 for noon, 180 for 9 o'clock, 270 for 6 o'clock). Default: 90.
+	# @author Maxime Delorme, Nicola Asuni
+	# @since 3.1.000 (2008-06-09)
+	# @access public
+	#
+	def PieSector(xc, yc, r, a, b, style='FD', cw=true, o=90)
+		PieSectorXY(xc, yc, r, r, a, b, style, cw, o)
+	end
+
+	#
+	# Draw the sector of an ellipse.
+	# It can be used for instance to render pie charts.
+	# @param float :xc abscissa of the center.
+	# @param float :yc ordinate of the center.
+	# @param float :rx the x-axis radius.
+	# @param float :ry the y-axis radius.
+	# @param float :a start angle (in degrees).
+	# @param float :b end angle (in degrees).
+	# @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
+	# @param float :cw: indicates whether to go clockwise.
+	# @param float :o: origin of angles (0 for 3 o'clock, 90 for noon, 180 for 9 o'clock, 270 for 6 o'clock).
+	# @param integer :nc Number of curves used to draw a 90 degrees portion of arc.
+	# @author Maxime Delorme, Nicola Asuni
+	# @since 3.1.000 (2008-06-09)
+	# @access public
+	#
+	def PieSectorXY(xc, yc, rx, ry, a, b, style='FD', cw=false, o=0, nc=2)
+		if @rtl
+			xc = @w - xc
+		end
+		op = getPathPaintOperator(style)
+		### not use ###
+		#if op == 'f'
+		#	line_style = nil
+		#end
+		if cw
+			d = b
+			b = 360 - a + o
+			a = 360 - d + o
+		else
+			b += o
+			a += o
+		end
+		outellipticalarc(xc, yc, rx, ry, 0, a, b, true, nc)
+		out(op)
+	end
+
+	#
+ 	# Set document barcode.
+	# @param string :bc barcode
+	# @access public
+	#
+	def SetBarcode(bc="")
+		@barcode = bc;
+	end
+	
+	#
+	# Get current barcode.
+	# @return string
+	# @access public
+	# @since 4.0.012 (2008-07-24)
+	#
+	def GetBarcode()
+		return @barcode
+	end
+	
+	#
+ 	# Print Barcode.
+	# @param int :x x position in user units
+	# @param int :y y position in user units
+	# @param int :w width in user units
+	# @param int :h height position in user units
+	# @param string :type type of barcode (I25, C128A, C128B, C128C, C39)
+	# @param string :style barcode style
+	# @param string :font font for text
+	# @param int :xres x resolution
+	# @param string :code code to print
+	#
+	def writeBarcode(x, y, w, h, type, style, font, xres, code)
+		require(File.dirname(__FILE__) + "/barcode/barcode.rb");
+		require(File.dirname(__FILE__) + "/barcode/i25object.rb");
+		require(File.dirname(__FILE__) + "/barcode/c39object.rb");
+		require(File.dirname(__FILE__) + "/barcode/c128aobject.rb");
+		require(File.dirname(__FILE__) + "/barcode/c128bobject.rb");
+		require(File.dirname(__FILE__) + "/barcode/c128cobject.rb");
+		
+		if (code.empty?)
+			return;
+		end
+		
+		if (style.empty?)
+			style  = BCS_ALIGN_LEFT;
+			style |= BCS_IMAGE_PNG;
+			style |= BCS_TRANSPARENT;
+			#:style |= BCS_BORDER;
+			#:style |= BCS_DRAW_TEXT;
+			#:style |= BCS_STRETCH_TEXT;
+			#:style |= BCS_REVERSE_COLOR;
+		end
+		if (font.empty?) then font = BCD_DEFAULT_FONT; end
+		if (xres.empty?) then xres = BCD_DEFAULT_XRES; end
+		
+		scale_factor = 1.5 * xres * @k;
+		bc_w = (w * scale_factor).round #width in points
+		bc_h = (h * scale_factor).round #height in points
+		
+		case (type.upcase)
+			when "I25"
+				obj = I25Object.new(bc_w, bc_h, style, code);
+			when "C128A"
+				obj = C128AObject.new(bc_w, bc_h, style, code);
+			when "C128B"
+				obj = C128BObject.new(bc_w, bc_h, style, code);
+			when "C128C"
+				obj = C128CObject.new(bc_w, bc_h, style, code);
+			when "C39"
+				obj = C39Object.new(bc_w, bc_h, style, code);
+		end
+		
+		obj.SetFont(font);   
+		obj.DrawObject(xres);
+		
+		#use a temporary file....
+		tmpName = tempnam(@@k_path_cache,'img');
+		imagepng(obj.getImage(), tmpName);
+		Image(tmpName, x, y, w, h, 'png');
+		obj.DestroyObject();
+		obj = nil
+		unlink(tmpName);
+	end
+	
+	#
+	# Returns an array containing original margins:
+	# <ul>
+	#   <li>:ret['left'] = left  margin</li>
+	#   <li>:ret['right'] = right margin</li>
+	# </ul>
+	# @return array containing all margins measures 
+	# @access public
+	# @since 4.0.012 (2008-07-24)
+	#
+	def GetOriginalMargins()
+		ret = { 'left' => @original_l_margin, 'right' => @original_r_margin }
+		return ret
 	end
 
 	#
