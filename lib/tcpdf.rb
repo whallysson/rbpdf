@@ -7782,34 +7782,6 @@ class TCPDF
 	end
 	
 	#
- 	# Determine whether a string is empty.
- 	# @param string :str string to be checked
- 	# @return boolean true if string is empty
- 	# @access public
- 	# @since 4.5.044 (2009-04-16)
- 	#
- 	def empty_string(str)
- 		return (str.nil? or (str.is_a?(String) and (str.length == 0)))
- 	end
-
- 	#
-	# Find position of last occurrence of a substring in a string
-	# @param string :haystack The string to search in.
-	# @param string :needle substring to search.
-	# @param int :offset May be specified to begin searching an arbitrary number of characters into the string.
-	# @return Returns the position where the needle exists. Returns FALSE if the needle was not found. 
-	# @access public
-	# @since 4.8.038 (2010-03-13)
- 	#
-	def revstrpos(haystack, needle, offset = 0)
-		length = haystack.length
-		offset = (offset > 0) ? (length - offset) : offset.abs
-		pos = haystack.reverse.index(needle.reverse, offset)
-
-		return (pos.nil? ? nil : length - pos - needle.length)
- 	end
-
-	#
 	# Get the Path-Painting Operators.
 	# @param string :style Style of rendering. Possible values are:
 	# <ul>
@@ -12631,6 +12603,7 @@ class TCPDF
 	end
 
 	# --- END OF BUFFER FUNCTIONS ---
+	# --- PAGE OPERATION FUNCTIONS ---
 
 	#
 	# Move a page to a previous position.
@@ -13239,6 +13212,39 @@ class TCPDF
 			return Marshal.load(Marshal.dump(object))
 		end
 	end
+
+	# --- END OF PAGE OPERATION FUNCTIONS ---
+	# --- STRING FUNCTIONS ---
+
+	#
+ 	# Determine whether a string is empty.
+ 	# @param string :str string to be checked
+ 	# @return boolean true if string is empty
+ 	# @access public
+ 	# @since 4.5.044 (2009-04-16)
+ 	#
+ 	def empty_string(str)
+ 		return (str.nil? or (str.is_a?(String) and (str.length == 0)))
+ 	end
+
+ 	#
+	# Find position of last occurrence of a substring in a string
+	# @param string :haystack The string to search in.
+	# @param string :needle substring to search.
+	# @param int :offset May be specified to begin searching an arbitrary number of characters into the string.
+	# @return Returns the position where the needle exists. Returns FALSE if the needle was not found. 
+	# @access public
+	# @since 4.8.038 (2010-03-13)
+ 	#
+	def revstrpos(haystack, needle, offset = 0)
+		length = haystack.length
+		offset = (offset > 0) ? (length - offset) : offset.abs
+		pos = haystack.reverse.index(needle.reverse, offset)
+
+		return (pos.nil? ? nil : length - pos - needle.length)
+ 	end
+
+	# --- END OF STRING FUNCTIONS ---
 
 	#
 	# Set Text rendering mode.
