@@ -4271,6 +4271,139 @@ class TCPDF
   alias_method :image, :Image
 
 	#
+	# Extract info from a JPEG file
+	# @access protected
+	#
+	def parsejpeg(file)
+		a=getimagesize(file);
+		if (a.empty?)
+			Error('Missing or incorrect image file: ' + file);
+		end
+		if (a[2]!='JPEG')
+			Error('Not a JPEG file: ' + file);
+		end
+		if (a['channels'].nil? or a['channels']==3)
+			colspace='DeviceRGB';
+		elsif (a['channels']==4)
+			colspace='DeviceCMYK';
+		else
+			colspace='DeviceGray';
+		end
+		bpc=!a['bits'].nil? ? a['bits'] : 8;
+		#Read whole file
+		data='';
+	  open(file,'rb') do |f|
+			data<<f.read();
+		end
+		return {'w' => a[0],'h' => a[1],'cs' => colspace,'bpc' => bpc,'f'=>'DCTDecode','data' => data}
+	end
+
+	def imageToPNG(file)
+		img = Magick::ImageList.new(file)
+		img.format = 'PNG'       # convert to PNG from gif 
+		img.opacity = 0          # PNG alpha channel delete
+
+		#use a temporary file....
+		tmpFile = Tempfile.new(['', '_' + File::basename(file) + '.png'], @@k_path_cache);
+		tmpFile.binmode
+		tmpFile.print img.to_blob
+		tmpFile
+	ensure
+		tmpFile.close
+	end
+
+	#
+	# Extract info from a PNG file
+	# @access protected
+	#
+	def parsepng(file)
+		f=open(file,'rb');
+		#Check signature
+		if (f.read(8)!=137.chr + 'PNG' + 13.chr + 10.chr + 26.chr + 10.chr)
+			Error('Not a PNG file: ' + file);
+		end
+		#Read header chunk
+		f.read(4);
+		if (f.read(4)!='IHDR')
+			Error('Incorrect PNG file: ' + file);
+		end
+		w=freadint(f);
+		h=freadint(f);
+		bpc=f.read(1).unpack('C')[0]
+		if (bpc>8)
+			# Error('16-bit depth not supported: ' + file)
+			return false
+		end
+		ct=f.read(1).unpack('C')[0]
+		if (ct==0)
+			colspace='DeviceGray';
+		elsif (ct==2)
+			colspace='DeviceRGB';
+		elsif (ct==3)
+			colspace='Indexed';
+		else
+			# Error('Alpha channel not supported: ' + file)
+			return false
+		end
+		if (f.read(1).unpack('C')[0] != 0)
+			# Error('Unknown compression method: ' + file)
+			return false
+		end
+		if (f.read(1).unpack('C')[0]!=0)
+			# Error('Unknown filter method: ' + file)
+			return false
+		end
+		if (f.read(1).unpack('C')[0]!=0)
+			# Error('Interlacing not supported: ' + file)
+			return false
+		end
+		f.read(4);
+		parms='/DecodeParms <</Predictor 15 /Colors ' + (ct==2 ? 3 : 1).to_s + ' /BitsPerComponent ' + bpc.to_s + ' /Columns ' + w.to_s + '>>';
+		#Scan chunks looking for palette, transparency and image data
+		pal='';
+		trns='';
+		data='';
+		begin
+			n=freadint(f);
+			type=f.read(4);
+			if (type=='PLTE')
+				#Read palette
+				pal=f.read( n);
+				f.read(4);
+			elsif (type=='tRNS')
+				#Read transparency info
+				t=f.read( n);
+				if (ct==0)
+					trns = t[1].unpack('C')[0]
+				elsif (ct==2)
+					trns = t[[1].unpack('C')[0], t[3].unpack('C')[0], t[5].unpack('C')[0]]
+				else
+					pos=t.include?(0.chr);
+					if (pos!=false)
+						trns = [pos]
+					end
+				end
+				f.read(4);
+			elsif (type=='IDAT')
+				#Read image data block
+				data<<f.read( n);
+				f.read(4);
+			elsif (type=='IEND')
+				break;
+			else
+				f.read( n+4);
+			end
+		end while(n)
+		if (colspace=='Indexed' and pal.empty?)
+			# Error('Missing palette in ' + file)
+			return false
+		end
+		return {'w' => w, 'h' => h, 'cs' => colspace, 'bpc' => bpc, 'f'=>'FlateDecode', 'parms' => parms, 'pal' => pal, 'trns' => trns, 'data' => data}
+	ensure
+		f.close unless f.nil?
+	end
+
+	#
 	# Performs a line break. 
 	# The current abscissa goes back to the left margin and the ordinate increases by the amount passed in parameter.
 	# @param float :h The height of the break. By default, the value equals the height of the last printed cell.
@@ -6195,139 +6328,6 @@ class TCPDF
 	def dooverlinew(x, y, w)
 		linew = - @current_font['ut'] / 1000.0 * @font_size_pt
 		return sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - y + @font_ascent) * @k - linew, w * @k, linew)
-	end
-
-	#
-	# Extract info from a JPEG file
-	# @access protected
-	#
-	def parsejpeg(file)
-		a=getimagesize(file);
-		if (a.empty?)
-			Error('Missing or incorrect image file: ' + file);
-		end
-		if (a[2]!='JPEG')
-			Error('Not a JPEG file: ' + file);
-		end
-		if (a['channels'].nil? or a['channels']==3)
-			colspace='DeviceRGB';
-		elsif (a['channels']==4)
-			colspace='DeviceCMYK';
-		else
-			colspace='DeviceGray';
-		end
-		bpc=!a['bits'].nil? ? a['bits'] : 8;
-		#Read whole file
-		data='';
-	  open(file,'rb') do |f|
-			data<<f.read();
-		end
-		return {'w' => a[0],'h' => a[1],'cs' => colspace,'bpc' => bpc,'f'=>'DCTDecode','data' => data}
-	end
-
-	def imageToPNG(file)
-		img = Magick::ImageList.new(file)
-		img.format = 'PNG'       # convert to PNG from gif 
-		img.opacity = 0          # PNG alpha channel delete
-
-		#use a temporary file....
-		tmpFile = Tempfile.new(['', '_' + File::basename(file) + '.png'], @@k_path_cache);
-		tmpFile.binmode
-		tmpFile.print img.to_blob
-		tmpFile
-	ensure
-		tmpFile.close
-	end
-
-	#
-	# Extract info from a PNG file
-	# @access protected
-	#
-	def parsepng(file)
-		f=open(file,'rb');
-		#Check signature
-		if (f.read(8)!=137.chr + 'PNG' + 13.chr + 10.chr + 26.chr + 10.chr)
-			Error('Not a PNG file: ' + file);
-		end
-		#Read header chunk
-		f.read(4);
-		if (f.read(4)!='IHDR')
-			Error('Incorrect PNG file: ' + file);
-		end
-		w=freadint(f);
-		h=freadint(f);
-		bpc=f.read(1).unpack('C')[0]
-		if (bpc>8)
-			# Error('16-bit depth not supported: ' + file)
-			return false
-		end
-		ct=f.read(1).unpack('C')[0]
-		if (ct==0)
-			colspace='DeviceGray';
-		elsif (ct==2)
-			colspace='DeviceRGB';
-		elsif (ct==3)
-			colspace='Indexed';
-		else
-			# Error('Alpha channel not supported: ' + file)
-			return false
-		end
-		if (f.read(1).unpack('C')[0] != 0)
-			# Error('Unknown compression method: ' + file)
-			return false
-		end
-		if (f.read(1).unpack('C')[0]!=0)
-			# Error('Unknown filter method: ' + file)
-			return false
-		end
-		if (f.read(1).unpack('C')[0]!=0)
-			# Error('Interlacing not supported: ' + file)
-			return false
-		end
-		f.read(4);
-		parms='/DecodeParms <</Predictor 15 /Colors ' + (ct==2 ? 3 : 1).to_s + ' /BitsPerComponent ' + bpc.to_s + ' /Columns ' + w.to_s + '>>';
-		#Scan chunks looking for palette, transparency and image data
-		pal='';
-		trns='';
-		data='';
-		begin
-			n=freadint(f);
-			type=f.read(4);
-			if (type=='PLTE')
-				#Read palette
-				pal=f.read( n);
-				f.read(4);
-			elsif (type=='tRNS')
-				#Read transparency info
-				t=f.read( n);
-				if (ct==0)
-					trns = t[1].unpack('C')[0]
-				elsif (ct==2)
-					trns = t[[1].unpack('C')[0], t[3].unpack('C')[0], t[5].unpack('C')[0]]
-				else
-					pos=t.include?(0.chr);
-					if (pos!=false)
-						trns = [pos]
-					end
-				end
-				f.read(4);
-			elsif (type=='IDAT')
-				#Read image data block
-				data<<f.read( n);
-				f.read(4);
-			elsif (type=='IEND')
-				break;
-			else
-				f.read( n+4);
-			end
-		end while(n)
-		if (colspace=='Indexed' and pal.empty?)
-			# Error('Missing palette in ' + file)
-			return false
-		end
-		return {'w' => w, 'h' => h, 'cs' => colspace, 'bpc' => bpc, 'f'=>'FlateDecode', 'parms' => parms, 'pal' => pal, 'trns' => trns, 'data' => data}
-	ensure
-		f.close unless f.nil?
 	end
 
 	#
