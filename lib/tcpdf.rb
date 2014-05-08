@@ -7782,63 +7782,6 @@ class TCPDF
 	end
 	
 	#
-	# Get the Path-Painting Operators.
-	# @param string :style Style of rendering. Possible values are:
-	# <ul>
-	#   <li>S or D: Stroke the path.</li>
-	#   <li>s or d: Close and stroke the path.</li>
-	#   <li>f or F: Fill the path, using the nonzero winding number rule to determine the region to fill.</li>
-	#   <li>f* or F*: Fill the path, using the even-odd rule to determine the region to fill.</li>
-	#   <li>B or FD or DF: Fill and then stroke the path, using the nonzero winding number rule to determine the region to fill.</li>
-	#   <li>B* or F*D or DF*: Fill and then stroke the path, using the even-odd rule to determine the region to fill.</li>
-	#   <li>b or fd or df: Close, fill, and then stroke the path, using the nonzero winding number rule to determine the region to fill.</li>
-	#   <li>b or f*d or df*: Close, fill, and then stroke the path, using the even-odd rule to determine the region to fill.</li>
-	#   <li>CNZ: Clipping mode using the even-odd rule to determine which regions lie inside the clipping path.</li>
-	#   <li>CEO: Clipping mode using the nonzero winding number rule to determine which regions lie inside the clipping path</li>
-	#   <li>n: End the path object without filling or stroking it.</li>
-	# </ul>
-	# @param string :default default style
-	# @param boolean :mode if true enable rasterization, false otherwise.
-	# @author Nicola Asuni
-	# @access protected
-	# @since 5.0.000 (2010-04-30)
-	#
-	def getPathPaintOperator(style, default='S')
-		op = ''
-		case style
-		when 'S', 'D'
-			op = 'S'
-		when 's', 'd'
-			op = 's'
-		when 'f', 'F'
-			op = 'f'
-		when 'f*', 'F*'
-			op = 'f*'
-		when 'B', 'FD', 'DF'
-			op = 'B'
-		when 'B*', 'F*D', 'DF*'
-			op = 'B*'
-		when 'b', 'fd', 'df'
-			op = 'b'
-		when 'b*', 'f*d', 'df*'
-			op = 'b*'
-		when 'CNZ'
-			op = 'W n'
-		when 'CEO'
-			op = 'W* n'
-		when 'n'
-			op = 'n'
-		else
-			if !default.empty?
-				op = getPathPaintOperator(default, '')
-			else
-				op = ''
-			end
-		end
-		return op
-	end
-
-	#
 	# Output anchor link.
 	# @param string :url link URL or internal link (i.e.: <a href="#23">link to page 23</a>)
 	# @param string :name link name
@@ -13303,6 +13246,66 @@ class TCPDF
 		@textstrokewidth = stroke * @k
 	end
 
+	#
+	# Get the Path-Painting Operators.
+	# @param string :style Style of rendering. Possible values are:
+	# <ul>
+	#   <li>S or D: Stroke the path.</li>
+	#   <li>s or d: Close and stroke the path.</li>
+	#   <li>f or F: Fill the path, using the nonzero winding number rule to determine the region to fill.</li>
+	#   <li>f* or F*: Fill the path, using the even-odd rule to determine the region to fill.</li>
+	#   <li>B or FD or DF: Fill and then stroke the path, using the nonzero winding number rule to determine the region to fill.</li>
+	#   <li>B* or F*D or DF*: Fill and then stroke the path, using the even-odd rule to determine the region to fill.</li>
+	#   <li>b or fd or df: Close, fill, and then stroke the path, using the nonzero winding number rule to determine the region to fill.</li>
+	#   <li>b or f*d or df*: Close, fill, and then stroke the path, using the even-odd rule to determine the region to fill.</li>
+	#   <li>CNZ: Clipping mode using the even-odd rule to determine which regions lie inside the clipping path.</li>
+	#   <li>CEO: Clipping mode using the nonzero winding number rule to determine which regions lie inside the clipping path</li>
+	#   <li>n: End the path object without filling or stroking it.</li>
+	# </ul>
+	# @param string :default default style
+	# @param boolean :mode if true enable rasterization, false otherwise.
+	# @author Nicola Asuni
+	# @access protected
+	# @since 5.0.000 (2010-04-30)
+	#
+	def getPathPaintOperator(style, default='S')
+		op = ''
+		case style
+		when 'S', 'D'
+			op = 'S'
+		when 's', 'd'
+			op = 's'
+		when 'f', 'F'
+			op = 'f'
+		when 'f*', 'F*'
+			op = 'f*'
+		when 'B', 'FD', 'DF'
+			op = 'B'
+		when 'B*', 'F*D', 'DF*'
+			op = 'B*'
+		when 'b', 'fd', 'df'
+			op = 'b'
+		when 'b*', 'f*d', 'df*'
+			op = 'b*'
+		when 'CNZ'
+			op = 'W n'
+		when 'CEO'
+			op = 'W* n'
+		when 'n'
+			op = 'n'
+		else
+			if !default.empty?
+				op = getPathPaintOperator(default, '')
+			else
+				op = ''
+			end
+		end
+		return op
+	end
+
+	# -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-
+	# SVG METHODS (not implement, yet.)
+	# -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-
 end # END OF TCPDF CLASS
 
 #TODO 2007-05-25 (EJM) Level=0 - 
