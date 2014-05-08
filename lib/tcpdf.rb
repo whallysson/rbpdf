@@ -7781,3322 +7781,7 @@ class TCPDF
 		return @buffer;
 	end
 	
-	# --- HTML PARSER FUNCTIONS ---
-	
 	#
-	# Returns the string used to find spaces
-	# @return string
-	# @access protected
-	# @author Nicola Asuni
-	# @since 4.8.024 (2010-01-15)
-	#
-	def getSpaceString()
-		spacestr = 32.chr
-		if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
-			spacestr = 0.chr + 32.chr
-		end
-		return spacestr
-	end
-
-	#
-	# Allows to preserve some HTML formatting (limited support).<br />
-	# IMPORTANT: The HTML must be well formatted - try to clean-up it using an application like HTML-Tidy before submitting.
-	# Supported tags are: a, b, blockquote, br, dd, del, div, dl, dt, em, font, h1, h2, h3, h4, h5, h6, hr, i, img, li, ol, p, pre, small, span, strong, sub, sup, table, td, th, thead, tr, tt, u, ul
-	# @param string :html text to display
-	# @param boolean :ln if true add a new line after text (default = true)
-	# @param int :fill Indicates if the background must be painted (1:true) or transparent (0:false).
-	# @param boolean :reseth if true reset the last cell height (default false).
-	# @param boolean :cell if true add the default c_margin space to each Write (default false).
-	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
-	# @access public
-	#
-	def writeHTML(html, ln=true, fill=0, reseth=false, cell=false, align='')
-		ln = false if ln == 0
-		reseth = false if reseth == 0
-		cell = false if cell == 0
-		case fill
-		when true
-			fill = 1 
-		when false
-			fill = 0 
-		end
-
-		gvars = getGraphicVars()
-		# store current values
-		prevPage = @page
-		prevlMargin = @l_margin
-		prevrMargin = @r_margin
-		curfontname = @font_family
-		curfontstyle = @font_style
-		curfontsize = @font_size_pt
-		curfontascent = getFontAscent(curfontname, curfontstyle, curfontsize)
-		curfontdescent = getFontDescent(curfontname, curfontstyle, curfontsize)
-		@newline = true
-		startlinepage = @page
-		minstartliney = @y
-		maxbottomliney = 0
-		startlinex = @x
-		startliney = @y
-		yshift = 0
-		newline = true
-		loop = 0
-		curpos = 0
-		opentagpos = nil
-		this_method_vars = {}
-		undo = false
-		fontaligned = false
-		@premode = false
-		if !@page_annots[@page].nil?
-			pask = @page_annots[@page].length
-		else
-			pask = 0
-		end
-		if !@in_footer
-			if !@footerlen[@page].nil?
-				@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
-			else
-				@footerpos[@page] = @pagelen[@page]
-			end
-			startlinepos = @footerpos[@page]
-		else
-			startlinepos = @pagelen[@page]
-		end
-		lalign = align
-		plalign = align
-		if @rtl
-			w = @x - @l_margin
-		else
-			w = @w - @r_margin - @x
-		end
-		w -= 2 * @c_margin
-
-		if cell
-			if @rtl
-				@x -= @c_margin
-			else
-				@x += @c_margin
-			end
-		end
-		if @customlistindent >= 0
-			@listindent = @customlistindent
-		else
-			@listindent = GetStringWidth('0000')
-		end
-		@listindentlevel = 0
-		# save previous states
-		prev_cell_height_ratio = @cell_height_ratio
-		prev_listnum = @listnum
-		prev_listordered = @listordered
-		prev_listcount = @listcount
-		prev_lispacer = @lispacer
-		@listnum = 0
-		@listordered = []
-		@listcount = []
-		@lispacer = ''
-		if empty_string(@lasth) or reseth
-			#set row height
-			@lasth = @font_size * @cell_height_ratio
-		end
-		dom = getHtmlDomArray(html)
-		maxel = dom.size
-		key = 0
-		while key < maxel
-			if dom[key]['tag'] and dom[key]['attribute'] and dom[key]['attribute']['pagebreak']
-				# check for pagebreak 
-				if (dom[key]['attribute']['pagebreak'] == 'true') or (dom[key]['attribute']['pagebreak'] == 'left') or (dom[key]['attribute']['pagebreak'] == 'right')
-					# add a page (or trig AcceptPageBreak() for multicolumn mode)
-					checkPageBreak(@page_break_trigger + 1)
-				end
-				if ((dom[key]['attribute']['pagebreak'] == 'left') and ((!@rtl and (@page % 2 == 0)) or (@rtl and (@page % 2 != 0)))) or ((dom[key]['attribute']['pagebreak'] == 'right') and ((!@rtl and (@page % 2 != 0)) or (@rtl and (@page % 2 == 0))))
-					# add a page (or trig AcceptPageBreak() for multicolumn mode)
-					checkPageBreak(@page_break_trigger + 1)
-				end
-			end
-			if dom[key]['tag'] and dom[key]['opening'] and dom[key]['attribute']['nobr'] and (dom[key]['attribute']['nobr'] == 'true')
-				if dom[(dom[key]['parent'])]['attribute']['nobr'] and (dom[(dom[key]['parent'])]['attribute']['nobr'] == 'true')
-					dom[key]['attribute']['nobr'] = false
-				else
-					# store current object
-					startTransaction()
-					# save this method vars
-					this_method_vars['html'] = html
-					this_method_vars['ln'] = ln
-					this_method_vars['fill'] = fill
-					this_method_vars['reseth'] = reseth
-					this_method_vars['cell'] = cell
-					this_method_vars['align'] = align
-					this_method_vars['gvars'] = gvars
-					this_method_vars['prevPage'] = prevPage
-					this_method_vars['prevlMargin'] = prevlMargin
-					this_method_vars['prevrMargin'] = prevrMargin
-					this_method_vars['curfontname'] = curfontname
-					this_method_vars['curfontstyle'] = curfontstyle
-					this_method_vars['curfontsize'] = curfontsize
-					this_method_vars['curfontascent'] = curfontascent
-					this_method_vars['curfontdescent'] = curfontdescent
-					this_method_vars['minstartliney'] = minstartliney
-					this_method_vars['maxbottomliney'] = maxbottomliney
-					this_method_vars['yshift'] = yshift
-					this_method_vars['startlinepage'] = startlinepage
-					this_method_vars['startlinepos'] = startlinepos
-					this_method_vars['startlinex'] = startlinex
-					this_method_vars['startliney'] = startliney
-					this_method_vars['newline'] = newline
-					this_method_vars['loop'] = loop
-					this_method_vars['curpos'] = curpos
-					this_method_vars['pask'] = pask
-					this_method_vars['lalign'] = lalign
-					this_method_vars['plalign'] = plalign
-					this_method_vars['w'] = w
-					this_method_vars['prev_cell_height_ratio'] = prev_cell_height_ratio
-					this_method_vars['prev_listnum'] = prev_listnum
-					this_method_vars['prev_listordered'] = prev_listordered
-					this_method_vars['prev_listcount'] = prev_listcount
-					this_method_vars['prev_lispacer'] = prev_lispacer
-					this_method_vars['fontaligned'] = fontaligned
-					this_method_vars['key'] = key
-					this_method_vars['dom'] = dom
-				end
-			end
-			# print THEAD block
-			if (dom[key]['value'] == 'tr') and dom[key]['thead'] and dom[key]['thead']
-				if dom[key]['parent'] and dom[(dom[key]['parent'])]['thead'] and !empty_string(dom[(dom[key]['parent'])]['thead'])
-					@in_thead = true
-					# print table header (thead)
-					writeHTML(@thead, false, false, false, false, '')
-					if (@start_transaction_page == (@numpages - 1)) or (@y < @start_transaction_y) or checkPageBreak(@lasth, '', false)
-						# restore previous object
-						rollbackTransaction(true)
-						# restore previous values
-						this_method_vars.each {|vkey , vval|
-							eval("#{vkey} = vval") 
-						}
-						# add a page (or trig AcceptPageBreak() for multicolumn mode)
-						pre_y = @y
-						if !checkPageBreak(@page_break_trigger + 1) and (@y < pre_y)
-							# fix for multicolumn mode
-							startliney = @y
-						end
-						@start_transaction_page = @page
-						@start_transaction_y = @y
-					end
-				end
-				# move :key index forward to skip THEAD block
-				while (key < maxel) and !((dom[key]['tag'] and dom[key]['opening'] and (dom[key]['value'] == 'tr') and (dom[key]['thead'].nil? or !dom[key]['thead'])) or (dom[key]['tag'] and !dom[key]['opening'] and (dom[key]['value'] == 'table')))
-					key += 1
-				end
-			end
-			if dom[key]['tag'] or (key == 0)
-				if dom[key]['line-height']
-					# set line height
-					@cell_height_ratio = dom[key]['line-height']
-					@lasth = @font_size * @cell_height_ratio
-				end
-				if ((dom[key]['value'] == 'table') or (dom[key]['value'] == 'tr')) and !dom[key]['align'].nil?
-					dom[key]['align'] = @rtl ? 'R' : 'L'
-				end
-				# vertically align image in line
-				if !@newline and (dom[key]['value'] == 'img') and !dom[key]['attribute']['height'].nil? and (dom[key]['attribute']['height'].to_i > 0)
-					# get image height
-					imgh = getHTMLUnitToUnits(dom[key]['attribute']['height'], @lasth, 'px')
-					# check for automatic line break
-					autolinebreak = false
-					if dom[key]['attribute']['width'] and (dom[key]['attribute']['width'].to_i > 0)
-						imgw = getHTMLUnitToUnits(dom[key]['attribute']['width'], 1, 'px', false)
-						if (@rtl and (@x - imgw < @l_margin + @c_margin)) or (!@rtl and (@x + imgw > @w - @r_margin - @c_margin))
-							# add automatic line break
-							autolinebreak = true
-							Ln('', cell)
-							# go back to evaluate this line break
-							key -= 1
-						end
-					end
-					if !autolinebreak
-						if !@in_footer
-							pre_y = @y
-							# check for page break
-							if !checkPageBreak(imgh) and (@y < pre_y)
-								# fix for multicolumn mode
-								startliney = @y
-							end
-						end
-						if @page > startlinepage
-							# fix line splitted over two pages
-							if !@footerlen[startlinepage].nil?
-								curpos = @pagelen[startlinepage] - @footerlen[startlinepage]
-							end
-							# line to be moved one page forward
-							pagebuff = getPageBuffer(startlinepage)
-							linebeg = pagebuff[startlinepos, curpos - startlinepos]
-							tstart = pagebuff[0, startlinepos]
-							tend = pagebuff[curpos..-1]
-							# remove line from previous page
-							setPageBuffer(startlinepage, tstart + '' + tend)
-							pagebuff = getPageBuffer(@page)
-							tstart = pagebuff[0, @cntmrk[@page]]
-							tend = pagebuff[@cntmrk[@page]..-1]
-							# add line start to current page
-							yshift = minstartliney - @y
-							if fontaligned
-								yshift += curfontsize / @k
-							end
-							try = sprintf('1 0 0 1 0 %.3f cm', (yshift * @k))
-							setPageBuffer(@page, tstart + "\nq\n" + try + "\n" + linebeg + "\nQ\n" + tend)
-							# shift the annotations and links
-							if @page_annots[@page]
-								next_pask = @page_annots[@page].length
-							else
-								next_pask = 0
-							end
-							if !@page_annots[startlinepage].nil?
-								@page_annots[startlinepage].each_with_index { |pac, pak|
-									if pak >= pask
-										@page_annots[@page].push pac
-										@page_annots[startlinepage].delete_at(pak)
-										npak = @page_annots[@page].length - 1
-										@page_annots[@page][npak]['y'] -= yshift
-									end
-								}
-							end
-							pask = next_pask
-							startlinepos = @cntmrk[@page]
-							startlinepage = @page
-							startliney = @y
-						end
-						@y += ((curfontsize * @cell_height_ratio / @k) + curfontascent - curfontdescent) / 2  - imgh
-						minstartliney = [@y, minstartliney].min
-						maxbottomliney = startliney + @font_size * @cell_height_ratio
-					end
-	 			elsif !dom[key]['fontname'].nil? or !dom[key]['fontstyle'].nil? or !dom[key]['fontsize'].nil?
-					# account for different font size
-					pfontname = curfontname
-					pfontstyle = curfontstyle
-					pfontsize = curfontsize
-					fontname  = !dom[key]['fontname'].nil?  ? dom[key]['fontname']  : curfontname
-					fontstyle = !dom[key]['fontstyle'].nil? ? dom[key]['fontstyle'] : curfontstyle
-					fontsize  = !dom[key]['fontsize'].nil?  ? dom[key]['fontsize']  : curfontsize
-					fontascent = getFontAscent(fontname, fontstyle, fontsize)
-					fontdescent = getFontDescent(fontname, fontstyle, fontsize)
-					if (fontname != curfontname) or (fontstyle != curfontstyle) or (fontsize != curfontsize)
-						if fontsize.is_a?(Numeric) and (fontsize >= 0) and curfontsize.is_a?(Numeric) and (curfontsize >= 0) and (fontsize != curfontsize) and !@newline and (key < maxel - 1)
-							if !@newline and (@page > startlinepage)
-								# fix lines splitted over two pages
-								if !@footerlen[startlinepage].nil?
-									curpos = @pagelen[startlinepage] - @footerlen[startlinepage]
-								end
-								# line to be moved one page forward
-								pagebuff = getPageBuffer(startlinepage)
-								linebeg = pagebuff[startlinepos, curpos - startlinepos]
-								tstart = pagebuff[0, startlinepos]
-								tend = pagebuff[curpos..-1]
-								# remove line from previous page
-								setPageBuffer(startlinepage, tstart + '' + tend)
-								pagebuff = getPageBuffer(@page)
-								tstart = pagebuff[0, @cntmrk[@page]]
-								tend = pagebuff[@cntmrk[@page]..-1]
-								# add line start to current page
-								yshift = minstartliney - @y
-								try = sprintf('1 0 0 1 0 %.3f cm', yshift * @k)
-								setPageBuffer(@page, tstart + "\nq\n" + try + "\n" + linebeg + "\nQ\n" + tend)
-								# shift the annotations and links
-								if @page_annots[@page]
-									next_pask = @page_annots[@page].length
-								else
-									next_pask = 0
-								end
-								if !@page_annots[startlinepage].nil?
-									@page_annots[startlinepage].each_with_index { |pac, pak|
-										if pak >= pask
-											@page_annots[@page].push = pac
-											@page_annots[startlinepage].delete_at(pak)
-											npak = @page_annots[@page].length - 1
-											@page_annots[@page][npak]['y'] -= yshift
-										end
-									}
-								end
-								pask = next_pask
-								startlinepos = @cntmrk[@page]
-								startlinepage = @page
-								startliney = @y
-							end
-							if !dom[key]['block']
-								@y += (((curfontsize - fontsize) * @cell_height_ratio / @k) + curfontascent - fontascent - curfontdescent + fontdescent) / 2
-								if (dom[key]['value'] != 'sup') and (dom[key]['value'] != 'sub')
-									minstartliney = [@y, minstartliney].min
-									maxbottomliney = [@y + ((fontsize * @cell_height_ratio) / @k), maxbottomliney].max
-								end
-							end
-							fontaligned = true
-						end
-						SetFont(fontname, fontstyle, fontsize)
-						@lasth = @font_size * @cell_height_ratio
-						curfontname = fontname
-						curfontstyle = fontstyle
-						curfontsize = fontsize
-						curfontascent = fontascent
-						curfontdescent = fontdescent
-					end
-				end
-				# set text rendering mode
-				textstroke = !dom[key]['stroke'].nil? ? dom[key]['stroke'] : @textstrokewidth
-				textfill = !dom[key]['fill'].nil? ? dom[key]['fill'] : ((@textrendermode % 2) == 0) 
-				textclip = !dom[key]['clip'].nil? ? dom[key]['clip'] : (@textrendermode > 3)
-				setTextRenderingMode(textstroke, textfill, textclip)
-				if (plalign == 'J') and dom[key]['block']
-					plalign = ''
-				end
-				# get current position on page buffer
-				curpos = @pagelen[startlinepage]
-				if !dom[key]['bgcolor'].nil? and (dom[key]['bgcolor'].length > 0)
-					SetFillColorArray(dom[key]['bgcolor'])
-					wfill = 1
-				else
-					wfill = fill
-				end
-				if !dom[key]['fgcolor'].nil? and (dom[key]['fgcolor'].length > 0)
-					SetTextColorArray(dom[key]['fgcolor'])
-				end
-				if !dom[key]['strokecolor'].nil? and (dom[key]['strokecolor'].length > 0)
-					SetDrawColorArray(dom[key]['strokecolor'])
-				end
-				if !dom[key]['align'].nil?
-					lalign = dom[key]['align']
-				end
-				if empty_string(lalign)
-					lalign = align
-				end
-			end
-			# align lines
-			if @newline and (dom[key]['value'].length > 0) and (dom[key]['value'] != 'td') and (dom[key]['value'] != 'th')
-				newline = true
-				fontaligned = false
-				# we are at the beginning of a new line
-				if !startlinex.nil?
-					yshift = minstartliney - startliney
-					if (yshift > 0) or (@page > startlinepage)
-						yshift = 0
-					end
-					t_x = 0
-						# the last line must be shifted to be aligned as requested
-						linew = (@endlinex - startlinex).abs
-						pstart = getPageBuffer(startlinepage)[0, startlinepos]
-						if !opentagpos.nil? and !@footerlen[startlinepage].nil? and !@in_footer
-							@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
-							midpos = [opentagpos, @footerpos[startlinepage]].min
-						elsif !opentagpos.nil?
-							midpos = opentagpos
-						elsif !@footerlen[startlinepage].nil? and !@in_footer
-							@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
-							midpos = @footerpos[startlinepage]
-						else
-							midpos = 0
-						end
-						if midpos > 0
-							pmid = getPageBuffer(startlinepage)[startlinepos, midpos - startlinepos]
-							pend = getPageBuffer(startlinepage)[midpos..-1]
-						else
-							pmid = getPageBuffer(startlinepage)[startlinepos..-1]
-							pend = ''
-						end
-					if (!plalign.nil? and ((plalign == 'C') or (plalign == 'J') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl))) or (yshift < 0)
-						# calculate shifting amount
-						tw = w
-						if (plalign == 'J') and isRTLTextDir() and (@num_columns > 1)
-							tw += @c_margin
-						end
-						if @l_margin != prevlMargin
-							tw += prevlMargin - @l_margin
-						end
-						if @r_margin != prevrMargin
-							tw += prevrMargin - @r_margin
-						end
-						one_space_width = GetStringWidth(32.chr)
-						mdiff = (tw - linew).abs
-						if plalign == 'C'
-							if @rtl
-								t_x = -(mdiff / 2)
-							else
-								t_x = (mdiff / 2)
-							end
-						elsif (plalign == 'R') and !@rtl
-							# right alignment on LTR document
-							if revstrpos(pmid, ')]').to_i == revstrpos(pmid, ' )]').to_i + 1
-								# remove last space (if any)
-								linew -= one_space_width
-								mdiff = (tw - linew).abs
-							end
-							t_x = mdiff
-						elsif (plalign == 'L') and @rtl
-							# left alignment on RTL document
-							if revstrpos(pmid, '[(') and ((revstrpos(pmid, '[( ').to_i == revstrpos(pmid, '[(').to_i) or (revstrpos(pmid, '[(' + 0.chr + 32.chr).to_i == revstrpos(pmid, '[(').to_i))
-								# remove first space (if any)
-								linew -= one_space_width
-							end
-							if pmid.index('[(') and (pmid.index('[(').to_i == revstrpos(pmid, '[(').to_i)
-								# remove last space (if any)
-								linew -= one_space_width
-								if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
-									linew -= one_space_width
-								end
-							end
-							mdiff = (tw - linew).abs
-							t_x = -mdiff
-						elsif (plalign == 'J') and (plalign == lalign)
-							# Justification
-							if isRTLTextDir()
-								t_x = @l_margin - @endlinex + @c_margin
-							end
-							no = 0 # spaces without trim
-							ns = 0 # spaces with trim
-
-							pmidtemp = pmid
-							# escape special characters
-							pmidtemp.gsub!(/[\\][\(]/x, '\\#!#OP#!#')
-							pmidtemp.gsub!(/[\\][\)]/x, '\\#!#CP#!#')
-							# search spaces
-							lnstring = pmidtemp.scan(/\[\(([^\)]*)\)\]/x)
-							if !lnstring.empty?
-								spacestr = getSpaceString()
-								maxkk = lnstring.length - 1
-								0.upto(maxkk) do |kk|
-									# restore special characters
-									lnstring[kk][0].gsub!('#!#OP#!#', '(')
-									lnstring[kk][0].gsub!('#!#CP#!#', ')')
-									if kk == maxkk
-										if isRTLTextDir()
-											tvalue = lnstring[kk][0].lstrip
-										else
-											tvalue = lnstring[kk][0].rstrip
-										end
-									else
-										tvalue = lnstring[kk][0]
-									end
-									# store number of spaces on the strings
-									lnstring[kk][1] = lnstring[kk][0].count(spacestr)
-									lnstring[kk][2] = tvalue.count(spacestr)
-									# count total spaces on line
-									no += lnstring[kk][1]
-									ns += lnstring[kk][2]
-									lnstring[kk][3] = no
-									lnstring[kk][4] = ns
-								end
-								if isRTLTextDir()
-									t_x = @l_margin - @endlinex + @c_margin - ((no - ns) * one_space_width)
-								end
-								# calculate additional space to add to each space
-								spacelen = one_space_width
-								spacewidth = (((tw - linew) + ((no - ns) * spacelen)) / (ns ? ns : 1)) * @k
-						 		spacewidthu = -1000 * ((tw - linew) + (no * spacelen)) / (ns ? ns : 1) / @font_size
-								nsmax = ns
-								ns = 0
-								# reset(lnstring)
-								offset = 0
-								strcount = 0
-								prev_epsposbeg = 0
-								textpos = 0;
-								if isRTLTextDir()
-									textpos = @w_pt
-								end
-								while pmid_offset = pmid.index(/([0-9\.\+\-]*)[\s](Td|cm|m|l|c|re)[\s]/x, offset)
-									pmid_data = $1
-									pmid_mark = $2
-									# check if we are inside a string section '[( ... )]'
-									stroffset = pmid.index('[(', offset)
-									if (stroffset != nil) and (stroffset <= pmid_offset)
-										# set offset to the end of string section 
-										offset = pmid.index(')]', stroffset)
-										while (offset != nil) and (pmid[offset - 1, 1] == '\\')
-											offset = pmid.index(')]', offset + 1)
-										end
-										if offset == false
-											Error('HTML Justification: malformed PDF code.')
-										end
-										next
-									end
-									if isRTLTextDir()
-										spacew = spacewidth * (nsmax - ns)
-									else
-										spacew = spacewidth * ns
-									end
-									offset = pmid_offset + $&.length
-									epsposbeg = pmid.index('q' + @epsmarker, offset)
-									epsposbeg = 0 if epsposbeg.nil?
-									epsposend = pmid.index(@epsmarker + 'Q', offset)
-									epsposend = 0 if epsposend.nil?
-									epsposend += (@epsmarker + 'Q').length
-									if ((epsposbeg > 0) and (epsposend > 0) and (offset > epsposbeg) and (offset < epsposend)) or ((epsposbeg === false) and (epsposend > 0) and (offset < epsposend))
-										# shift EPS images
-										trx = sprintf('1 0 0 1 %.3f 0 cm', spacew)
-										epsposbeg = pmid.index('q' + @epsmarker, prev_epsposbeg - 6)
-										epsposbeg = 0 if epsposbeg.nil?
-										pmid_b = pmid[0, epsposbeg]
-										pmid_m = pmid[epsposbeg, epsposend - epsposbeg]
-										pmid_e = pmid[epsposend..-1]
-										pmid = pmid_b + "\nq\n" + trx + "\n" + pmid_m + "\nQ\n" + pmid_e
-										offset = epsposend
-										next
-									end
-									prev_epsposbeg = epsposbeg
-									currentxpos = 0
-									# shift blocks of code
-									case pmid_mark
-									when 'Td', 'cm', 'm', 'l'
-										# get current X position
-										pmid =~ /([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x
-										currentxpos = $1.to_i
-										textpos = currentxpos
-										if (strcount <= maxkk) and (pmid_mark == 'Td')
-											if strcount == maxkk
-												if isRTLTextDir()
-													tvalue = lnstring[strcount][0]
-												else
-													tvalue = lnstring[strcount][0].strip
-												end
-											else
-												tvalue = lnstring[strcount][0]
-											end
-											ns += tvalue.count(spacestr)
-											strcount += 1
-										end
-										if isRTLTextDir()
-											spacew = spacewidth * (nsmax - ns)
-										end
-										# justify block
-										pmid.sub!(/([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x, "" + sprintf("%.2f", $1.to_f + spacew) + " " + $2 + " x*#!#*x" + $3 + $4)
-									when 're'
-										# justify block
-										pmid =~ /([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s](#{pmid_data})[\s](re)([\s]*)/x
-										currentxpos = $1.to_i
-										x_diff = 0
-										w_diff = 0
-										if isRTLTextDir() # RTL
-											if currentxpos < textpos
-												x_diff = spacewidth * (nsmax - lnstring[strcount][4])
-												w_diff = spacewidth * lnstring[strcount][2]
-											else
-												if strcount > 0
-													x_diff = spacewidth * (nsmax - lnstring[strcount - 1][4])
-													w_diff = spacewidth * lnstring[strcount - 1][2]
-												end
-											end
-										else # LTR
-											if currentxpos > textpos
-												if strcount > 0
-													x_diff = spacewidth * lnstring[strcount - 1][3]
-												end
-												w_diff = spacewidth * lnstring[strcount][2]
-											else
-												if strcount > 1
-													x_diff = spacewidth * lnstring[strcount - 2][3]
-												end
-												if strcount > 0
-													w_diff = spacewidth * lnstring[strcount - 1][2]
-												end
-											end
-										end
-										pmid.sub!(/(#{$1})[\s](#{$2})[\s](#{$3})[\s](#{pmid_data})[\s](re)([\s]*)/x, "" + sprintf("%.2f", $1.to_f + x_diff) + " " + $2 + " " + sprintf("%.2f", $3.to_f + w_diff) + " " + $4 + " x*#!#*x" + $5 + $6)
-									when 'c'
-										# get current X position
-										pmid =~ /([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s](#{pmid_data})[\s](c)([\s]*)/x
-										currentxpos = $1.to_i
-										# justify block
-										pmid.sub!(/(#{$1})[\s](#{$2})[\s](#{$3})[\s](#{$4})[\s](${5})[\s](#{pmid_data})[\s](c)([\s]*)/x, "" + sprintf("%.3f", $1.to_f + spacew) + " " + $2 + " " +  sprintf("%.3f", $3.to_f + spacew) + " " + $4 + " " + sprintf("%.3f", $5.to_f + spacew) + " " + $6 + " x*#!#*x" + $7 + $8)
-									end
-									# shift the annotations and links
-									if !@page_annots[@page].nil?
-										cxpos = currentxpos / @k
-										lmpos = @l_margin + @c_margin + @feps
-
-										@page_annots[@page].each_with_index { |pac, pak|
-											if (pac['y'] >= minstartliney) and (pac['x'] * @k >= currentxpos - @feps) and (pac['x'] * @k <= currentxpos + @feps)
-												if cxpos > lmpos
-													@page_annots[@page][pak]['x'] += (spacew - one_space_width) / @k
-													@page_annots[@page][pak]['w'] += (spacewidth * pac['numspaces']) / @k
-												else
-													@page_annots[@page][pak]['w'] += ((spacewidth * pac['numspaces']) - one_space_width) / @k
-												end
-												break
-											end
-										}
-									end
-								end # end of while
-								# remove markers
-								pmid.gsub!('x*#!#*x', '')
-								if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
-									# multibyte characters
-									spacew = spacewidthu
-									pmidtemp = pmid
-									# escape special characters
-									pmidtemp.gsub!(/[\\][\(]/x, '\\#!#OP#!#')
-									pmidtemp.gsub!(/[\\][\)]/x, '\\#!#CP#!#')
-									pmidtemp =~ /\[\(([^\)]*)\)\]/x
-									matches1 = $1.gsub("#!#OP#!#", "(")
-									matches1.gsub!("#!#CP#!#", ")")
-									pmid = pmidtemp.sub(/\[\(([^\)]*)\)\]/x,  "[(" + matches1.gsub(0.chr + 32.chr, ") " + sprintf("%.3f", spacew) + " (") + ")]")
-									setPageBuffer(startlinepage, pstart + "\n" + pmid + "\n" + pend)
-									endlinepos = (pstart + "\n" + pmid + "\n").length
-								else
-									# non-unicode (single-byte characters)
-									rs = sprintf("%.3f Tw", spacewidth)
-									pmid.gsub!(/\[\(/x, "#{rs} [(")
-									setPageBuffer(startlinepage, pstart + "\n" + pmid + "\nBT 0 Tw ET\n" + pend)
-									endlinepos = (pstart + "\n" + pmid + "\nBT 0 Tw ET\n").length
-								end
-							end
-						end # end of J
-					end # end if $startlinex
-					if (t_x != 0) or (yshift < 0)
-						# shift the line
-						trx = sprintf('1 0 0 1 %.3f %.3f cm', t_x * @k, yshift * @k)
-						setPageBuffer(startlinepage, pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n" + pend)
-						endlinepos = (pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n").length
-						# shift the annotations and links
-						if !@page_annots[@page].nil?
-							@page_annots[@page].each_with_index { |pac, pak|
-								if pak >= pask
-									@page_annots[@page][pak]['x'] += t_x
-									@page_annots[@page][pak]['y'] -= yshift
-								end
-							}
-						end
-						@y -= yshift
-					end
-				end
-				pbrk = checkPageBreak(@lasth)
-				@newline = false
-				startlinex = @x
-				startliney = @y
-				if dom[dom[key]['parent']]['value'] == 'sup'
-					startliney -= (0.3 * @font_size_pt) / @k
-				elsif dom[dom[key]['parent']]['value'] == 'sub'
-					startliney -= (@font_size_pt / 0.7) / @k
-				else
-					minstartliney = startliney
-					maxbottomliney = startliney + @font_size * @cell_height_ratio
-				end
-				startlinepage = @page
-				if !endlinepos.nil? and !pbrk
-					startlinepos = endlinepos
-				else
-					if !@in_footer
-						if !@footerlen[@page].nil?
-							@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
-						else
-							@footerpos[@page] = @pagelen[@page]
-						end
-						startlinepos = @footerpos[@page]
-					else
-						startlinepos = @pagelen[@page]
-					end
-				end
-				endlinepos = nil
-				plalign = lalign
-				if !@page_annots[@page].nil?
-					pask = @page_annots[@page].length
-				else
-					pask = 0
-				end
-				SetFont(fontname, fontstyle, fontsize)
-				if wfill  == 1
-					SetFillColorArray(@bgcolor)
-				end
-			end # end newline
-			if !opentagpos.nil?
-				opentagpos = nil
-			end
-			if dom[key]['tag']
-				if dom[key]['opening']    
-					# get text indentation (if any)
-					if dom[key]['text-indent'] and dom[key]['block']
-						@textindent = dom[key]['text-indent']
-						@newline = true
-					end
-					if dom[key]['value'] == 'table'
-						# available page width
-						if @rtl
-							wtmp = @x - @l_margin
-						else
-							wtmp = @w - @r_margin - @x
-						end
-						if dom[key]['attribute']['nested'] and (dom[key]['attribute']['nested'] == 'true')
-							# add margin for nested tables
-							wtmp -= @c_margin
-						end
-						# table width
-						if !dom[key]['width'].nil?
-							table_width = getHTMLUnitToUnits(dom[key]['width'], wtmp, 'px')
-						else
-							table_width = wtmp
-						end
-					end
-					if (dom[key]['value'] == 'td') or (dom[key]['value'] == 'th')
-						trid = dom[key]['parent']
-						table_el = dom[trid]['parent']
-						if dom[table_el]['cols'].nil?
-							dom[table_el]['cols'] = dom[trid]['cols']
-						end
-						oldmargin = @c_margin
-						if !dom[(dom[trid]['parent'])]['attribute']['cellpadding'].nil?
-							currentcmargin = getHTMLUnitToUnits(dom[(dom[trid]['parent'])]['attribute']['cellpadding'], 1, 'px')
-						else
-							currentcmargin = 0
-						end
-						@c_margin = currentcmargin
-						if !dom[(dom[trid]['parent'])]['attribute']['cellspacing'].nil?
-							cellspacing = getHTMLUnitToUnits(dom[(dom[trid]['parent'])]['attribute']['cellspacing'], 1, 'px')
-						else
-							cellspacing = 0
-						end
-						if @rtl
-							cellspacingx = -cellspacing
-						else
-							cellspacingx = cellspacing
-						end
-						colspan = dom[key]['attribute']['colspan']
-						table_columns_width = table_width - (cellspacing * (dom[table_el]['cols'] - 1))
-						wtmp = colspan * (table_columns_width / dom[table_el]['cols']) + (colspan - 1) * cellspacing
-						if !dom[key]['width'].nil?
-							cellw = getHTMLUnitToUnits(dom[key]['width'], table_columns_width, 'px')
-						else
-							cellw = wtmp
-						end
-						if !dom[key]['height'].nil?
-							# minimum cell height
-							cellh = getHTMLUnitToUnits(dom[key]['height'], 0, 'px')
-						else
-							cellh = 0
-						end
-						if !dom[key]['content'].nil?
-							cell_content = dom[key]['content']
-						else
-							cell_content = '&nbsp;'
-						end
-						tagtype = dom[key]['value']
-						parentid = key
-						while (key < maxel) and !(dom[key]['tag'] and !dom[key]['opening'] and (dom[key]['value'] == tagtype) and (dom[key]['parent'] == parentid))
-							# move :key index forward
-							key += 1
-						end
-						if dom[trid]['startpage'].nil?
-							dom[trid]['startpage'] = @page
-						else
-							@page = dom[trid]['startpage']
-						end
-						if dom[trid]['starty'].nil?
-							dom[trid]['starty'] = @y
-						else
-							@y = dom[trid]['starty']
-						end
-						if dom[trid]['startx'].nil?
-							dom[trid]['startx'] = @x
-						else
-							@x += (cellspacingx / 2)
-						end
-						if !dom[parentid]['attribute']['rowspan'].nil?
-							rowspan = dom[parentid]['attribute']['rowspan'].to_i
-						else
-							rowspan = 1
-						end
-						# skip row-spanned cells started on the previous rows
-						if !dom[table_el]['rowspans'].nil?
-							rsk = 0
-							rskmax = dom[table_el]['rowspans'].length
-							while rsk < rskmax
-								trwsp = dom[table_el]['rowspans'][rsk]
-								rsstartx = trwsp['startx']
-								rsendx = trwsp['endx']
-								# account for margin changes
-								if trwsp['startpage'] < @page
-									if @rtl and (@pagedim[@page]['orm'] != @pagedim[trwsp['startpage']]['orm'])
-										dl = @pagedim[@page]['orm'] - @pagedim[trwsp['startpage']]['orm']
-										rsstartx -= dl
-										rsendx -= dl
-									elsif !@rtl and (@pagedim[@page]['olm'] != @pagedim[trwsp['startpage']]['olm'])
-										dl = @pagedim[@page]['olm'] - @pagedim[trwsp['startpage']]['olm']
-										rsstartx += dl
-										rsendx += dl
-									end
-								end
-								if  (trwsp['rowspan'] > 0) and (rsstartx > @x - cellspacing - currentcmargin - @feps) and (rsstartx < @x + cellspacing + currentcmargin + @feps) and ((trwsp['starty'] < @y - @feps) or (trwsp['startpage'] < @page))
-									# set the starting X position of the current cell
-									@x = rsendx + cellspacingx
-									if (trwsp['rowspan'] == 1) and !dom[trid]['endy'].nil? and !dom[trid]['endpage'].nil? and (trwsp['endpage'] == dom[trid]['endpage'])
-										# set ending Y position for row
-										dom[table_el]['rowspans'][rsk]['endy'] = [dom[trid]['endy'], trwsp['endy']].max
-										dom[trid]['endy'] = dom[table_el]['rowspans'][rsk]['endy']
-									end
-									rsk = 0
-								else
-									rsk += 1
-								end
-							end
-						end
-						# add rowspan information to table element
-						if rowspan > 1
-							dom[table_el]['rowspans'].push({'trid' => trid, 'rowspan' => rowspan, 'mrowspan' => rowspan, 'colspan' => colspan, 'startpage' => @page, 'startx' => @x, 'starty' => @y})
-							trsid = dom[table_el]['rowspans'].size
-						end
-						dom[trid]['cellpos'].push({'startx' => @x})
-						cellid = dom[trid]['cellpos'].size
-						if rowspan > 1
-							dom[trid]['cellpos'][cellid - 1]['rowspanid'] = trsid - 1
-						end
-						# push background colors
-						if !dom[parentid]['bgcolor'].nil? and (dom[parentid]['bgcolor'].length > 0)
-							dom[trid]['cellpos'][cellid - 1]['bgcolor'] = dom[parentid]['bgcolor'].dup
-						end
-						prevLastH = @lasth
-						# ****** write the cell content ******
-						MultiCell(cellw, cellh, cell_content, 0, lalign, 0, 2, '', '', true, 0, true)
-						@lasth = prevLastH
-						@c_margin = oldmargin
-						dom[trid]['cellpos'][cellid - 1]['endx'] = @x
-						# update the end of row position
-						if rowspan <= 1
-							if !dom[trid]['endy'].nil?
-								if @page == dom[trid]['endpage']
-									dom[trid]['endy'] = [@y, dom[trid]['endy']].max
-								elsif @page > dom[trid]['endpage']
-									dom[trid]['endy'] = @y
-								end
-							else
-								dom[trid]['endy'] = @y
-							end
-							if !dom[trid]['endpage'].nil?
-								dom[trid]['endpage'] = [@page, dom[trid]['endpage']].max
-							else
-								dom[trid]['endpage'] = @page
-							end
-						else
-							# account for row-spanned cells
-							dom[table_el]['rowspans'][trsid - 1]['endx'] = @x
-							dom[table_el]['rowspans'][trsid - 1]['endy'] = @y
-							dom[table_el]['rowspans'][trsid - 1]['endpage'] = @page                             
-						end
-						if !dom[table_el]['rowspans'].nil?
-							# update endy and endpage on rowspanned cells
-							dom[table_el]['rowspans'].each_with_index { |trwsp, k|
-								if trwsp['rowspan'] > 0
-									if !dom[trid]['endpage'].nil?
-										if trwsp['endpage'] == dom[trid]['endpage']
-											dom[table_el]['rowspans'][k]['endy'] = [dom[trid]['endy'], trwsp['endy']].max
-										elsif trwsp['endpage'] < dom[trid]['endpage']
-											dom[table_el]['rowspans'][k]['endy'] = dom[trid]['endy']
-											dom[table_el]['rowspans'][k]['endpage'] = dom[trid]['endpage']
-										else
-											dom[trid]['endy'] = @pagedim[dom[trid]['endpage']]['hk'] - @pagedim[dom[trid]['endpage']]['bm']
-										end
-									end
-								end
-							}
-						end
-						@x += (cellspacingx / 2)
-					else
-						# opening tag (or self-closing tag)
-						if opentagpos.nil?
-							if !@in_footer
-								if !@footerlen[@page].nil?
-									@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
-								else
-									@footerpos[@page] = @pagelen[@page]
-								end
-								opentagpos = @footerpos[@page]
-							end
-						end
-						openHTMLTagHandler(dom, key, cell)
-					end
-				else
-					# closing tag
-					prev_numpages = @numpages
-					closeHTMLTagHandler(dom, key, cell, maxbottomliney)
-					if prev_numpages > @numpages
-						startlinepage = @page
-					end
-				end
-			elsif dom[key]['value'].length > 0
-				# print list-item
-				if !empty_string(@lispacer)
-					SetFont(pfontname, pfontstyle, pfontsize)
-					@lasth = @font_size * @cell_height_ratio
-					minstartliney = @y
-					maxbottomliney = startliney + @font_size * @cell_height_ratio
-					putHtmlListBullet(@listnum, @lispacer, pfontsize)
-					SetFont(curfontname, curfontstyle, curfontsize)
-					@lasth = @font_size * @cell_height_ratio
-					if pfontsize.is_a?(Numeric) and (pfontsize > 0) and curfontsize.is_a?(Numeric) and (curfontsize > 0) and (pfontsize != curfontsize)
-						pfontascent = getFontAscent(pfontname, pfontstyle, pfontsize)
-						pfontdescent = getFontDescent(pfontname, pfontstyle, pfontsize)
-						@y += ((pfontsize - curfontsize) * @cell_height_ratio / @k + pfontascent - curfontascent - pfontdescent + curfontdescent) / 2
-						minstartliney = [@y, minstartliney].min
-						maxbottomliney = [@y + pfontsize * @cell_height_ratio / @k, maxbottomliney].max
-					end
-				end
-				# text
-				@htmlvspace = 0
-				if !@premode and isRTLTextDir()
-					# reverse spaces order
-					len1 = dom[key]['value'].length
-					lsp = len1 - dom[key]['value'].lstrip.length
-					rsp = len1 - dom[key]['value'].rstrip.length
-					tmpstr = ''
-					if rsp > 0
-						tmpstr << dom[key]['value'][-rsp..-1]
-					end
-					tmpstr << (dom[key]['value']).strip
-					if lsp > 0
-						tmpstr << dom[key]['value'][0, lsp]
-					end
-					dom[key]['value'] = tmpstr
-				end
-				if newline
-					if !@premode
-						prelen = dom[key]['value'].length
-						if isRTLTextDir()
-							dom[key]['value'] = dom[key]['value'].rstrip + 0.chr
-						else
-							dom[key]['value'] = dom[key]['value'].lstrip
-						end
-						postlen = dom[key]['value'].length
-						if (postlen == 0) and (prelen > 0)
-							dom[key]['trimmed_space'] = true
-						end
-					end
-					newline = false
-					firstblock = true
-				else
-					firstblock = false
-				end
-				strrest = ''
-				if @rtl
-					@x -= @textindent
-				else
-					@x += @textindent
-				end
-				if !@href.empty? and @href['url']
-					# HTML <a> Link
-					hrefcolor = ''
-					if dom[(dom[key]['parent'])]['fgcolor'] and !dom[(dom[key]['parent'])]['fgcolor'].empty?
-						hrefcolor = dom[(dom[key]['parent'])]['fgcolor']
-					end
-					hrefstyle = -1
-					if dom[(dom[key]['parent'])]['fontstyle'] and (dom[(dom[key]['parent'])]['fontstyle'] != false)
-						hrefstyle = dom[(dom[key]['parent'])]['fontstyle']
-					end
-					strrest = addHtmlLink(@href['url'], dom[key]['value'], wfill, true, hrefcolor, hrefstyle, true)
-				else
-					# ****** write only until the end of the line and get the rest ******
-					strrest = Write(@lasth, dom[key]['value'], '', wfill, '', false, 0, true, firstblock, 0)
-				end
-				@textindent = 0
-
-				if !strrest.nil? and strrest.length > 0
-					# store the remaining string on the previous :key position
-					@newline = true
-					if cell
-						if @rtl
-							@x -= @c_margin
-						else
-							@x += @c_margin
-						end
-					end
-					if strrest == dom[key]['value']
-						# used to avoid infinite loop
-						loop += 1
-					else
-						loop = 0
-					end
-					if !@href.empty? and @href['url']
-						dom[key]['value'] = strrest.strip
-					elsif @premode
-						dom[key]['value'] = strrest
-					elsif isRTLTextDir()
-						dom[key]['value'] = strrest.rstrip
-					else
-						dom[key]['value'] = strrest.lstrip
-					end
-					if loop < 3
-						key -= 1
-					end
-				else
-					loop = 0
-				end
-			end
-			key += 1
-			if dom[key] and dom[key]['tag'] and (dom[key]['opening'].nil? or !dom[key]['opening']) and dom[(dom[key]['parent'])]['attribute']['nobr'] and (dom[(dom[key]['parent'])]['attribute']['nobr'] == 'true')
-				if !undo and (@start_transaction_page == (@numpages - 1)) or (@y < @start_transaction_y)
-					# restore previous object
-					rollbackTransaction(true)
-					# restore previous values
-					this_method_vars.each {|vkey , vval|
-						eval("#{vkey} = vval") 
-					}
-					# add a page (or trig AcceptPageBreak() for multicolumn mode)
-					pre_y = @y
-					if !checkPageBreak(@page_break_trigger + 1) and (@y < pre_y)
-						startliney = @y
-					end
-					undo = true # avoid infinite loop
-				else
-					undo = false
-				end
-			end
-		end # end for each :key
-		# align the last line
-		if !startlinex.nil?
-			yshift = minstartliney - startliney
-			if (yshift > 0) or (@page > startlinepage)
-				yshift = 0
-			end
-			t_x = 0
-			# the last line must be shifted to be aligned as requested
-			linew = (@endlinex - startlinex).abs
-			pstart = getPageBuffer(startlinepage)[0, startlinepos]
-			if !opentagpos.nil? and !@footerlen[startlinepage].nil? and !@in_footer
-				@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
-				midpos = [opentagpos, @footerpos[startlinepage]].min
-			elsif !opentagpos.nil?
-				midpos = opentagpos
-			elsif !@footerlen[startlinepage].nil? and !@in_footer
-				@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
-				midpos = @footerpos[startlinepage]
-			else
-				midpos = 0
-			end
-			if midpos > 0
-				pmid = getPageBuffer(startlinepage)[startlinepos, midpos - startlinepos]
-				pend = getPageBuffer(startlinepage)[midpos..-1]
-			else
-				pmid = getPageBuffer(startlinepage)[startlinepos..-1]
-				pend = ""
-			end
-			if (!plalign.nil? and (((plalign == 'C') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl)))) or (yshift < 0)
-				# calculate shifting amount
-				tw = w
-				if @l_margin != prevlMargin
-					tw += prevlMargin - @l_margin
-				end
-				if @r_margin != prevrMargin
-					tw += prevrMargin - @r_margin
-				end
-				one_space_width = GetStringWidth(32.chr)
-				mdiff = (tw - linew).abs
-				if plalign == 'C'
-					if @rtl
-						t_x = -(mdiff / 2)
-					else
-						t_x = (mdiff / 2)
-					end
-				elsif (plalign == 'R') and !@rtl
-					# right alignment on LTR document
-					if revstrpos(pmid, ')]').to_i == revstrpos(pmid, ' )]').to_i + 1
-						# remove last space (if any)
-						linew -= one_space_width
-						mdiff = (tw - linew).abs
-					end
-					t_x = mdiff
-				elsif (plalign == 'L') and @rtl
-					# left alignment on RTL document
-					if revstrpos(pmid, '[(') and ((revstrpos(pmid, '[( ').to_i == revstrpos(pmid, '[(').to_i) or (revstrpos(pmid, '[(' + 0.chr + 32.chr).to_i == revstrpos(pmid, '[(').to_i))
-						# remove first space (if any)
-						linew -= one_space_width
-					end
-					if pmid.index('[(') and (pmid.index('[(').to_i == revstrpos(pmid, '[(').to_i)
-						# remove last space (if any)
-						linew -= one_space_width
-						if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
-							linew -= one_space_width
-						end
-					end
-					mdiff = (tw - linew).abs
-					t_x = -mdiff
-				end
-			end # end if startlinex
-			if (t_x != 0) or (yshift < 0)
-				# shift the line
-				trx = sprintf('1 0 0 1 %.3f %.3f cm', t_x * @k, yshift * @k)
-				setPageBuffer(startlinepage, pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n" + pend)
-				endlinepos = (pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n").length
-
-				# shift the annotations and links
-				if !@page_annots[@page].nil?
-					@page_annots[@page].each_with_index { |pac, pak|
-						if pak >= pask
-							@page_annots[@page][pak]['x'] += t_x
-							@page_annots[@page][pak]['y'] -= yshift
-						end
-					}
-				end
-				@y -= yshift
-			end
-		end
-		if ln and !(cell and (dom[key-1]['value'] == 'table'))
-			Ln(@lasth)
-			if @y < maxbottomliney
-				@y = maxbottomliney
-			end
-		end
-		# restore previous values
-		setGraphicVars(gvars)
-		if @page > prevPage
-			@l_margin = @pagedim[@page]['olm']
-			@r_margin = @pagedim[@page]['orm']
-		end
-		# restore previous list state
-		@cell_height_ratio = prev_cell_height_ratio
-		@listnum = prev_listnum
-		@listordered = prev_listordered
-		@listcount = prev_listcount
-		@lispacer = prev_lispacer
-		dom = nil
-	end
-  alias_method :write_html, :writeHTML
-
-	#
-	# Prints a cell (rectangular area) with optional borders, background color and html text string. The upper-left corner of the cell corresponds to the current position. After the call, the current position moves to the right or to the next line.<br />
-	# If automatic page breaking is enabled and the cell goes beyond the limit, a page break is done before outputting.
-	# @param float :w Cell width. If 0, the cell extends up to the right margin.
-	# @param float :h Cell minimum height. The cell extends automatically if needed.
-	# @param float :x upper-left corner X coordinate
-	# @param float :y upper-left corner Y coordinate
-	# @param string :html html text to print. Default value: empty string.
-	# @param mixed :border Indicates if borders must be drawn around the cell. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
-	# @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right (or left for RTL language)</li><li>1: to the beginning of the next line</li><li>2: below</li></ul>
-	# Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
-	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
-	# @param boolean :reseth if true reset the last cell height (default true).
-	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
-	# @param boolean :autopadding if true, uses internal padding and automatically adjust it to account for line width.
-	# @access public
-	# @uses MultiCell()
-	# @see Multicell(), writeHTML(), Cell()
-	#
-	def writeHTMLCell(w, h, x, y, html='', border=0, ln=0, fill=0, reseth=true, align='', autopadding=true)
-		return MultiCell(w, h, html, border, align, fill, ln, x, y, reseth, 0, true, autopadding, 0)
-	end
-  alias_method :write_html_cell, :writeHTMLCell
-
-	#
-	# Extracts the CSS properties from a CSS string.
-	# @param string :cssdata string containing CSS definitions.
-	# @return A hash where the keys are the CSS selectors and the values are the CSS properties.
-	# @author Nicola Asuni
-	# @since 5.1.000 (2010-05-25)
-	# @access protected
-	#
-	def extractCSSproperties(cssdata)
-		if cssdata.empty?
-			return {}
-		end
-		# remove comments
-		cssdata.gsub!(/\/\*[^\*]*\*\//, '')
-		# remove newlines and multiple spaces
-		cssdata.gsub!(/[\s]+/, ' ')
-		# remove some spaces
-		cssdata.gsub!(/[\s]*([;:\{\}]{1})[\s]*/, '\\1')
-		# remove empty blocks
-		cssdata.gsub!(/([^\}\{]+)\{\}/, '')
-		# replace media type parenthesis
-		cssdata.gsub!(/@media[\s]+([^\{]*)\{/i, "@media \\1\t")
-		cssdata.gsub!(/\}\}/mi, "}\t")
-		# trim string
-		cssdata = cssdata.lstrip
-		# find media blocks (all, braille, embossed, handheld, print, projection, screen, speech, tty, tv)
-		cssblocks = {}
-		matches = cssdata.scan(/@media +([^\t]*)\t([^\t]*)\t/i)
-		unless matches.empty?
-			matches.each { |type|
-				cssblocks[type[0]] = type[1]
-			}
-			# remove media blocks
-			cssdata.gsub!(/@media +([^\t]*)\t([^\t]*)\t/i, '')
-		end
-		# keep 'all' and 'print' media, other media types are discarded
-		if cssblocks['all'] and !cssblocks['all'].empty?
-			cssdata << cssblocks['all']
-		end
-		if cssblocks['print'] and !cssblocks['print'].empty?
-			cssdata << cssblocks['print']
-		end
-		# reset css blocks array
-		cssblocks = []
-		# explode css data string into array
-		if cssdata[-1, 1] == '}'
-			# remove last parethesis
-			cssdata = cssdata.chop
-		end
-		matches = cssdata.split('}')
-		matches.each_with_index { |block, key|
-			# index 0 contains the CSS selector, index 1 contains CSS properties
-			cssblocks[key] = block.split('{')
-		}
-		# split groups of selectors (comma-separated list of selectors)
-		cssblocks.each_with_index { |block, key|
-			# index 0 contains the CSS selector, index 1 contains CSS properties
-			if block[0].index(',')
-				selectors = block[0].split(',')
-				selectors.each {|sel|
-					cssblocks.push [sel.strip, block[1]]
-				}
-				cssblocks.delete_at(key)
-			end
-		}
-		# covert array to selector => properties
-		cssdata = {}
-		cssblocks.each { |block|
-			selector = block[0]
-			# calculate selector's specificity
-			a = 0 # the declaration is not from is a 'style' attribute
-			b = selector.scan(/[\#]/).size # number of ID attributes
-			c = selector.scan(/[\[\.]/).size # number of other attributes
-			c += selector.scan(/[\:]link|visited|hover|active|focus|target|lang|enabled|disabled|checked|indeterminate|root|nth|first|last|only|empty|contains|not/i).size # number of pseudo-classes
-			d = (' ' + selector).scan(/[\>\+\~\s]{1}[a-zA-Z0-9\*]+/).size # number of element names
-			d += selector.scan(/[\:][\:]/).size # number of pseudo-elements
-			specificity = a.to_s + b.to_s + c.to_s + d.to_s
-			# add specificity to the beginning of the selector
-			cssdata[specificity + ' ' + selector] = block[1]
-		}
-		# sort selectors alphabetically to account for specificity
-		# ksort(cssdata, SORT_STRING)
-		# return array
-		return cssdata
-	end
-
-	#
-	# Returns true if the CSS selector is valid for the selected HTML tag
-	# @param array :dom array of HTML tags and properties
-	# @param int :key key of the current HTML tag
-	# @param string :selector CSS selector string
-	# @return true if the selector is valid, false otherwise
-	# @access protected
-	# @since 5.1.000 (2010-05-25)
-	#
-	def isValidCSSSelectorForTag(dom, key, selector)
-		valid = false; # value to be returned
-		tag = dom[key]['value']
-		selector_class = ''
-		if dom[key]['attribute']['class'] and !dom[key]['attribute']['class'].empty?
-			selector_class = dom[key]['attribute']['class'].downcase
-		end
-		id = ''
-		if dom[key]['attribute']['id'] and !dom[key]['attribute']['id'].empty?
-			selector_id = dom[key]['attribute']['id'].downcase
-		end
-
-		selector_offset = 0
-		offset = nil
-		operator = ''
-		lasttag = ''
-		attrib = ''
-		while selector_offset = selector.index(/([\>\+\~\s]{1})([a-zA-Z0-9\*]+)([^\>\+\~\s]*)/mi, selector_offset)
-			offset = selector_offset
-			selector_offset += $&.length
-			operator = $1
-			lasttag = $2.strip.downcase
-			attrib = $3.strip.downcase
-		end
-		if offset
-			if (lasttag == '*') or (lasttag == tag)
-				# the last element on selector is our tag or 'any tag'
-				if !attrib.empty?
-					# check if matches class, id, attribute, pseudo-class or pseudo-element
-					case attrib[0, 1]
-					when '.'  # class
-						valid = true  if attrib.sub(/^./, "") == selector_class
-					when '#'  # ID
-						valid = true  if attrib.sub(/^#/, "") == selector_id
-					when '['  # attribute
-						attrmatch = attrib.scan(/\[([a-zA-Z0-9]*)[\s]*([\~\^\$\*\|\=]*)[\s]*["]?([^"\]]*)["]?\]/i)
-						if !attrmatch.empty?
-							att = attrmatch[0].downcase
-							val = attrmatch[2]
-							if dom[key]['attribute'][att]
-								case attrmatch[1]
-								when '='
-									valid = true  if dom[key]['attribute'][att] == val
-								when '~='
-									valid = true  if dom[key]['attribute'][att].split(' ').include?(val)
-								when '^='
-									valid = true  if val == substr(dom[key]['attribute'][att], 0, val.length)
-								when '$='
-									valid = true  if val == substr(dom[key]['attribute'][att], -val.length)
-								when '*='
-									valid = true  if dom[key]['attribute'][att].index(val) != nil
-								when '|='
-									if dom[key]['attribute'][att] == val
-										valid = true
-									elsif ! dom[key]['attribute'][att].scan(/#{val}[\-]{1}/i).empty?
-										valid = true
-									end
-								else
-									valid = true
-								end
-							end
-						end
-					when ':'  # pseudo-class or pseudo-element
-						if attrib{1} == ':'  # pseudo-element
-							# pseudo-elements are not supported!
-							# (::first-line, ::first-letter, ::before, ::after)
-						else # pseudo-class
-							# pseudo-classes are not supported!
-							# (:root, :nth-child(n), :nth-last-child(n), :nth-of-type(n), :nth-last-of-type(n), :first-child, :last-child, :first-of-type, :last-of-type, :only-child, :only-of-type, :empty, :link, :visited, :active, :hover, :focus, :target, :lang(fr), :enabled, :disabled, :checked)
-						end
-					end # end of switch
-				else
-					valid = true
-				end
-
-				if valid and (offset > 0)
-					valid = false
-					# check remaining selector part
-					selector = selector[0, offset]
-					case operator
-					when ' '  # descendant of an element
-						while dom[key]['parent'] > 0
-							if isValidCSSSelectorForTag(dom, dom[key]['parent'], selector)
-								valid = true
-								break
-							else
-								key = dom[key]['parent']
-							end
-						end
-					when '>'  # child of an element
-						valid = isValidCSSSelectorForTag(dom, dom[key]['parent'], selector)
-					when '+'  # immediately preceded by an element
-						(key - 1).downto(dom[key]['parent'] + 1) do |i|
-							if dom[i]['tag'] and dom[i]['opening']
-								valid = isValidCSSSelectorForTag(dom, i, selector)
-								break
-							end
-						end
-					when '~'  # preceded by an element
-						(key - 1).downto(dom[key]['parent'] + 1) do |i|
-							if dom[i]['tag'] and dom[i]['opening']
-								if isValidCSSSelectorForTag(dom, i, selector)
-									break
-								end
-							end
-						end
-					end
-				end
-			end
-		end
-		return valid
-	end
-
-	#
-	# Returns the styles that apply for the selected HTML tag.
-	# @param array :dom array of HTML tags and properties
-	# @param int :key key of the current HTML tag
-	# @param hash :css array of CSS properties
-	# @return string containing CSS properties
-	# @access protected
-	# @since 5.1.000 (2010-05-25)
-	#
-	def getTagStyleFromCSS(dom, key, css)
-		tagstyle = '' # style to be returned
-		# get all styles that apply
-		css.each { |selector, style|
-			# remove specificity
-			selector = selector[selector.index(' ')..-1] if selector.index(' ')
-			# check if this selector apply to current tag
-			if isValidCSSSelectorForTag(dom, key, selector)
-				# apply style
-				tagstyle << ';' + style
-			end
-		}
-		if dom[key]['attribute']['style']
-			# attach inline style (latest properties have high priority)
-			tagstyle << ';' + dom[key]['attribute']['style']
-		end
-		# remove multiple semicolons
-		tagstyle.gsub!(/[;]+/, ';')
-		return tagstyle
-	end
-
-	#
-	# Returns the HTML DOM array.
-	# <ul><li>dom[key]['tag'] = true if tag, false otherwise;</li><li>dom[key]['value'] = tag name or text;</li><li>dom[key]['opening'] = true if opening tag, false otherwise;</li><li>dom[key]['attribute'] = array of attributes (attribute name is the key);</li><li>dom[key]['style'] = array of style attributes (attribute name is the key);</li><li>dom[key]['parent'] = id of parent element;</li><li>dom[key]['fontname'] = font family name;</li><li>dom[key]['fontstyle'] = font style;</li><li>dom[key]['fontsize'] = font size in points;</li><li>dom[key]['bgcolor'] = RGB array of background color;</li><li>dom[key]['fgcolor'] = RGB array of foreground color;</li><li>dom[key]['width'] = width in pixels;</li><li>dom[key]['height'] = height in pixels;</li><li>dom[key]['align'] = text alignment;</li><li>dom[key]['cols'] = number of colums in table;</li><li>dom[key]['rows'] = number of rows in table;</li></ul>
-	# @param string :html html code
-	# @return array
-	# @since 3.2.000 (2008-06-20)
-	#
-	def getHtmlDomArray(html)
-		#  define block tags
-		blocktags = ['blockquote','br','dd','dl','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','pre','ul','table','tr','td']
-		# array of CSS styles ( selector => properties).
-		css = {}
-		# extract external CSS files
-		matches = html.scan(/<link([^\>]*?)>/mi)
-		unless matches.empty?
-			matches.each { |link|
-				type = link[0].scan(/type[\s]*=[\s]*"text\/css"/)
-				next if type.empty?
-
-				type = link[0].scan(/media[\s]*=[\s]*"([^"]*)"/)
-				# get 'all' and 'print' media, other media types are discarded
-				# (all, braille, embossed, handheld, print, projection, screen, speech, tty, tv)
-				if type.empty? or (type[0][0] and ((type[0][0] == 'all') or (type[0][0] == 'print')))
-					type = link[0].scan(/href[\s]*=[\s]*"([^"]*)"/)
-					next if type.empty?
-
-					# read CSS data file
-					uri = type[0][0].strip
-					if uri =~ %r{^/}
-						uri_path = Rails.root.join('public')
-						uri.sub!(%r{^/}, '')
-						uri.split('/').each {|path|
-							uri_path = uri_path.join(path)
-						}
-						cssdata = ''
-						next unless File.exists?(uri_path)
-
-						open(uri_path) do |f|
-							cssdata << f.read
-						end
-					else
-						uri = URI(uri)
-						next if !uri.scheme or !uri.host
-
-						res = Net::HTTP.get_response(uri)
-						cssdata = res.body
-					end
-					css = css.merge(extractCSSproperties(cssdata))
-				end
-			}
-		end
-		# extract style tags
-		matches = html.scan(/<style([^\>]*?)>([^\<]*?)<\/style>/mi)
-		unless matches.empty?
-			matches.each { |media|
-				type = media[0].scan(/media[\s]*=[\s]*"([^"]*)"/)
-				# get 'all' and 'print' media, other media types are discarded
-				# (all, braille, embossed, handheld, print, projection, screen, speech, tty, tv)
-				if type.empty? or (type[0] and ((type[0] == 'all') or (type[0] == 'print')))
-					cssdata = media[1]
-					css = css.merge(extractCSSproperties(cssdata))
-				end
-			}
-		end
-		# remove heade and style blocks
-		html.gsub!(/<head([^\>]*?)>(.*)<\/head>/mi, '')
-		html.gsub!(/<style([^\>]*?)>([^\<]*?)<\/style>/mi, '')
-		# remove comments
-		html.gsub!(/<!--(.|\s)*?-->/m, '')
-
-		# remove all unsupported tags (the line below lists all supported tags)
-		::ActionView::Base.sanitized_allowed_css_properties = ["page-break-before", "page-break-after", "page-break-inside"]
-		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote body br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr stroke strokecolor fill))
-		html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
-		# replace some blank characters
-		html.gsub!(/<br>/, '<br/>')
-		html.gsub!(/<pre/, '<xre') # preserve pre tag
-		html.gsub!(/<(table|tr|td|th|blockquote|dd|div|dt|h1|h2|h3|h4|h5|h6|br|hr|li|ol|ul|p)([^\>]*)>[\n\r\t]+/, '<\\1\\2>')
-		html.gsub!(/@(\r\n|\r)@/, "\n")
-		html.gsub!(/[\t\0\x0B]/, " ")
-		html.gsub!(/\\/, "\\\\\\")
-
-		offset = 0
-		while (offset < html.length) and ((pos = html.index('</pre>', offset)) != nil)
-			html_a = html[0, offset]
-			html_b = html[offset, pos - offset + 6]
-			while html_b =~ /<xre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi
-				# preserve newlines on <pre> tag
-				html_b = html_b.gsub(/<xre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi, "<xre\\1>\\2<br />\\3</pre>")
-			end
-			html = html_a + html_b + html[(pos + 6)..-1]
-			offset = (html_a + html_b).length
-		end
-		html.gsub!(/[\n]/, " ")
-		# remove extra spaces from code
-		html.gsub!(/[\s]+<\/(table|tr|td|th|ul|ol|li|dl|dt|dd)>/, '</\\1>')
-		html.gsub!(/[\s]+<(tr|td|th|ul|ol|li|dl|dt|dd|br)/, '<\\1')
-		html.gsub!(/<\/(table|tr|td|th|blockquote|dd|dl|div|dt|h1|h2|h3|h4|h5|h6|hr|li|ol|ul|p)>[\s]+</, '</\\1><')
-
-		html.gsub!(/<\/(td|th)>/, '<marker style="font-size:0"/></\\1>')
-		html.gsub!(/<\/table>([\s]*)<marker style="font-size:0"\/>/, '</table>')
-		html.gsub!(/[\s]*<img/, ' <img')
-		html.gsub!(/<img([^\>]*)>/xi, '<img\\1><span><marker style="font-size:0"/></span>')
-		html.gsub!(/<xre/, '<pre') # restore pre tag
-
-		# trim string
-		html.gsub!(/^[\s]+/, '')
-		html.gsub!(/[\s]+$/, '')
-
-		# pattern for generic tag
-		tagpattern = /(<[^>]+>)/
-		# explodes the string
-		a = html.split(tagpattern)
-		# count elements
-		maxel = a.size
-		elkey = 0
-		key = 0
-		# create an array of elements
-		dom = []
-		dom[key] = {}
-		# set first void element
-		dom[key]['tag'] = false
-		dom[key]['block'] = false
-		dom[key]['value'] = ''
-		dom[key]['parent'] = 0
-		dom[key]['fontname'] = @font_family.dup
-		dom[key]['fontstyle'] = @font_style.dup
-		dom[key]['fontsize'] = @font_size_pt
-		dom[key]['stroke'] = @textstrokewidth
-		dom[key]['fill'] = ((@textrendermode % 2) == 0)
-		dom[key]['clip'] = (@textrendermode > 3)
-		dom[key]['line-height'] = @cell_height_ratio
-		dom[key]['bgcolor'] = ActiveSupport::OrderedHash.new
-		dom[key]['fgcolor'] = @fgcolor.dup
-		dom[key]['strokecolor'] = @strokecolor.dup
-
-		dom[key]['align'] = ''
-		dom[key]['listtype'] = ''
-		dom[key]['text-indent'] = 0
-		dom[key]['attribute'] = {} # reset attribute array
-		thead = false # true when we are inside the THEAD tag
-		key += 1
-		level = []
-		level.push(0) # root
-		while elkey < maxel
-			dom[key] = {}
-			element = a[elkey]
-			dom[key]['elkey'] = elkey
-			if element =~ tagpattern
-				# html tag
-				element = element[1..-2]
-				# get tag name
-				tag = element.scan(/[\/]?([a-zA-Z0-9]*)/).flatten.delete_if {|x| x.length == 0}
-				tagname = tag[0].downcase
-				# check if we are inside a table header
-				if tagname == 'thead'
-					if element[0,1] == '/'
-						thead = false
-					else
-						thead = true
-					end
-					elkey += 1
-					next
-				end
-				dom[key]['tag'] = true
-				dom[key]['value'] = tagname
-				if blocktags.include?(dom[key]['value'])
-					dom[key]['block'] = true
-				else
-					dom[key]['block'] = false
-				end
-				if element[0,1] == '/'
-					# *** closing html tag
-					dom[key]['opening'] = false
-					dom[key]['parent'] = level[-1]
-					level.pop if level.length > 1
-
-					grandparent = dom[(dom[key]['parent'])]['parent']
-					dom[key]['fontname'] = dom[grandparent]['fontname'].dup
-					dom[key]['fontstyle'] = dom[grandparent]['fontstyle'].dup
-					dom[key]['fontsize'] = dom[grandparent]['fontsize']
-					dom[key]['stroke'] = dom[grandparent]['stroke']
-					dom[key]['fill'] = dom[grandparent]['fill']
-					dom[key]['clip'] = dom[grandparent]['clip']
-					dom[key]['line-height'] = dom[grandparent]['line-height']
-					dom[key]['bgcolor'] = dom[grandparent]['bgcolor'].dup
-					dom[key]['fgcolor'] = dom[grandparent]['fgcolor'].dup
-					dom[key]['strokecolor'] = dom[grandparent]['strokecolor'].dup
-					dom[key]['align'] = dom[grandparent]['align'].dup
-					if !dom[grandparent]['listtype'].nil?
-						dom[key]['listtype'] = dom[grandparent]['listtype'].dup
-					end
-					# set the number of columns in table tag
-					if (dom[key]['value'] == 'tr') and dom[grandparent]['cols'].nil?
-						dom[grandparent]['cols'] = dom[(dom[key]['parent'])]['cols']
-					end
-					if (dom[key]['value'] == 'td') or (dom[key]['value'] == 'th')
-						dom[(dom[key]['parent'])]['content'] = ''
-						(dom[key]['parent'] + 1).upto(key - 1) do |i|
-							dom[(dom[key]['parent'])]['content'] << a[dom[i]['elkey']]
-						end
-						# mark nested tables
-						dom[(dom[key]['parent'])]['content'] = dom[(dom[key]['parent'])]['content'].gsub('<table', '<table nested="true"')
-						# remove thead sections from nested tables
-						dom[(dom[key]['parent'])]['content'] = dom[(dom[key]['parent'])]['content'].gsub('<thead>', '')
-						dom[(dom[key]['parent'])]['content'] = dom[(dom[key]['parent'])]['content'].gsub('</thead>', '')
-					end
-					# store header rows on a new table
-					if (dom[key]['value'] == 'tr') and (dom[(dom[key]['parent'])]['thead'] == true)
-						if empty_string(dom[grandparent]['thead'])
-							dom[grandparent]['thead'] = a[dom[grandparent]['elkey']].dup
-						end
-						dom[key]['parent'].upto(key) do |i|
-							dom[grandparent]['thead'] << a[dom[i]['elkey']]
-						end
-						if dom[(dom[key]['parent'])]['attribute'].nil?
-							dom[(dom[key]['parent'])]['attribute'] = {}
-						end
-						# header elements must be always contained in a single page
-						dom[(dom[key]['parent'])]['attribute']['nobr'] = 'true'
-					end
-					if (dom[key]['value'] == 'table') and !empty_string(dom[(dom[key]['parent'])]['thead'])
-						# remove the nobr attributes from the table header
-						dom[(dom[key]['parent'])]['thead'] = dom[(dom[key]['parent'])]['thead'].gsub(' nobr="true"', '')
-						dom[(dom[key]['parent'])]['thead'] << '</tablehead>'
-					end
-				else
-					# *** opening html tag
-					dom[key]['opening'] = true
-					dom[key]['parent'] = level[-1]
-					if element[-1, 1] != '/'
-						# not self-closing tag
-						level.push(key)
-						dom[key]['self'] = false
-					else
-						dom[key]['self'] = true
-					end
-					# copy some values from parent
-					parentkey = 0
-					if key > 0
-						parentkey = dom[key]['parent']
-						dom[key]['fontname'] = dom[parentkey]['fontname'].dup
-						dom[key]['fontstyle'] = dom[parentkey]['fontstyle'].dup
-						dom[key]['fontsize'] = dom[parentkey]['fontsize']
-						dom[key]['stroke'] = dom[parentkey]['stroke']
-						dom[key]['fill'] = dom[parentkey]['fill']
-						dom[key]['clip'] = dom[parentkey]['clip']
-						dom[key]['line-height'] = dom[parentkey]['line-height']
-						dom[key]['bgcolor'] = dom[parentkey]['bgcolor'].dup
-						dom[key]['fgcolor'] = dom[parentkey]['fgcolor'].dup
-						dom[key]['strokecolor'] = dom[parentkey]['strokecolor'].dup
-						dom[key]['align'] = dom[parentkey]['align'].dup
-						dom[key]['listtype'] = dom[parentkey]['listtype'].dup
-						dom[key]['text-indent'] = dom[parentkey]['text-indent']
-					end
-					# get attributes
-					attr_array = element.scan(/([^=\s]*)[\s]*=[\s]*"([^"]*)"/)
-					dom[key]['attribute'] = {} # reset attribute array
-					attr_array.each do |name, value|
-						dom[key]['attribute'][name.downcase] = value
-					end
-					if !css.empty?
-						# merge eternal CSS style to current style
-						dom[key]['attribute']['style'] = getTagStyleFromCSS(dom, key, css)
-					end
-					# split style attributes
-					if !dom[key]['attribute']['style'].nil?
-						# get style attributes
-						style_array = dom[key]['attribute']['style'].scan(/([^;:\s]*):([^;]*)/)
-						dom[key]['style'] = {} # reset style attribute array
-						style_array.each do |name, value|
-							# in case of duplicate attribute the last replace the previous
-							dom[key]['style'][name.downcase] = value.strip
-						end
-						# --- get some style attributes ---
-						if !dom[key]['style']['font-family'].nil?
-							# font family
-							if !dom[key]['style']['font-family'].nil?
-								fontslist = dom[key]['style']['font-family'].downcase.split(',')
-								fontslist.each {|font|
-									font = font.downcase.strip
-									if @fontlist.include?(font) or @fontkeys.include?(font)
-										dom[key]['fontname'] = font
-										break
-									end
-								}
-							end
-						end
-						# list-style-type
-						if !dom[key]['style']['list-style-type'].nil?
-							dom[key]['listtype'] = dom[key]['style']['list-style-type'].downcase.strip
-							if dom[key]['listtype'] == 'inherit'
-								dom[key]['listtype'] = dom[parentkey]['listtype']
-							end
-						end
-						# text-indent
-						if dom[key]['style']['text-indent']
-							dom[key]['text-indent'] = getHTMLUnitToUnits(dom[key]['style']['text-indent'])
-							if dom[key]['text-indent'] == 'inherit'
-								dom[key]['text-indent'] = dom[parentkey]['text-indent']
-							end
-						end
-						# font size
-						if !dom[key]['style']['font-size'].nil?
-							fsize = dom[key]['style']['font-size'].strip
-							case fsize
-								# absolute-size
-							when 'xx-small'
-								dom[key]['fontsize'] = dom[0]['fontsize'] - 4
-							when 'x-small'
-								dom[key]['fontsize'] = dom[0]['fontsize'] - 3
-							when 'small'
-								dom[key]['fontsize'] = dom[0]['fontsize'] - 2
-							when 'medium'
-								dom[key]['fontsize'] = dom[0]['fontsize']
-							when 'large'
-								dom[key]['fontsize'] = dom[0]['fontsize'] + 2
-							when 'x-large'
-								dom[key]['fontsize'] = dom[0]['fontsize'] + 4
-							when 'xx-large'
-								dom[key]['fontsize'] = dom[0]['fontsize'] + 6
-								# relative-size
-							when 'smaller'
-								dom[key]['fontsize'] = dom[parentkey]['fontsize'] - 3
-							when 'larger'
-								dom[key]['fontsize'] = dom[parentkey]['fontsize'] + 3
-							else
-								dom[key]['fontsize'] = getHTMLUnitToUnits(fsize, dom[parentkey]['fontsize'], 'pt', true)
-							end
-						end
-						# line-height
-						if dom[key]['style']['line-height']
-							lineheight = dom[key]['style']['line-height'].strip
-							case lineheight
-								# A normal line height. This is default
-							when 'normal'
-								dom[key]['line-height'] = dom[0]['line-height']
-							else
-								if lineheight =~ /^[\d]*[.]?[\d]+$/  # 1.2, .2, 0.33, etc..
-									lineheight = lineheight.to_f * 100
-								end
-
-								dom[key]['line-height'] = getHTMLUnitToUnits(lineheight, 1, '%', true)
-							end
-						end
-						# font style
-						dom[key]['fontstyle'] ||= ""
-						if !dom[key]['style']['font-weight'].nil? and (dom[key]['style']['font-weight'][0,1].downcase == 'b')
-							dom[key]['fontstyle'] << 'B'
-						end
-						if !dom[key]['style']['font-style'].nil? and (dom[key]['style']['font-style'][0,1].downcase == 'i')
-							dom[key]['fontstyle'] << 'I'
-						end
-						# font color
-						if !empty_string(dom[key]['style']['color'])
-							dom[key]['fgcolor'] = convertHTMLColorToDec(dom[key]['style']['color'])
-						elsif dom[key]['value'] == 'a'
-							dom[key]['fgcolor'] = @html_link_color_array
-						end
-						# background color
-						if !empty_string(dom[key]['style']['background-color'])
-							dom[key]['bgcolor'] = convertHTMLColorToDec(dom[key]['style']['background-color'])
-						end
-						# text-decoration
-						if !dom[key]['style']['text-decoration'].nil?
-							decors = dom[key]['style']['text-decoration'].downcase.split(' ')
-							decors.each {|dec|
-								dec = dec.strip
-								unless empty_string(dec)
-									if dec[0,1] == 'u'
-										# underline
-										dom[key]['fontstyle'] << 'U'
-									elsif dec[0,1] == 'l'
-										# line-trough
-										dom[key]['fontstyle'] << 'D'
-									elsif dec[0,1] == 'o'
-										# overline
-										dom[key]['fontstyle'] << 'O'
-									end
-								end
-							}
-						elsif dom[key]['value'] == 'a'
-							dom[key]['fontstyle'] = @html_link_font_style
-						end
-						# check for width attribute
-						if !dom[key]['style']['width'].nil?
-							dom[key]['width'] = dom[key]['style']['width']
-						end
-						# check for height attribute
-						if !dom[key]['style']['height'].nil?
-							dom[key]['height'] = dom[key]['style']['height']
-						end
-						# check for text alignment
-						if !dom[key]['style']['text-align'].nil?
-							dom[key]['align'] = dom[key]['style']['text-align'][0,1].upcase
-						end
-						# check for border attribute
-						if !dom[key]['style']['border'].nil?
-							dom[key]['attribute']['border'] = dom[key]['style']['border']
-						end
-
-						# page-break-inside
-						if dom[key]['style']['page-break-inside'] and (dom[key]['style']['page-break-inside'] == 'avoid')
-							dom[key]['attribute']['nobr'] = 'true'
-						end
-						# page-break-before
-						if dom[key]['style']['page-break-before']
-							if dom[key]['style']['page-break-before'] == 'always'
-								dom[key]['attribute']['pagebreak'] = 'true'
-							elsif dom[key]['style']['page-break-before'] == 'left'
-								dom[key]['attribute']['pagebreak'] = 'left'
-							elsif dom[key]['style']['page-break-before'] == 'right'
-								dom[key]['attribute']['pagebreak'] = 'right'
-							end
-						end
-						# page-break-after
-						if dom[key]['style']['page-break-after']
-							if dom[key]['style']['page-break-after'] == 'always'
-								dom[key]['attribute']['pagebreakafter'] = 'true'
-							elsif dom[key]['style']['page-break-after'] == 'left'
-								dom[key]['attribute']['pagebreakafter'] = 'left'
-							elsif dom[key]['style']['page-break-after'] == 'right'
-								dom[key]['attribute']['pagebreakafter'] = 'right'
-							end
-						end
-					end
-					# check for font tag
-					if dom[key]['value'] == 'font'
-						# font family
-						if !dom[key]['attribute']['face'].nil?
-							fontslist = dom[key]['attribute']['face'].downcase.split(',')
-							fontslist.each { |font|
-								font = font.downcase.strip
-								if @fontlist.include?(font) or @fontkeys.include?(font)
-									dom[key]['fontname'] = font
-									break
-								end
-							}
-						end
-						# font size
-						if !dom[key]['attribute']['size'].nil?
-							if key > 0
-								if dom[key]['attribute']['size'][0,1] == '+'
-									dom[key]['fontsize'] = dom[(dom[key]['parent'])]['fontsize'] + dom[key]['attribute']['size'][1..-1].to_i
-								elsif dom[key]['attribute']['size'][0,1] == '-'
-									dom[key]['fontsize'] = dom[(dom[key]['parent'])]['fontsize'] - dom[key]['attribute']['size'][1..-1].to_i
-								else
-									dom[key]['fontsize'] = dom[key]['attribute']['size'].to_i
-								end
-							else
-								dom[key]['fontsize'] = dom[key]['attribute']['size'].to_i
-							end
-						end
-					end
-					# force natural alignment for lists
-					if (dom[key]['value'] == 'ul') or (dom[key]['value'] == 'ol') or (dom[key]['value'] == 'dl') and (empty_string(dom[key]['align']) or (dom[key]['align'] != 'J'))
-						if @rtl
-							dom[key]['align'] = 'R'
-						else
-							dom[key]['align'] = 'L'
-						end
-					end
-					if (dom[key]['value'] == 'small') or (dom[key]['value'] == 'sup') or (dom[key]['value'] == 'sub')
-						if dom[key]['attribute']['size'].nil? and (dom[key]['style'].nil? or dom[key]['style']['font-size'].nil?)
-							dom[key]['fontsize'] = dom[key]['fontsize'] * @@k_small_ratio
-						end
-					end
-					if (dom[key]['value'] == 'strong') or (dom[key]['value'] == 'b')
-						dom[key]['fontstyle'] << 'B'
-					end
-					if (dom[key]['value'] == 'em') or (dom[key]['value'] == 'i')
-						dom[key]['fontstyle'] << 'I'
-					end
-					if dom[key]['value'] == 'u' or dom[key]['value'] == 'ins'
-						dom[key]['fontstyle'] << 'U'
-					end
-					if dom[key]['value'] == 'del'
-						dom[key]['fontstyle'] << 'D'
-					end
-					if (dom[key]['style'].nil? or dom[key]['style']['text-decoration'].nil?) and (dom[key]['value'] == 'a')
-						dom[key]['fontstyle'] = @html_link_font_style
-					end
-					if (dom[key]['value'] == 'pre') or (dom[key]['value'] == 'tt')
-						dom[key]['fontname'] = @default_monospaced_font
-					end
-					if (dom[key]['value'][0,1] == 'h') and (dom[key]['value'][1,1].to_i > 0) and (dom[key]['value'][1,1].to_i < 7)
-						# headings h1, h2, h3, h4, h5, h6
-						if dom[key]['attribute']['size'].nil? and (dom[key]['style'].nil? or dom[key]['style']['font-size'].nil?)
-							headsize = (4 - dom[key]['value'][1,1].to_i) * 2
-							dom[key]['fontsize'] = dom[0]['fontsize'] + headsize
-						end
-						if dom[key]['style'].nil? or dom[key]['style']['font-weight'].nil?
-							dom[key]['fontstyle'] << 'B'
-						end
-					end
-					if dom[key]['value'] == 'table'
-						dom[key]['rows'] = 0 # number of rows
-						dom[key]['trids'] = [] # IDs of TR elements
-						dom[key]['thead'] = '' # table header rows
-					end
-					if dom[key]['value'] == 'tr'
-						dom[key]['cols'] = 0
-						if thead
-							dom[key]['thead'] = true
-							# rows on thead block are printed as a separate table
-						else
-							dom[key]['thead'] = false
-							# store the number of rows on table element
-							dom[(dom[key]['parent'])]['rows'] += 1
-							# store the TR elements IDs on table element
-							dom[(dom[key]['parent'])]['trids'].push(key)
-						end
-					end
-					if (dom[key]['value'] == 'th') or (dom[key]['value'] == 'td')
-						if !dom[key]['attribute']['colspan'].nil?
-							colspan = dom[key]['attribute']['colspan'].to_i
-						else
-							colspan = 1
-						end
-						dom[key]['attribute']['colspan'] = colspan
-						dom[(dom[key]['parent'])]['cols'] += colspan
-					end
-					# set foreground color attribute
-					if !empty_string(dom[key]['attribute']['color'])
-						dom[key]['fgcolor'] = convertHTMLColorToDec(dom[key]['attribute']['color'])
-					elsif (dom[key]['style'].nil? or dom[key]['style']['color'].nil?) and (dom[key]['value'] == 'a')
-						dom[key]['fgcolor'] = @html_link_color_array
-					end
-					# set background color attribute
-					if !empty_string(dom[key]['attribute']['bgcolor'])
-						dom[key]['bgcolor'] = convertHTMLColorToDec(dom[key]['attribute']['bgcolor'])
-					end
-					# set stroke color attribute
-					if !empty_string(dom[key]['attribute']['strokecolor'])
-						dom[key]['strokecolor'] = convertHTMLColorToDec(dom[key]['attribute']['strokecolor'])
-					end
-					# check for width attribute
-					if !dom[key]['attribute']['width'].nil?
-						dom[key]['width'] = dom[key]['attribute']['width']
-					end
-					# check for height attribute
-					if !dom[key]['attribute']['height'].nil?
-						dom[key]['height'] = dom[key]['attribute']['height']
-					end
-					# check for text alignment
-					if !empty_string(dom[key]['attribute']['align']) and (dom[key]['value'] != 'img')
-						dom[key]['align'] = dom[key]['attribute']['align'][0,1].upcase
-					end
-					# check for text rendering mode (the following attributes do not exist in HTML)
-					if !dom[key]['attribute']['stroke'].nil?
-						# font stroke width
-						dom[key]['stroke'] = getHTMLUnitToUnits(dom[key]['attribute']['stroke'], dom[key]['fontsize'], 'pt', true)
-					end
-					if !dom[key]['attribute']['fill'].nil?
-						# font fill
-						if dom[key]['attribute']['fill'] == 'true'
-							dom[key]['fill'] = true
-						else
-							dom[key]['fill'] = false
-						end
-					end
-					if !dom[key]['attribute']['clip'].nil?
-						# clipping mode
-						if dom[key]['attribute']['clip'] == 'true'
-							dom[key]['clip'] = true
-						else
-							dom[key]['clip'] = false
-						end
-					end
-				end # end opening tag
-			else
-				# text
-				dom[key]['tag'] = false
-				dom[key]['block'] = false
-				dom[key]['value'] = unhtmlentities(element).gsub(/\\\\/, "\\")
-				dom[key]['parent'] = level[-1]
-			end
-			elkey += 1
-			key += 1
-		end
-		return dom
-	end
-
-	#
-	# Convert to accessible file path
-	# @param string :attrname image file name
-	#
-	def getImageFilename( attrname )
-		testscrtype = URI.parse(attrname)
-		if testscrtype.query.nil? or testscrtype.query.empty?
-		# convert URL to server path
-			attrname = attrname.gsub(@@k_path_url, @@k_path_main)
-		end
-	end
-
-
-	#
-	# Process opening tags.
-	# @param array :dom html dom array 
-	# @param int :key current element id
-	# @param boolean :cell if true add the default c_margin space to each new line (default false).
-	# @access protected
-	#
-	def openHTMLTagHandler(dom, key, cell)
-		tag = dom[key]
-		parent = dom[(dom[key]['parent'])]
-		firstorlast = (key == 1)
-		# check for text direction attribute
-		if !tag['attribute']['dir'].nil?
-			SetTempRTL(tag['attribute']['dir'])
-		else
-			@tmprtl = false
-		end
-		if tag['block']
-			hbz = 0 # distance from y to line bottom
-			hb = 0 # vertical space between block tags
-			# calculate vertical space for block tags
-			if @tagvspaces[tag['value']] and @tagvspaces[tag['value']][0] and @tagvspaces[tag['value']][0]['h'] and (@tagvspaces[tag['value']][0]['h'] >= 0)
-				cur_h = @tagvspaces[tag['value']][0]['h']
-			elsif !tag['fontsize'].nil?
-				cur_h = (tag['fontsize'] / @k) * @cell_height_ratio
-			else
-				cur_h = @font_size * @cell_height_ratio
-			end
-			if @tagvspaces[tag['value']] and @tagvspaces[tag['value']][0] and @tagvspaces[tag['value']][0]['n']
-				n = @tagvspaces[tag['value']][0]['n']
-			elsif tag['value'] =~ /[h][0-9]/
-				n = 0.6
-			else
-				n = 1
-			end
-			hb = n * cur_h
-			if (@htmlvspace <= 0) and (n > 0)
-				if parent['fontsize']
-					hbz = (parent['fontsize'] / @k) * @cell_height_ratio
-				else
-					hbz = @font_size * @cell_height_ratio
-				end
-			end
-		end
-		#Opening tag
-		case tag['value']
-		when 'table'
-			cp = 0
-			cs = 0
-			dom[key]['rowspans'] = []
-			if dom[key]['attribute']['nested'].nil? or (dom[key]['attribute']['nested'] != 'true')
-				# set table header
-				if !empty_string(dom[key]['thead'])
-					# set table header
-					@thead = dom[key]['thead']
-					if @thead_margins.nil? or @thead_margins.empty?
-						@thead_margins ||= {}
-						@thead_margins['cmargin'] = @c_margin
-					end
-				end
-			end
-			if !tag['attribute']['cellpadding'].nil?
-				cp = getHTMLUnitToUnits(tag['attribute']['cellpadding'], 1, 'px')
-				@old_c_margin = @c_margin
-				@c_margin = cp
-			end
-			if !tag['attribute']['cellspacing'].nil?
-				cs = getHTMLUnitToUnits(tag['attribute']['cellspacing'], 1, 'px')
-			end
-			if checkPageBreak(((2 * cp) + (2 * cs) + @lasth), '', false)
-				@in_thead = true
-				# add a page (or trig AcceptPageBreak() for multicolumn mode)
-				checkPageBreak(@page_break_trigger + 1)
-			end
-		when 'tr'
-			# array of columns positions
-			dom[key]['cellpos'] = []
-		when 'hr'
-			if !tag['height'].nil? and (tag['height'] != '')
-				hrHeight = getHTMLUnitToUnits(tag['height'], 1, 'px')
-			else
-				hrHeight = GetLineWidth()
-			end
-			addHTMLVertSpace(hbz, (hrHeight / 2), cell, firstorlast)
-			x = GetX()
-			y = GetY()
-			wtmp = @w - @l_margin - @r_margin
-			if cell
-				wtmp -= 2 * @c_margin
-			end
-			if !tag['attribute']['width'].nil? and (tag['attribute']['width'] != '')
-				hrWidth = getHTMLUnitToUnits(tag['attribute']['width'], wtmp, 'px')
-			else
-				hrWidth = wtmp
-			end
-			prevlinewidth = GetLineWidth()
-			SetLineWidth(hrHeight)
-			Line(x, y, x + hrWidth, y)
-			SetLineWidth(prevlinewidth)
-			Ln('', cell)
-			addHTMLVertSpace(hrHeight / 2, 0, cell, dom[key + 1].nil?)
-		when 'a'
-			if tag['attribute'].key?('href')
-				@href['url'] = tag['attribute']['href']
-			end
-		when 'img'
-			if !tag['attribute']['src'].nil?
-				# replace relative path with real server path
-				### T.B.D ### TCPDF 5.0.000 ###
-				#if tag['attribute']['src'][0] == '/'
-				#	findroot = tag['attribute']['src'].index($_SERVER['DOCUMENT_ROOT'])
-				#	if (findroot == nil) or (findroot.to_i > 1)
-				#		tag['attribute']['src'] = Rails.root.join('public') + tag['attribute']['src']
-				#	end
-				#end
-				img_name = tag['attribute']['src']
-				### T.B.D ### TCPDF 5.0.000 ###
-				# tag['attribute']['src'] = CGI.escape(tag['attribute']['src'])
-				type = getImageFileType(tag['attribute']['src'])
-				tag['attribute']['src'] = getImageFilename(tag['attribute']['src'])
-				if tag['attribute']['width'].nil?
-					tag['attribute']['width'] = 0
-				end
-				if tag['attribute']['height'].nil?
-					tag['attribute']['height'] = 0
-				end
-				#if tag['attribute']['align'].nil?
-					# the only alignment supported is "bottom"
-					# further development is required for other modes.
-					tag['attribute']['align'] = 'bottom'
-				#end
-				case tag['attribute']['align']
-				when 'top'
-					align = 'T'
-				when 'middle'
-					align = 'M'
-				when 'bottom'
-					align = 'B'
-				else
-					align = 'B'
-				end
-				prevy = @y
-				xpos = @x
-				# eliminate marker spaces
-				if !dom[key - 1].nil?
-					if (dom[key - 1]['value'] == ' ') or !dom[key - 1]['trimmed_space'].nil?
-						xpos -= GetStringWidth(32.chr)
-					elsif @rtl and (dom[key - 1]['value'] == '  ')
-						xpos += 2 * GetStringWidth(32.chr)
-					end
-				end
-				imglink = ''
-				if !@href['url'].nil? and !empty_string(@href['url'])
-					imglink = @href['url']
-					if imglink[0, 1] == '#'
-						# convert url to internal link
-						page = imglink.sub(/^#/, "").to_i
-						imglink = AddLink()
-						SetLink(imglink, 0, page)
-					end
-				end
-				border = 0
-				if !tag['attribute']['border'].nil? and !tag['attribute']['border'].empty?
-					# currently only support 1 (frame) or a combination of 'LTRB'
-					border = tag['attribute']['border']
-					case tag['attribute']['border']
-					when '0'
-						border = 0
-					when '1'
-						border = 1
-					else
-						border = tag['attribute']['border']
-					end
-				end
-				iw = 0
-				if !tag['attribute']['width'].nil?
-					iw = getHTMLUnitToUnits(tag['attribute']['width'], 1, 'px', false)
-				end
-				ih = 0
-				if !tag['attribute']['height'].nil?
-					ih = getHTMLUnitToUnits(tag['attribute']['height'], 1, 'px', false)
-				end
-
-				begin
-#				if (type == 'eps') or (type == 'ai')
-#					ImageEps(tag['attribute']['src'], xpos, @y, iw, ih, imglink, true, align, '', border, true)
-#				elsif type == 'svg'
-#					ImageSVG(tag['attribute']['src'], xpos, @y, iw, ih, imglink, align, '', border, true)
-#				else
-					result_img = Image(tag['attribute']['src'], xpos, @y, iw, ih, '', imglink, align, false, 300, '', false, false, border, false, false, true)
-#				end
-				rescue => err
-					logger.error "pdf: Image: error: #{err.message}"
-					result_img = false
-				end
-				case align
-				when 'T'
-					@y = prevy
-				when 'M'
-					@y = (@img_rb_y + prevy - (tag['fontsize'] / @k)) / 2
-				when 'B'
-					@y = @img_rb_y - (tag['fontsize'] / @k)
-				end
-				if result_img == false
-					Write(@lasth, File::basename(img_name), '', false, '', false, 0, false)
-				end
-			end
-		when 'dl'
-			@listnum += 1
-			if @listnum == 1
-				addHTMLVertSpace(hbz, hb, cell, firstorlast)
-			else
-				addHTMLVertSpace(0, 0, cell, firstorlast)
-			end
-		when 'dt'
-			Ln('', cell)
-			addHTMLVertSpace(hbz, 0, cell, firstorlast)
-		when 'dd'
-			if @rtl
-				@r_margin += @listindent
-			else
-				@l_margin += @listindent
-			end
-			@listindentlevel += 1
-			addHTMLVertSpace(hbz, 0, cell, firstorlast)
-		when 'ul', 'ol'
-			@listnum += 1
-			if tag['value'] == "ol"
-				@listordered[@listnum] = true
-			else
-				@listordered[@listnum] = false
-			end
-			if !tag['attribute']['start'].nil?
-				@listcount[@listnum] = tag['attribute']['start'].to_i - 1
-			else 
-				@listcount[@listnum] = 0
-			end
-			if @rtl
-				@r_margin += @listindent
-				@x -= @listindent
-			else
-				@l_margin += @listindent
-				@x += @listindent
-			end
-			@listindentlevel += 1
-			if @listnum == 1
-				addHTMLVertSpace(hbz, hb, cell, firstorlast)
-			else
-				addHTMLVertSpace(0, 0, cell, firstorlast)
-			end
-		when 'li'
-			addHTMLVertSpace(hbz, 0, cell, firstorlast)
-			if @listordered[@listnum]
-				# ordered item
-				if !empty_string(parent['attribute']['type'])
-					@lispacer = parent['attribute']['type']
-				elsif !empty_string(parent['listtype'])
-					@lispacer = parent['listtype']
-				elsif !empty_string(@lisymbol)
-					@lispacer = @lisymbol
-				else
-					@lispacer = '#'
-				end
-				@listcount[@listnum] += 1
-				if !tag['attribute']['value'].nil?
-					@listcount[@listnum] = tag['attribute']['value'].to_i
-				end
-			else
-				# unordered item
-				if !empty_string(parent['attribute']['type'])
-					@lispacer = parent['attribute']['type']
-				elsif !empty_string(parent['listtype'])
-					@lispacer = parent['listtype']
-				elsif !empty_string(@lisymbol)
-					@lispacer = @lisymbol
-				else
-					@lispacer = '!'
-				end
-			end
-		when 'blockquote'
-			if @rtl
-				@r_margin += @listindent
-			else
-				@l_margin += @listindent
-			end
-			@listindentlevel += 1
-			addHTMLVertSpace(hbz, hb, cell, firstorlast)
-		when 'br'
-			addHTMLVertSpace(hbz, 0, cell, firstorlast)
-		when 'div'
-			addHTMLVertSpace(hbz, 0, cell, firstorlast)
-		when 'p'
-			addHTMLVertSpace(hbz, hb, cell, firstorlast)
-		when 'pre'
-			addHTMLVertSpace(hbz, hb, cell, firstorlast)
-			@premode = true
-		when 'sup'
-			SetXY(GetX(), GetY() - ((0.7 * @font_size_pt) / @k))
-		when 'sub'
-			SetXY(GetX(), GetY() + ((0.3 * @font_size_pt) / @k))
-		when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
-			addHTMLVertSpace(hbz, hb, cell, firstorlast)
-		end
-
-		if dom[key]['self'] and dom[key]['attribute']['pagebreakafter']
-			pba = dom[key]['attribute']['pagebreakafter']
-			# check for pagebreak 
-			if (pba == 'true') or (pba == 'left') or (pba == 'right')
-				# add a page (or trig AcceptPageBreak() for multicolumn mode)
-				checkPageBreak(@page_break_trigger + 1)
-			end
-			if ((pba == 'left') and ((!@rtl and (@page % 2 == 0)) or (@rtl and (@page % 2 != 0)))) or ((pba == 'right') and ((!@rtl and (@page % 2 != 0)) or (@rtl and (@page % 2 == 0))))
-				# add a page (or trig AcceptPageBreak() for multicolumn mode)
-				checkPageBreak(@page_break_trigger + 1)
-			end
-		end
-	end
-  
-	#
-	# Process closing tags.
-	# @param array :dom html dom array 
-	# @param int :key current element id
-	# @param boolean :cell if true add the default c_margin space to each new line (default false).
-	# @param int :maxbottomliney maximum y value of current line
-	# @access protected
-	#
-	def closeHTMLTagHandler(dom, key, cell, maxbottomliney=0)
-		tag = dom[key].dup
-		parent = dom[(dom[key]['parent'])].dup
-		firstorlast = dom[key + 1].nil? or (dom[key + 2].nil? and (dom[key + 1]['value'] == 'marker'))
-		in_table_head = false
-		if tag['block']
-			hbz = 0 # distance from y to line bottom
-			hb = 0 # vertical space between block tags
-			# calculate vertical space for block tags
-			if @tagvspaces[tag['value']] and @tagvspaces[tag['value']][1] and @tagvspaces[tag['value']][1]['h'] and (@tagvspaces[tag['value']][1]['h'] >= 0)
-				pre_h = @tagvspaces[tag['value']][1]['h']
-			elsif parent['fontsize']
-				pre_h = (parent['fontsize'] / @k) * @cell_height_ratio
-			else
-				pre_h = @font_size * @cell_height_ratio
-			end
-			if @tagvspaces[tag['value']] and @tagvspaces[tag['value']][1] and @tagvspaces[tag['value']][1]['n']
-				n = @tagvspaces[tag['value']][1]['n']
-			elsif tag['value'] =~ /[h][0-9]/
-				n = 0.6
-			else
-				n = 1
-			end
-			hb = n * pre_h
-			if @y < maxbottomliney
-				hbz = maxbottomliney - @y
-			end
-		end
-		# Closing tag
-		case (tag['value'])
-			when 'tr'
-				table_el = dom[(dom[key]['parent'])]['parent']
-				if parent['endy'].nil?
-					dom[(dom[key]['parent'])]['endy'] = @y
-					parent['endy'] = @y
-				end
-				if parent['endpage'].nil?
-					dom[(dom[key]['parent'])]['endpage'] = @page
-					parent['endpage'] = @page
-				end
-				# update row-spanned cells
-				if !dom[table_el]['rowspans'].nil?
-					dom[table_el]['rowspans'].each_with_index { |trwsp, k|
-						dom[table_el]['rowspans'][k]['rowspan'] -= 1
-						if dom[table_el]['rowspans'][k]['rowspan'] == 0
-							if dom[table_el]['rowspans'][k]['endpage'] == parent['endpage']
-								dom[(dom[key]['parent'])]['endy'] = [dom[table_el]['rowspans'][k]['endy'], parent['endy']].max
-							elsif dom[table_el]['rowspans'][k]['endpage'] > parent['endpage']
-								dom[(dom[key]['parent'])]['endy'] = dom[table_el]['rowspans'][k]['endy']
-								dom[(dom[key]['parent'])]['endpage'] = dom[table_el]['rowspans'][k]['endpage']
-							end
-						end
-					}
-					# report new endy and endpage to the rowspanned cells
-					dom[table_el]['rowspans'].each_with_index { |trwsp, k|
-						if dom[table_el]['rowspans'][k]['rowspan'] == 0
-							dom[table_el]['rowspans'][k]['endpage'] = [dom[table_el]['rowspans'][k]['endpage'], dom[(dom[key]['parent'])]['endpage']].max
-							dom[(dom[key]['parent'])]['endpage'] = dom[table_el]['rowspans'][k]['endpage']
-							dom[table_el]['rowspans'][k]['endy'] = [dom[table_el]['rowspans'][k]['endy'], dom[(dom[key]['parent'])]['endy']].max
-							dom[(dom[key]['parent'])]['endy'] = dom[table_el]['rowspans'][k]['endy']
-						end
-					}
-					# update remaining rowspanned cells
-					dom[table_el]['rowspans'].each_with_index { |trwsp, k|
-						if dom[table_el]['rowspans'][k]['rowspan'] == 0
-							dom[table_el]['rowspans'][k]['endpage'] = dom[(dom[key]['parent'])]['endpage']
-							dom[table_el]['rowspans'][k]['endy'] = dom[(dom[key]['parent'])]['endy']
-						end
-					}
-				end
-				if (@num_columns > 1) and (dom[(dom[key]['parent'])]['endy'] >= (@page_break_trigger - @lasth)) and (@y < dom[(dom[key]['parent'])]['endy'])
-					Ln(0, cell)
-				else
-					SetPage(dom[(dom[key]['parent'])]['endpage']);
-					@y = dom[(dom[key]['parent'])]['endy']
-					if !dom[table_el]['attribute']['cellspacing'].nil?
-						cellspacing = getHTMLUnitToUnits(dom[table_el]['attribute']['cellspacing'], 1, 'px')
-						@y += cellspacing
-					end
-					Ln(0, cell)
-					@x = parent['startx']
-					# account for booklet mode
-					if @page > parent['startpage']
-						if @rtl and (@pagedim[@page]['orm'] != @pagedim[parent['startpage']]['orm'])
-							@x -= @pagedim[@page]['orm'] - @pagedim[parent['startpage']]['orm']
-						elsif !@rtl and (@pagedim[@page]['olm'] != @pagedim[parent['startpage']]['olm'])
-							@x += @pagedim[@page]['olm'] - @pagedim[parent['startpage']]['olm']
-						end
-					end
-				end
-			when 'table', 'tablehead'
-				if tag['value'] == 'tablehead'
-					# closing tag used for the thead part
-					in_table_head = true
-					@in_thead = false
-				end
-
-				table_el = parent
-				# draw borders
-				if (!table_el['attribute']['border'].nil? and (table_el['attribute']['border'].to_i > 0)) or (!table_el['style'].nil? and !table_el['style']['border'].nil? and (table_el['style']['border'].to_i > 0))
-					border = 1
-				else
-					border = 0
-				end
-
-				startpage = 0
-				end_page = 0
-				# fix bottom line alignment of last line before page break
-				dom[(dom[key]['parent'])]['trids'].each_with_index { |trkey, j|
-					# update row-spanned cells
-					if !dom[(dom[key]['parent'])]['rowspans'].nil?
-						dom[(dom[key]['parent'])]['rowspans'].each_with_index { |trwsp, k|
-							if trwsp['trid'] == trkey
-								dom[(dom[key]['parent'])]['rowspans'][k]['mrowspan'] -= 1
-							end
-							if defined?(prevtrkey) and (trwsp['trid'] == prevtrkey) and (trwsp['mrowspan'] >= 0)
-								dom[(dom[key]['parent'])]['rowspans'][k]['trid'] = trkey
-							end
-						}
-					end
-					if defined?(prevtrkey) and (dom[trkey]['startpage'] > dom[prevtrkey]['endpage'])
-						pgendy = @pagedim[dom[prevtrkey]['endpage']]['hk'] - @pagedim[dom[prevtrkey]['endpage']]['bm']
-						dom[prevtrkey]['endy'] = pgendy
-						# update row-spanned cells
-						if !dom[(dom[key]['parent'])]['rowspans'].nil?
-							dom[(dom[key]['parent'])]['rowspans'].each_with_index { |trwsp, k|
-								if (trwsp['trid'] == trkey) and (trwsp['mrowspan'] > 1) and (trwsp['endpage'] == dom[prevtrkey]['endpage'])
-									dom[(dom[key]['parent'])]['rowspans'][k]['endy'] = pgendy
-									dom[(dom[key]['parent'])]['rowspans'][k]['mrowspan'] = -1
-								end
-							}
-						end
-					end
-					prevtrkey = trkey
-					table_el = dom[(dom[key]['parent'])].dup
-				}
-				# for each row
-				table_el['trids'].each_with_index { |trkey, j|
-					parent = dom[trkey]
-					# for each cell on the row
-					parent['cellpos'].each_with_index { |cellpos, k|
-						if !cellpos['rowspanid'].nil? and (cellpos['rowspanid'] >= 0)
-							cellpos['startx'] = table_el['rowspans'][(cellpos['rowspanid'])]['startx']
-							cellpos['endx'] = table_el['rowspans'][(cellpos['rowspanid'])]['endx']
-							endy = table_el['rowspans'][(cellpos['rowspanid'])]['endy']
-							startpage = table_el['rowspans'][(cellpos['rowspanid'])]['startpage']
-							end_page = table_el['rowspans'][(cellpos['rowspanid'])]['endpage']
-						else
-							endy = parent['endy']
-							startpage = parent['startpage']
-							end_page = parent['endpage']
-						end
-						if end_page > startpage
-							# design borders around HTML cells.
-							startpage.upto(end_page) do |page|
-								SetPage(page)
-								if page == startpage
-									@y = parent['starty'] # put cursor at the beginning of row on the first page
-									ch = GetPageHeight() - parent['starty'] - GetBreakMargin()
-									cborder = getBorderMode(border, position='start')
-								elsif page == end_page
-									@y = @t_margin # put cursor at the beginning of last page
-									ch = endy - @t_margin
-									cborder = getBorderMode(border, position='end')
-								else
-									@y = @t_margin # put cursor at the beginning of the current page
-									ch = GetPageHeight() - @t_margin - GetBreakMargin()
-									cborder = getBorderMode(border, position='middle')
-								end
-								if !cellpos['bgcolor'].nil? and (cellpos['bgcolor'] != false)
-									SetFillColorArray(cellpos['bgcolor'])
-									fill = 1
-								else
-									fill = 0
-								end
-								cw = (cellpos['endx'] - cellpos['startx']).abs
-								@x = cellpos['startx']
-								# account for margin changes
-								if page > startpage
-									if @rtl and (@pagedim[page]['orm'] != @pagedim[startpage]['orm'])
-										@x -= @pagedim[page]['orm'] - @pagedim[startpage]['orm']
-									elsif !@rtl and (@pagedim[page]['lm'] != @pagedim[startpage]['olm'])
-										@x += @pagedim[page]['olm'] - @pagedim[startpage]['olm']
-									end
-								end
-								# design a cell around the text
-								ccode = @fill_color + "\n" + getCellCode(cw, ch, '', cborder, 1, '', fill, '', 0, true)
-								if (cborder != 0) or (fill == 1)
-									pagebuff = getPageBuffer(@page)
-									pstart = pagebuff[0, @intmrk[@page]]
-									pend = pagebuff[@intmrk[@page]..-1]
-									setPageBuffer(@page, pstart + ccode + "\n" + pend)
-									@intmrk[@page] += (ccode + "\n").length
-								end
-							end
-						else
-							SetPage(startpage)
-							if !cellpos['bgcolor'].nil? and (cellpos['bgcolor'] != false)
-								SetFillColorArray(cellpos['bgcolor'])
-								fill = 1
-							else
-								fill = 0
-							end
-							@x = cellpos['startx']
-							@y = parent['starty']
-							cw = (cellpos['endx'] - cellpos['startx']).abs
-							ch = endy - parent['starty']
-							# design a cell around the text
-							ccode = @fill_color + "\n" + getCellCode(cw, ch, '', border, 1, '', fill, '', 0, true)
-							if (border != 0) or (fill == 1)
-								if !@transfmrk[@page].nil?
-									pagemark = @transfmrk[@page]
-									@transfmrk[@page] += (ccode + "\n").length
-								elsif @in_footer
-									pagemark = @footerpos[@page]
-									@footerpos[@page] += (ccode + "\n").length
-								else
-									pagemark = @intmrk[@page]
-									@intmrk[@page] += (ccode + "\n").length
-								end
-								pagebuff = getPageBuffer(@page)
-								pstart = pagebuff[0, pagemark]
-								pend = pagebuff[pagemark..-1]
-								setPageBuffer(@page, pstart + ccode + "\n" + pend)
-							end
-						end
-					}                                       
-					if !table_el['attribute']['cellspacing'].nil?
-						cellspacing = getHTMLUnitToUnits(table_el['attribute']['cellspacing'], 1, 'px')
-						@y += cellspacing
-					end
-					Ln(0, cell)
-					@x = parent['startx']
-					if end_page > startpage
-						if @rtl and (@pagedim[end_page]['orm'] != @pagedim[startpage]['orm'])
-							@x += @pagedim[end_page]['orm'] - @pagedim[startpage]['orm']
-						elsif !@rtl and (@pagedim[end_page]['olm'] != @pagedim[startpage]['olm'])
-							@x += @pagedim[end_page]['olm'] - @pagedim[startpage]['olm']
-						end
-					end
-				}
-				if !in_table_head
-					# we are not inside a thead section
-					if !parent['cellpadding'].nil?
-						@c_margin = @old_c_margin
-					end
-					@lasth = @font_size * @cell_height_ratio
-					if (@page == @numpages - 1) and @pageopen[@numpages]
-						# remove last blank page
-						deletePage(@numpages)
-					end
-					if !@thead_margins['top'].nil?
-						# restore top margin
-						@t_margin = @thead_margins['top']
-						@pagedim[@page]['tm'] = @t_margin
-					end
-					if table_el['attribute']['nested'].nil? or (table_el['attribute']['nested'] != 'true')
-						# reset main table header
-						@thead = ''
-						@thead_margins = {}
-					end
-				end
-			when 'a'
-				@href = {}
-			when 'sup'
-				SetXY(GetX(), GetY() + (0.7 * parent['fontsize'] / @k))
-			when 'sub'
-				SetXY(GetX(), GetY() - (0.3 * parent['fontsize'] / @k))
-			when 'div'
-				addHTMLVertSpace(hbz, 0, cell, firstorlast)
-			when 'blockquote'
-				if @rtl
-					@r_margin -= @listindent
-				else
-					@l_margin -= @listindent
-				end
-				@listindentlevel -= 1
-				addHTMLVertSpace(hbz, hb, cell, firstorlast)
-			when 'p'
-				addHTMLVertSpace(hbz, hb, cell, firstorlast)
-			when 'pre'
-				addHTMLVertSpace(hbz, hb, cell, firstorlast)
-				@premode = false
-			when 'dl'
-				@listnum -= 1
-				if @listnum <= 0
-					@listnum = 0
-					addHTMLVertSpace(hbz, hb, cell, firstorlast)
-				else
-					addHTMLVertSpace(0, 0, cell, firstorlast)
-				end
-				@lasth = @font_size * @cell_height_ratio
-			when 'dt'
-				@lispacer = ''
-				addHTMLVertSpace(0, 0, cell, firstorlast)
-			when 'dd'
-				@lispacer = ''
-				if @rtl
-					@r_margin -= @listindent
-				else
-					@l_margin -= @listindent
-				end
-				@listindentlevel -= 1
-				addHTMLVertSpace(0, 0, cell, firstorlast)
-			when 'ul', 'ol'
-				@listnum -= 1
-				@lispacer = ''
-				if @rtl
-					@r_margin -= @listindent
-				else
-					@l_margin -= @listindent
-				end
-				@listindentlevel -= 1
-				if @listnum <= 0
-					@listnum = 0
-					addHTMLVertSpace(hbz, hb, cell, firstorlast)
-				else
-					addHTMLVertSpace(0, 0, cell, firstorlast)
-				end
-				@lasth = @font_size * @cell_height_ratio
-			when 'li'
-				@lispacer = ''
-				addHTMLVertSpace(0, 0, cell, firstorlast)
-			when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
-				addHTMLVertSpace(hbz, hb, cell, firstorlast)
-		end
-		if dom[(dom[key]['parent'])]['attribute']['pagebreakafter']
-			pba = dom[(dom[key]['parent'])]['attribute']['pagebreakafter']
-			# check for pagebreak 
-			if (pba == 'true') or (pba == 'left') or (pba == 'right')
-				# add a page (or trig AcceptPageBreak() for multicolumn mode)
-				checkPageBreak(@page_break_trigger + 1)
-			end
-			if ((pba == 'left') and ((!@rtl and (@page % 2 == 0)) or (@rtl and (@page % 2 != 0)))) or ((pba == 'right') and ((!@rtl and (@page % 2 != 0)) or (@rtl and (@page % 2 == 0))))
-				# add a page (or trig AcceptPageBreak() for multicolumn mode)
-				checkPageBreak(@page_break_trigger + 1)
-			end
-		end
-		@tmprtl = false
-	end
-	
-	#
-	# Add vertical spaces if needed.
-	# @param string :hbz Distance between current y and line bottom.
-	# @param string :hb The height of the break.
-	# @param boolean :cell if true add the default cMargin space to each new line (default false).
-	# @param boolean :firstorlast if true do not print additional empty lines.
-	# @access protected
-	#
-	def addHTMLVertSpace(hbz=0, hb=0, cell=false, firstorlast=false)
-		if firstorlast
-			Ln(0, cell)
-			@htmlvspace = 0
-			return
-		end
-
-		if hb < @htmlvspace
-			hd = 0
-		else
-			hd = hb - @htmlvspace
-			@htmlvspace = hb
-		end
-		Ln(hbz + hd, cell)
-	end
-
-	#
-	# Set the booklet mode for double-sided pages.
-	# @param boolean :booklet true set the booklet mode on, fals eotherwise.
-	# @param float :inner Inner page margin.
-	# @param float :outer Outer page margin.
-	# @access public
-	# @since 4.2.000 (2008-10-29)
-	#
-	def SetBooklet(booklet=true, inner=-1, outer=-1)
-		@booklet = booklet
-		if inner >= 0
-			@l_margin = inner
-		end
-		if outer >= 0
-			@r_margin = outer
-		end
-	end
-
-	#
-	# Swap the left and right margins.
-	# @param boolean :reverse if true swap left and right margins.
-	# @access protected
-	# @since 4.2.000 (2008-10-29)
-	#
-	def swapMargins(reverse=true)
-		if reverse
-			# swap left and right margins
-			mtemp = @original_l_margin
-			@original_l_margin = @original_r_margin
-			@original_r_margin = mtemp
-			deltam = @original_l_margin - @original_r_margin
-			@l_margin += deltam
-			@r_margin -= deltam
-		end
-	end
-
-	#
-	# Set the vertical spaces for HTML tags.
-	# The array must have the following structure (example):
-	# :tagvs = {'h1' => [{'h' => '', 'n' => 2}, {'h' => 1.3, 'n' => 1}]}
-	# The first array level contains the tag names,
-	# the second level contains 0 for opening tags or 1 for closing tags,
-	# the third level contains the vertical space unit (h) and the number spaces to add (n).
-	# If the h parameter is not specified, default values are used.
-	# @param array :tagvs array of tags and relative vertical spaces.
-	# @access public
-	# @since 4.2.001 (2008-10-30)
-	#
-	def setHtmlVSpace(tagvs)
-		@tagvspaces = tagvs
-	end
-
-	#
-	# convert HTML string containing value and unit of measure to user's units or points.
-	# @param string :htmlval string containing values and unit
-	# @param string :refsize reference value in points
-	# @param string :defaultunit default unit (can be one of the following: %, em, ex, px, in, mm, pc, pt).
-	# @param boolean :point if true returns points, otherwise returns value in user's units
-	# @return float value in user's unit or point if :points=true
-	# @access public
-	# @since 4.4.004 (2008-12-10)
-	#
-	def getHTMLUnitToUnits(htmlval, refsize=1, defaultunit='px', points=false)
-		supportedunits = ['%', 'em', 'ex', 'px', 'in', 'cm', 'mm', 'pc', 'pt']
-		retval = 0
-		value = 0
-		unit = 'px'
-		k = @k
-		if points
-			k = 1
-		end
-		if supportedunits.include?(defaultunit)
-			unit = defaultunit
-		end
-		if htmlval.is_a?(Numeric)
-			value = htmlval.to_f
-		else
-			mnum = htmlval.scan(/[0-9\.\-\+]+/)
-			unless mnum.empty?
-				value = mnum[0].to_f
-				munit = htmlval.scan(/[a-z%]+/)
-				unless munit.empty?
-					if supportedunits.include?(munit[0])
-						unit = munit[0]
-					end
-				end
-			end
-		end
-		case unit
-		when '%' # percentage
-			retval = (value * refsize) / 100
-		when 'em' # relative-size
-			retval = value * refsize
-		when 'ex' # height of lower case 'x' (about half the font-size)
-			retval = value * (refsize / 2)
-		when 'in' # absolute-size
-			retval = (value * @dpi) / k
-		when 'cm' # centimeters
-			retval = (value / 2.54 * @dpi) / k
-		when 'mm' # millimeters
-			retval = (value / 25.4 * @dpi) / k
-		when 'pc' # one pica is 12 points
-			retval = (value * 12) / k
-		when 'pt' # points
-			retval = value / k
-		when 'px' # pixels
-			retval = pixelsToUnits(value)
-		end
-		return retval
-	end
-
-	#
-	# Returns the Roman representation of an integer number
-	# @param int :number to convert
-	# @return string roman representation of the specified number
-	# @access public
-	# @since 4.4.004 (2008-12-10)
-	#
-	def intToRoman(number)
-		roman = ''
-		while number >= 1000
-			roman << 'M'
-			number -= 1000
-		end
-		while number >= 900
-			roman << 'CM'
-			number -= 900
-		end
-		while number >= 500
-			roman << 'D'
-			number -= 500
-		end
-		while number >= 400
-			roman << 'CD'
-			number -= 400
-		end
-		while number >= 100
-			roman << 'C'
-			number -= 100
-		end
-		while number >= 90
-			roman << 'XC'
-			number -= 90
-		end
-		while number >= 50
-			roman << 'L'
-			number -= 50
-		end
-		while number >= 40
-			roman << 'XL'
-			number -= 40
-		end
-		while number >= 10
-			roman << 'X'
-			number -= 10
-		end
-		while number >= 9
-			roman << 'IX'
-			number -= 9
-		end
-		while number >= 5
-			roman << 'V'
-			number -= 5
-		end
-		while number >= 4
-			roman << 'IV'
-			number -= 4
-		end
-		while number >= 1
-			roman << 'I'
-			number -= 1
-		end
-		return roman
-	end
-
-	#
-	# Output an HTML list bullet or ordered item symbol
-	# @param int :listdepth list nesting level
-	# @param string :listtype type of list
-	# @param float :size current font size
-	# @access protected
-	# @since 4.4.004 (2008-12-10)
-	#
-	def putHtmlListBullet(listdepth, listtype='', size=10)
-		size /= @k
-		fill = ''
-		color = @fgcolor
-		width = 0
-		textitem = ''
-		tmpx = @x           
-		lspace = GetStringWidth('  ')
-		if listtype == '!'
-			# set default list type for unordered list
-			deftypes = ['disc', 'circle', 'square']
-			listtype = deftypes[(listdepth - 1) % 3]
-		elsif listtype == '#'
-			# set default list type for ordered list
-			listtype = 'decimal'
-		end
-		case listtype
-			# unordered types
-		when 'none'
-		when 'disc', 'circle'
-			fill = 'F' if listtype == 'disc'
-			fill << 'D'
-			r = size / 6
-			lspace += 2 * r
-			if @rtl
-				@x += lspace
-			else
-				@x -= lspace
-			end
-			Circle(@x + r, @y + @lasth / 2, r, 0, 360, fill, {'color'=>color}, color, 8)
-		when 'square'
-			l = size / 3
-			lspace += l
-			if @rtl
-				@x += lspace
-			else
-				@x -= lspace
-			end
-			Rect(@x, @y + (@lasth - l)/ 2, l, l, 'F', {}, color)
-
-		# ordered types
-		# listcount[@listnum]
-		# textitem
-		when '1', 'decimal'
-			textitem = @listcount[@listnum].to_s
-		when 'decimal-leading-zero'
-			textitem = sprintf("%02d", @listcount[@listnum])
-		when 'i', 'lower-roman'
-			textitem = (intToRoman(@listcount[@listnum])).downcase
-		when 'I', 'upper-roman'
-			textitem = intToRoman(@listcount[@listnum])
-		when 'a', 'lower-alpha', 'lower-latin'
-			textitem = (97 + @listcount[@listnum] - 1).chr
-		when 'A', 'upper-alpha', 'upper-latin'
-			textitem = (65 + @listcount[@listnum] - 1).chr
-		when 'lower-greek'
-			textitem = unichr(945 + @listcount[@listnum] - 1)
-		else
-			textitem = @listcount[@listnum].to_s
-		end
-
-		if !empty_string(textitem)
-			# print ordered item
-			if @rtl
-				textitem = '.' + textitem
-			else
-				textitem = textitem + '.'
-			end
-			lspace += GetStringWidth(textitem)
-			if @rtl
-				@x += lspace
-			else
-				@x -= lspace
-			end
-			Write(@lasth, textitem, '', false, '', false, 0, false)
-		end
-		@x = tmpx
-		@lispacer = ''
-	end
-
-	#
-	# Returns current graphic variables as array.
-	# @return array graphic variables
-	# @access protected
-	# @since 4.2.010 (2008-11-14)
-	#
-	def getGraphicVars()
-		grapvars = {
-			'FontFamily' => @font_family,
-			'FontStyle' => @font_style,
-			'FontSizePt' => @font_size_pt,
-			'rMargin' => @r_margin,
-			'lMargin' => @l_margin,
-			'cMargin' => @c_margin,
-			'LineWidth' => @line_width,
-			'linestyleWidth' => @linestyle_width,
-			'linestyleCap' => @linestyle_cap,
-			'linestyleJoin' => @linestyle_join,
-			'linestyleDash' => @linestyle_dash,
-			'textrendermode' => @textrendermode,
-			'textstrokewidth' => @textstrokewidth,
-			'DrawColor' => @draw_color,
-			'FillColor' => @fill_color,
-			'TextColor' => @text_color,
-			'ColorFlag' => @color_flag,
-			'bgcolor' => @bgcolor,
-			'fgcolor' => @fgcolor,
-			'htmlvspace' => @htmlvspace,
-			'listindent' => @listindent,
-			'listindentlevel' => @listindentlevel,
-			'listnum' => @listnum,
-			'listordered' => @listordered,
-			'listcount' => @listcount,
-			'lispacer' => @lispacer,
-			'lasth' => @lasth
-		}
-		return grapvars
-	end
-
-	#
-	# Set graphic variables.
-	# @param :gvars array graphic variables
-	# @access protected
-	# @since 4.2.010 (2008-11-14)
-	#
-	def setGraphicVars(gvars)
-		@font_family = gvars['FontFamily']
-		@font_style = gvars['FontStyle']
-		@font_size_pt = gvars['FontSizePt']
-		@r_margin = gvars['rMargin']
-		@l_margin = gvars['lMargin']
-		@c_margin = gvars['cMargin']
-		@line_width = gvars['LineWidth']
-		@linestyle_width = gvars['linestyleWidth']
-		@linestyle_cap = gvars['linestyleCap']
-		@linestyle_join = gvars['linestyleJoin']
-		@linestyle_dash = gvars['linestyleDash']
-		@textrendermode = gvars['textrendermode']
-		@textstrokewidth = gvars['textstrokewidth']
-		@draw_color = gvars['DrawColor']
-		@fill_color = gvars['FillColor']
-		@text_color = gvars['TextColor']
-		@color_flag = gvars['ColorFlag']
-		@bgcolor = gvars['bgcolor']
-		@fgcolor = gvars['fgcolor']
-		@htmlvspace = gvars['htmlvspace']
-		@listindent = gvars['listindent']
-		@listindentlevel = gvars['listindentlevel']
-		@listnum = gvars['listnum']
-		@listordered = gvars['listordered']
-		@listcount = gvars['listcount']
-		@lispacer = gvars['lispacer']
-		#@lasth = gvars['lasth']
-		out('' + @linestyle_width + ' ' + @linestyle_cap + ' ' + @linestyle_join + ' ' + @linestyle_dash + ' ' + @draw_color + ' ' + @fill_color + '')
-		unless empty_string(@font_family)
-			SetFont(@font_family, @font_style, @font_size_pt)
-		end
-	end
-
-	#
-	# Returns a temporary filename for caching object on filesystem.
-	# @param string :name prefix to add to filename
-	# return string filename.
-	# @access protected
-	# @since 4.5.000 (2008-12-31)
-	#
-	def getObjFilename(name)
-                tmpFile = Tempfile.new(name + '_', @@k_path_cache)
-                tmpFile.binmode
-		tmpFile
-	ensure
-		tmpFile.close
-	end
-
-	#
-	# Writes data to a temporary file on filesystem.
-	# @param string :filename file name
-	# @param mixed :data data to write on file
-	# @param boolean :append if true append data, false replace.
-	# @access protected
-	# @since 4.5.000 (2008-12-31)
-	#
-	def writeDiskCache(filename, data, append=false)
-		filename = filename.path
-		if append
-			fmode = 'a+b'
-		else
-			fmode = 'w+b'
-		end
-		f = open(filename, fmode)
-		if !f
-			Error('Unable to write cache file: ' + filename)
-		else
-			f.write(data)
-			f.close
-		end
-
-		# update file length (needed for transactions)
-		if @cache_file_length[filename].nil?
-			@cache_file_length[filename] = data.length
-		else
-			@cache_file_length[filename] += data.length
-		end
-	end
-
-	#
-	# Read data from a temporary file on filesystem.
-	# @param string :filename file name
-	# @return mixed retrieved data
-	# @access protected
-	# @since 4.5.000 (2008-12-31)
-	#
-	def readDiskCache(filename)
-		filename = filename.path
-		data = ''
-		open( filename,'rb') do |f|
-			data << f.read()
-		end
-		return data
-	end
-
-	#
-	# Set buffer content (always append data).
-	# @param string :data data
-	# @access protected
-	# @since 4.5.000 (2009-01-02)
-	#
-	def setBuffer(data)
-		@bufferlen += data.length
-		if @diskcache
-			if @buffer.nil? or empty_string(@buffer.path)
-				@buffer = getObjFilename('buffer')
-			end
-			writeDiskCache(@buffer, data, true)
-		else
-			@buffer << data
-		end
-	end
-
-	#
-	# Get buffer content.
-	# @return string buffer content
-	# @access protected
-	# @since 4.5.000 (2009-01-02)
-	#
-	def getBuffer
-		if @diskcache
-			return readDiskCache(@buffer)
-		else
-			return @buffer
-		end
-	end
-
-	#
-	# Set page buffer content.
-	# @param int :page page number
-	# @param string :data page data
-	# @param boolean :append if true append data, false replace.
-	# @access protected
-	# @since 4.5.000 (2008-12-31)
-	#
-	def setPageBuffer(page, data, append=false)
-		if @diskcache
-			if @pages[page].nil?
-				@pages[page] = getObjFilename('page' + page.to_s)
-			end
-			writeDiskCache(@pages[page], data, append)
-		else
-			if append
-				@pages[page] << data
-			else
-				@pages[page] = data
-			end
-		end
-		if append and !@pagelen[page].nil?
-			@pagelen[page] += data.length
-		else
-			@pagelen[page] = data.length
-		end
-	end
-
-	#
-	# Get page buffer content.
-	# @param int :page page number
-	# @return string page buffer content or false in case of error
-	# @access protected
-	# @since 4.5.000 (2008-12-31)
-	#
-	def getPageBuffer(page)
-		if @diskcache
-			return readDiskCache(@pages[page])
-		elsif !@pages[page].nil?
-			return @pages[page]
-		end
-		return false
-	end
-
-	#
-	# Set image buffer content.
-	# @param string :image image key
-	# @param array :data image data
-	# @access protected
-	# @since 4.5.000 (2008-12-31)
-	#
-	def setImageBuffer(image, data)
-		if @diskcache
-			if @images[image].nil?
-				@images[image] = getObjFilename('image' + File::basename(image))
-			end
-			writeDiskCache(@images[image], Marshal.dump(data))
-		else
-			@images[image] = data
-		end
-		if !@imagekeys.include?(image)
-			@imagekeys.push image
-			@numimages += 1
-		end
-	end
-
-	#
-	# Set image buffer content for a specified sub-key.
-	# @param string :image image key
-	# @param string :key image sub-key
-	# @param hash :data image data
-	# @access protected
-	# @since 4.5.000 (2008-12-31)
-	#
-	def setImageSubBuffer(image, key, data)
-		if @images[image].nil?
-				setImageBuffer(image, {})
-		end
-		if @diskcache
-			tmpimg = getImageBuffer(image)
-			tmpimg[key] = data
-			writeDiskCache(@images[image], Marshal.dump(tmpimg))
-		else
-			@images[image][key] = data
-		end
-	end
-                
-	#
-	# Get image buffer content.
-	# @param string :image image key
-	# @return string image buffer content or false in case of error
-	# @access protected
-	# @since 4.5.000 (2008-12-31)
-	#
-	def getImageBuffer(image)
-		if @diskcache and !@images[image].nil?
-			return Marshal.load(readDiskCache(@images[image]))
-		elsif !@images[image].nil?
-			return @images[image]
-		end
-		return false
-	end
-
-	#
-	# Set font buffer content.
-	# @param string :font font key
-	# @param hash :data font data
-	# @access protected
-	# @since 4.5.000 (2009-01-02)
-	#
-	def setFontBuffer(font, data)
-		if @diskcache
-			if @fonts[font].nil?
-				@fonts[font] = getObjFilename('font')
-			end
-			writeDiskCache(@fonts[font], Marshal.dump(data))
-		else
-			@fonts[font] = data
-		end
-		if !@fontkeys.include?(font)
-			@fontkeys.push font
-		end
-	end
-
-	#
-	# Set font buffer content.
-	# @param string :font font key
-	# @param string :key font sub-key
-	# @param array :data font data
-	# @access protected
-	# @since 4.5.000 (2009-01-02)
-	#
-	def setFontSubBuffer(font, key, data)
-		if @fonts[font].nil?
-			setFontBuffer(font, {})
-		end
-		if @diskcache
-			tmpfont = getFontBuffer(font)
-			tmpfont[key] = data
-			writeDiskCache(@fonts[font], Marshal.dump(tmpfont))
-		else
-			@fonts[font][key] = data
-		end
-	end
-
-	#
-	# Get font buffer content.
-	# @param string :font font key
-	# @return string font buffer content or false in case of error
-	# @access protected
-	# @since 4.5.000 (2009-01-02)
-	#
-	def getFontBuffer(font)
-		if @diskcache and !@fonts[font].nil?
-			return Marshal.load(readDiskCache(@fonts[font]))
-		elsif !@fonts[font].nil?
-			return @fonts[font]
-		end
-		return false
-	end
-
  	# Determine whether a string is empty.
  	# @param string :str string to be checked
  	# @return boolean true if string is empty
@@ -12626,6 +9311,3326 @@ class TCPDF
 	def GetFontStyle()
 		return @font_style
 	end
+
+	# --- HTML PARSER FUNCTIONS ---
+
+	#
+	# Extracts the CSS properties from a CSS string.
+	# @param string :cssdata string containing CSS definitions.
+	# @return A hash where the keys are the CSS selectors and the values are the CSS properties.
+	# @author Nicola Asuni
+	# @since 5.1.000 (2010-05-25)
+	# @access protected
+	#
+	def extractCSSproperties(cssdata)
+		if cssdata.empty?
+			return {}
+		end
+		# remove comments
+		cssdata.gsub!(/\/\*[^\*]*\*\//, '')
+		# remove newlines and multiple spaces
+		cssdata.gsub!(/[\s]+/, ' ')
+		# remove some spaces
+		cssdata.gsub!(/[\s]*([;:\{\}]{1})[\s]*/, '\\1')
+		# remove empty blocks
+		cssdata.gsub!(/([^\}\{]+)\{\}/, '')
+		# replace media type parenthesis
+		cssdata.gsub!(/@media[\s]+([^\{]*)\{/i, "@media \\1\t")
+		cssdata.gsub!(/\}\}/mi, "}\t")
+		# trim string
+		cssdata = cssdata.lstrip
+		# find media blocks (all, braille, embossed, handheld, print, projection, screen, speech, tty, tv)
+		cssblocks = {}
+		matches = cssdata.scan(/@media +([^\t]*)\t([^\t]*)\t/i)
+		unless matches.empty?
+			matches.each { |type|
+				cssblocks[type[0]] = type[1]
+			}
+			# remove media blocks
+			cssdata.gsub!(/@media +([^\t]*)\t([^\t]*)\t/i, '')
+		end
+		# keep 'all' and 'print' media, other media types are discarded
+		if cssblocks['all'] and !cssblocks['all'].empty?
+			cssdata << cssblocks['all']
+		end
+		if cssblocks['print'] and !cssblocks['print'].empty?
+			cssdata << cssblocks['print']
+		end
+		# reset css blocks array
+		cssblocks = []
+		# explode css data string into array
+		if cssdata[-1, 1] == '}'
+			# remove last parethesis
+			cssdata = cssdata.chop
+		end
+		matches = cssdata.split('}')
+		matches.each_with_index { |block, key|
+			# index 0 contains the CSS selector, index 1 contains CSS properties
+			cssblocks[key] = block.split('{')
+		}
+		# split groups of selectors (comma-separated list of selectors)
+		cssblocks.each_with_index { |block, key|
+			# index 0 contains the CSS selector, index 1 contains CSS properties
+			if block[0].index(',')
+				selectors = block[0].split(',')
+				selectors.each {|sel|
+					cssblocks.push [sel.strip, block[1]]
+				}
+				cssblocks.delete_at(key)
+			end
+		}
+		# covert array to selector => properties
+		cssdata = {}
+		cssblocks.each { |block|
+			selector = block[0]
+			# calculate selector's specificity
+			a = 0 # the declaration is not from is a 'style' attribute
+			b = selector.scan(/[\#]/).size # number of ID attributes
+			c = selector.scan(/[\[\.]/).size # number of other attributes
+			c += selector.scan(/[\:]link|visited|hover|active|focus|target|lang|enabled|disabled|checked|indeterminate|root|nth|first|last|only|empty|contains|not/i).size # number of pseudo-classes
+			d = (' ' + selector).scan(/[\>\+\~\s]{1}[a-zA-Z0-9\*]+/).size # number of element names
+			d += selector.scan(/[\:][\:]/).size # number of pseudo-elements
+			specificity = a.to_s + b.to_s + c.to_s + d.to_s
+			# add specificity to the beginning of the selector
+			cssdata[specificity + ' ' + selector] = block[1]
+		}
+		# sort selectors alphabetically to account for specificity
+		# ksort(cssdata, SORT_STRING)
+		# return array
+		return cssdata
+	end
+
+	#
+	# Returns true if the CSS selector is valid for the selected HTML tag
+	# @param array :dom array of HTML tags and properties
+	# @param int :key key of the current HTML tag
+	# @param string :selector CSS selector string
+	# @return true if the selector is valid, false otherwise
+	# @access protected
+	# @since 5.1.000 (2010-05-25)
+	#
+	def isValidCSSSelectorForTag(dom, key, selector)
+		valid = false; # value to be returned
+		tag = dom[key]['value']
+		selector_class = ''
+		if dom[key]['attribute']['class'] and !dom[key]['attribute']['class'].empty?
+			selector_class = dom[key]['attribute']['class'].downcase
+		end
+		id = ''
+		if dom[key]['attribute']['id'] and !dom[key]['attribute']['id'].empty?
+			selector_id = dom[key]['attribute']['id'].downcase
+		end
+
+		selector_offset = 0
+		offset = nil
+		operator = ''
+		lasttag = ''
+		attrib = ''
+		while selector_offset = selector.index(/([\>\+\~\s]{1})([a-zA-Z0-9\*]+)([^\>\+\~\s]*)/mi, selector_offset)
+			offset = selector_offset
+			selector_offset += $&.length
+			operator = $1
+			lasttag = $2.strip.downcase
+			attrib = $3.strip.downcase
+		end
+		if offset
+			if (lasttag == '*') or (lasttag == tag)
+				# the last element on selector is our tag or 'any tag'
+				if !attrib.empty?
+					# check if matches class, id, attribute, pseudo-class or pseudo-element
+					case attrib[0, 1]
+					when '.'  # class
+						valid = true  if attrib.sub(/^./, "") == selector_class
+					when '#'  # ID
+						valid = true  if attrib.sub(/^#/, "") == selector_id
+					when '['  # attribute
+						attrmatch = attrib.scan(/\[([a-zA-Z0-9]*)[\s]*([\~\^\$\*\|\=]*)[\s]*["]?([^"\]]*)["]?\]/i)
+						if !attrmatch.empty?
+							att = attrmatch[0].downcase
+							val = attrmatch[2]
+							if dom[key]['attribute'][att]
+								case attrmatch[1]
+								when '='
+									valid = true  if dom[key]['attribute'][att] == val
+								when '~='
+									valid = true  if dom[key]['attribute'][att].split(' ').include?(val)
+								when '^='
+									valid = true  if val == substr(dom[key]['attribute'][att], 0, val.length)
+								when '$='
+									valid = true  if val == substr(dom[key]['attribute'][att], -val.length)
+								when '*='
+									valid = true  if dom[key]['attribute'][att].index(val) != nil
+								when '|='
+									if dom[key]['attribute'][att] == val
+										valid = true
+									elsif ! dom[key]['attribute'][att].scan(/#{val}[\-]{1}/i).empty?
+										valid = true
+									end
+								else
+									valid = true
+								end
+							end
+						end
+					when ':'  # pseudo-class or pseudo-element
+						if attrib{1} == ':'  # pseudo-element
+							# pseudo-elements are not supported!
+							# (::first-line, ::first-letter, ::before, ::after)
+						else # pseudo-class
+							# pseudo-classes are not supported!
+							# (:root, :nth-child(n), :nth-last-child(n), :nth-of-type(n), :nth-last-of-type(n), :first-child, :last-child, :first-of-type, :last-of-type, :only-child, :only-of-type, :empty, :link, :visited, :active, :hover, :focus, :target, :lang(fr), :enabled, :disabled, :checked)
+						end
+					end # end of switch
+				else
+					valid = true
+				end
+
+				if valid and (offset > 0)
+					valid = false
+					# check remaining selector part
+					selector = selector[0, offset]
+					case operator
+					when ' '  # descendant of an element
+						while dom[key]['parent'] > 0
+							if isValidCSSSelectorForTag(dom, dom[key]['parent'], selector)
+								valid = true
+								break
+							else
+								key = dom[key]['parent']
+							end
+						end
+					when '>'  # child of an element
+						valid = isValidCSSSelectorForTag(dom, dom[key]['parent'], selector)
+					when '+'  # immediately preceded by an element
+						(key - 1).downto(dom[key]['parent'] + 1) do |i|
+							if dom[i]['tag'] and dom[i]['opening']
+								valid = isValidCSSSelectorForTag(dom, i, selector)
+								break
+							end
+						end
+					when '~'  # preceded by an element
+						(key - 1).downto(dom[key]['parent'] + 1) do |i|
+							if dom[i]['tag'] and dom[i]['opening']
+								if isValidCSSSelectorForTag(dom, i, selector)
+									break
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+		return valid
+	end
+
+	#
+	# Returns the styles that apply for the selected HTML tag.
+	# @param array :dom array of HTML tags and properties
+	# @param int :key key of the current HTML tag
+	# @param hash :css array of CSS properties
+	# @return string containing CSS properties
+	# @access protected
+	# @since 5.1.000 (2010-05-25)
+	#
+	def getTagStyleFromCSS(dom, key, css)
+		tagstyle = '' # style to be returned
+		# get all styles that apply
+		css.each { |selector, style|
+			# remove specificity
+			selector = selector[selector.index(' ')..-1] if selector.index(' ')
+			# check if this selector apply to current tag
+			if isValidCSSSelectorForTag(dom, key, selector)
+				# apply style
+				tagstyle << ';' + style
+			end
+		}
+		if dom[key]['attribute']['style']
+			# attach inline style (latest properties have high priority)
+			tagstyle << ';' + dom[key]['attribute']['style']
+		end
+		# remove multiple semicolons
+		tagstyle.gsub!(/[;]+/, ';')
+		return tagstyle
+	end
+
+	#
+	# Returns the HTML DOM array.
+	# <ul><li>dom[key]['tag'] = true if tag, false otherwise;</li><li>dom[key]['value'] = tag name or text;</li><li>dom[key]['opening'] = true if opening tag, false otherwise;</li><li>dom[key]['attribute'] = array of attributes (attribute name is the key);</li><li>dom[key]['style'] = array of style attributes (attribute name is the key);</li><li>dom[key]['parent'] = id of parent element;</li><li>dom[key]['fontname'] = font family name;</li><li>dom[key]['fontstyle'] = font style;</li><li>dom[key]['fontsize'] = font size in points;</li><li>dom[key]['bgcolor'] = RGB array of background color;</li><li>dom[key]['fgcolor'] = RGB array of foreground color;</li><li>dom[key]['width'] = width in pixels;</li><li>dom[key]['height'] = height in pixels;</li><li>dom[key]['align'] = text alignment;</li><li>dom[key]['cols'] = number of colums in table;</li><li>dom[key]['rows'] = number of rows in table;</li></ul>
+	# @param string :html html code
+	# @return array
+	# @since 3.2.000 (2008-06-20)
+	#
+	def getHtmlDomArray(html)
+		#  define block tags
+		blocktags = ['blockquote','br','dd','dl','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','pre','ul','table','tr','td']
+		# array of CSS styles ( selector => properties).
+		css = {}
+		# extract external CSS files
+		matches = html.scan(/<link([^\>]*?)>/mi)
+		unless matches.empty?
+			matches.each { |link|
+				type = link[0].scan(/type[\s]*=[\s]*"text\/css"/)
+				next if type.empty?
+
+				type = link[0].scan(/media[\s]*=[\s]*"([^"]*)"/)
+				# get 'all' and 'print' media, other media types are discarded
+				# (all, braille, embossed, handheld, print, projection, screen, speech, tty, tv)
+				if type.empty? or (type[0][0] and ((type[0][0] == 'all') or (type[0][0] == 'print')))
+					type = link[0].scan(/href[\s]*=[\s]*"([^"]*)"/)
+					next if type.empty?
+
+					# read CSS data file
+					uri = type[0][0].strip
+					if uri =~ %r{^/}
+						uri_path = Rails.root.join('public')
+						uri.sub!(%r{^/}, '')
+						uri.split('/').each {|path|
+							uri_path = uri_path.join(path)
+						}
+						cssdata = ''
+						next unless File.exists?(uri_path)
+
+						open(uri_path) do |f|
+							cssdata << f.read
+						end
+					else
+						uri = URI(uri)
+						next if !uri.scheme or !uri.host
+
+						res = Net::HTTP.get_response(uri)
+						cssdata = res.body
+					end
+					css = css.merge(extractCSSproperties(cssdata))
+				end
+			}
+		end
+		# extract style tags
+		matches = html.scan(/<style([^\>]*?)>([^\<]*?)<\/style>/mi)
+		unless matches.empty?
+			matches.each { |media|
+				type = media[0].scan(/media[\s]*=[\s]*"([^"]*)"/)
+				# get 'all' and 'print' media, other media types are discarded
+				# (all, braille, embossed, handheld, print, projection, screen, speech, tty, tv)
+				if type.empty? or (type[0] and ((type[0] == 'all') or (type[0] == 'print')))
+					cssdata = media[1]
+					css = css.merge(extractCSSproperties(cssdata))
+				end
+			}
+		end
+		# remove heade and style blocks
+		html.gsub!(/<head([^\>]*?)>(.*)<\/head>/mi, '')
+		html.gsub!(/<style([^\>]*?)>([^\<]*?)<\/style>/mi, '')
+		# remove comments
+		html.gsub!(/<!--(.|\s)*?-->/m, '')
+
+		# remove all unsupported tags (the line below lists all supported tags)
+		::ActionView::Base.sanitized_allowed_css_properties = ["page-break-before", "page-break-after", "page-break-inside"]
+		html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote body br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr stroke strokecolor fill))
+		html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
+		# replace some blank characters
+		html.gsub!(/<br>/, '<br/>')
+		html.gsub!(/<pre/, '<xre') # preserve pre tag
+		html.gsub!(/<(table|tr|td|th|blockquote|dd|div|dt|h1|h2|h3|h4|h5|h6|br|hr|li|ol|ul|p)([^\>]*)>[\n\r\t]+/, '<\\1\\2>')
+		html.gsub!(/@(\r\n|\r)@/, "\n")
+		html.gsub!(/[\t\0\x0B]/, " ")
+		html.gsub!(/\\/, "\\\\\\")
+
+		offset = 0
+		while (offset < html.length) and ((pos = html.index('</pre>', offset)) != nil)
+			html_a = html[0, offset]
+			html_b = html[offset, pos - offset + 6]
+			while html_b =~ /<xre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi
+				# preserve newlines on <pre> tag
+				html_b = html_b.gsub(/<xre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi, "<xre\\1>\\2<br />\\3</pre>")
+			end
+			html = html_a + html_b + html[(pos + 6)..-1]
+			offset = (html_a + html_b).length
+		end
+		html.gsub!(/[\n]/, " ")
+		# remove extra spaces from code
+		html.gsub!(/[\s]+<\/(table|tr|td|th|ul|ol|li|dl|dt|dd)>/, '</\\1>')
+		html.gsub!(/[\s]+<(tr|td|th|ul|ol|li|dl|dt|dd|br)/, '<\\1')
+		html.gsub!(/<\/(table|tr|td|th|blockquote|dd|dl|div|dt|h1|h2|h3|h4|h5|h6|hr|li|ol|ul|p)>[\s]+</, '</\\1><')
+
+		html.gsub!(/<\/(td|th)>/, '<marker style="font-size:0"/></\\1>')
+		html.gsub!(/<\/table>([\s]*)<marker style="font-size:0"\/>/, '</table>')
+		html.gsub!(/[\s]*<img/, ' <img')
+		html.gsub!(/<img([^\>]*)>/xi, '<img\\1><span><marker style="font-size:0"/></span>')
+		html.gsub!(/<xre/, '<pre') # restore pre tag
+
+		# trim string
+		html.gsub!(/^[\s]+/, '')
+		html.gsub!(/[\s]+$/, '')
+
+		# pattern for generic tag
+		tagpattern = /(<[^>]+>)/
+		# explodes the string
+		a = html.split(tagpattern)
+		# count elements
+		maxel = a.size
+		elkey = 0
+		key = 0
+		# create an array of elements
+		dom = []
+		dom[key] = {}
+		# set first void element
+		dom[key]['tag'] = false
+		dom[key]['block'] = false
+		dom[key]['value'] = ''
+		dom[key]['parent'] = 0
+		dom[key]['fontname'] = @font_family.dup
+		dom[key]['fontstyle'] = @font_style.dup
+		dom[key]['fontsize'] = @font_size_pt
+		dom[key]['stroke'] = @textstrokewidth
+		dom[key]['fill'] = ((@textrendermode % 2) == 0)
+		dom[key]['clip'] = (@textrendermode > 3)
+		dom[key]['line-height'] = @cell_height_ratio
+		dom[key]['bgcolor'] = ActiveSupport::OrderedHash.new
+		dom[key]['fgcolor'] = @fgcolor.dup
+		dom[key]['strokecolor'] = @strokecolor.dup
+
+		dom[key]['align'] = ''
+		dom[key]['listtype'] = ''
+		dom[key]['text-indent'] = 0
+		dom[key]['attribute'] = {} # reset attribute array
+		thead = false # true when we are inside the THEAD tag
+		key += 1
+		level = []
+		level.push(0) # root
+		while elkey < maxel
+			dom[key] = {}
+			element = a[elkey]
+			dom[key]['elkey'] = elkey
+			if element =~ tagpattern
+				# html tag
+				element = element[1..-2]
+				# get tag name
+				tag = element.scan(/[\/]?([a-zA-Z0-9]*)/).flatten.delete_if {|x| x.length == 0}
+				tagname = tag[0].downcase
+				# check if we are inside a table header
+				if tagname == 'thead'
+					if element[0,1] == '/'
+						thead = false
+					else
+						thead = true
+					end
+					elkey += 1
+					next
+				end
+				dom[key]['tag'] = true
+				dom[key]['value'] = tagname
+				if blocktags.include?(dom[key]['value'])
+					dom[key]['block'] = true
+				else
+					dom[key]['block'] = false
+				end
+				if element[0,1] == '/'
+					# *** closing html tag
+					dom[key]['opening'] = false
+					dom[key]['parent'] = level[-1]
+					level.pop if level.length > 1
+
+					grandparent = dom[(dom[key]['parent'])]['parent']
+					dom[key]['fontname'] = dom[grandparent]['fontname'].dup
+					dom[key]['fontstyle'] = dom[grandparent]['fontstyle'].dup
+					dom[key]['fontsize'] = dom[grandparent]['fontsize']
+					dom[key]['stroke'] = dom[grandparent]['stroke']
+					dom[key]['fill'] = dom[grandparent]['fill']
+					dom[key]['clip'] = dom[grandparent]['clip']
+					dom[key]['line-height'] = dom[grandparent]['line-height']
+					dom[key]['bgcolor'] = dom[grandparent]['bgcolor'].dup
+					dom[key]['fgcolor'] = dom[grandparent]['fgcolor'].dup
+					dom[key]['strokecolor'] = dom[grandparent]['strokecolor'].dup
+					dom[key]['align'] = dom[grandparent]['align'].dup
+					if !dom[grandparent]['listtype'].nil?
+						dom[key]['listtype'] = dom[grandparent]['listtype'].dup
+					end
+					# set the number of columns in table tag
+					if (dom[key]['value'] == 'tr') and dom[grandparent]['cols'].nil?
+						dom[grandparent]['cols'] = dom[(dom[key]['parent'])]['cols']
+					end
+					if (dom[key]['value'] == 'td') or (dom[key]['value'] == 'th')
+						dom[(dom[key]['parent'])]['content'] = ''
+						(dom[key]['parent'] + 1).upto(key - 1) do |i|
+							dom[(dom[key]['parent'])]['content'] << a[dom[i]['elkey']]
+						end
+						# mark nested tables
+						dom[(dom[key]['parent'])]['content'] = dom[(dom[key]['parent'])]['content'].gsub('<table', '<table nested="true"')
+						# remove thead sections from nested tables
+						dom[(dom[key]['parent'])]['content'] = dom[(dom[key]['parent'])]['content'].gsub('<thead>', '')
+						dom[(dom[key]['parent'])]['content'] = dom[(dom[key]['parent'])]['content'].gsub('</thead>', '')
+					end
+					# store header rows on a new table
+					if (dom[key]['value'] == 'tr') and (dom[(dom[key]['parent'])]['thead'] == true)
+						if empty_string(dom[grandparent]['thead'])
+							dom[grandparent]['thead'] = a[dom[grandparent]['elkey']].dup
+						end
+						dom[key]['parent'].upto(key) do |i|
+							dom[grandparent]['thead'] << a[dom[i]['elkey']]
+						end
+						if dom[(dom[key]['parent'])]['attribute'].nil?
+							dom[(dom[key]['parent'])]['attribute'] = {}
+						end
+						# header elements must be always contained in a single page
+						dom[(dom[key]['parent'])]['attribute']['nobr'] = 'true'
+					end
+					if (dom[key]['value'] == 'table') and !empty_string(dom[(dom[key]['parent'])]['thead'])
+						# remove the nobr attributes from the table header
+						dom[(dom[key]['parent'])]['thead'] = dom[(dom[key]['parent'])]['thead'].gsub(' nobr="true"', '')
+						dom[(dom[key]['parent'])]['thead'] << '</tablehead>'
+					end
+				else
+					# *** opening html tag
+					dom[key]['opening'] = true
+					dom[key]['parent'] = level[-1]
+					if element[-1, 1] != '/'
+						# not self-closing tag
+						level.push(key)
+						dom[key]['self'] = false
+					else
+						dom[key]['self'] = true
+					end
+					# copy some values from parent
+					parentkey = 0
+					if key > 0
+						parentkey = dom[key]['parent']
+						dom[key]['fontname'] = dom[parentkey]['fontname'].dup
+						dom[key]['fontstyle'] = dom[parentkey]['fontstyle'].dup
+						dom[key]['fontsize'] = dom[parentkey]['fontsize']
+						dom[key]['stroke'] = dom[parentkey]['stroke']
+						dom[key]['fill'] = dom[parentkey]['fill']
+						dom[key]['clip'] = dom[parentkey]['clip']
+						dom[key]['line-height'] = dom[parentkey]['line-height']
+						dom[key]['bgcolor'] = dom[parentkey]['bgcolor'].dup
+						dom[key]['fgcolor'] = dom[parentkey]['fgcolor'].dup
+						dom[key]['strokecolor'] = dom[parentkey]['strokecolor'].dup
+						dom[key]['align'] = dom[parentkey]['align'].dup
+						dom[key]['listtype'] = dom[parentkey]['listtype'].dup
+						dom[key]['text-indent'] = dom[parentkey]['text-indent']
+					end
+					# get attributes
+					attr_array = element.scan(/([^=\s]*)[\s]*=[\s]*"([^"]*)"/)
+					dom[key]['attribute'] = {} # reset attribute array
+					attr_array.each do |name, value|
+						dom[key]['attribute'][name.downcase] = value
+					end
+					if !css.empty?
+						# merge eternal CSS style to current style
+						dom[key]['attribute']['style'] = getTagStyleFromCSS(dom, key, css)
+					end
+					# split style attributes
+					if !dom[key]['attribute']['style'].nil?
+						# get style attributes
+						style_array = dom[key]['attribute']['style'].scan(/([^;:\s]*):([^;]*)/)
+						dom[key]['style'] = {} # reset style attribute array
+						style_array.each do |name, value|
+							# in case of duplicate attribute the last replace the previous
+							dom[key]['style'][name.downcase] = value.strip
+						end
+						# --- get some style attributes ---
+						if !dom[key]['style']['font-family'].nil?
+							# font family
+							if !dom[key]['style']['font-family'].nil?
+								fontslist = dom[key]['style']['font-family'].downcase.split(',')
+								fontslist.each {|font|
+									font = font.downcase.strip
+									if @fontlist.include?(font) or @fontkeys.include?(font)
+										dom[key]['fontname'] = font
+										break
+									end
+								}
+							end
+						end
+						# list-style-type
+						if !dom[key]['style']['list-style-type'].nil?
+							dom[key]['listtype'] = dom[key]['style']['list-style-type'].downcase.strip
+							if dom[key]['listtype'] == 'inherit'
+								dom[key]['listtype'] = dom[parentkey]['listtype']
+							end
+						end
+						# text-indent
+						if dom[key]['style']['text-indent']
+							dom[key]['text-indent'] = getHTMLUnitToUnits(dom[key]['style']['text-indent'])
+							if dom[key]['text-indent'] == 'inherit'
+								dom[key]['text-indent'] = dom[parentkey]['text-indent']
+							end
+						end
+						# font size
+						if !dom[key]['style']['font-size'].nil?
+							fsize = dom[key]['style']['font-size'].strip
+							case fsize
+								# absolute-size
+							when 'xx-small'
+								dom[key]['fontsize'] = dom[0]['fontsize'] - 4
+							when 'x-small'
+								dom[key]['fontsize'] = dom[0]['fontsize'] - 3
+							when 'small'
+								dom[key]['fontsize'] = dom[0]['fontsize'] - 2
+							when 'medium'
+								dom[key]['fontsize'] = dom[0]['fontsize']
+							when 'large'
+								dom[key]['fontsize'] = dom[0]['fontsize'] + 2
+							when 'x-large'
+								dom[key]['fontsize'] = dom[0]['fontsize'] + 4
+							when 'xx-large'
+								dom[key]['fontsize'] = dom[0]['fontsize'] + 6
+								# relative-size
+							when 'smaller'
+								dom[key]['fontsize'] = dom[parentkey]['fontsize'] - 3
+							when 'larger'
+								dom[key]['fontsize'] = dom[parentkey]['fontsize'] + 3
+							else
+								dom[key]['fontsize'] = getHTMLUnitToUnits(fsize, dom[parentkey]['fontsize'], 'pt', true)
+							end
+						end
+						# line-height
+						if dom[key]['style']['line-height']
+							lineheight = dom[key]['style']['line-height'].strip
+							case lineheight
+								# A normal line height. This is default
+							when 'normal'
+								dom[key]['line-height'] = dom[0]['line-height']
+							else
+								if lineheight =~ /^[\d]*[.]?[\d]+$/  # 1.2, .2, 0.33, etc..
+									lineheight = lineheight.to_f * 100
+								end
+
+								dom[key]['line-height'] = getHTMLUnitToUnits(lineheight, 1, '%', true)
+							end
+						end
+						# font style
+						dom[key]['fontstyle'] ||= ""
+						if !dom[key]['style']['font-weight'].nil? and (dom[key]['style']['font-weight'][0,1].downcase == 'b')
+							dom[key]['fontstyle'] << 'B'
+						end
+						if !dom[key]['style']['font-style'].nil? and (dom[key]['style']['font-style'][0,1].downcase == 'i')
+							dom[key]['fontstyle'] << 'I'
+						end
+						# font color
+						if !empty_string(dom[key]['style']['color'])
+							dom[key]['fgcolor'] = convertHTMLColorToDec(dom[key]['style']['color'])
+						elsif dom[key]['value'] == 'a'
+							dom[key]['fgcolor'] = @html_link_color_array
+						end
+						# background color
+						if !empty_string(dom[key]['style']['background-color'])
+							dom[key]['bgcolor'] = convertHTMLColorToDec(dom[key]['style']['background-color'])
+						end
+						# text-decoration
+						if !dom[key]['style']['text-decoration'].nil?
+							decors = dom[key]['style']['text-decoration'].downcase.split(' ')
+							decors.each {|dec|
+								dec = dec.strip
+								unless empty_string(dec)
+									if dec[0,1] == 'u'
+										# underline
+										dom[key]['fontstyle'] << 'U'
+									elsif dec[0,1] == 'l'
+										# line-trough
+										dom[key]['fontstyle'] << 'D'
+									elsif dec[0,1] == 'o'
+										# overline
+										dom[key]['fontstyle'] << 'O'
+									end
+								end
+							}
+						elsif dom[key]['value'] == 'a'
+							dom[key]['fontstyle'] = @html_link_font_style
+						end
+						# check for width attribute
+						if !dom[key]['style']['width'].nil?
+							dom[key]['width'] = dom[key]['style']['width']
+						end
+						# check for height attribute
+						if !dom[key]['style']['height'].nil?
+							dom[key]['height'] = dom[key]['style']['height']
+						end
+						# check for text alignment
+						if !dom[key]['style']['text-align'].nil?
+							dom[key]['align'] = dom[key]['style']['text-align'][0,1].upcase
+						end
+						# check for border attribute
+						if !dom[key]['style']['border'].nil?
+							dom[key]['attribute']['border'] = dom[key]['style']['border']
+						end
+
+						# page-break-inside
+						if dom[key]['style']['page-break-inside'] and (dom[key]['style']['page-break-inside'] == 'avoid')
+							dom[key]['attribute']['nobr'] = 'true'
+						end
+						# page-break-before
+						if dom[key]['style']['page-break-before']
+							if dom[key]['style']['page-break-before'] == 'always'
+								dom[key]['attribute']['pagebreak'] = 'true'
+							elsif dom[key]['style']['page-break-before'] == 'left'
+								dom[key]['attribute']['pagebreak'] = 'left'
+							elsif dom[key]['style']['page-break-before'] == 'right'
+								dom[key]['attribute']['pagebreak'] = 'right'
+							end
+						end
+						# page-break-after
+						if dom[key]['style']['page-break-after']
+							if dom[key]['style']['page-break-after'] == 'always'
+								dom[key]['attribute']['pagebreakafter'] = 'true'
+							elsif dom[key]['style']['page-break-after'] == 'left'
+								dom[key]['attribute']['pagebreakafter'] = 'left'
+							elsif dom[key]['style']['page-break-after'] == 'right'
+								dom[key]['attribute']['pagebreakafter'] = 'right'
+							end
+						end
+					end
+					# check for font tag
+					if dom[key]['value'] == 'font'
+						# font family
+						if !dom[key]['attribute']['face'].nil?
+							fontslist = dom[key]['attribute']['face'].downcase.split(',')
+							fontslist.each { |font|
+								font = font.downcase.strip
+								if @fontlist.include?(font) or @fontkeys.include?(font)
+									dom[key]['fontname'] = font
+									break
+								end
+							}
+						end
+						# font size
+						if !dom[key]['attribute']['size'].nil?
+							if key > 0
+								if dom[key]['attribute']['size'][0,1] == '+'
+									dom[key]['fontsize'] = dom[(dom[key]['parent'])]['fontsize'] + dom[key]['attribute']['size'][1..-1].to_i
+								elsif dom[key]['attribute']['size'][0,1] == '-'
+									dom[key]['fontsize'] = dom[(dom[key]['parent'])]['fontsize'] - dom[key]['attribute']['size'][1..-1].to_i
+								else
+									dom[key]['fontsize'] = dom[key]['attribute']['size'].to_i
+								end
+							else
+								dom[key]['fontsize'] = dom[key]['attribute']['size'].to_i
+							end
+						end
+					end
+					# force natural alignment for lists
+					if (dom[key]['value'] == 'ul') or (dom[key]['value'] == 'ol') or (dom[key]['value'] == 'dl') and (empty_string(dom[key]['align']) or (dom[key]['align'] != 'J'))
+						if @rtl
+							dom[key]['align'] = 'R'
+						else
+							dom[key]['align'] = 'L'
+						end
+					end
+					if (dom[key]['value'] == 'small') or (dom[key]['value'] == 'sup') or (dom[key]['value'] == 'sub')
+						if dom[key]['attribute']['size'].nil? and (dom[key]['style'].nil? or dom[key]['style']['font-size'].nil?)
+							dom[key]['fontsize'] = dom[key]['fontsize'] * @@k_small_ratio
+						end
+					end
+					if (dom[key]['value'] == 'strong') or (dom[key]['value'] == 'b')
+						dom[key]['fontstyle'] << 'B'
+					end
+					if (dom[key]['value'] == 'em') or (dom[key]['value'] == 'i')
+						dom[key]['fontstyle'] << 'I'
+					end
+					if dom[key]['value'] == 'u' or dom[key]['value'] == 'ins'
+						dom[key]['fontstyle'] << 'U'
+					end
+					if dom[key]['value'] == 'del'
+						dom[key]['fontstyle'] << 'D'
+					end
+					if (dom[key]['style'].nil? or dom[key]['style']['text-decoration'].nil?) and (dom[key]['value'] == 'a')
+						dom[key]['fontstyle'] = @html_link_font_style
+					end
+					if (dom[key]['value'] == 'pre') or (dom[key]['value'] == 'tt')
+						dom[key]['fontname'] = @default_monospaced_font
+					end
+					if (dom[key]['value'][0,1] == 'h') and (dom[key]['value'][1,1].to_i > 0) and (dom[key]['value'][1,1].to_i < 7)
+						# headings h1, h2, h3, h4, h5, h6
+						if dom[key]['attribute']['size'].nil? and (dom[key]['style'].nil? or dom[key]['style']['font-size'].nil?)
+							headsize = (4 - dom[key]['value'][1,1].to_i) * 2
+							dom[key]['fontsize'] = dom[0]['fontsize'] + headsize
+						end
+						if dom[key]['style'].nil? or dom[key]['style']['font-weight'].nil?
+							dom[key]['fontstyle'] << 'B'
+						end
+					end
+					if dom[key]['value'] == 'table'
+						dom[key]['rows'] = 0 # number of rows
+						dom[key]['trids'] = [] # IDs of TR elements
+						dom[key]['thead'] = '' # table header rows
+					end
+					if dom[key]['value'] == 'tr'
+						dom[key]['cols'] = 0
+						if thead
+							dom[key]['thead'] = true
+							# rows on thead block are printed as a separate table
+						else
+							dom[key]['thead'] = false
+							# store the number of rows on table element
+							dom[(dom[key]['parent'])]['rows'] += 1
+							# store the TR elements IDs on table element
+							dom[(dom[key]['parent'])]['trids'].push(key)
+						end
+					end
+					if (dom[key]['value'] == 'th') or (dom[key]['value'] == 'td')
+						if !dom[key]['attribute']['colspan'].nil?
+							colspan = dom[key]['attribute']['colspan'].to_i
+						else
+							colspan = 1
+						end
+						dom[key]['attribute']['colspan'] = colspan
+						dom[(dom[key]['parent'])]['cols'] += colspan
+					end
+					# set foreground color attribute
+					if !empty_string(dom[key]['attribute']['color'])
+						dom[key]['fgcolor'] = convertHTMLColorToDec(dom[key]['attribute']['color'])
+					elsif (dom[key]['style'].nil? or dom[key]['style']['color'].nil?) and (dom[key]['value'] == 'a')
+						dom[key]['fgcolor'] = @html_link_color_array
+					end
+					# set background color attribute
+					if !empty_string(dom[key]['attribute']['bgcolor'])
+						dom[key]['bgcolor'] = convertHTMLColorToDec(dom[key]['attribute']['bgcolor'])
+					end
+					# set stroke color attribute
+					if !empty_string(dom[key]['attribute']['strokecolor'])
+						dom[key]['strokecolor'] = convertHTMLColorToDec(dom[key]['attribute']['strokecolor'])
+					end
+					# check for width attribute
+					if !dom[key]['attribute']['width'].nil?
+						dom[key]['width'] = dom[key]['attribute']['width']
+					end
+					# check for height attribute
+					if !dom[key]['attribute']['height'].nil?
+						dom[key]['height'] = dom[key]['attribute']['height']
+					end
+					# check for text alignment
+					if !empty_string(dom[key]['attribute']['align']) and (dom[key]['value'] != 'img')
+						dom[key]['align'] = dom[key]['attribute']['align'][0,1].upcase
+					end
+					# check for text rendering mode (the following attributes do not exist in HTML)
+					if !dom[key]['attribute']['stroke'].nil?
+						# font stroke width
+						dom[key]['stroke'] = getHTMLUnitToUnits(dom[key]['attribute']['stroke'], dom[key]['fontsize'], 'pt', true)
+					end
+					if !dom[key]['attribute']['fill'].nil?
+						# font fill
+						if dom[key]['attribute']['fill'] == 'true'
+							dom[key]['fill'] = true
+						else
+							dom[key]['fill'] = false
+						end
+					end
+					if !dom[key]['attribute']['clip'].nil?
+						# clipping mode
+						if dom[key]['attribute']['clip'] == 'true'
+							dom[key]['clip'] = true
+						else
+							dom[key]['clip'] = false
+						end
+					end
+				end # end opening tag
+			else
+				# text
+				dom[key]['tag'] = false
+				dom[key]['block'] = false
+				dom[key]['value'] = unhtmlentities(element).gsub(/\\\\/, "\\")
+				dom[key]['parent'] = level[-1]
+			end
+			elkey += 1
+			key += 1
+		end
+		return dom
+	end
+
+	#
+	# Convert to accessible file path
+	# @param string :attrname image file name
+	#
+	def getImageFilename( attrname )
+		testscrtype = URI.parse(attrname)
+		if testscrtype.query.nil? or testscrtype.query.empty?
+		# convert URL to server path
+			attrname = attrname.gsub(@@k_path_url, @@k_path_main)
+		end
+	end
+
+	#
+	# Returns the string used to find spaces
+	# @return string
+	# @access protected
+	# @author Nicola Asuni
+	# @since 4.8.024 (2010-01-15)
+	#
+	def getSpaceString()
+		spacestr = 32.chr
+		if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+			spacestr = 0.chr + 32.chr
+		end
+		return spacestr
+	end
+
+	#
+	# Prints a cell (rectangular area) with optional borders, background color and html text string. The upper-left corner of the cell corresponds to the current position. After the call, the current position moves to the right or to the next line.<br />
+	# If automatic page breaking is enabled and the cell goes beyond the limit, a page break is done before outputting.
+	# @param float :w Cell width. If 0, the cell extends up to the right margin.
+	# @param float :h Cell minimum height. The cell extends automatically if needed.
+	# @param float :x upper-left corner X coordinate
+	# @param float :y upper-left corner Y coordinate
+	# @param string :html html text to print. Default value: empty string.
+	# @param mixed :border Indicates if borders must be drawn around the cell. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
+	# @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right (or left for RTL language)</li><li>1: to the beginning of the next line</li><li>2: below</li></ul>
+	# Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
+	# @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
+	# @param boolean :reseth if true reset the last cell height (default true).
+	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
+	# @param boolean :autopadding if true, uses internal padding and automatically adjust it to account for line width.
+	# @access public
+	# @uses MultiCell()
+	# @see Multicell(), writeHTML(), Cell()
+	#
+	def writeHTMLCell(w, h, x, y, html='', border=0, ln=0, fill=0, reseth=true, align='', autopadding=true)
+		return MultiCell(w, h, html, border, align, fill, ln, x, y, reseth, 0, true, autopadding, 0)
+	end
+  alias_method :write_html_cell, :writeHTMLCell
+
+	#
+	# Allows to preserve some HTML formatting (limited support).<br />
+	# IMPORTANT: The HTML must be well formatted - try to clean-up it using an application like HTML-Tidy before submitting.
+	# Supported tags are: a, b, blockquote, br, dd, del, div, dl, dt, em, font, h1, h2, h3, h4, h5, h6, hr, i, img, li, ol, p, pre, small, span, strong, sub, sup, table, td, th, thead, tr, tt, u, ul
+	# @param string :html text to display
+	# @param boolean :ln if true add a new line after text (default = true)
+	# @param int :fill Indicates if the background must be painted (1:true) or transparent (0:false).
+	# @param boolean :reseth if true reset the last cell height (default false).
+	# @param boolean :cell if true add the default c_margin space to each Write (default false).
+	# @param string :align Allows to center or align the text. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
+	# @access public
+	#
+	def writeHTML(html, ln=true, fill=0, reseth=false, cell=false, align='')
+		ln = false if ln == 0
+		reseth = false if reseth == 0
+		cell = false if cell == 0
+		case fill
+		when true
+			fill = 1 
+		when false
+			fill = 0 
+		end
+
+		gvars = getGraphicVars()
+		# store current values
+		prevPage = @page
+		prevlMargin = @l_margin
+		prevrMargin = @r_margin
+		curfontname = @font_family
+		curfontstyle = @font_style
+		curfontsize = @font_size_pt
+		curfontascent = getFontAscent(curfontname, curfontstyle, curfontsize)
+		curfontdescent = getFontDescent(curfontname, curfontstyle, curfontsize)
+		@newline = true
+		startlinepage = @page
+		minstartliney = @y
+		maxbottomliney = 0
+		startlinex = @x
+		startliney = @y
+		yshift = 0
+		newline = true
+		loop = 0
+		curpos = 0
+		opentagpos = nil
+		this_method_vars = {}
+		undo = false
+		fontaligned = false
+		@premode = false
+		if !@page_annots[@page].nil?
+			pask = @page_annots[@page].length
+		else
+			pask = 0
+		end
+		if !@in_footer
+			if !@footerlen[@page].nil?
+				@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
+			else
+				@footerpos[@page] = @pagelen[@page]
+			end
+			startlinepos = @footerpos[@page]
+		else
+			startlinepos = @pagelen[@page]
+		end
+		lalign = align
+		plalign = align
+		if @rtl
+			w = @x - @l_margin
+		else
+			w = @w - @r_margin - @x
+		end
+		w -= 2 * @c_margin
+
+		if cell
+			if @rtl
+				@x -= @c_margin
+			else
+				@x += @c_margin
+			end
+		end
+		if @customlistindent >= 0
+			@listindent = @customlistindent
+		else
+			@listindent = GetStringWidth('0000')
+		end
+		@listindentlevel = 0
+		# save previous states
+		prev_cell_height_ratio = @cell_height_ratio
+		prev_listnum = @listnum
+		prev_listordered = @listordered
+		prev_listcount = @listcount
+		prev_lispacer = @lispacer
+		@listnum = 0
+		@listordered = []
+		@listcount = []
+		@lispacer = ''
+		if empty_string(@lasth) or reseth
+			#set row height
+			@lasth = @font_size * @cell_height_ratio
+		end
+		dom = getHtmlDomArray(html)
+		maxel = dom.size
+		key = 0
+		while key < maxel
+			if dom[key]['tag'] and dom[key]['attribute'] and dom[key]['attribute']['pagebreak']
+				# check for pagebreak 
+				if (dom[key]['attribute']['pagebreak'] == 'true') or (dom[key]['attribute']['pagebreak'] == 'left') or (dom[key]['attribute']['pagebreak'] == 'right')
+					# add a page (or trig AcceptPageBreak() for multicolumn mode)
+					checkPageBreak(@page_break_trigger + 1)
+				end
+				if ((dom[key]['attribute']['pagebreak'] == 'left') and ((!@rtl and (@page % 2 == 0)) or (@rtl and (@page % 2 != 0)))) or ((dom[key]['attribute']['pagebreak'] == 'right') and ((!@rtl and (@page % 2 != 0)) or (@rtl and (@page % 2 == 0))))
+					# add a page (or trig AcceptPageBreak() for multicolumn mode)
+					checkPageBreak(@page_break_trigger + 1)
+				end
+			end
+			if dom[key]['tag'] and dom[key]['opening'] and dom[key]['attribute']['nobr'] and (dom[key]['attribute']['nobr'] == 'true')
+				if dom[(dom[key]['parent'])]['attribute']['nobr'] and (dom[(dom[key]['parent'])]['attribute']['nobr'] == 'true')
+					dom[key]['attribute']['nobr'] = false
+				else
+					# store current object
+					startTransaction()
+					# save this method vars
+					this_method_vars['html'] = html
+					this_method_vars['ln'] = ln
+					this_method_vars['fill'] = fill
+					this_method_vars['reseth'] = reseth
+					this_method_vars['cell'] = cell
+					this_method_vars['align'] = align
+					this_method_vars['gvars'] = gvars
+					this_method_vars['prevPage'] = prevPage
+					this_method_vars['prevlMargin'] = prevlMargin
+					this_method_vars['prevrMargin'] = prevrMargin
+					this_method_vars['curfontname'] = curfontname
+					this_method_vars['curfontstyle'] = curfontstyle
+					this_method_vars['curfontsize'] = curfontsize
+					this_method_vars['curfontascent'] = curfontascent
+					this_method_vars['curfontdescent'] = curfontdescent
+					this_method_vars['minstartliney'] = minstartliney
+					this_method_vars['maxbottomliney'] = maxbottomliney
+					this_method_vars['yshift'] = yshift
+					this_method_vars['startlinepage'] = startlinepage
+					this_method_vars['startlinepos'] = startlinepos
+					this_method_vars['startlinex'] = startlinex
+					this_method_vars['startliney'] = startliney
+					this_method_vars['newline'] = newline
+					this_method_vars['loop'] = loop
+					this_method_vars['curpos'] = curpos
+					this_method_vars['pask'] = pask
+					this_method_vars['lalign'] = lalign
+					this_method_vars['plalign'] = plalign
+					this_method_vars['w'] = w
+					this_method_vars['prev_cell_height_ratio'] = prev_cell_height_ratio
+					this_method_vars['prev_listnum'] = prev_listnum
+					this_method_vars['prev_listordered'] = prev_listordered
+					this_method_vars['prev_listcount'] = prev_listcount
+					this_method_vars['prev_lispacer'] = prev_lispacer
+					this_method_vars['fontaligned'] = fontaligned
+					this_method_vars['key'] = key
+					this_method_vars['dom'] = dom
+				end
+			end
+			# print THEAD block
+			if (dom[key]['value'] == 'tr') and dom[key]['thead'] and dom[key]['thead']
+				if dom[key]['parent'] and dom[(dom[key]['parent'])]['thead'] and !empty_string(dom[(dom[key]['parent'])]['thead'])
+					@in_thead = true
+					# print table header (thead)
+					writeHTML(@thead, false, false, false, false, '')
+					if (@start_transaction_page == (@numpages - 1)) or (@y < @start_transaction_y) or checkPageBreak(@lasth, '', false)
+						# restore previous object
+						rollbackTransaction(true)
+						# restore previous values
+						this_method_vars.each {|vkey , vval|
+							eval("#{vkey} = vval") 
+						}
+						# add a page (or trig AcceptPageBreak() for multicolumn mode)
+						pre_y = @y
+						if !checkPageBreak(@page_break_trigger + 1) and (@y < pre_y)
+							# fix for multicolumn mode
+							startliney = @y
+						end
+						@start_transaction_page = @page
+						@start_transaction_y = @y
+					end
+				end
+				# move :key index forward to skip THEAD block
+				while (key < maxel) and !((dom[key]['tag'] and dom[key]['opening'] and (dom[key]['value'] == 'tr') and (dom[key]['thead'].nil? or !dom[key]['thead'])) or (dom[key]['tag'] and !dom[key]['opening'] and (dom[key]['value'] == 'table')))
+					key += 1
+				end
+			end
+			if dom[key]['tag'] or (key == 0)
+				if dom[key]['line-height']
+					# set line height
+					@cell_height_ratio = dom[key]['line-height']
+					@lasth = @font_size * @cell_height_ratio
+				end
+				if ((dom[key]['value'] == 'table') or (dom[key]['value'] == 'tr')) and !dom[key]['align'].nil?
+					dom[key]['align'] = @rtl ? 'R' : 'L'
+				end
+				# vertically align image in line
+				if !@newline and (dom[key]['value'] == 'img') and !dom[key]['attribute']['height'].nil? and (dom[key]['attribute']['height'].to_i > 0)
+					# get image height
+					imgh = getHTMLUnitToUnits(dom[key]['attribute']['height'], @lasth, 'px')
+					# check for automatic line break
+					autolinebreak = false
+					if dom[key]['attribute']['width'] and (dom[key]['attribute']['width'].to_i > 0)
+						imgw = getHTMLUnitToUnits(dom[key]['attribute']['width'], 1, 'px', false)
+						if (@rtl and (@x - imgw < @l_margin + @c_margin)) or (!@rtl and (@x + imgw > @w - @r_margin - @c_margin))
+							# add automatic line break
+							autolinebreak = true
+							Ln('', cell)
+							# go back to evaluate this line break
+							key -= 1
+						end
+					end
+					if !autolinebreak
+						if !@in_footer
+							pre_y = @y
+							# check for page break
+							if !checkPageBreak(imgh) and (@y < pre_y)
+								# fix for multicolumn mode
+								startliney = @y
+							end
+						end
+						if @page > startlinepage
+							# fix line splitted over two pages
+							if !@footerlen[startlinepage].nil?
+								curpos = @pagelen[startlinepage] - @footerlen[startlinepage]
+							end
+							# line to be moved one page forward
+							pagebuff = getPageBuffer(startlinepage)
+							linebeg = pagebuff[startlinepos, curpos - startlinepos]
+							tstart = pagebuff[0, startlinepos]
+							tend = pagebuff[curpos..-1]
+							# remove line from previous page
+							setPageBuffer(startlinepage, tstart + '' + tend)
+							pagebuff = getPageBuffer(@page)
+							tstart = pagebuff[0, @cntmrk[@page]]
+							tend = pagebuff[@cntmrk[@page]..-1]
+							# add line start to current page
+							yshift = minstartliney - @y
+							if fontaligned
+								yshift += curfontsize / @k
+							end
+							try = sprintf('1 0 0 1 0 %.3f cm', (yshift * @k))
+							setPageBuffer(@page, tstart + "\nq\n" + try + "\n" + linebeg + "\nQ\n" + tend)
+							# shift the annotations and links
+							if @page_annots[@page]
+								next_pask = @page_annots[@page].length
+							else
+								next_pask = 0
+							end
+							if !@page_annots[startlinepage].nil?
+								@page_annots[startlinepage].each_with_index { |pac, pak|
+									if pak >= pask
+										@page_annots[@page].push pac
+										@page_annots[startlinepage].delete_at(pak)
+										npak = @page_annots[@page].length - 1
+										@page_annots[@page][npak]['y'] -= yshift
+									end
+								}
+							end
+							pask = next_pask
+							startlinepos = @cntmrk[@page]
+							startlinepage = @page
+							startliney = @y
+						end
+						@y += ((curfontsize * @cell_height_ratio / @k) + curfontascent - curfontdescent) / 2  - imgh
+						minstartliney = [@y, minstartliney].min
+						maxbottomliney = startliney + @font_size * @cell_height_ratio
+					end
+	 			elsif !dom[key]['fontname'].nil? or !dom[key]['fontstyle'].nil? or !dom[key]['fontsize'].nil?
+					# account for different font size
+					pfontname = curfontname
+					pfontstyle = curfontstyle
+					pfontsize = curfontsize
+					fontname  = !dom[key]['fontname'].nil?  ? dom[key]['fontname']  : curfontname
+					fontstyle = !dom[key]['fontstyle'].nil? ? dom[key]['fontstyle'] : curfontstyle
+					fontsize  = !dom[key]['fontsize'].nil?  ? dom[key]['fontsize']  : curfontsize
+					fontascent = getFontAscent(fontname, fontstyle, fontsize)
+					fontdescent = getFontDescent(fontname, fontstyle, fontsize)
+					if (fontname != curfontname) or (fontstyle != curfontstyle) or (fontsize != curfontsize)
+						if fontsize.is_a?(Numeric) and (fontsize >= 0) and curfontsize.is_a?(Numeric) and (curfontsize >= 0) and (fontsize != curfontsize) and !@newline and (key < maxel - 1)
+							if !@newline and (@page > startlinepage)
+								# fix lines splitted over two pages
+								if !@footerlen[startlinepage].nil?
+									curpos = @pagelen[startlinepage] - @footerlen[startlinepage]
+								end
+								# line to be moved one page forward
+								pagebuff = getPageBuffer(startlinepage)
+								linebeg = pagebuff[startlinepos, curpos - startlinepos]
+								tstart = pagebuff[0, startlinepos]
+								tend = pagebuff[curpos..-1]
+								# remove line from previous page
+								setPageBuffer(startlinepage, tstart + '' + tend)
+								pagebuff = getPageBuffer(@page)
+								tstart = pagebuff[0, @cntmrk[@page]]
+								tend = pagebuff[@cntmrk[@page]..-1]
+								# add line start to current page
+								yshift = minstartliney - @y
+								try = sprintf('1 0 0 1 0 %.3f cm', yshift * @k)
+								setPageBuffer(@page, tstart + "\nq\n" + try + "\n" + linebeg + "\nQ\n" + tend)
+								# shift the annotations and links
+								if @page_annots[@page]
+									next_pask = @page_annots[@page].length
+								else
+									next_pask = 0
+								end
+								if !@page_annots[startlinepage].nil?
+									@page_annots[startlinepage].each_with_index { |pac, pak|
+										if pak >= pask
+											@page_annots[@page].push = pac
+											@page_annots[startlinepage].delete_at(pak)
+											npak = @page_annots[@page].length - 1
+											@page_annots[@page][npak]['y'] -= yshift
+										end
+									}
+								end
+								pask = next_pask
+								startlinepos = @cntmrk[@page]
+								startlinepage = @page
+								startliney = @y
+							end
+							if !dom[key]['block']
+								@y += (((curfontsize - fontsize) * @cell_height_ratio / @k) + curfontascent - fontascent - curfontdescent + fontdescent) / 2
+								if (dom[key]['value'] != 'sup') and (dom[key]['value'] != 'sub')
+									minstartliney = [@y, minstartliney].min
+									maxbottomliney = [@y + ((fontsize * @cell_height_ratio) / @k), maxbottomliney].max
+								end
+							end
+							fontaligned = true
+						end
+						SetFont(fontname, fontstyle, fontsize)
+						@lasth = @font_size * @cell_height_ratio
+						curfontname = fontname
+						curfontstyle = fontstyle
+						curfontsize = fontsize
+						curfontascent = fontascent
+						curfontdescent = fontdescent
+					end
+				end
+				# set text rendering mode
+				textstroke = !dom[key]['stroke'].nil? ? dom[key]['stroke'] : @textstrokewidth
+				textfill = !dom[key]['fill'].nil? ? dom[key]['fill'] : ((@textrendermode % 2) == 0) 
+				textclip = !dom[key]['clip'].nil? ? dom[key]['clip'] : (@textrendermode > 3)
+				setTextRenderingMode(textstroke, textfill, textclip)
+				if (plalign == 'J') and dom[key]['block']
+					plalign = ''
+				end
+				# get current position on page buffer
+				curpos = @pagelen[startlinepage]
+				if !dom[key]['bgcolor'].nil? and (dom[key]['bgcolor'].length > 0)
+					SetFillColorArray(dom[key]['bgcolor'])
+					wfill = 1
+				else
+					wfill = fill
+				end
+				if !dom[key]['fgcolor'].nil? and (dom[key]['fgcolor'].length > 0)
+					SetTextColorArray(dom[key]['fgcolor'])
+				end
+				if !dom[key]['strokecolor'].nil? and (dom[key]['strokecolor'].length > 0)
+					SetDrawColorArray(dom[key]['strokecolor'])
+				end
+				if !dom[key]['align'].nil?
+					lalign = dom[key]['align']
+				end
+				if empty_string(lalign)
+					lalign = align
+				end
+			end
+			# align lines
+			if @newline and (dom[key]['value'].length > 0) and (dom[key]['value'] != 'td') and (dom[key]['value'] != 'th')
+				newline = true
+				fontaligned = false
+				# we are at the beginning of a new line
+				if !startlinex.nil?
+					yshift = minstartliney - startliney
+					if (yshift > 0) or (@page > startlinepage)
+						yshift = 0
+					end
+					t_x = 0
+						# the last line must be shifted to be aligned as requested
+						linew = (@endlinex - startlinex).abs
+						pstart = getPageBuffer(startlinepage)[0, startlinepos]
+						if !opentagpos.nil? and !@footerlen[startlinepage].nil? and !@in_footer
+							@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
+							midpos = [opentagpos, @footerpos[startlinepage]].min
+						elsif !opentagpos.nil?
+							midpos = opentagpos
+						elsif !@footerlen[startlinepage].nil? and !@in_footer
+							@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
+							midpos = @footerpos[startlinepage]
+						else
+							midpos = 0
+						end
+						if midpos > 0
+							pmid = getPageBuffer(startlinepage)[startlinepos, midpos - startlinepos]
+							pend = getPageBuffer(startlinepage)[midpos..-1]
+						else
+							pmid = getPageBuffer(startlinepage)[startlinepos..-1]
+							pend = ''
+						end
+					if (!plalign.nil? and ((plalign == 'C') or (plalign == 'J') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl))) or (yshift < 0)
+						# calculate shifting amount
+						tw = w
+						if (plalign == 'J') and isRTLTextDir() and (@num_columns > 1)
+							tw += @c_margin
+						end
+						if @l_margin != prevlMargin
+							tw += prevlMargin - @l_margin
+						end
+						if @r_margin != prevrMargin
+							tw += prevrMargin - @r_margin
+						end
+						one_space_width = GetStringWidth(32.chr)
+						mdiff = (tw - linew).abs
+						if plalign == 'C'
+							if @rtl
+								t_x = -(mdiff / 2)
+							else
+								t_x = (mdiff / 2)
+							end
+						elsif (plalign == 'R') and !@rtl
+							# right alignment on LTR document
+							if revstrpos(pmid, ')]').to_i == revstrpos(pmid, ' )]').to_i + 1
+								# remove last space (if any)
+								linew -= one_space_width
+								mdiff = (tw - linew).abs
+							end
+							t_x = mdiff
+						elsif (plalign == 'L') and @rtl
+							# left alignment on RTL document
+							if revstrpos(pmid, '[(') and ((revstrpos(pmid, '[( ').to_i == revstrpos(pmid, '[(').to_i) or (revstrpos(pmid, '[(' + 0.chr + 32.chr).to_i == revstrpos(pmid, '[(').to_i))
+								# remove first space (if any)
+								linew -= one_space_width
+							end
+							if pmid.index('[(') and (pmid.index('[(').to_i == revstrpos(pmid, '[(').to_i)
+								# remove last space (if any)
+								linew -= one_space_width
+								if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+									linew -= one_space_width
+								end
+							end
+							mdiff = (tw - linew).abs
+							t_x = -mdiff
+						elsif (plalign == 'J') and (plalign == lalign)
+							# Justification
+							if isRTLTextDir()
+								t_x = @l_margin - @endlinex + @c_margin
+							end
+							no = 0 # spaces without trim
+							ns = 0 # spaces with trim
+
+							pmidtemp = pmid
+							# escape special characters
+							pmidtemp.gsub!(/[\\][\(]/x, '\\#!#OP#!#')
+							pmidtemp.gsub!(/[\\][\)]/x, '\\#!#CP#!#')
+							# search spaces
+							lnstring = pmidtemp.scan(/\[\(([^\)]*)\)\]/x)
+							if !lnstring.empty?
+								spacestr = getSpaceString()
+								maxkk = lnstring.length - 1
+								0.upto(maxkk) do |kk|
+									# restore special characters
+									lnstring[kk][0].gsub!('#!#OP#!#', '(')
+									lnstring[kk][0].gsub!('#!#CP#!#', ')')
+									if kk == maxkk
+										if isRTLTextDir()
+											tvalue = lnstring[kk][0].lstrip
+										else
+											tvalue = lnstring[kk][0].rstrip
+										end
+									else
+										tvalue = lnstring[kk][0]
+									end
+									# store number of spaces on the strings
+									lnstring[kk][1] = lnstring[kk][0].count(spacestr)
+									lnstring[kk][2] = tvalue.count(spacestr)
+									# count total spaces on line
+									no += lnstring[kk][1]
+									ns += lnstring[kk][2]
+									lnstring[kk][3] = no
+									lnstring[kk][4] = ns
+								end
+								if isRTLTextDir()
+									t_x = @l_margin - @endlinex + @c_margin - ((no - ns) * one_space_width)
+								end
+								# calculate additional space to add to each space
+								spacelen = one_space_width
+								spacewidth = (((tw - linew) + ((no - ns) * spacelen)) / (ns ? ns : 1)) * @k
+						 		spacewidthu = -1000 * ((tw - linew) + (no * spacelen)) / (ns ? ns : 1) / @font_size
+								nsmax = ns
+								ns = 0
+								# reset(lnstring)
+								offset = 0
+								strcount = 0
+								prev_epsposbeg = 0
+								textpos = 0;
+								if isRTLTextDir()
+									textpos = @w_pt
+								end
+								while pmid_offset = pmid.index(/([0-9\.\+\-]*)[\s](Td|cm|m|l|c|re)[\s]/x, offset)
+									pmid_data = $1
+									pmid_mark = $2
+									# check if we are inside a string section '[( ... )]'
+									stroffset = pmid.index('[(', offset)
+									if (stroffset != nil) and (stroffset <= pmid_offset)
+										# set offset to the end of string section 
+										offset = pmid.index(')]', stroffset)
+										while (offset != nil) and (pmid[offset - 1, 1] == '\\')
+											offset = pmid.index(')]', offset + 1)
+										end
+										if offset == false
+											Error('HTML Justification: malformed PDF code.')
+										end
+										next
+									end
+									if isRTLTextDir()
+										spacew = spacewidth * (nsmax - ns)
+									else
+										spacew = spacewidth * ns
+									end
+									offset = pmid_offset + $&.length
+									epsposbeg = pmid.index('q' + @epsmarker, offset)
+									epsposbeg = 0 if epsposbeg.nil?
+									epsposend = pmid.index(@epsmarker + 'Q', offset)
+									epsposend = 0 if epsposend.nil?
+									epsposend += (@epsmarker + 'Q').length
+									if ((epsposbeg > 0) and (epsposend > 0) and (offset > epsposbeg) and (offset < epsposend)) or ((epsposbeg === false) and (epsposend > 0) and (offset < epsposend))
+										# shift EPS images
+										trx = sprintf('1 0 0 1 %.3f 0 cm', spacew)
+										epsposbeg = pmid.index('q' + @epsmarker, prev_epsposbeg - 6)
+										epsposbeg = 0 if epsposbeg.nil?
+										pmid_b = pmid[0, epsposbeg]
+										pmid_m = pmid[epsposbeg, epsposend - epsposbeg]
+										pmid_e = pmid[epsposend..-1]
+										pmid = pmid_b + "\nq\n" + trx + "\n" + pmid_m + "\nQ\n" + pmid_e
+										offset = epsposend
+										next
+									end
+									prev_epsposbeg = epsposbeg
+									currentxpos = 0
+									# shift blocks of code
+									case pmid_mark
+									when 'Td', 'cm', 'm', 'l'
+										# get current X position
+										pmid =~ /([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x
+										currentxpos = $1.to_i
+										textpos = currentxpos
+										if (strcount <= maxkk) and (pmid_mark == 'Td')
+											if strcount == maxkk
+												if isRTLTextDir()
+													tvalue = lnstring[strcount][0]
+												else
+													tvalue = lnstring[strcount][0].strip
+												end
+											else
+												tvalue = lnstring[strcount][0]
+											end
+											ns += tvalue.count(spacestr)
+											strcount += 1
+										end
+										if isRTLTextDir()
+											spacew = spacewidth * (nsmax - ns)
+										end
+										# justify block
+										pmid.sub!(/([0-9\.\+\-]*)[\s](#{pmid_data})[\s](#{pmid_mark})([\s]*)/x, "" + sprintf("%.2f", $1.to_f + spacew) + " " + $2 + " x*#!#*x" + $3 + $4)
+									when 're'
+										# justify block
+										pmid =~ /([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s](#{pmid_data})[\s](re)([\s]*)/x
+										currentxpos = $1.to_i
+										x_diff = 0
+										w_diff = 0
+										if isRTLTextDir() # RTL
+											if currentxpos < textpos
+												x_diff = spacewidth * (nsmax - lnstring[strcount][4])
+												w_diff = spacewidth * lnstring[strcount][2]
+											else
+												if strcount > 0
+													x_diff = spacewidth * (nsmax - lnstring[strcount - 1][4])
+													w_diff = spacewidth * lnstring[strcount - 1][2]
+												end
+											end
+										else # LTR
+											if currentxpos > textpos
+												if strcount > 0
+													x_diff = spacewidth * lnstring[strcount - 1][3]
+												end
+												w_diff = spacewidth * lnstring[strcount][2]
+											else
+												if strcount > 1
+													x_diff = spacewidth * lnstring[strcount - 2][3]
+												end
+												if strcount > 0
+													w_diff = spacewidth * lnstring[strcount - 1][2]
+												end
+											end
+										end
+										pmid.sub!(/(#{$1})[\s](#{$2})[\s](#{$3})[\s](#{pmid_data})[\s](re)([\s]*)/x, "" + sprintf("%.2f", $1.to_f + x_diff) + " " + $2 + " " + sprintf("%.2f", $3.to_f + w_diff) + " " + $4 + " x*#!#*x" + $5 + $6)
+									when 'c'
+										# get current X position
+										pmid =~ /([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s]([0-9\.\+\-]*)[\s](#{pmid_data})[\s](c)([\s]*)/x
+										currentxpos = $1.to_i
+										# justify block
+										pmid.sub!(/(#{$1})[\s](#{$2})[\s](#{$3})[\s](#{$4})[\s](${5})[\s](#{pmid_data})[\s](c)([\s]*)/x, "" + sprintf("%.3f", $1.to_f + spacew) + " " + $2 + " " +  sprintf("%.3f", $3.to_f + spacew) + " " + $4 + " " + sprintf("%.3f", $5.to_f + spacew) + " " + $6 + " x*#!#*x" + $7 + $8)
+									end
+									# shift the annotations and links
+									if !@page_annots[@page].nil?
+										cxpos = currentxpos / @k
+										lmpos = @l_margin + @c_margin + @feps
+
+										@page_annots[@page].each_with_index { |pac, pak|
+											if (pac['y'] >= minstartliney) and (pac['x'] * @k >= currentxpos - @feps) and (pac['x'] * @k <= currentxpos + @feps)
+												if cxpos > lmpos
+													@page_annots[@page][pak]['x'] += (spacew - one_space_width) / @k
+													@page_annots[@page][pak]['w'] += (spacewidth * pac['numspaces']) / @k
+												else
+													@page_annots[@page][pak]['w'] += ((spacewidth * pac['numspaces']) - one_space_width) / @k
+												end
+												break
+											end
+										}
+									end
+								end # end of while
+								# remove markers
+								pmid.gsub!('x*#!#*x', '')
+								if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+									# multibyte characters
+									spacew = spacewidthu
+									pmidtemp = pmid
+									# escape special characters
+									pmidtemp.gsub!(/[\\][\(]/x, '\\#!#OP#!#')
+									pmidtemp.gsub!(/[\\][\)]/x, '\\#!#CP#!#')
+									pmidtemp =~ /\[\(([^\)]*)\)\]/x
+									matches1 = $1.gsub("#!#OP#!#", "(")
+									matches1.gsub!("#!#CP#!#", ")")
+									pmid = pmidtemp.sub(/\[\(([^\)]*)\)\]/x,  "[(" + matches1.gsub(0.chr + 32.chr, ") " + sprintf("%.3f", spacew) + " (") + ")]")
+									setPageBuffer(startlinepage, pstart + "\n" + pmid + "\n" + pend)
+									endlinepos = (pstart + "\n" + pmid + "\n").length
+								else
+									# non-unicode (single-byte characters)
+									rs = sprintf("%.3f Tw", spacewidth)
+									pmid.gsub!(/\[\(/x, "#{rs} [(")
+									setPageBuffer(startlinepage, pstart + "\n" + pmid + "\nBT 0 Tw ET\n" + pend)
+									endlinepos = (pstart + "\n" + pmid + "\nBT 0 Tw ET\n").length
+								end
+							end
+						end # end of J
+					end # end if $startlinex
+					if (t_x != 0) or (yshift < 0)
+						# shift the line
+						trx = sprintf('1 0 0 1 %.3f %.3f cm', t_x * @k, yshift * @k)
+						setPageBuffer(startlinepage, pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n" + pend)
+						endlinepos = (pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n").length
+						# shift the annotations and links
+						if !@page_annots[@page].nil?
+							@page_annots[@page].each_with_index { |pac, pak|
+								if pak >= pask
+									@page_annots[@page][pak]['x'] += t_x
+									@page_annots[@page][pak]['y'] -= yshift
+								end
+							}
+						end
+						@y -= yshift
+					end
+				end
+				pbrk = checkPageBreak(@lasth)
+				@newline = false
+				startlinex = @x
+				startliney = @y
+				if dom[dom[key]['parent']]['value'] == 'sup'
+					startliney -= (0.3 * @font_size_pt) / @k
+				elsif dom[dom[key]['parent']]['value'] == 'sub'
+					startliney -= (@font_size_pt / 0.7) / @k
+				else
+					minstartliney = startliney
+					maxbottomliney = startliney + @font_size * @cell_height_ratio
+				end
+				startlinepage = @page
+				if !endlinepos.nil? and !pbrk
+					startlinepos = endlinepos
+				else
+					if !@in_footer
+						if !@footerlen[@page].nil?
+							@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
+						else
+							@footerpos[@page] = @pagelen[@page]
+						end
+						startlinepos = @footerpos[@page]
+					else
+						startlinepos = @pagelen[@page]
+					end
+				end
+				endlinepos = nil
+				plalign = lalign
+				if !@page_annots[@page].nil?
+					pask = @page_annots[@page].length
+				else
+					pask = 0
+				end
+				SetFont(fontname, fontstyle, fontsize)
+				if wfill  == 1
+					SetFillColorArray(@bgcolor)
+				end
+			end # end newline
+			if !opentagpos.nil?
+				opentagpos = nil
+			end
+			if dom[key]['tag']
+				if dom[key]['opening']    
+					# get text indentation (if any)
+					if dom[key]['text-indent'] and dom[key]['block']
+						@textindent = dom[key]['text-indent']
+						@newline = true
+					end
+					if dom[key]['value'] == 'table'
+						# available page width
+						if @rtl
+							wtmp = @x - @l_margin
+						else
+							wtmp = @w - @r_margin - @x
+						end
+						if dom[key]['attribute']['nested'] and (dom[key]['attribute']['nested'] == 'true')
+							# add margin for nested tables
+							wtmp -= @c_margin
+						end
+						# table width
+						if !dom[key]['width'].nil?
+							table_width = getHTMLUnitToUnits(dom[key]['width'], wtmp, 'px')
+						else
+							table_width = wtmp
+						end
+					end
+					if (dom[key]['value'] == 'td') or (dom[key]['value'] == 'th')
+						trid = dom[key]['parent']
+						table_el = dom[trid]['parent']
+						if dom[table_el]['cols'].nil?
+							dom[table_el]['cols'] = dom[trid]['cols']
+						end
+						oldmargin = @c_margin
+						if !dom[(dom[trid]['parent'])]['attribute']['cellpadding'].nil?
+							currentcmargin = getHTMLUnitToUnits(dom[(dom[trid]['parent'])]['attribute']['cellpadding'], 1, 'px')
+						else
+							currentcmargin = 0
+						end
+						@c_margin = currentcmargin
+						if !dom[(dom[trid]['parent'])]['attribute']['cellspacing'].nil?
+							cellspacing = getHTMLUnitToUnits(dom[(dom[trid]['parent'])]['attribute']['cellspacing'], 1, 'px')
+						else
+							cellspacing = 0
+						end
+						if @rtl
+							cellspacingx = -cellspacing
+						else
+							cellspacingx = cellspacing
+						end
+						colspan = dom[key]['attribute']['colspan']
+						table_columns_width = table_width - (cellspacing * (dom[table_el]['cols'] - 1))
+						wtmp = colspan * (table_columns_width / dom[table_el]['cols']) + (colspan - 1) * cellspacing
+						if !dom[key]['width'].nil?
+							cellw = getHTMLUnitToUnits(dom[key]['width'], table_columns_width, 'px')
+						else
+							cellw = wtmp
+						end
+						if !dom[key]['height'].nil?
+							# minimum cell height
+							cellh = getHTMLUnitToUnits(dom[key]['height'], 0, 'px')
+						else
+							cellh = 0
+						end
+						if !dom[key]['content'].nil?
+							cell_content = dom[key]['content']
+						else
+							cell_content = '&nbsp;'
+						end
+						tagtype = dom[key]['value']
+						parentid = key
+						while (key < maxel) and !(dom[key]['tag'] and !dom[key]['opening'] and (dom[key]['value'] == tagtype) and (dom[key]['parent'] == parentid))
+							# move :key index forward
+							key += 1
+						end
+						if dom[trid]['startpage'].nil?
+							dom[trid]['startpage'] = @page
+						else
+							@page = dom[trid]['startpage']
+						end
+						if dom[trid]['starty'].nil?
+							dom[trid]['starty'] = @y
+						else
+							@y = dom[trid]['starty']
+						end
+						if dom[trid]['startx'].nil?
+							dom[trid]['startx'] = @x
+						else
+							@x += (cellspacingx / 2)
+						end
+						if !dom[parentid]['attribute']['rowspan'].nil?
+							rowspan = dom[parentid]['attribute']['rowspan'].to_i
+						else
+							rowspan = 1
+						end
+						# skip row-spanned cells started on the previous rows
+						if !dom[table_el]['rowspans'].nil?
+							rsk = 0
+							rskmax = dom[table_el]['rowspans'].length
+							while rsk < rskmax
+								trwsp = dom[table_el]['rowspans'][rsk]
+								rsstartx = trwsp['startx']
+								rsendx = trwsp['endx']
+								# account for margin changes
+								if trwsp['startpage'] < @page
+									if @rtl and (@pagedim[@page]['orm'] != @pagedim[trwsp['startpage']]['orm'])
+										dl = @pagedim[@page]['orm'] - @pagedim[trwsp['startpage']]['orm']
+										rsstartx -= dl
+										rsendx -= dl
+									elsif !@rtl and (@pagedim[@page]['olm'] != @pagedim[trwsp['startpage']]['olm'])
+										dl = @pagedim[@page]['olm'] - @pagedim[trwsp['startpage']]['olm']
+										rsstartx += dl
+										rsendx += dl
+									end
+								end
+								if  (trwsp['rowspan'] > 0) and (rsstartx > @x - cellspacing - currentcmargin - @feps) and (rsstartx < @x + cellspacing + currentcmargin + @feps) and ((trwsp['starty'] < @y - @feps) or (trwsp['startpage'] < @page))
+									# set the starting X position of the current cell
+									@x = rsendx + cellspacingx
+									if (trwsp['rowspan'] == 1) and !dom[trid]['endy'].nil? and !dom[trid]['endpage'].nil? and (trwsp['endpage'] == dom[trid]['endpage'])
+										# set ending Y position for row
+										dom[table_el]['rowspans'][rsk]['endy'] = [dom[trid]['endy'], trwsp['endy']].max
+										dom[trid]['endy'] = dom[table_el]['rowspans'][rsk]['endy']
+									end
+									rsk = 0
+								else
+									rsk += 1
+								end
+							end
+						end
+						# add rowspan information to table element
+						if rowspan > 1
+							dom[table_el]['rowspans'].push({'trid' => trid, 'rowspan' => rowspan, 'mrowspan' => rowspan, 'colspan' => colspan, 'startpage' => @page, 'startx' => @x, 'starty' => @y})
+							trsid = dom[table_el]['rowspans'].size
+						end
+						dom[trid]['cellpos'].push({'startx' => @x})
+						cellid = dom[trid]['cellpos'].size
+						if rowspan > 1
+							dom[trid]['cellpos'][cellid - 1]['rowspanid'] = trsid - 1
+						end
+						# push background colors
+						if !dom[parentid]['bgcolor'].nil? and (dom[parentid]['bgcolor'].length > 0)
+							dom[trid]['cellpos'][cellid - 1]['bgcolor'] = dom[parentid]['bgcolor'].dup
+						end
+						prevLastH = @lasth
+						# ****** write the cell content ******
+						MultiCell(cellw, cellh, cell_content, 0, lalign, 0, 2, '', '', true, 0, true)
+						@lasth = prevLastH
+						@c_margin = oldmargin
+						dom[trid]['cellpos'][cellid - 1]['endx'] = @x
+						# update the end of row position
+						if rowspan <= 1
+							if !dom[trid]['endy'].nil?
+								if @page == dom[trid]['endpage']
+									dom[trid]['endy'] = [@y, dom[trid]['endy']].max
+								elsif @page > dom[trid]['endpage']
+									dom[trid]['endy'] = @y
+								end
+							else
+								dom[trid]['endy'] = @y
+							end
+							if !dom[trid]['endpage'].nil?
+								dom[trid]['endpage'] = [@page, dom[trid]['endpage']].max
+							else
+								dom[trid]['endpage'] = @page
+							end
+						else
+							# account for row-spanned cells
+							dom[table_el]['rowspans'][trsid - 1]['endx'] = @x
+							dom[table_el]['rowspans'][trsid - 1]['endy'] = @y
+							dom[table_el]['rowspans'][trsid - 1]['endpage'] = @page                             
+						end
+						if !dom[table_el]['rowspans'].nil?
+							# update endy and endpage on rowspanned cells
+							dom[table_el]['rowspans'].each_with_index { |trwsp, k|
+								if trwsp['rowspan'] > 0
+									if !dom[trid]['endpage'].nil?
+										if trwsp['endpage'] == dom[trid]['endpage']
+											dom[table_el]['rowspans'][k]['endy'] = [dom[trid]['endy'], trwsp['endy']].max
+										elsif trwsp['endpage'] < dom[trid]['endpage']
+											dom[table_el]['rowspans'][k]['endy'] = dom[trid]['endy']
+											dom[table_el]['rowspans'][k]['endpage'] = dom[trid]['endpage']
+										else
+											dom[trid]['endy'] = @pagedim[dom[trid]['endpage']]['hk'] - @pagedim[dom[trid]['endpage']]['bm']
+										end
+									end
+								end
+							}
+						end
+						@x += (cellspacingx / 2)
+					else
+						# opening tag (or self-closing tag)
+						if opentagpos.nil?
+							if !@in_footer
+								if !@footerlen[@page].nil?
+									@footerpos[@page] = @pagelen[@page] - @footerlen[@page]
+								else
+									@footerpos[@page] = @pagelen[@page]
+								end
+								opentagpos = @footerpos[@page]
+							end
+						end
+						openHTMLTagHandler(dom, key, cell)
+					end
+				else
+					# closing tag
+					prev_numpages = @numpages
+					closeHTMLTagHandler(dom, key, cell, maxbottomliney)
+					if prev_numpages > @numpages
+						startlinepage = @page
+					end
+				end
+			elsif dom[key]['value'].length > 0
+				# print list-item
+				if !empty_string(@lispacer)
+					SetFont(pfontname, pfontstyle, pfontsize)
+					@lasth = @font_size * @cell_height_ratio
+					minstartliney = @y
+					maxbottomliney = startliney + @font_size * @cell_height_ratio
+					putHtmlListBullet(@listnum, @lispacer, pfontsize)
+					SetFont(curfontname, curfontstyle, curfontsize)
+					@lasth = @font_size * @cell_height_ratio
+					if pfontsize.is_a?(Numeric) and (pfontsize > 0) and curfontsize.is_a?(Numeric) and (curfontsize > 0) and (pfontsize != curfontsize)
+						pfontascent = getFontAscent(pfontname, pfontstyle, pfontsize)
+						pfontdescent = getFontDescent(pfontname, pfontstyle, pfontsize)
+						@y += ((pfontsize - curfontsize) * @cell_height_ratio / @k + pfontascent - curfontascent - pfontdescent + curfontdescent) / 2
+						minstartliney = [@y, minstartliney].min
+						maxbottomliney = [@y + pfontsize * @cell_height_ratio / @k, maxbottomliney].max
+					end
+				end
+				# text
+				@htmlvspace = 0
+				if !@premode and isRTLTextDir()
+					# reverse spaces order
+					len1 = dom[key]['value'].length
+					lsp = len1 - dom[key]['value'].lstrip.length
+					rsp = len1 - dom[key]['value'].rstrip.length
+					tmpstr = ''
+					if rsp > 0
+						tmpstr << dom[key]['value'][-rsp..-1]
+					end
+					tmpstr << (dom[key]['value']).strip
+					if lsp > 0
+						tmpstr << dom[key]['value'][0, lsp]
+					end
+					dom[key]['value'] = tmpstr
+				end
+				if newline
+					if !@premode
+						prelen = dom[key]['value'].length
+						if isRTLTextDir()
+							dom[key]['value'] = dom[key]['value'].rstrip + 0.chr
+						else
+							dom[key]['value'] = dom[key]['value'].lstrip
+						end
+						postlen = dom[key]['value'].length
+						if (postlen == 0) and (prelen > 0)
+							dom[key]['trimmed_space'] = true
+						end
+					end
+					newline = false
+					firstblock = true
+				else
+					firstblock = false
+				end
+				strrest = ''
+				if @rtl
+					@x -= @textindent
+				else
+					@x += @textindent
+				end
+				if !@href.empty? and @href['url']
+					# HTML <a> Link
+					hrefcolor = ''
+					if dom[(dom[key]['parent'])]['fgcolor'] and !dom[(dom[key]['parent'])]['fgcolor'].empty?
+						hrefcolor = dom[(dom[key]['parent'])]['fgcolor']
+					end
+					hrefstyle = -1
+					if dom[(dom[key]['parent'])]['fontstyle'] and (dom[(dom[key]['parent'])]['fontstyle'] != false)
+						hrefstyle = dom[(dom[key]['parent'])]['fontstyle']
+					end
+					strrest = addHtmlLink(@href['url'], dom[key]['value'], wfill, true, hrefcolor, hrefstyle, true)
+				else
+					# ****** write only until the end of the line and get the rest ******
+					strrest = Write(@lasth, dom[key]['value'], '', wfill, '', false, 0, true, firstblock, 0)
+				end
+				@textindent = 0
+
+				if !strrest.nil? and strrest.length > 0
+					# store the remaining string on the previous :key position
+					@newline = true
+					if cell
+						if @rtl
+							@x -= @c_margin
+						else
+							@x += @c_margin
+						end
+					end
+					if strrest == dom[key]['value']
+						# used to avoid infinite loop
+						loop += 1
+					else
+						loop = 0
+					end
+					if !@href.empty? and @href['url']
+						dom[key]['value'] = strrest.strip
+					elsif @premode
+						dom[key]['value'] = strrest
+					elsif isRTLTextDir()
+						dom[key]['value'] = strrest.rstrip
+					else
+						dom[key]['value'] = strrest.lstrip
+					end
+					if loop < 3
+						key -= 1
+					end
+				else
+					loop = 0
+				end
+			end
+			key += 1
+			if dom[key] and dom[key]['tag'] and (dom[key]['opening'].nil? or !dom[key]['opening']) and dom[(dom[key]['parent'])]['attribute']['nobr'] and (dom[(dom[key]['parent'])]['attribute']['nobr'] == 'true')
+				if !undo and (@start_transaction_page == (@numpages - 1)) or (@y < @start_transaction_y)
+					# restore previous object
+					rollbackTransaction(true)
+					# restore previous values
+					this_method_vars.each {|vkey , vval|
+						eval("#{vkey} = vval") 
+					}
+					# add a page (or trig AcceptPageBreak() for multicolumn mode)
+					pre_y = @y
+					if !checkPageBreak(@page_break_trigger + 1) and (@y < pre_y)
+						startliney = @y
+					end
+					undo = true # avoid infinite loop
+				else
+					undo = false
+				end
+			end
+		end # end for each :key
+		# align the last line
+		if !startlinex.nil?
+			yshift = minstartliney - startliney
+			if (yshift > 0) or (@page > startlinepage)
+				yshift = 0
+			end
+			t_x = 0
+			# the last line must be shifted to be aligned as requested
+			linew = (@endlinex - startlinex).abs
+			pstart = getPageBuffer(startlinepage)[0, startlinepos]
+			if !opentagpos.nil? and !@footerlen[startlinepage].nil? and !@in_footer
+				@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
+				midpos = [opentagpos, @footerpos[startlinepage]].min
+			elsif !opentagpos.nil?
+				midpos = opentagpos
+			elsif !@footerlen[startlinepage].nil? and !@in_footer
+				@footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
+				midpos = @footerpos[startlinepage]
+			else
+				midpos = 0
+			end
+			if midpos > 0
+				pmid = getPageBuffer(startlinepage)[startlinepos, midpos - startlinepos]
+				pend = getPageBuffer(startlinepage)[midpos..-1]
+			else
+				pmid = getPageBuffer(startlinepage)[startlinepos..-1]
+				pend = ""
+			end
+			if (!plalign.nil? and (((plalign == 'C') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl)))) or (yshift < 0)
+				# calculate shifting amount
+				tw = w
+				if @l_margin != prevlMargin
+					tw += prevlMargin - @l_margin
+				end
+				if @r_margin != prevrMargin
+					tw += prevrMargin - @r_margin
+				end
+				one_space_width = GetStringWidth(32.chr)
+				mdiff = (tw - linew).abs
+				if plalign == 'C'
+					if @rtl
+						t_x = -(mdiff / 2)
+					else
+						t_x = (mdiff / 2)
+					end
+				elsif (plalign == 'R') and !@rtl
+					# right alignment on LTR document
+					if revstrpos(pmid, ')]').to_i == revstrpos(pmid, ' )]').to_i + 1
+						# remove last space (if any)
+						linew -= one_space_width
+						mdiff = (tw - linew).abs
+					end
+					t_x = mdiff
+				elsif (plalign == 'L') and @rtl
+					# left alignment on RTL document
+					if revstrpos(pmid, '[(') and ((revstrpos(pmid, '[( ').to_i == revstrpos(pmid, '[(').to_i) or (revstrpos(pmid, '[(' + 0.chr + 32.chr).to_i == revstrpos(pmid, '[(').to_i))
+						# remove first space (if any)
+						linew -= one_space_width
+					end
+					if pmid.index('[(') and (pmid.index('[(').to_i == revstrpos(pmid, '[(').to_i)
+						# remove last space (if any)
+						linew -= one_space_width
+						if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+							linew -= one_space_width
+						end
+					end
+					mdiff = (tw - linew).abs
+					t_x = -mdiff
+				end
+			end # end if startlinex
+			if (t_x != 0) or (yshift < 0)
+				# shift the line
+				trx = sprintf('1 0 0 1 %.3f %.3f cm', t_x * @k, yshift * @k)
+				setPageBuffer(startlinepage, pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n" + pend)
+				endlinepos = (pstart + "\nq\n" + trx + "\n" + pmid + "\nQ\n").length
+
+				# shift the annotations and links
+				if !@page_annots[@page].nil?
+					@page_annots[@page].each_with_index { |pac, pak|
+						if pak >= pask
+							@page_annots[@page][pak]['x'] += t_x
+							@page_annots[@page][pak]['y'] -= yshift
+						end
+					}
+				end
+				@y -= yshift
+			end
+		end
+		if ln and !(cell and (dom[key-1]['value'] == 'table'))
+			Ln(@lasth)
+			if @y < maxbottomliney
+				@y = maxbottomliney
+			end
+		end
+		# restore previous values
+		setGraphicVars(gvars)
+		if @page > prevPage
+			@l_margin = @pagedim[@page]['olm']
+			@r_margin = @pagedim[@page]['orm']
+		end
+		# restore previous list state
+		@cell_height_ratio = prev_cell_height_ratio
+		@listnum = prev_listnum
+		@listordered = prev_listordered
+		@listcount = prev_listcount
+		@lispacer = prev_lispacer
+		dom = nil
+	end
+  alias_method :write_html, :writeHTML
+
+	#
+	# Process opening tags.
+	# @param array :dom html dom array 
+	# @param int :key current element id
+	# @param boolean :cell if true add the default c_margin space to each new line (default false).
+	# @access protected
+	#
+	def openHTMLTagHandler(dom, key, cell)
+		tag = dom[key]
+		parent = dom[(dom[key]['parent'])]
+		firstorlast = (key == 1)
+		# check for text direction attribute
+		if !tag['attribute']['dir'].nil?
+			SetTempRTL(tag['attribute']['dir'])
+		else
+			@tmprtl = false
+		end
+		if tag['block']
+			hbz = 0 # distance from y to line bottom
+			hb = 0 # vertical space between block tags
+			# calculate vertical space for block tags
+			if @tagvspaces[tag['value']] and @tagvspaces[tag['value']][0] and @tagvspaces[tag['value']][0]['h'] and (@tagvspaces[tag['value']][0]['h'] >= 0)
+				cur_h = @tagvspaces[tag['value']][0]['h']
+			elsif !tag['fontsize'].nil?
+				cur_h = (tag['fontsize'] / @k) * @cell_height_ratio
+			else
+				cur_h = @font_size * @cell_height_ratio
+			end
+			if @tagvspaces[tag['value']] and @tagvspaces[tag['value']][0] and @tagvspaces[tag['value']][0]['n']
+				n = @tagvspaces[tag['value']][0]['n']
+			elsif tag['value'] =~ /[h][0-9]/
+				n = 0.6
+			else
+				n = 1
+			end
+			hb = n * cur_h
+			if (@htmlvspace <= 0) and (n > 0)
+				if parent['fontsize']
+					hbz = (parent['fontsize'] / @k) * @cell_height_ratio
+				else
+					hbz = @font_size * @cell_height_ratio
+				end
+			end
+		end
+		#Opening tag
+		case tag['value']
+		when 'table'
+			cp = 0
+			cs = 0
+			dom[key]['rowspans'] = []
+			if dom[key]['attribute']['nested'].nil? or (dom[key]['attribute']['nested'] != 'true')
+				# set table header
+				if !empty_string(dom[key]['thead'])
+					# set table header
+					@thead = dom[key]['thead']
+					if @thead_margins.nil? or @thead_margins.empty?
+						@thead_margins ||= {}
+						@thead_margins['cmargin'] = @c_margin
+					end
+				end
+			end
+			if !tag['attribute']['cellpadding'].nil?
+				cp = getHTMLUnitToUnits(tag['attribute']['cellpadding'], 1, 'px')
+				@old_c_margin = @c_margin
+				@c_margin = cp
+			end
+			if !tag['attribute']['cellspacing'].nil?
+				cs = getHTMLUnitToUnits(tag['attribute']['cellspacing'], 1, 'px')
+			end
+			if checkPageBreak(((2 * cp) + (2 * cs) + @lasth), '', false)
+				@in_thead = true
+				# add a page (or trig AcceptPageBreak() for multicolumn mode)
+				checkPageBreak(@page_break_trigger + 1)
+			end
+		when 'tr'
+			# array of columns positions
+			dom[key]['cellpos'] = []
+		when 'hr'
+			if !tag['height'].nil? and (tag['height'] != '')
+				hrHeight = getHTMLUnitToUnits(tag['height'], 1, 'px')
+			else
+				hrHeight = GetLineWidth()
+			end
+			addHTMLVertSpace(hbz, (hrHeight / 2), cell, firstorlast)
+			x = GetX()
+			y = GetY()
+			wtmp = @w - @l_margin - @r_margin
+			if cell
+				wtmp -= 2 * @c_margin
+			end
+			if !tag['attribute']['width'].nil? and (tag['attribute']['width'] != '')
+				hrWidth = getHTMLUnitToUnits(tag['attribute']['width'], wtmp, 'px')
+			else
+				hrWidth = wtmp
+			end
+			prevlinewidth = GetLineWidth()
+			SetLineWidth(hrHeight)
+			Line(x, y, x + hrWidth, y)
+			SetLineWidth(prevlinewidth)
+			Ln('', cell)
+			addHTMLVertSpace(hrHeight / 2, 0, cell, dom[key + 1].nil?)
+		when 'a'
+			if tag['attribute'].key?('href')
+				@href['url'] = tag['attribute']['href']
+			end
+		when 'img'
+			if !tag['attribute']['src'].nil?
+				# replace relative path with real server path
+				### T.B.D ### TCPDF 5.0.000 ###
+				#if tag['attribute']['src'][0] == '/'
+				#	findroot = tag['attribute']['src'].index($_SERVER['DOCUMENT_ROOT'])
+				#	if (findroot == nil) or (findroot.to_i > 1)
+				#		tag['attribute']['src'] = Rails.root.join('public') + tag['attribute']['src']
+				#	end
+				#end
+				img_name = tag['attribute']['src']
+				### T.B.D ### TCPDF 5.0.000 ###
+				# tag['attribute']['src'] = CGI.escape(tag['attribute']['src'])
+				type = getImageFileType(tag['attribute']['src'])
+				tag['attribute']['src'] = getImageFilename(tag['attribute']['src'])
+				if tag['attribute']['width'].nil?
+					tag['attribute']['width'] = 0
+				end
+				if tag['attribute']['height'].nil?
+					tag['attribute']['height'] = 0
+				end
+				#if tag['attribute']['align'].nil?
+					# the only alignment supported is "bottom"
+					# further development is required for other modes.
+					tag['attribute']['align'] = 'bottom'
+				#end
+				case tag['attribute']['align']
+				when 'top'
+					align = 'T'
+				when 'middle'
+					align = 'M'
+				when 'bottom'
+					align = 'B'
+				else
+					align = 'B'
+				end
+				prevy = @y
+				xpos = @x
+				# eliminate marker spaces
+				if !dom[key - 1].nil?
+					if (dom[key - 1]['value'] == ' ') or !dom[key - 1]['trimmed_space'].nil?
+						xpos -= GetStringWidth(32.chr)
+					elsif @rtl and (dom[key - 1]['value'] == '  ')
+						xpos += 2 * GetStringWidth(32.chr)
+					end
+				end
+				imglink = ''
+				if !@href['url'].nil? and !empty_string(@href['url'])
+					imglink = @href['url']
+					if imglink[0, 1] == '#'
+						# convert url to internal link
+						page = imglink.sub(/^#/, "").to_i
+						imglink = AddLink()
+						SetLink(imglink, 0, page)
+					end
+				end
+				border = 0
+				if !tag['attribute']['border'].nil? and !tag['attribute']['border'].empty?
+					# currently only support 1 (frame) or a combination of 'LTRB'
+					border = tag['attribute']['border']
+					case tag['attribute']['border']
+					when '0'
+						border = 0
+					when '1'
+						border = 1
+					else
+						border = tag['attribute']['border']
+					end
+				end
+				iw = 0
+				if !tag['attribute']['width'].nil?
+					iw = getHTMLUnitToUnits(tag['attribute']['width'], 1, 'px', false)
+				end
+				ih = 0
+				if !tag['attribute']['height'].nil?
+					ih = getHTMLUnitToUnits(tag['attribute']['height'], 1, 'px', false)
+				end
+
+				begin
+#				if (type == 'eps') or (type == 'ai')
+#					ImageEps(tag['attribute']['src'], xpos, @y, iw, ih, imglink, true, align, '', border, true)
+#				elsif type == 'svg'
+#					ImageSVG(tag['attribute']['src'], xpos, @y, iw, ih, imglink, align, '', border, true)
+#				else
+					result_img = Image(tag['attribute']['src'], xpos, @y, iw, ih, '', imglink, align, false, 300, '', false, false, border, false, false, true)
+#				end
+				rescue => err
+					logger.error "pdf: Image: error: #{err.message}"
+					result_img = false
+				end
+				case align
+				when 'T'
+					@y = prevy
+				when 'M'
+					@y = (@img_rb_y + prevy - (tag['fontsize'] / @k)) / 2
+				when 'B'
+					@y = @img_rb_y - (tag['fontsize'] / @k)
+				end
+				if result_img == false
+					Write(@lasth, File::basename(img_name), '', false, '', false, 0, false)
+				end
+			end
+		when 'dl'
+			@listnum += 1
+			if @listnum == 1
+				addHTMLVertSpace(hbz, hb, cell, firstorlast)
+			else
+				addHTMLVertSpace(0, 0, cell, firstorlast)
+			end
+		when 'dt'
+			Ln('', cell)
+			addHTMLVertSpace(hbz, 0, cell, firstorlast)
+		when 'dd'
+			if @rtl
+				@r_margin += @listindent
+			else
+				@l_margin += @listindent
+			end
+			@listindentlevel += 1
+			addHTMLVertSpace(hbz, 0, cell, firstorlast)
+		when 'ul', 'ol'
+			@listnum += 1
+			if tag['value'] == "ol"
+				@listordered[@listnum] = true
+			else
+				@listordered[@listnum] = false
+			end
+			if !tag['attribute']['start'].nil?
+				@listcount[@listnum] = tag['attribute']['start'].to_i - 1
+			else 
+				@listcount[@listnum] = 0
+			end
+			if @rtl
+				@r_margin += @listindent
+				@x -= @listindent
+			else
+				@l_margin += @listindent
+				@x += @listindent
+			end
+			@listindentlevel += 1
+			if @listnum == 1
+				addHTMLVertSpace(hbz, hb, cell, firstorlast)
+			else
+				addHTMLVertSpace(0, 0, cell, firstorlast)
+			end
+		when 'li'
+			addHTMLVertSpace(hbz, 0, cell, firstorlast)
+			if @listordered[@listnum]
+				# ordered item
+				if !empty_string(parent['attribute']['type'])
+					@lispacer = parent['attribute']['type']
+				elsif !empty_string(parent['listtype'])
+					@lispacer = parent['listtype']
+				elsif !empty_string(@lisymbol)
+					@lispacer = @lisymbol
+				else
+					@lispacer = '#'
+				end
+				@listcount[@listnum] += 1
+				if !tag['attribute']['value'].nil?
+					@listcount[@listnum] = tag['attribute']['value'].to_i
+				end
+			else
+				# unordered item
+				if !empty_string(parent['attribute']['type'])
+					@lispacer = parent['attribute']['type']
+				elsif !empty_string(parent['listtype'])
+					@lispacer = parent['listtype']
+				elsif !empty_string(@lisymbol)
+					@lispacer = @lisymbol
+				else
+					@lispacer = '!'
+				end
+			end
+		when 'blockquote'
+			if @rtl
+				@r_margin += @listindent
+			else
+				@l_margin += @listindent
+			end
+			@listindentlevel += 1
+			addHTMLVertSpace(hbz, hb, cell, firstorlast)
+		when 'br'
+			addHTMLVertSpace(hbz, 0, cell, firstorlast)
+		when 'div'
+			addHTMLVertSpace(hbz, 0, cell, firstorlast)
+		when 'p'
+			addHTMLVertSpace(hbz, hb, cell, firstorlast)
+		when 'pre'
+			addHTMLVertSpace(hbz, hb, cell, firstorlast)
+			@premode = true
+		when 'sup'
+			SetXY(GetX(), GetY() - ((0.7 * @font_size_pt) / @k))
+		when 'sub'
+			SetXY(GetX(), GetY() + ((0.3 * @font_size_pt) / @k))
+		when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
+			addHTMLVertSpace(hbz, hb, cell, firstorlast)
+		end
+
+		if dom[key]['self'] and dom[key]['attribute']['pagebreakafter']
+			pba = dom[key]['attribute']['pagebreakafter']
+			# check for pagebreak 
+			if (pba == 'true') or (pba == 'left') or (pba == 'right')
+				# add a page (or trig AcceptPageBreak() for multicolumn mode)
+				checkPageBreak(@page_break_trigger + 1)
+			end
+			if ((pba == 'left') and ((!@rtl and (@page % 2 == 0)) or (@rtl and (@page % 2 != 0)))) or ((pba == 'right') and ((!@rtl and (@page % 2 != 0)) or (@rtl and (@page % 2 == 0))))
+				# add a page (or trig AcceptPageBreak() for multicolumn mode)
+				checkPageBreak(@page_break_trigger + 1)
+			end
+		end
+	end
+  
+	#
+	# Process closing tags.
+	# @param array :dom html dom array 
+	# @param int :key current element id
+	# @param boolean :cell if true add the default c_margin space to each new line (default false).
+	# @param int :maxbottomliney maximum y value of current line
+	# @access protected
+	#
+	def closeHTMLTagHandler(dom, key, cell, maxbottomliney=0)
+		tag = dom[key].dup
+		parent = dom[(dom[key]['parent'])].dup
+		firstorlast = dom[key + 1].nil? or (dom[key + 2].nil? and (dom[key + 1]['value'] == 'marker'))
+		in_table_head = false
+		if tag['block']
+			hbz = 0 # distance from y to line bottom
+			hb = 0 # vertical space between block tags
+			# calculate vertical space for block tags
+			if @tagvspaces[tag['value']] and @tagvspaces[tag['value']][1] and @tagvspaces[tag['value']][1]['h'] and (@tagvspaces[tag['value']][1]['h'] >= 0)
+				pre_h = @tagvspaces[tag['value']][1]['h']
+			elsif parent['fontsize']
+				pre_h = (parent['fontsize'] / @k) * @cell_height_ratio
+			else
+				pre_h = @font_size * @cell_height_ratio
+			end
+			if @tagvspaces[tag['value']] and @tagvspaces[tag['value']][1] and @tagvspaces[tag['value']][1]['n']
+				n = @tagvspaces[tag['value']][1]['n']
+			elsif tag['value'] =~ /[h][0-9]/
+				n = 0.6
+			else
+				n = 1
+			end
+			hb = n * pre_h
+			if @y < maxbottomliney
+				hbz = maxbottomliney - @y
+			end
+		end
+		# Closing tag
+		case (tag['value'])
+			when 'tr'
+				table_el = dom[(dom[key]['parent'])]['parent']
+				if parent['endy'].nil?
+					dom[(dom[key]['parent'])]['endy'] = @y
+					parent['endy'] = @y
+				end
+				if parent['endpage'].nil?
+					dom[(dom[key]['parent'])]['endpage'] = @page
+					parent['endpage'] = @page
+				end
+				# update row-spanned cells
+				if !dom[table_el]['rowspans'].nil?
+					dom[table_el]['rowspans'].each_with_index { |trwsp, k|
+						dom[table_el]['rowspans'][k]['rowspan'] -= 1
+						if dom[table_el]['rowspans'][k]['rowspan'] == 0
+							if dom[table_el]['rowspans'][k]['endpage'] == parent['endpage']
+								dom[(dom[key]['parent'])]['endy'] = [dom[table_el]['rowspans'][k]['endy'], parent['endy']].max
+							elsif dom[table_el]['rowspans'][k]['endpage'] > parent['endpage']
+								dom[(dom[key]['parent'])]['endy'] = dom[table_el]['rowspans'][k]['endy']
+								dom[(dom[key]['parent'])]['endpage'] = dom[table_el]['rowspans'][k]['endpage']
+							end
+						end
+					}
+					# report new endy and endpage to the rowspanned cells
+					dom[table_el]['rowspans'].each_with_index { |trwsp, k|
+						if dom[table_el]['rowspans'][k]['rowspan'] == 0
+							dom[table_el]['rowspans'][k]['endpage'] = [dom[table_el]['rowspans'][k]['endpage'], dom[(dom[key]['parent'])]['endpage']].max
+							dom[(dom[key]['parent'])]['endpage'] = dom[table_el]['rowspans'][k]['endpage']
+							dom[table_el]['rowspans'][k]['endy'] = [dom[table_el]['rowspans'][k]['endy'], dom[(dom[key]['parent'])]['endy']].max
+							dom[(dom[key]['parent'])]['endy'] = dom[table_el]['rowspans'][k]['endy']
+						end
+					}
+					# update remaining rowspanned cells
+					dom[table_el]['rowspans'].each_with_index { |trwsp, k|
+						if dom[table_el]['rowspans'][k]['rowspan'] == 0
+							dom[table_el]['rowspans'][k]['endpage'] = dom[(dom[key]['parent'])]['endpage']
+							dom[table_el]['rowspans'][k]['endy'] = dom[(dom[key]['parent'])]['endy']
+						end
+					}
+				end
+				if (@num_columns > 1) and (dom[(dom[key]['parent'])]['endy'] >= (@page_break_trigger - @lasth)) and (@y < dom[(dom[key]['parent'])]['endy'])
+					Ln(0, cell)
+				else
+					SetPage(dom[(dom[key]['parent'])]['endpage']);
+					@y = dom[(dom[key]['parent'])]['endy']
+					if !dom[table_el]['attribute']['cellspacing'].nil?
+						cellspacing = getHTMLUnitToUnits(dom[table_el]['attribute']['cellspacing'], 1, 'px')
+						@y += cellspacing
+					end
+					Ln(0, cell)
+					@x = parent['startx']
+					# account for booklet mode
+					if @page > parent['startpage']
+						if @rtl and (@pagedim[@page]['orm'] != @pagedim[parent['startpage']]['orm'])
+							@x -= @pagedim[@page]['orm'] - @pagedim[parent['startpage']]['orm']
+						elsif !@rtl and (@pagedim[@page]['olm'] != @pagedim[parent['startpage']]['olm'])
+							@x += @pagedim[@page]['olm'] - @pagedim[parent['startpage']]['olm']
+						end
+					end
+				end
+			when 'table', 'tablehead'
+				if tag['value'] == 'tablehead'
+					# closing tag used for the thead part
+					in_table_head = true
+					@in_thead = false
+				end
+
+				table_el = parent
+				# draw borders
+				if (!table_el['attribute']['border'].nil? and (table_el['attribute']['border'].to_i > 0)) or (!table_el['style'].nil? and !table_el['style']['border'].nil? and (table_el['style']['border'].to_i > 0))
+					border = 1
+				else
+					border = 0
+				end
+
+				startpage = 0
+				end_page = 0
+				# fix bottom line alignment of last line before page break
+				dom[(dom[key]['parent'])]['trids'].each_with_index { |trkey, j|
+					# update row-spanned cells
+					if !dom[(dom[key]['parent'])]['rowspans'].nil?
+						dom[(dom[key]['parent'])]['rowspans'].each_with_index { |trwsp, k|
+							if trwsp['trid'] == trkey
+								dom[(dom[key]['parent'])]['rowspans'][k]['mrowspan'] -= 1
+							end
+							if defined?(prevtrkey) and (trwsp['trid'] == prevtrkey) and (trwsp['mrowspan'] >= 0)
+								dom[(dom[key]['parent'])]['rowspans'][k]['trid'] = trkey
+							end
+						}
+					end
+					if defined?(prevtrkey) and (dom[trkey]['startpage'] > dom[prevtrkey]['endpage'])
+						pgendy = @pagedim[dom[prevtrkey]['endpage']]['hk'] - @pagedim[dom[prevtrkey]['endpage']]['bm']
+						dom[prevtrkey]['endy'] = pgendy
+						# update row-spanned cells
+						if !dom[(dom[key]['parent'])]['rowspans'].nil?
+							dom[(dom[key]['parent'])]['rowspans'].each_with_index { |trwsp, k|
+								if (trwsp['trid'] == trkey) and (trwsp['mrowspan'] > 1) and (trwsp['endpage'] == dom[prevtrkey]['endpage'])
+									dom[(dom[key]['parent'])]['rowspans'][k]['endy'] = pgendy
+									dom[(dom[key]['parent'])]['rowspans'][k]['mrowspan'] = -1
+								end
+							}
+						end
+					end
+					prevtrkey = trkey
+					table_el = dom[(dom[key]['parent'])].dup
+				}
+				# for each row
+				table_el['trids'].each_with_index { |trkey, j|
+					parent = dom[trkey]
+					# for each cell on the row
+					parent['cellpos'].each_with_index { |cellpos, k|
+						if !cellpos['rowspanid'].nil? and (cellpos['rowspanid'] >= 0)
+							cellpos['startx'] = table_el['rowspans'][(cellpos['rowspanid'])]['startx']
+							cellpos['endx'] = table_el['rowspans'][(cellpos['rowspanid'])]['endx']
+							endy = table_el['rowspans'][(cellpos['rowspanid'])]['endy']
+							startpage = table_el['rowspans'][(cellpos['rowspanid'])]['startpage']
+							end_page = table_el['rowspans'][(cellpos['rowspanid'])]['endpage']
+						else
+							endy = parent['endy']
+							startpage = parent['startpage']
+							end_page = parent['endpage']
+						end
+						if end_page > startpage
+							# design borders around HTML cells.
+							startpage.upto(end_page) do |page|
+								SetPage(page)
+								if page == startpage
+									@y = parent['starty'] # put cursor at the beginning of row on the first page
+									ch = GetPageHeight() - parent['starty'] - GetBreakMargin()
+									cborder = getBorderMode(border, position='start')
+								elsif page == end_page
+									@y = @t_margin # put cursor at the beginning of last page
+									ch = endy - @t_margin
+									cborder = getBorderMode(border, position='end')
+								else
+									@y = @t_margin # put cursor at the beginning of the current page
+									ch = GetPageHeight() - @t_margin - GetBreakMargin()
+									cborder = getBorderMode(border, position='middle')
+								end
+								if !cellpos['bgcolor'].nil? and (cellpos['bgcolor'] != false)
+									SetFillColorArray(cellpos['bgcolor'])
+									fill = 1
+								else
+									fill = 0
+								end
+								cw = (cellpos['endx'] - cellpos['startx']).abs
+								@x = cellpos['startx']
+								# account for margin changes
+								if page > startpage
+									if @rtl and (@pagedim[page]['orm'] != @pagedim[startpage]['orm'])
+										@x -= @pagedim[page]['orm'] - @pagedim[startpage]['orm']
+									elsif !@rtl and (@pagedim[page]['lm'] != @pagedim[startpage]['olm'])
+										@x += @pagedim[page]['olm'] - @pagedim[startpage]['olm']
+									end
+								end
+								# design a cell around the text
+								ccode = @fill_color + "\n" + getCellCode(cw, ch, '', cborder, 1, '', fill, '', 0, true)
+								if (cborder != 0) or (fill == 1)
+									pagebuff = getPageBuffer(@page)
+									pstart = pagebuff[0, @intmrk[@page]]
+									pend = pagebuff[@intmrk[@page]..-1]
+									setPageBuffer(@page, pstart + ccode + "\n" + pend)
+									@intmrk[@page] += (ccode + "\n").length
+								end
+							end
+						else
+							SetPage(startpage)
+							if !cellpos['bgcolor'].nil? and (cellpos['bgcolor'] != false)
+								SetFillColorArray(cellpos['bgcolor'])
+								fill = 1
+							else
+								fill = 0
+							end
+							@x = cellpos['startx']
+							@y = parent['starty']
+							cw = (cellpos['endx'] - cellpos['startx']).abs
+							ch = endy - parent['starty']
+							# design a cell around the text
+							ccode = @fill_color + "\n" + getCellCode(cw, ch, '', border, 1, '', fill, '', 0, true)
+							if (border != 0) or (fill == 1)
+								if !@transfmrk[@page].nil?
+									pagemark = @transfmrk[@page]
+									@transfmrk[@page] += (ccode + "\n").length
+								elsif @in_footer
+									pagemark = @footerpos[@page]
+									@footerpos[@page] += (ccode + "\n").length
+								else
+									pagemark = @intmrk[@page]
+									@intmrk[@page] += (ccode + "\n").length
+								end
+								pagebuff = getPageBuffer(@page)
+								pstart = pagebuff[0, pagemark]
+								pend = pagebuff[pagemark..-1]
+								setPageBuffer(@page, pstart + ccode + "\n" + pend)
+							end
+						end
+					}                                       
+					if !table_el['attribute']['cellspacing'].nil?
+						cellspacing = getHTMLUnitToUnits(table_el['attribute']['cellspacing'], 1, 'px')
+						@y += cellspacing
+					end
+					Ln(0, cell)
+					@x = parent['startx']
+					if end_page > startpage
+						if @rtl and (@pagedim[end_page]['orm'] != @pagedim[startpage]['orm'])
+							@x += @pagedim[end_page]['orm'] - @pagedim[startpage]['orm']
+						elsif !@rtl and (@pagedim[end_page]['olm'] != @pagedim[startpage]['olm'])
+							@x += @pagedim[end_page]['olm'] - @pagedim[startpage]['olm']
+						end
+					end
+				}
+				if !in_table_head
+					# we are not inside a thead section
+					if !parent['cellpadding'].nil?
+						@c_margin = @old_c_margin
+					end
+					@lasth = @font_size * @cell_height_ratio
+					if (@page == @numpages - 1) and @pageopen[@numpages]
+						# remove last blank page
+						deletePage(@numpages)
+					end
+					if !@thead_margins['top'].nil?
+						# restore top margin
+						@t_margin = @thead_margins['top']
+						@pagedim[@page]['tm'] = @t_margin
+					end
+					if table_el['attribute']['nested'].nil? or (table_el['attribute']['nested'] != 'true')
+						# reset main table header
+						@thead = ''
+						@thead_margins = {}
+					end
+				end
+			when 'a'
+				@href = {}
+			when 'sup'
+				SetXY(GetX(), GetY() + (0.7 * parent['fontsize'] / @k))
+			when 'sub'
+				SetXY(GetX(), GetY() - (0.3 * parent['fontsize'] / @k))
+			when 'div'
+				addHTMLVertSpace(hbz, 0, cell, firstorlast)
+			when 'blockquote'
+				if @rtl
+					@r_margin -= @listindent
+				else
+					@l_margin -= @listindent
+				end
+				@listindentlevel -= 1
+				addHTMLVertSpace(hbz, hb, cell, firstorlast)
+			when 'p'
+				addHTMLVertSpace(hbz, hb, cell, firstorlast)
+			when 'pre'
+				addHTMLVertSpace(hbz, hb, cell, firstorlast)
+				@premode = false
+			when 'dl'
+				@listnum -= 1
+				if @listnum <= 0
+					@listnum = 0
+					addHTMLVertSpace(hbz, hb, cell, firstorlast)
+				else
+					addHTMLVertSpace(0, 0, cell, firstorlast)
+				end
+				@lasth = @font_size * @cell_height_ratio
+			when 'dt'
+				@lispacer = ''
+				addHTMLVertSpace(0, 0, cell, firstorlast)
+			when 'dd'
+				@lispacer = ''
+				if @rtl
+					@r_margin -= @listindent
+				else
+					@l_margin -= @listindent
+				end
+				@listindentlevel -= 1
+				addHTMLVertSpace(0, 0, cell, firstorlast)
+			when 'ul', 'ol'
+				@listnum -= 1
+				@lispacer = ''
+				if @rtl
+					@r_margin -= @listindent
+				else
+					@l_margin -= @listindent
+				end
+				@listindentlevel -= 1
+				if @listnum <= 0
+					@listnum = 0
+					addHTMLVertSpace(hbz, hb, cell, firstorlast)
+				else
+					addHTMLVertSpace(0, 0, cell, firstorlast)
+				end
+				@lasth = @font_size * @cell_height_ratio
+			when 'li'
+				@lispacer = ''
+				addHTMLVertSpace(0, 0, cell, firstorlast)
+			when 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
+				addHTMLVertSpace(hbz, hb, cell, firstorlast)
+		end
+		if dom[(dom[key]['parent'])]['attribute']['pagebreakafter']
+			pba = dom[(dom[key]['parent'])]['attribute']['pagebreakafter']
+			# check for pagebreak 
+			if (pba == 'true') or (pba == 'left') or (pba == 'right')
+				# add a page (or trig AcceptPageBreak() for multicolumn mode)
+				checkPageBreak(@page_break_trigger + 1)
+			end
+			if ((pba == 'left') and ((!@rtl and (@page % 2 == 0)) or (@rtl and (@page % 2 != 0)))) or ((pba == 'right') and ((!@rtl and (@page % 2 != 0)) or (@rtl and (@page % 2 == 0))))
+				# add a page (or trig AcceptPageBreak() for multicolumn mode)
+				checkPageBreak(@page_break_trigger + 1)
+			end
+		end
+		@tmprtl = false
+	end
+	
+	#
+	# Add vertical spaces if needed.
+	# @param string :hbz Distance between current y and line bottom.
+	# @param string :hb The height of the break.
+	# @param boolean :cell if true add the default cMargin space to each new line (default false).
+	# @param boolean :firstorlast if true do not print additional empty lines.
+	# @access protected
+	#
+	def addHTMLVertSpace(hbz=0, hb=0, cell=false, firstorlast=false)
+		if firstorlast
+			Ln(0, cell)
+			@htmlvspace = 0
+			return
+		end
+
+		if hb < @htmlvspace
+			hd = 0
+		else
+			hd = hb - @htmlvspace
+			@htmlvspace = hb
+		end
+		Ln(hbz + hd, cell)
+	end
+
+	#
+	# Set the booklet mode for double-sided pages.
+	# @param boolean :booklet true set the booklet mode on, fals eotherwise.
+	# @param float :inner Inner page margin.
+	# @param float :outer Outer page margin.
+	# @access public
+	# @since 4.2.000 (2008-10-29)
+	#
+	def SetBooklet(booklet=true, inner=-1, outer=-1)
+		@booklet = booklet
+		if inner >= 0
+			@l_margin = inner
+		end
+		if outer >= 0
+			@r_margin = outer
+		end
+	end
+
+	#
+	# Swap the left and right margins.
+	# @param boolean :reverse if true swap left and right margins.
+	# @access protected
+	# @since 4.2.000 (2008-10-29)
+	#
+	def swapMargins(reverse=true)
+		if reverse
+			# swap left and right margins
+			mtemp = @original_l_margin
+			@original_l_margin = @original_r_margin
+			@original_r_margin = mtemp
+			deltam = @original_l_margin - @original_r_margin
+			@l_margin += deltam
+			@r_margin -= deltam
+		end
+	end
+
+	#
+	# Set the vertical spaces for HTML tags.
+	# The array must have the following structure (example):
+	# :tagvs = {'h1' => [{'h' => '', 'n' => 2}, {'h' => 1.3, 'n' => 1}]}
+	# The first array level contains the tag names,
+	# the second level contains 0 for opening tags or 1 for closing tags,
+	# the third level contains the vertical space unit (h) and the number spaces to add (n).
+	# If the h parameter is not specified, default values are used.
+	# @param array :tagvs array of tags and relative vertical spaces.
+	# @access public
+	# @since 4.2.001 (2008-10-30)
+	#
+	def setHtmlVSpace(tagvs)
+		@tagvspaces = tagvs
+	end
+
+	#
+	# convert HTML string containing value and unit of measure to user's units or points.
+	# @param string :htmlval string containing values and unit
+	# @param string :refsize reference value in points
+	# @param string :defaultunit default unit (can be one of the following: %, em, ex, px, in, mm, pc, pt).
+	# @param boolean :point if true returns points, otherwise returns value in user's units
+	# @return float value in user's unit or point if :points=true
+	# @access public
+	# @since 4.4.004 (2008-12-10)
+	#
+	def getHTMLUnitToUnits(htmlval, refsize=1, defaultunit='px', points=false)
+		supportedunits = ['%', 'em', 'ex', 'px', 'in', 'cm', 'mm', 'pc', 'pt']
+		retval = 0
+		value = 0
+		unit = 'px'
+		k = @k
+		if points
+			k = 1
+		end
+		if supportedunits.include?(defaultunit)
+			unit = defaultunit
+		end
+		if htmlval.is_a?(Numeric)
+			value = htmlval.to_f
+		else
+			mnum = htmlval.scan(/[0-9\.\-\+]+/)
+			unless mnum.empty?
+				value = mnum[0].to_f
+				munit = htmlval.scan(/[a-z%]+/)
+				unless munit.empty?
+					if supportedunits.include?(munit[0])
+						unit = munit[0]
+					end
+				end
+			end
+		end
+		case unit
+		when '%' # percentage
+			retval = (value * refsize) / 100
+		when 'em' # relative-size
+			retval = value * refsize
+		when 'ex' # height of lower case 'x' (about half the font-size)
+			retval = value * (refsize / 2)
+		when 'in' # absolute-size
+			retval = (value * @dpi) / k
+		when 'cm' # centimeters
+			retval = (value / 2.54 * @dpi) / k
+		when 'mm' # millimeters
+			retval = (value / 25.4 * @dpi) / k
+		when 'pc' # one pica is 12 points
+			retval = (value * 12) / k
+		when 'pt' # points
+			retval = value / k
+		when 'px' # pixels
+			retval = pixelsToUnits(value)
+		end
+		return retval
+	end
+
+	#
+	# Returns the Roman representation of an integer number
+	# @param int :number to convert
+	# @return string roman representation of the specified number
+	# @access public
+	# @since 4.4.004 (2008-12-10)
+	#
+	def intToRoman(number)
+		roman = ''
+		while number >= 1000
+			roman << 'M'
+			number -= 1000
+		end
+		while number >= 900
+			roman << 'CM'
+			number -= 900
+		end
+		while number >= 500
+			roman << 'D'
+			number -= 500
+		end
+		while number >= 400
+			roman << 'CD'
+			number -= 400
+		end
+		while number >= 100
+			roman << 'C'
+			number -= 100
+		end
+		while number >= 90
+			roman << 'XC'
+			number -= 90
+		end
+		while number >= 50
+			roman << 'L'
+			number -= 50
+		end
+		while number >= 40
+			roman << 'XL'
+			number -= 40
+		end
+		while number >= 10
+			roman << 'X'
+			number -= 10
+		end
+		while number >= 9
+			roman << 'IX'
+			number -= 9
+		end
+		while number >= 5
+			roman << 'V'
+			number -= 5
+		end
+		while number >= 4
+			roman << 'IV'
+			number -= 4
+		end
+		while number >= 1
+			roman << 'I'
+			number -= 1
+		end
+		return roman
+	end
+
+	#
+	# Output an HTML list bullet or ordered item symbol
+	# @param int :listdepth list nesting level
+	# @param string :listtype type of list
+	# @param float :size current font size
+	# @access protected
+	# @since 4.4.004 (2008-12-10)
+	#
+	def putHtmlListBullet(listdepth, listtype='', size=10)
+		size /= @k
+		fill = ''
+		color = @fgcolor
+		width = 0
+		textitem = ''
+		tmpx = @x           
+		lspace = GetStringWidth('  ')
+		if listtype == '!'
+			# set default list type for unordered list
+			deftypes = ['disc', 'circle', 'square']
+			listtype = deftypes[(listdepth - 1) % 3]
+		elsif listtype == '#'
+			# set default list type for ordered list
+			listtype = 'decimal'
+		end
+		case listtype
+			# unordered types
+		when 'none'
+		when 'disc', 'circle'
+			fill = 'F' if listtype == 'disc'
+			fill << 'D'
+			r = size / 6
+			lspace += 2 * r
+			if @rtl
+				@x += lspace
+			else
+				@x -= lspace
+			end
+			Circle(@x + r, @y + @lasth / 2, r, 0, 360, fill, {'color'=>color}, color, 8)
+		when 'square'
+			l = size / 3
+			lspace += l
+			if @rtl
+				@x += lspace
+			else
+				@x -= lspace
+			end
+			Rect(@x, @y + (@lasth - l)/ 2, l, l, 'F', {}, color)
+
+		# ordered types
+		# listcount[@listnum]
+		# textitem
+		when '1', 'decimal'
+			textitem = @listcount[@listnum].to_s
+		when 'decimal-leading-zero'
+			textitem = sprintf("%02d", @listcount[@listnum])
+		when 'i', 'lower-roman'
+			textitem = (intToRoman(@listcount[@listnum])).downcase
+		when 'I', 'upper-roman'
+			textitem = intToRoman(@listcount[@listnum])
+		when 'a', 'lower-alpha', 'lower-latin'
+			textitem = (97 + @listcount[@listnum] - 1).chr
+		when 'A', 'upper-alpha', 'upper-latin'
+			textitem = (65 + @listcount[@listnum] - 1).chr
+		when 'lower-greek'
+			textitem = unichr(945 + @listcount[@listnum] - 1)
+		else
+			textitem = @listcount[@listnum].to_s
+		end
+
+		if !empty_string(textitem)
+			# print ordered item
+			if @rtl
+				textitem = '.' + textitem
+			else
+				textitem = textitem + '.'
+			end
+			lspace += GetStringWidth(textitem)
+			if @rtl
+				@x += lspace
+			else
+				@x -= lspace
+			end
+			Write(@lasth, textitem, '', false, '', false, 0, false)
+		end
+		@x = tmpx
+		@lispacer = ''
+	end
+
+	#
+	# Returns current graphic variables as array.
+	# @return array graphic variables
+	# @access protected
+	# @since 4.2.010 (2008-11-14)
+	#
+	def getGraphicVars()
+		grapvars = {
+			'FontFamily' => @font_family,
+			'FontStyle' => @font_style,
+			'FontSizePt' => @font_size_pt,
+			'rMargin' => @r_margin,
+			'lMargin' => @l_margin,
+			'cMargin' => @c_margin,
+			'LineWidth' => @line_width,
+			'linestyleWidth' => @linestyle_width,
+			'linestyleCap' => @linestyle_cap,
+			'linestyleJoin' => @linestyle_join,
+			'linestyleDash' => @linestyle_dash,
+			'textrendermode' => @textrendermode,
+			'textstrokewidth' => @textstrokewidth,
+			'DrawColor' => @draw_color,
+			'FillColor' => @fill_color,
+			'TextColor' => @text_color,
+			'ColorFlag' => @color_flag,
+			'bgcolor' => @bgcolor,
+			'fgcolor' => @fgcolor,
+			'htmlvspace' => @htmlvspace,
+			'listindent' => @listindent,
+			'listindentlevel' => @listindentlevel,
+			'listnum' => @listnum,
+			'listordered' => @listordered,
+			'listcount' => @listcount,
+			'lispacer' => @lispacer,
+			'lasth' => @lasth
+		}
+		return grapvars
+	end
+
+	#
+	# Set graphic variables.
+	# @param :gvars array graphic variables
+	# @access protected
+	# @since 4.2.010 (2008-11-14)
+	#
+	def setGraphicVars(gvars)
+		@font_family = gvars['FontFamily']
+		@font_style = gvars['FontStyle']
+		@font_size_pt = gvars['FontSizePt']
+		@r_margin = gvars['rMargin']
+		@l_margin = gvars['lMargin']
+		@c_margin = gvars['cMargin']
+		@line_width = gvars['LineWidth']
+		@linestyle_width = gvars['linestyleWidth']
+		@linestyle_cap = gvars['linestyleCap']
+		@linestyle_join = gvars['linestyleJoin']
+		@linestyle_dash = gvars['linestyleDash']
+		@textrendermode = gvars['textrendermode']
+		@textstrokewidth = gvars['textstrokewidth']
+		@draw_color = gvars['DrawColor']
+		@fill_color = gvars['FillColor']
+		@text_color = gvars['TextColor']
+		@color_flag = gvars['ColorFlag']
+		@bgcolor = gvars['bgcolor']
+		@fgcolor = gvars['fgcolor']
+		@htmlvspace = gvars['htmlvspace']
+		@listindent = gvars['listindent']
+		@listindentlevel = gvars['listindentlevel']
+		@listnum = gvars['listnum']
+		@listordered = gvars['listordered']
+		@listcount = gvars['listcount']
+		@lispacer = gvars['lispacer']
+		#@lasth = gvars['lasth']
+		out('' + @linestyle_width + ' ' + @linestyle_cap + ' ' + @linestyle_join + ' ' + @linestyle_dash + ' ' + @draw_color + ' ' + @fill_color + '')
+		unless empty_string(@font_family)
+			SetFont(@font_family, @font_style, @font_size_pt)
+		end
+	end
+
+        # --- END OF HTML PARSER FUNCTIONS ---
+        # --- BUFFER FUNCTIONS ---
+
+	#
+	# Returns a temporary filename for caching object on filesystem.
+	# @param string :name prefix to add to filename
+	# return string filename.
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def getObjFilename(name)
+                tmpFile = Tempfile.new(name + '_', @@k_path_cache)
+                tmpFile.binmode
+		tmpFile
+	ensure
+		tmpFile.close
+	end
+
+	#
+	# Writes data to a temporary file on filesystem.
+	# @param string :filename file name
+	# @param mixed :data data to write on file
+	# @param boolean :append if true append data, false replace.
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def writeDiskCache(filename, data, append=false)
+		filename = filename.path
+		if append
+			fmode = 'a+b'
+		else
+			fmode = 'w+b'
+		end
+		f = open(filename, fmode)
+		if !f
+			Error('Unable to write cache file: ' + filename)
+		else
+			f.write(data)
+			f.close
+		end
+
+		# update file length (needed for transactions)
+		if @cache_file_length[filename].nil?
+			@cache_file_length[filename] = data.length
+		else
+			@cache_file_length[filename] += data.length
+		end
+	end
+
+	#
+	# Read data from a temporary file on filesystem.
+	# @param string :filename file name
+	# @return mixed retrieved data
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def readDiskCache(filename)
+		filename = filename.path
+		data = ''
+		open( filename,'rb') do |f|
+			data << f.read()
+		end
+		return data
+	end
+
+	#
+	# Set buffer content (always append data).
+	# @param string :data data
+	# @access protected
+	# @since 4.5.000 (2009-01-02)
+	#
+	def setBuffer(data)
+		@bufferlen += data.length
+		if @diskcache
+			if @buffer.nil? or empty_string(@buffer.path)
+				@buffer = getObjFilename('buffer')
+			end
+			writeDiskCache(@buffer, data, true)
+		else
+			@buffer << data
+		end
+	end
+
+	#
+	# Get buffer content.
+	# @return string buffer content
+	# @access protected
+	# @since 4.5.000 (2009-01-02)
+	#
+	def getBuffer
+		if @diskcache
+			return readDiskCache(@buffer)
+		else
+			return @buffer
+		end
+	end
+
+	#
+	# Set page buffer content.
+	# @param int :page page number
+	# @param string :data page data
+	# @param boolean :append if true append data, false replace.
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def setPageBuffer(page, data, append=false)
+		if @diskcache
+			if @pages[page].nil?
+				@pages[page] = getObjFilename('page' + page.to_s)
+			end
+			writeDiskCache(@pages[page], data, append)
+		else
+			if append
+				@pages[page] << data
+			else
+				@pages[page] = data
+			end
+		end
+		if append and !@pagelen[page].nil?
+			@pagelen[page] += data.length
+		else
+			@pagelen[page] = data.length
+		end
+	end
+
+	#
+	# Get page buffer content.
+	# @param int :page page number
+	# @return string page buffer content or false in case of error
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def getPageBuffer(page)
+		if @diskcache
+			return readDiskCache(@pages[page])
+		elsif !@pages[page].nil?
+			return @pages[page]
+		end
+		return false
+	end
+
+	#
+	# Set image buffer content.
+	# @param string :image image key
+	# @param array :data image data
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def setImageBuffer(image, data)
+		if @diskcache
+			if @images[image].nil?
+				@images[image] = getObjFilename('image' + File::basename(image))
+			end
+			writeDiskCache(@images[image], Marshal.dump(data))
+		else
+			@images[image] = data
+		end
+		if !@imagekeys.include?(image)
+			@imagekeys.push image
+			@numimages += 1
+		end
+	end
+
+	#
+	# Set image buffer content for a specified sub-key.
+	# @param string :image image key
+	# @param string :key image sub-key
+	# @param hash :data image data
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def setImageSubBuffer(image, key, data)
+		if @images[image].nil?
+				setImageBuffer(image, {})
+		end
+		if @diskcache
+			tmpimg = getImageBuffer(image)
+			tmpimg[key] = data
+			writeDiskCache(@images[image], Marshal.dump(tmpimg))
+		else
+			@images[image][key] = data
+		end
+	end
+                
+	#
+	# Get image buffer content.
+	# @param string :image image key
+	# @return string image buffer content or false in case of error
+	# @access protected
+	# @since 4.5.000 (2008-12-31)
+	#
+	def getImageBuffer(image)
+		if @diskcache and !@images[image].nil?
+			return Marshal.load(readDiskCache(@images[image]))
+		elsif !@images[image].nil?
+			return @images[image]
+		end
+		return false
+	end
+
+	#
+	# Set font buffer content.
+	# @param string :font font key
+	# @param hash :data font data
+	# @access protected
+	# @since 4.5.000 (2009-01-02)
+	#
+	def setFontBuffer(font, data)
+		if @diskcache
+			if @fonts[font].nil?
+				@fonts[font] = getObjFilename('font')
+			end
+			writeDiskCache(@fonts[font], Marshal.dump(data))
+		else
+			@fonts[font] = data
+		end
+		if !@fontkeys.include?(font)
+			@fontkeys.push font
+		end
+	end
+
+	#
+	# Set font buffer content.
+	# @param string :font font key
+	# @param string :key font sub-key
+	# @param array :data font data
+	# @access protected
+	# @since 4.5.000 (2009-01-02)
+	#
+	def setFontSubBuffer(font, key, data)
+		if @fonts[font].nil?
+			setFontBuffer(font, {})
+		end
+		if @diskcache
+			tmpfont = getFontBuffer(font)
+			tmpfont[key] = data
+			writeDiskCache(@fonts[font], Marshal.dump(tmpfont))
+		else
+			@fonts[font][key] = data
+		end
+	end
+
+	#
+	# Get font buffer content.
+	# @param string :font font key
+	# @return string font buffer content or false in case of error
+	# @access protected
+	# @since 4.5.000 (2009-01-02)
+	#
+	def getFontBuffer(font)
+		if @diskcache and !@fonts[font].nil?
+			return Marshal.load(readDiskCache(@fonts[font]))
+		elsif !@fonts[font].nil?
+			return @fonts[font]
+		end
+		return false
+	end
+
+	# --- END OF BUFFER FUNCTIONS ---
 
 	#
 	# Move a page to a previous position.
