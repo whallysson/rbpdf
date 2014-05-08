@@ -1240,106 +1240,6 @@ class TCPDF
   alias_method :set_creator, :SetCreator
 
 	#
-	# Create a new page group.
-	# NOTE: call this function before calling AddPage()
-	# @param int :page starting group page (leave empty for next page).
-	# @access public
-	# @since 3.0.000 (2008-03-27)
-	#
-	def startPageGroup(page='')
-		if page.empty?
-			page = @page + 1
-		end
-		@newpagegroup[page] = true
-	end
-
-	#
-	# Defines an alias for the total number of pages.
-	# It will be substituted as the document is closed.
-	# @param string :alias The alias.
-	# @access public
-	# @since 1.4
-	# @see GetAliasNbPages(), PageNo(), Footer()
-	#
-	def AliasNbPages(alias_nb ='{nb}')
-		@alias_nb_pages = alias_nb
-	end
-  alias_method :alias_nb_pages, :AliasNbPages
-
-	#
-	# Returns the string alias used for the total number of pages.
-	# If the current font is unicode type, the returned string is surrounded by additional curly braces.
-	# @return string
-	# @access public
-	# @since 4.0.018 (2008-08-08)
-	# @see AliasNbPages(), PageNo(), Footer()
-	#
-	def GetAliasNbPages()
-		if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
-			return '{' + @alias_nb_pages + '}'
-		end
-		return @alias_nb_pages
-	end
-
-	#
-	# Defines an alias for the page number.
-	# It will be substituted as the document is closed.
-	# @param string :alias The alias.
-	# @access public
-	# @since 4.5.000 (2009-01-02)
-	# @see getAliasNbPages(), PageNo(), Footer()
-	#
-	def AliasNumPage(alias_num='{pnb}')
-		# Define an alias for total number of pages
-		@alias_num_page = alias_num
-	end
-                
-	#
-	# Returns the string alias used for the page number.
-	# If the current font is unicode type, the returned string is surrounded by additional curly braces.
-	# @return string
-	# @access public
-	# @since 4.5.000 (2009-01-02)
-	# @see AliasNbPages(), PageNo(), Footer()
-	#
-	def GetAliasNumPage()
-			if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
-			return '{' + @alias_num_page + '}'
-		end
-		return @alias_num_page
-	end
-
-	#
-	# Return the alias of the current page group
-	# If the current font is unicode type, the returned string is surrounded by additional curly braces.
-	# (will be replaced by the total number of pages in this group).
-	# @return alias of the current page group
-	# @access public
-	# @since 3.0.000 (2008-03-27)
-	#
-	def GetPageGroupAlias()
-		if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont1')
-			return '{' + @currpagegroup + '}'
-		end
-		return @currpagegroup
-	end
-
-	#
-	# Return the alias for the page number on the current page group
-	# If the current font is unicode type, the returned string is surrounded by additional curly braces.
-	# (will be replaced by the total number of pages in this group).
-	# @return alias of the current page group
-	# @access public
-	# @since 4.5.000 (2009-01-02)
-	#
-	def GetPageNumGroupAlias()
-		if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
-			return '{' + @currpagegroup.gsub('{nb', '{pnb') +'}'
-		end
-		return @currpagegroup.gsub('{nb', '{pnb')
-	end
-
-	#
 	# This method is automatically called in case of fatal error; it simply outputs the message and halts the execution. An inherited class may override it to customize the error handling but should always halt the script, or the resulting document would probably be invalid.
 	# 2004-06-11 :: Nicola Asuni : changed bold tag with strong
 	# @param string :msg The error message
@@ -12575,6 +12475,76 @@ class TCPDF
 	# --- END FORMS FIELDS ------------------------------------------------
 
 	#
+	# Create a new page group.
+	# NOTE: call this function before calling AddPage()
+	# @param int :page starting group page (leave empty for next page).
+	# @access public
+	# @since 3.0.000 (2008-03-27)
+	#
+	def startPageGroup(page='')
+		if page.empty?
+			page = @page + 1
+		end
+		@newpagegroup[page] = true
+	end
+
+	#
+	# Defines an alias for the total number of pages.
+	# It will be substituted as the document is closed.
+	# @param string :alias The alias.
+	# @access public
+	# @since 1.4
+	# @see GetAliasNbPages(), PageNo(), Footer()
+	#
+	def AliasNbPages(alias_nb ='{nb}')
+		@alias_nb_pages = alias_nb
+	end
+  alias_method :alias_nb_pages, :AliasNbPages
+
+	#
+	# Returns the string alias used for the total number of pages.
+	# If the current font is unicode type, the returned string is surrounded by additional curly braces.
+	# @return string
+	# @access public
+	# @since 4.0.018 (2008-08-08)
+	# @see AliasNbPages(), PageNo(), Footer()
+	#
+	def GetAliasNbPages()
+		if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+			return '{' + @alias_nb_pages + '}'
+		end
+		return @alias_nb_pages
+	end
+
+	#
+	# Defines an alias for the page number.
+	# It will be substituted as the document is closed.
+	# @param string :alias The alias.
+	# @access public
+	# @since 4.5.000 (2009-01-02)
+	# @see getAliasNbPages(), PageNo(), Footer()
+	#
+	def AliasNumPage(alias_num='{pnb}')
+		# Define an alias for total number of pages
+		@alias_num_page = alias_num
+	end
+                
+	#
+	# Returns the string alias used for the page number.
+	# If the current font is unicode type, the returned string is surrounded by additional curly braces.
+	# @return string
+	# @access public
+	# @since 4.5.000 (2009-01-02)
+	# @see AliasNbPages(), PageNo(), Footer()
+	#
+	def GetAliasNumPage()
+			if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+			return '{' + @alias_num_page + '}'
+		end
+		return @alias_num_page
+	end
+
+	#
 	# Return the current page in the group.
 	# @return current page in the group
 	# @access public
@@ -12592,6 +12562,36 @@ class TCPDF
 	#
 	def getGroupPageNoFormatted()
 		return formatPageNumber(getGroupPageNo())
+	end
+
+	#
+	# Return the alias of the current page group
+	# If the current font is unicode type, the returned string is surrounded by additional curly braces.
+	# (will be replaced by the total number of pages in this group).
+	# @return alias of the current page group
+	# @access public
+	# @since 3.0.000 (2008-03-27)
+	#
+	def GetPageGroupAlias()
+		if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont1')
+			return '{' + @currpagegroup + '}'
+		end
+		return @currpagegroup
+	end
+
+	#
+	# Return the alias for the page number on the current page group
+	# If the current font is unicode type, the returned string is surrounded by additional curly braces.
+	# (will be replaced by the total number of pages in this group).
+	# @return alias of the current page group
+	# @access public
+	# @since 4.5.000 (2009-01-02)
+	#
+	def GetPageNumGroupAlias()
+		if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
+			return '{' + @currpagegroup.gsub('{nb', '{pnb') +'}'
+		end
+		return @currpagegroup.gsub('{nb', '{pnb')
 	end
 
 	#
