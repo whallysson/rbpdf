@@ -2704,7 +2704,7 @@ class TCPDF
   # @param float :y Ordinate of the upper-left corner of the rectangle
   # @param float :w Width of the rectangle
   # @param float :h Height of the rectangle
-  # @param string :text annotation text or alternate content
+  # @param mixed :text annotation text or alternate content
   # @param array :opt array of options (see section 8.4 of PDF reference 1.7).
   # @param int :spaces number of spaces on the text to link
   # @access public
@@ -3308,7 +3308,7 @@ class TCPDF
       if (@color_flag)
         s<<' Q';
       end
-      if link && ((link.is_a?(String) and !link.empty?) or link.is_a? Fixnum)
+      if link && ((link.is_a?(String) and !link.empty?) or (link.is_a?(Fixnum) and link != 0)) # Fixnum is PDF file Page No.
         Link(xdx, y + ((h - @font_size) / 2), width, @font_size, link, ns)
       end
     end
