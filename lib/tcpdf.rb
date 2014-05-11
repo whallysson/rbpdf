@@ -6119,8 +6119,8 @@ class TCPDF
     s = '<</Type /FontDescriptor /FontName /' + name
     font['desc'].each {|k, v|
       if k != 'Style'
-        if fdv.is_a? Float
-          fdv = sprintf('%.3f', fdv)
+        if v.is_a? Float
+          v = sprintf('%.3f', v)
         end
         s << ' /' + k + ' ' + v.to_s + ''
       end
