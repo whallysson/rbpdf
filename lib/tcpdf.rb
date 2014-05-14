@@ -3752,7 +3752,7 @@ class TCPDF
         tmpstr = UniArrSubString(uchars, j, i)
         if firstline
           startx = @x
-          tmparr = chars[j..i-1]
+          tmparr = chars[j, i - j]
           if rtlmode
             tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
           end
@@ -3834,7 +3834,7 @@ class TCPDF
               tmpstr = UniArrSubString(uchars, j, i)
               if firstline
                 startx = @x
-                tmparr = chars[j..i-1]
+                tmparr = chars[j, i - j]
                 if rtlmode
                   tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
                 end
@@ -3888,7 +3888,7 @@ class TCPDF
             tmpstr = UniArrSubString(uchars, j, sep + endspace)
             if firstline
               startx = @x
-              tmparr = chars[j..sep+endspace-1]
+              tmparr = chars[j, sep + endspace - j]
               if rtlmode
                 tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
               end
@@ -3963,7 +3963,7 @@ class TCPDF
       tmpstr = UniArrSubString(uchars, j, nb)
       if firstline
         startx = @x
-        tmparr = chars[j..nb-1]
+        tmparr = chars[j, nb - j]
         if rtlmode
           tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
         end
@@ -4177,8 +4177,8 @@ class TCPDF
       end
     end
     # get original image width and height in pixels
-                pixw = imsize[0]
-                pixh = imsize[1]
+    pixw = imsize[0]
+    pixh = imsize[1]
 
     # calculate image width and height on document
     if (w <= 0) and (h <= 0)
@@ -10676,27 +10676,27 @@ class TCPDF
             yshift = 0
           end
           t_x = 0
-            # the last line must be shifted to be aligned as requested
-            linew = (@endlinex - startlinex).abs
-            pstart = getPageBuffer(startlinepage)[0, startlinepos]
-            if !opentagpos.nil? and !@footerlen[startlinepage].nil? and !@in_footer
-              @footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
-              midpos = [opentagpos, @footerpos[startlinepage]].min
-            elsif !opentagpos.nil?
-              midpos = opentagpos
-            elsif !@footerlen[startlinepage].nil? and !@in_footer
-              @footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
-              midpos = @footerpos[startlinepage]
-            else
-              midpos = 0
-            end
-            if midpos > 0
-              pmid = getPageBuffer(startlinepage)[startlinepos, midpos - startlinepos]
-              pend = getPageBuffer(startlinepage)[midpos..-1]
-            else
-              pmid = getPageBuffer(startlinepage)[startlinepos..-1]
-              pend = ''
-            end
+          # the last line must be shifted to be aligned as requested
+          linew = (@endlinex - startlinex).abs
+          pstart = getPageBuffer(startlinepage)[0, startlinepos]
+          if !opentagpos.nil? and !@footerlen[startlinepage].nil? and !@in_footer
+            @footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
+            midpos = [opentagpos, @footerpos[startlinepage]].min
+          elsif !opentagpos.nil?
+            midpos = opentagpos
+          elsif !@footerlen[startlinepage].nil? and !@in_footer
+            @footerpos[startlinepage] = @pagelen[startlinepage] - @footerlen[startlinepage]
+            midpos = @footerpos[startlinepage]
+          else
+            midpos = 0
+          end
+          if midpos > 0
+            pmid = getPageBuffer(startlinepage)[startlinepos, midpos - startlinepos]
+            pend = getPageBuffer(startlinepage)[midpos..-1]
+          else
+            pmid = getPageBuffer(startlinepage)[startlinepos..-1]
+            pend = ''
+          end
           if (!plalign.nil? and ((plalign == 'C') or (plalign == 'J') or ((plalign == 'R') and !@rtl) or ((plalign == 'L') and @rtl))) or (yshift < 0)
             # calculate shifting amount
             tw = w
@@ -10849,7 +10849,7 @@ class TCPDF
                         if isRTLTextDir()
                           tvalue = lnstring[strcount][0]
                         else
-                          tvalue = lnstring[strcount][0].strip
+                          tvalue = lnstring[strcount][0].rstrip
                         end
                       else
                         tvalue = lnstring[strcount][0]

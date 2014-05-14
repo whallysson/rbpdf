@@ -126,5 +126,48 @@ class TcpdfTest < ActiveSupport::TestCase
 
     line = pdf.write(0, "12345\nabcde\nefgh", nil, 0, '', false, 0, true)
     assert_equal line,  "\nabcde\nefgh"
-   end
+  end
+
+  class MYPDF < TCPDF
+    def endlinex
+      @endlinex
+    end
+    def r_margin
+      @r_margin
+    end
+  end
+
+  test "write endline x test 1" do
+    pdf = MYPDF.new
+    pdf.add_page()
+    line = pdf.write(0, " cccccccccc cccccccccc ", nil, 0, '', false, 0, true)
+    endlinex = pdf.endlinex()
+    assert_not_equal endlinex, 0
+  end
+
+  test "write endline x test 2" do
+    pdf = MYPDF.new
+    pdf.add_page()
+
+    r_margin = pdf.r_margin()
+    width = pdf.getPageWidth()
+    x = width - r_margin - 10
+    pdf.SetX(x)
+    line = pdf.write(0, " cccccccccc cccccccccc ", nil, 0, '', false, 0, true)
+    endlinex = pdf.endlinex()
+    assert_equal endlinex, x
+  end
+
+  test "write endline x test 3" do
+    pdf = MYPDF.new
+    pdf.add_page()
+
+    r_margin = pdf.r_margin()
+    width = pdf.getPageWidth()
+    x = width - r_margin - 10
+    pdf.SetX(x)
+    line = pdf.write(0, "cccccccccc cccccccccc ", nil, 0, '', false, 0, true)
+    endlinex = pdf.endlinex()
+    assert_not_equal endlinex, x
+  end
 end
