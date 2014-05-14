@@ -4154,6 +4154,9 @@ class TCPDF
   # @since 1.1
   #
   def Image(file, x='', y='', w=0, h=0, type='', link=nil, align='', resize=false, dpi=300, palign='', ismask=false, imgmask=false, border=0, fitbox=false, hidden=false, fitonpage=false)
+    w = 0 if w == ''
+    h = 0 if h == ''
+
     x = @x if x == ''
     y = @y if y == ''
 
@@ -4162,11 +4165,14 @@ class TCPDF
 
     # get image dimensions
     imsize = getimagesize(file)
-    if imsize == false
+    if imsize.nil? or imsize == false
       # encode spaces on filename
       file = file.gsub(' ', '%20')
       imsize = getimagesize(file)
-      if imsize == false
+
+      if imsize.nil?
+        Error('Missing image file: ' + file)
+      elsif imsize == false
         if (w > 0) and (h > 0)
           pw = getHTMLUnitToUnits(w, 0, @pdfunit, true) * @imgscale * @k
           ph = getHTMLUnitToUnits(h, 0, @pdfunit, true) * @imgscale * @k
@@ -4395,7 +4401,7 @@ class TCPDF
   #
   def parsejpeg(file)
     a=getimagesize(file);
-    if (a.empty?)
+    if a.nil? or a.empty?
       Error('Missing or incorrect image file: ' + file);
     end
     if (a[2]!='JPEG')
