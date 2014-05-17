@@ -369,7 +369,7 @@ class TCPDF
     @underline ||= false
     @overline ||= false
     @ws ||= 0
-    @dpi = 72
+    @dpi = 72.0
     @pagegroups ||= {}
     @intmrk ||= []
     @cntmrk ||= []
@@ -379,10 +379,6 @@ class TCPDF
     @endlinex ||= 0
     @newpagegroup ||= []
     @visibility ||= 'all'
-    @linestyle_width ||= ''
-    @linestyle_cap ||= '0 J'
-    @linestyle_join ||= '0 j'
-    @linestyle_dash ||= '[] 0 d'
     @numpages ||= 0
     @pagelen ||= []
     @numimages ||= 0
@@ -431,7 +427,11 @@ class TCPDF
     #Interior cell margin (1 mm)
     @c_margin = margin / 10
     #Line width (0.2 mm)
-    @line_width = 0.567 / @k
+    @line_width = 0.57 / @k
+    @linestyle_width ||= sprintf('%.2f w', (@line_width * @k))
+    @linestyle_cap ||= '0 J'
+    @linestyle_join ||= '0 j'
+    @linestyle_dash ||= '[] 0 d'
     #Automatic page break
     SetAutoPageBreak(true, 2 * margin)
     #Full width display mode
@@ -513,7 +513,7 @@ class TCPDF
     unit = unit.downcase
     # Set scale factor
     case unit
-    when 'px', 'pt'; @k=1       # points
+    when 'px', 'pt'; @k=1.0     # points
     when 'mm'; @k = @dpi / 25.4 # millimeters
     when 'cm'; @k = @dpi / 2.54 # centimeters
     when 'in'; @k = @dpi        # inches
@@ -9529,11 +9529,11 @@ class TCPDF
     valid = false; # value to be returned
     tag = dom[key]['value']
     selector_class = ''
-    if dom[key]['attribute']['class'] and !dom[key]['attribute']['class'].empty?
+    if dom[key]['attribute'] and dom[key]['attribute']['class'] and !dom[key]['attribute']['class'].empty?
       selector_class = dom[key]['attribute']['class'].downcase
     end
     id = ''
-    if dom[key]['attribute']['id'] and !dom[key]['attribute']['id'].empty?
+    if dom[key]['attribute'] and dom[key]['attribute']['id'] and !dom[key]['attribute']['id'].empty?
       selector_id = dom[key]['attribute']['id'].downcase
     end
 
@@ -9659,7 +9659,7 @@ class TCPDF
         tagstyle << ';' + style
       end
     }
-    if dom[key]['attribute']['style']
+    if dom[key]['attribute'] and dom[key]['attribute']['style']
       # attach inline style (latest properties have high priority)
       tagstyle << ';' + dom[key]['attribute']['style']
     end
@@ -9677,8 +9677,6 @@ class TCPDF
   # @since 3.2.000 (2008-06-20)
   #
   def getHtmlDomArray(html)
-    #  define block tags
-    blocktags = ['blockquote','br','dd','dl','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','pre','ul','table','tr','td']
     # array of CSS styles ( selector => properties).
     css = {}
     # extract external CSS files
@@ -9739,9 +9737,12 @@ class TCPDF
     # remove comments
     html.gsub!(/<!--(.|\s)*?-->/m, '')
 
+    # define block tags
+    blocktags = ['blockquote','br','dd','dl','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','pre','ul','table','tr','td']
+
     # remove all unsupported tags (the line below lists all supported tags)
     ::ActionView::Base.sanitized_allowed_css_properties = ["page-break-before", "page-break-after", "page-break-inside"]
-    html = "%s" % sanitize(html, :tags=> %w(marker a b blockquote body br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr stroke strokecolor fill))
+    html = "%s" % sanitize(html, :tags=> %w(a b blockquote body br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr stroke strokecolor fill))
     html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
     # replace some blank characters
     html.gsub!(/<br>/, '<br/>')
@@ -9781,7 +9782,7 @@ class TCPDF
     # pattern for generic tag
     tagpattern = /(<[^>]+>)/
     # explodes the string
-    a = html.split(tagpattern)
+    a = html.split(tagpattern).compact.delete_if {|x| x.empty?}
     # count elements
     maxel = a.size
     elkey = 0

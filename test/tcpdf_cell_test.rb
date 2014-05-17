@@ -6,9 +6,8 @@ class TcpdfTest < ActiveSupport::TestCase
     pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.add_page()
     code = pdf.getCellCode(10)
-    assert_equal code, " 0 J 0 j [] 0 d 0 G 0 g\n"
-    # 0 J 0 j [] 0 d 0 G 0 rg       # getCellCode
-
+    assert_equal code, "0.57 w 0 J 0 j [] 0 d 0 G 0 g\n"
+    # 0.57 w 0 J 0 j [] 0 d 0 G 0 rg       # getCellCode
   end
 
   test "getCellCode link url align test" do
@@ -19,7 +18,7 @@ class TcpdfTest < ActiveSupport::TestCase
     contents.each_line {|line| content.push line.chomp }
 
     assert_equal content.length,  2
-    assert_equal content[1], "28.35 813.82 m 28.35 784.91 l S 28.07 813.54 m 56.98 813.54 l S 56.70 813.82 m 56.70 784.91 l S 28.07 785.19 m 56.98 785.19 l S BT 31.19 795.17 Td 0 Tr 0.00 w [(abc)] TJ ET"
+    assert_equal content[1], "28.35 813.83 m 28.35 784.91 l S 28.07 813.54 m 56.98 813.54 l S 56.70 813.83 m 56.70 784.91 l S 28.07 785.19 m 56.98 785.19 l S BT 31.19 795.17 Td 0 Tr 0.00 w [(abc)] TJ ET"
     # 28.35 813.82 m 28.35 784.91 l S
     # 28.07 813.54 m 56.98 813.54 l S
     # 56.70 813.82 m 56.70 784.91 l S
