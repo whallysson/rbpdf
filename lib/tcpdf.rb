@@ -183,8 +183,6 @@ class TCPDF
   
   attr_accessor :offsets
   
-  attr_accessor :orientation_changes
-  
   attr_accessor :page
   
   attr_accessor :pages
@@ -197,26 +195,10 @@ class TCPDF
   
   attr_accessor :state
   
-  attr_accessor :tableborder
-  
-  attr_accessor :tdbegin
-  
-  attr_accessor :tdwidth
-  
-  attr_accessor :tdheight
-  
-  attr_accessor :tdalign
-  
-  attr_accessor :tdfill
-  
-  attr_accessor :tempfontsize
-  
   attr_accessor :text_color
   
   attr_accessor :underline
   
-  attr_accessor :ws
-
   attr_accessor :diskcache
 
   attr_accessor :cache_file_length
@@ -245,8 +227,8 @@ class TCPDF
     # }
 
     # set disk caching
-    @diskcache = diskcache
-
+    @diskcache = diskcache ? true : false
+ 
     # set language direction
     @rtl = false
     @tmprtl = false
@@ -254,55 +236,109 @@ class TCPDF
     @x ||= 0 
     @y ||= 0 
 
-    # bookmark
-    @outlines ||= []
+    #######################
+    @offsets ||= []
 
-    @javascript ||= ''
-    @js_objects ||= []
+    @alias_nb_pages = '{nb}'
+    @alias_num_page = '{pnb}'
+    @img_scale ||= 1
+    @r_margin ||= 0
+    @l_margin ||= 0
+    @page_annots ||= []
 
-    #Some checks
-    dochecks();
-    
-    begin
-      @@decoder = HTMLEntities.new 
-    rescue
-      @@decoder = nil
-    end
-    
-    #Initialization of properties
+    @header_font ||= ['', '', 10]
+    @footer_font ||= ['', '', 8]
+
+    @header_margin ||= 10
+    @footer_margin ||= 10
+
     @barcode ||= false
-    if @diskcache
-      @buffer ||= nil
-    else
-      @buffer ||= ''
-    end
-    @diffs ||= []
-    @color_flag ||= false
-    @default_table_columns ||= 4
-    @default_font ||= "FreeSans" if unicode
-    @default_font ||= "Helvetica"
-    @draw_color ||= '0 G'
-    @encoding ||= "UTF-8"
-    @fill_color ||= '0 g'
-    @fonts ||= {}
-    @font_family ||= 'helvetica'
-    @font_files ||= {}
-    @font_style ||= ''
-    @font_ascent ||= ''
-    @font_descent ||= ''
-    @font_size ||= 12
-    @font_size_pt ||= 12
+    @print_header ||= true
+    @print_footer ||= true
     @header_width ||= 0
     @header_logo ||= ""
     @header_logo_width ||= 30
     @header_title ||= ""
     @header_string ||= ""
-    @images ||= {}
-    @img_scale ||= 1
-    @in_footer ||= false
+    @default_table_columns ||= 4
+    @listordered ||= []
+    @listcount ||= []
+    @listindent ||= 0
+    @listindentlevel ||= 0
+    @lispacer ||= ""
+
+    # bookmark
+    @outlines ||= []
+
+    # --- javascript and form ---
+    @javascript ||= ''
+    @js_objects ||= []
+
+    @dpi = 72.0
+    @newpagegroup ||= []
+    @pagegroups ||= {}
+    @visibility ||= 'all'
+    @cell_height_ratio = @@k_cell_height_ratio
+
+    @intmrk ||= []
+    @cntmrk ||= []
+    @footerpos ||= []
+    @footerlen ||= []
+    @newline ||= true
+    @endlinex ||= 0
+
+    @open_marked_content ||= false
+    @htmlvspace ||= 0
+    @spot_colors ||= {}
+    @lisymbol ||= ''
+    @epsmarker ||= 'x#!#EPS#!#x'
+    @transfmatrix ||= []
+    @transfmatrix_key ||= 0
+    @booklet ||= false
+    @feps ||= 0.005
+    @tagvspaces ||= {}
+    @customlistindent ||= -1
+    @opencell = true
+    @embeddedfiles ||= {}
+
+    @html_link_color_array ||= [0, 0, 255]
+    @html_link_font_style ||= 'U'
+    @numpages ||= 0
+    @pagelen ||= []
+    @numimages ||= 0
+    @imagekeys ||= []
+    @bufferlen ||= 0
+
+    @numfonts ||= 0
+    @fontkeys ||= []
+    @font_obj_ids ||= {}
+    @pageopen ||= []
+    @default_monospaced_font = 'courier'
+
+
+    @cache_file_length = {}
+    @prev_cache_file_length = {}
+    @thead ||= ''
+    @thead_margins ||= {}
+    @cache_utf8_string_to_array = {}
+    @cache_maxsize_utf8_string_to_array = 8
+    @cache_size_utf8_string_to_array = 0
+    
+    @signature_data ||= {}
+    @sig_annot_ref ||= '***SIGANNREF*** 0 R'
+    @page_obj_id ||= []
+    @embedded_start_obj_id ||= 100000
+    @form_obj_id ||= []
+    @apxo_start_obj_id ||= 400000
+    @apxo_obj_id ||= 400000
+    @annotation_fonts ||= {}
+    @radiobutton_groups ||= []
+    @radio_groups ||= []
+    @textindent ||= 0
+
+    @start_transaction_y ||= 0
     @in_thead ||= false
     @columns ||= []
-    @start_transaction_y ||= 0
     @num_columns ||= 0
     @current_column ||= 0
     @column_start_page ||= 0
@@ -317,87 +353,59 @@ class TCPDF
     # 6 = Fill, then stroke text and add to path for clipping;
     # 7 = Add text to path for clipping.
     @textrendermode ||= 0
-
     @textstrokewidth ||= 0
-    @alias_nb_pages = '{nb}'
-    @alias_num_page = '{pnb}'
-    @imgscale ||= 1
+
+    @pdfunit ||= 'mm'
+    @tocpage ||= false
+
+    #######################
+
+    #Some checks
+    dochecks();
+    
+    begin
+      @@decoder = HTMLEntities.new 
+    rescue
+      @@decoder = nil
+    end
+    
+    #Initialization of properties
     @is_unicode = unicode
-    @lasth ||= 0
-    @links ||= []
-    @listordered ||= []
-    @listcount ||= []
-    @lispacer ||= ""
-    @listindent ||= 0
-    @listindentlevel ||= 0
-    @n ||= 2
-    @offsets ||= []
-    @orientation_changes ||= []
     @page ||= 0
-    @htmlvspace ||= 0
-    @open_marked_content ||= false
-    @spot_colors ||= {}
-    @lisymbol ||= ''
-    @epsmarker ||= 'x#!#EPS#!#x'
-    @transfmatrix ||= []
-    @transfmatrix_key ||= 0
-    @booklet ||= false
-    @feps ||= 0.005
-    @tagvspaces ||= {}
-    @customlistindent ||= -1
-    @opencell = true
-    @embeddedfiles ||= {}
     @transfmrk ||= []
-    @html_link_color_array ||= [0, 0, 255]
-    @html_link_font_style ||= 'U'
     @pagedim ||= []
-    @page_annots ||= []
+    @n ||= 2
+    if @diskcache
+      @buffer ||= nil
+    else
+      @buffer ||= ''
+    end
     @pages ||= []
-    @pdf_version ||= "1.3"
-    @header_margin ||= 10
-    @footer_margin ||= 10
-    @r_margin ||= 0
-    @l_margin ||= 0
-    @header_font ||= ['', '', 10]
-    @footer_font ||= ['', '', 8]
-    @print_header ||= true
-    @print_footer ||= true
     @state ||= 0
-    @tdfill ||= 0
-    @tempfontsize ||= 10
-    @text_color ||= '0 g'
+    @fonts ||= {}
+    @font_files ||= {}
+    @diffs ||= []
+    @images ||= {}
+    @links ||= []
+    @gradients ||= []
+    @in_footer ||= false
+    @lasth ||= 0
+    @font_family ||= 'helvetica'
+    @font_style ||= ''
+    @font_size_pt ||= 12
     @underline ||= false
     @overline ||= false
-    @ws ||= 0
-    @dpi = 72.0
-    @pagegroups ||= {}
-    @intmrk ||= []
-    @cntmrk ||= []
-    @footerpos ||= []
-    @footerlen ||= []
-    @newline ||= true
-    @endlinex ||= 0
-    @newpagegroup ||= []
-    @visibility ||= 'all'
-    @numpages ||= 0
-    @pagelen ||= []
-    @numimages ||= 0
-    @imagekeys ||= []
-    @bufferlen ||= 0
-    @numfonts ||= 0
-    @fontkeys ||= []
-    @font_obj_ids ||= {}
-    @pageopen ||= []
-    @cell_height_ratio = @@k_cell_height_ratio
-    @cache_file_length = {}
-    @prev_cache_file_length = {}
-    @thead ||= ''
-    @thead_margins ||= {}
-    @cache_utf8_string_to_array = {}
-    @cache_maxsize_utf8_string_to_array = 8
-    @cache_size_utf8_string_to_array = 0
-    
-    #Standard Unicode fonts
+    @linethrough ||= false
+    @draw_color ||= '0 G'
+    @fill_color ||= '0 g'
+    @text_color ||= '0 g'
+    @color_flag ||= false
+
+    # encryption values
+    @encrypted ||= false
+    @last_enc_key ||= ''
+     
+    # Standard Unicode fonts
     @core_fonts = {
     'courier'=>'Courier',
     'courierB'=>'Courier-Bold',
@@ -414,14 +422,11 @@ class TCPDF
     'symbol'=>'Symbol',
     'zapfdingbats'=>'ZapfDingbats'}
 
-    #Scale factor
     # Set scale factor
     setPageUnit(unit)
-
     # set page format and orientation
     setPageFormat(format, orientation)
-
-    #Page margins (1 cm)
+    # Page margins (1 cm)
     margin = 28.35/@k
     SetMargins(margin, margin)
     #Interior cell margin (1 mm)
@@ -439,68 +444,35 @@ class TCPDF
     #Compression
     SetCompression(true)
     #Set default PDF version number
-    @pdf_version = "1.3"
-    
+    @pdf_version ||= "1.7"
     @encoding = encoding
-    @b = 0
-    @i = 0
-    @u = 0
     @href ||= {}
     @fontlist = ["arial", "times", "courier", "helvetica", "symbol"]
-    @default_monospaced_font = 'courier'
-    @issetfont = false
     @fgcolor = ActiveSupport::OrderedHash.new
     @strokecolor = ActiveSupport::OrderedHash.new
     @bgcolor = ActiveSupport::OrderedHash.new
-    @pdfunit ||= 'mm'
-    @tocpage ||= false
     @extgstates ||= []
-    @gradients ||= []
-    @bgtag ||= []
-    @tableborder ||= 0
-    @tdbegin ||= false
-    @tdwidth ||=  0
-    @tdheight ||= 0
-    if @rtl
-      @tdalign ||= "R"
-    else
-      @tdalign ||= "L"
-    end
-
-    @sign ||= false
-    @signature_data ||= {}
-    @sig_annot_ref ||= '***SIGANNREF*** 0 R'
-    @page_obj_id ||= []
-    @embedded_start_obj_id ||= 100000
-    @annots_start_obj_id ||= 200000
-    @annot_obj_id ||= 200000
-    @curr_annot_obj_id ||= 200000
-    @form_obj_id ||= []
-    @apxo_start_obj_id ||= 400000
-    @apxo_obj_id ||= 400000
-    @annotation_fonts ||= {}
-    @radiobutton_groups ||= []
-    @radio_groups ||= []
-    @textindent ||= 0
 
     # user's rights
-    @ur = false;
-    @ur_document = "/FullSave";
-    @ur_annots = "/Create/Delete/Modify/Copy/Import/Export";
-    @ur_form = "/Add/Delete/FillIn/Import/Export/SubmitStandalone/SpawnTemplate";
-    @ur_signature = "/Modify";
+    @sign ||= false
+    @ur = false
+    @ur_document = "/FullSave"
+    @ur_annots = "/Create/Delete/Modify/Copy/Import/Export"
+    @ur_form = "/Add/Delete/FillIn/Import/Export/SubmitStandalone/SpawnTemplate"
+    @ur_signature = "/Modify"
 
     # set default JPEG quality
     @jpeg_quality ||= 75
 
     # initialize some settings
-#    utf8Bidi([''], '');
+#    utf8Bidi([''], '')
     # set default font
     SetFont(@font_family, @font_style, @font_size_pt)
 
-    @annot_obj_id = @annots_start_obj_id
-    @curr_annot_obj_id = @annots_start_obj_id
-    @apxo_obj_id = @apxo_start_obj_id
+    @annots_start_obj_id ||= 200000
+    @annot_obj_id ||= @annots_start_obj_id
+    @curr_annot_obj_id ||= @annots_start_obj_id
+    @apxo_obj_id ||= @apxo_start_obj_id
   end
   
   #
@@ -4174,8 +4146,8 @@ class TCPDF
         Error('Missing image file: ' + file)
       elsif imsize == false
         if (w > 0) and (h > 0)
-          pw = getHTMLUnitToUnits(w, 0, @pdfunit, true) * @imgscale * @k
-          ph = getHTMLUnitToUnits(h, 0, @pdfunit, true) * @imgscale * @k
+          pw = getHTMLUnitToUnits(w, 0, @pdfunit, true) * @img_scale * @k
+          ph = getHTMLUnitToUnits(h, 0, @pdfunit, true) * @img_scale * @k
           imsize = [pw, ph]
         else
           Error('[Image] Unable to get image width and height: ' + file)
@@ -13362,7 +13334,7 @@ class TCPDF
   # @since 4.5.029 (2009-03-19)
   #
   def objclone(object)
-                if @diskcache
+    if @diskcache
       @prev_cache_file_length = object.cache_file_length.dup
       return object.dup
     else
