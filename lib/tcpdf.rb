@@ -2,9 +2,9 @@
 #============================================================+
 # File name   : tcpdf.rb
 # Begin       : 2002-08-03
-# Last Update : 2007-03-20
+# Last Update : 2010-05-27
 # Author      : Nicola Asuni
-# Version     : 1.53.0.TC031
+# Version     : 5.1.002
 # License     : GNU LGPL (http://www.gnu.org/copyleft/lesser.html)
 #  ----------------------------------------------------------------------------
 #      This program is free software: you can redistribute it and/or modify
@@ -53,7 +53,7 @@ require 'core/rmagick'
 # @package com.tecnick.tcpdf
 #
  
-PDF_PRODUCER = 'TCPDF via RFPDF 1.53.0.TC031 (http://tcpdf.sourceforge.net)'
+PDF_PRODUCER = 'TCPDF via RFPDF 5.1.002 (http://www.tcpdf.org)'
 
 module TCPDFFontDescriptor
   @@descriptors = { 'freesans' => {} }
@@ -72,13 +72,13 @@ end
 # This is a Ruby class for generating PDF files on-the-fly without requiring external extensions.<br>
 # This class is an extension and improvement of the FPDF class by Olivier Plathey (http://www.fpdf.org).<br>
 # This version contains some changes: [porting to Ruby, support for UTF-8 Unicode, code style and formatting, php documentation (www.phpdoc.org), ISO page formats, minor improvements, image scale factor]<br>
-# TCPDF project (http://tcpdf.sourceforge.net) is based on the Public Domain FPDF class by Olivier Plathey (http://www.fpdf.org).<br>
+# TCPDF project (http://www.tcpdf.org) has been originally derived in 2002 from the Public Domain FPDF class by Olivier Plathey (http://www.fpdf.org), but now is almost entirely rewritten.<br>
 # To add your own TTF fonts please read /fonts/README.TXT
 # @name TCPDF
 # @package com.tecnick.tcpdf
-# @@version 1.53.0.TC031
+# @@version 5.1.002
 # @author Nicola Asuni
-# @link http://tcpdf.sourceforge.net
+# @link http://www.tcpdf.org
 # @license http://www.gnu.org/copyleft/lesser.html LGPL
 #
 class TCPDF
@@ -95,7 +95,7 @@ class TCPDF
     Rails.logger
   end
 
-  @@version = "1.53.0.TC031"
+  @@version = "5.1.002"
   @@fpdf_charwidths = {}
 
   cattr_accessor :k_cell_height_ratio
