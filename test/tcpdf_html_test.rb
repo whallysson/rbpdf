@@ -110,4 +110,50 @@ class TcpdfTest < ActiveSupport::TestCase
     assert_equal count_head, 1
     assert_equal count, 0
   end
+
+  test "write_html ASCII text test" do
+    pdf = TCPDF.new
+    pdf.add_page()
+
+    text = 'HTML Example'
+    htmlcontent = '<h1>' + text + '</h1>'
+    pdf.write_html(htmlcontent, true, 0, true, 0)
+    page = pdf.get_page
+    assert_equal 1, page
+
+    content = []
+    contents = pdf.getPageBuffer(1)
+    contents.each_line {|line| content.push line.chomp }
+
+    count = 0
+    content.each do |line|
+      count += 1 unless line.scan(text).empty?
+    end
+    assert_equal count, 1
+  end
+
+  test "write_html Non ASCII text test" do
+    pdf = TCPDF.new
+    pdf.add_page()
+
+    text = 'HTML Example ' + "\xc2\x83\xc2\x86"
+
+    htmlcontent = '<h1>' + text + '</h1>'
+    pdf.write_html(htmlcontent, true, 0, true, 0)
+    page = pdf.get_page
+    assert_equal 1, page
+
+    content = []
+    contents = pdf.getPageBuffer(1)
+    contents.each_line {|line| content.push line.chomp }
+
+    text = 'HTML Example ' + "\x83\x86"
+    text.force_encoding('ASCII-8BIT') if text.respond_to?(:force_encoding)
+    count = 0
+    content.each do |line|
+      line.force_encoding('ASCII-8BIT') if line.respond_to?(:force_encoding)
+      count += 1 unless line.scan(text).empty?
+    end
+    assert_equal count, 1
+  end
 end

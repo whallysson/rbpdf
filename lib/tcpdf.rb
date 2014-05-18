@@ -248,6 +248,7 @@ class TCPDF
 
     @header_font ||= ['', '', 10]
     @footer_font ||= ['', '', 8]
+    @l ||= {}
 
     @header_margin ||= 10
     @footer_margin ||= 10
@@ -9730,6 +9731,7 @@ class TCPDF
   # @since 3.2.000 (2008-06-20)
   #
   def getHtmlDomArray(html)
+    html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
     # array of CSS styles ( selector => properties).
     css = {}
     # extract external CSS files
@@ -9796,7 +9798,7 @@ class TCPDF
     # remove all unsupported tags (the line below lists all supported tags)
     ::ActionView::Base.sanitized_allowed_css_properties = ["page-break-before", "page-break-after", "page-break-inside"]
     html = "%s" % sanitize(html, :tags=> %w(a b blockquote body br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr stroke strokecolor fill))
-    html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
+
     # replace some blank characters
     html.gsub!(/<br>/, '<br/>')
     html.gsub!(/<pre/, '<xre') # preserve pre tag
