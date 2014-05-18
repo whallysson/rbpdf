@@ -1,9 +1,14 @@
 require 'test_helper'
 
 class TcpdfTest < ActiveSupport::TestCase
+  class MYPDF < TCPDF
+    def getHtmlDomArray(html)
+      super
+    end
+  end
 
   test "Dom Basic" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     # Simple Text
     dom = pdf.getHtmlDomArray('abc')

@@ -679,6 +679,7 @@ class TCPDF
     end
     setPageOrientation(orientation)
   end
+  protected :setPageFormat
 
   #
   # Set page boundaries.
@@ -728,6 +729,7 @@ class TCPDF
       end
     }
   end
+  protected :swapPageBoxCoordinates
 
   #
   # Set page orientation.
@@ -1566,6 +1568,7 @@ class TCPDF
       @cntmrk[page] = @pagelen[page]
     end
   end
+  protected :setContentMark
 
   #
   # Set header data.
@@ -1831,6 +1834,7 @@ class TCPDF
       @newline = false
     end
   end
+  protected :setHeader
 
   #
   # This method is used to render the page footer. 
@@ -1877,6 +1881,7 @@ class TCPDF
     # calculate footer length
     @footerlen[@page] = @pagelen[@page] - @footerpos[@page] + 1
   end
+  protected :setFooter
 
   #
   # This method is used to render the table header on new page (if any). 
@@ -1919,6 +1924,7 @@ class TCPDF
       @r_margin = prev_rMargin
     end
   end
+  protected :setTableHeader
 
   #
   # Returns the current page number.
@@ -2780,6 +2786,7 @@ class TCPDF
       out(out)
     }
   end
+  protected :putEmbeddedFiles
 
   #
   # Prints a text cell at the specified position.
@@ -2891,6 +2898,7 @@ class TCPDF
     end
     return false
   end
+  protected :checkPageBreak
 
   def BreakThePage?(h)
     warn "[DEPRECATION] 'BreakThePage/break_the_page' is deprecated. Please don't Use."
@@ -3330,6 +3338,7 @@ class TCPDF
     rs = gstyles + rs
     return rs
   end
+  protected :getCellCode
 
   #
   # This method allows printing text with line breaks.
@@ -3619,6 +3628,7 @@ class TCPDF
     end
     return cborder
   end
+  protected :getBorderMode
 
   #
   # This method prints text from the current position.<br />
@@ -3985,6 +3995,7 @@ class TCPDF
       return @w - @r_margin - @x
     end
   end
+  protected :getRemainingWidth
 
   #
   # Extract a slice of the :strarr array and return it as string.
@@ -4245,7 +4256,7 @@ class TCPDF
         else
           #Allow for additional formats
           mtd='parse' + type;
-          if (!self.respond_to?(mtd))
+          unless self.respond_to?(mtd, true)
             Error('Unsupported image type: ' + type);
           end
           info=send(mtd, file);
@@ -4396,6 +4407,7 @@ class TCPDF
     end
     return {'w' => a[0],'h' => a[1],'cs' => colspace,'bpc' => bpc,'f'=>'DCTDecode','data' => data}
   end
+  protected :parsejpeg
 
   def imageToPNG(file)
     img = Magick::ImageList.new(file)
@@ -4410,6 +4422,7 @@ class TCPDF
   ensure
     tmpFile.close
   end
+  protected :imageToPNG
 
   #
   # Extract info from a PNG file
@@ -4501,6 +4514,7 @@ class TCPDF
   ensure
     f.close unless f.nil?
   end
+  protected :parsepng
 
   #
   # Performs a line break. 
@@ -4801,6 +4815,8 @@ class TCPDF
   end
 
   # Protected methods
+
+protected
 
   #
   # Check for locale-related bug
@@ -5785,7 +5801,7 @@ class TCPDF
       else
         #Allow for additional types
         mtd='put' + type.downcase;
-        if (!self.respond_to?(mtd))
+        unless self.respond_to?(mtd, true)
           Error('Unsupported font type: ' + type)
         end
         obj_id = self.send(mtd,font)
@@ -7065,6 +7081,7 @@ class TCPDF
   end
   
   # ====================================================
+public
   
   #
   # Set header font.
@@ -7316,6 +7333,7 @@ class TCPDF
     #end
     #return s
   end
+  protected :encrypt_data
 
   # END OF ENCRYPTION FUNCTIONS -------------------------
 
@@ -7406,6 +7424,7 @@ class TCPDF
       @transfmrk[@page] = @pagelen[@page]
     end
   end
+  protected :Transform
 
   # END TRANSFORMATIONS SECTION -------------------------
 
@@ -7509,6 +7528,8 @@ class TCPDF
   end
   alias_method :set_line_style, :SetLineStyle
 
+protected
+
   #
   # Begin a new subpath by moving the current point to coordinates (x, y), omitting any connecting line segment.
   # @param float :x Abscissa of point.
@@ -7591,6 +7612,8 @@ class TCPDF
   def outCurveY(x1, y1, x3, y3)
     out(sprintf('%.2f %.2f %.2f %.2f y', x1 * @k, (@h - y1) * @k, x3 * @k, (@h - y3) * @k))
   end
+
+public
 
   #
   # Draws a line between two points.
@@ -7837,6 +7860,7 @@ class TCPDF
       outLine(xc, yc)
     end
   end
+  protected :outellipticalarc
 
   #
   # Draws a circle.
@@ -8243,6 +8267,7 @@ class TCPDF
   def utf8StrRev(str, setbom=false, forcertl=false)
     return utf8StrArrRev(UTF8StringToArray(str), str, setbom, forcertl)
   end
+  protected :utf8StrRev
 
   #
   # Reverse the RLT substrings array using the Bidirectional Algorithm (http://unicode.org/reports/tr9/).
@@ -8258,6 +8283,7 @@ class TCPDF
   def utf8StrArrRev(arr, str='', setbom=false, forcertl=false)
     return arrUTF8ToUTF16BE(utf8Bidi(arr, str, forcertl), setbom)
   end
+  protected :utf8StrArrRev
 
   #
   # Reverse the RLT substrings using the Bidirectional Algorithm (http://unicode.org/reports/tr9/).
@@ -8832,6 +8858,7 @@ class TCPDF
     
     return ordarray
   end
+  protected :utf8Bidi
     
   # END OF BIDIRECTIONAL TEXT SECTION -------------------
 
@@ -8930,6 +8957,7 @@ class TCPDF
     @outline_root = @n
     out('<</Type /Outlines /First ' + n.to_s + ' 0 R /Last ' + (n + lru[0]).to_s + ' 0 R>> endobj')
   end
+  protected :putbookmarks
 
   # --- JAVASCRIPT ------------------------------------------------------
   # --- FORM FIELDS -----------------------------------------------------
@@ -9073,6 +9101,7 @@ class TCPDF
   def formatPageNumber(num)
     return number_with_delimiter(num, :delimiter => ",")
   end
+  protected :formatPageNumber
 
   #
   # Format the page numbers on the Table Of Content.
@@ -9085,6 +9114,7 @@ class TCPDF
   def formatTOCPageNumber(num)
     return number_with_delimiter(num, :delimiter => ",")
   end
+  protected :formatTOCPageNumber
 
   #
   # Returns the current page number formatted as a string.
@@ -9110,6 +9140,7 @@ class TCPDF
     @n_ocg_view = @n
     out('<< /Type /OCG /Name ' + textstring('view') + ' /Usage << /Print <</PrintState /OFF>> /View <</ViewState /ON>> >> >> endobj')
   end
+  protected :putocg
 
   #
   # Set the visibility of the successive elements.
@@ -9161,6 +9192,7 @@ class TCPDF
     @extgstates[n]['parms'] = parms
     return n
   end
+  protected :addExtGState
 
   #
   # Add an extgstate
@@ -9171,6 +9203,8 @@ class TCPDF
   def setExtGState(gs)
     out(sprintf('/GS%d gs', gs))
   end
+  protected :setExtGState
+
   #
   # Put extgstates for object transparency
   # @param array :gs extgstate
@@ -9196,6 +9230,7 @@ class TCPDF
       out(out)
     end
   end
+  protected :putextgstates
 
   #
   # Set alpha for stroking (CA) and non-stroking (ca) operations.
@@ -9483,6 +9518,8 @@ class TCPDF
   alias_method :get_font_style, :getFontStyle
 
   # --- HTML PARSER FUNCTIONS ---
+
+protected
 
   #
   # Extracts the CSS properties from a CSS string.
@@ -10334,6 +10371,8 @@ class TCPDF
     end
     return spacestr
   end
+
+public
 
   #
   # Prints a cell (rectangular area) with optional borders, background color and html text string. The upper-left corner of the cell corresponds to the current position. After the call, the current position moves to the right or to the next line.<br />
@@ -11829,6 +11868,7 @@ class TCPDF
       end
     end
   end
+  protected :openHTMLTagHandler
   
   #
   # Process closing tags.
@@ -12178,6 +12218,7 @@ class TCPDF
     end
     @tmprtl = false
   end
+  protected :closeHTMLTagHandler
   
   #
   # Add vertical spaces if needed.
@@ -12202,6 +12243,7 @@ class TCPDF
     end
     Ln(hbz + hd, cell)
   end
+  protected :addHTMLVertSpace
 
   #
   # Set the booklet mode for double-sided pages.
@@ -12239,6 +12281,7 @@ class TCPDF
       @r_margin -= deltam
     end
   end
+  protected :swapMargins
 
   #
   # Set the vertical spaces for HTML tags.
@@ -12381,6 +12424,8 @@ class TCPDF
     return roman
   end
   alias_method :int_to_roman, :intToRoman
+
+protected
 
   #
   # Output an HTML list bullet or ordered item symbol
@@ -12809,6 +12854,8 @@ class TCPDF
 
   # --- END OF BUFFER FUNCTIONS ---
   # --- PAGE OPERATION FUNCTIONS ---
+
+public
 
   #
   # Move a page to a previous position.
@@ -13572,6 +13619,7 @@ class TCPDF
     end
     return op
   end
+  protected :getPathPaintOperator
 
   # -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-
   # SVG METHODS (not implement, yet.)

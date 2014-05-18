@@ -2,9 +2,17 @@
 require 'test_helper'
 
 class TcpdfTest < ActiveSupport::TestCase
+  class MYPDF < TCPDF
+    def UTF8StringToArray(str)
+      super
+    end
+    def utf8Bidi(ta, str='', forcertl=false)
+      super
+    end
+  end
 
   test "Bidi" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     # UCS4 charactor -> UTF-8 charactor
     utf8_chr = pdf.unichr(0x61)

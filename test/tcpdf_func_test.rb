@@ -1,6 +1,14 @@
 require 'test_helper'
 
 class TcpdfTest < ActiveSupport::TestCase
+  class MYPDF < TCPDF
+    def getSpaceString
+      super
+    end
+    def getPageBuffer(page)
+      super
+    end
+  end
 
   test "get_html_unit_to_units test" do
     pdf = TCPDF.new
@@ -48,7 +56,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "getSpaceString test" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
     spacestr = pdf.getSpaceString()
     assert_equal spacestr, 32.chr
 
@@ -120,7 +128,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "Transaction test without diskcache" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
     pdf.add_page()
     page = pdf.get_page
 
@@ -140,7 +148,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "Transaction test with diskcache" do
-    pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf = MYPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.add_page()
     page = pdf.get_page
 

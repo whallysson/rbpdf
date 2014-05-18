@@ -1,6 +1,12 @@
 require 'test_helper'
 
 class TcpdfPageTest < ActiveSupport::TestCase
+  class MYPDF < TCPDF
+    def putviewerpreferences
+      super
+    end
+  end
+
   test "viewerpreferences test" do
     # set array for viewer preferences
     preferences = {
@@ -22,7 +28,7 @@ class TcpdfPageTest < ActiveSupport::TestCase
         'NumCopies' => 2
     }
 
-    pdf = TCPDF.new
+    pdf = MYPDF.new
     pdf.set_viewer_preferences(preferences)
     out = pdf.putviewerpreferences()
 

@@ -1,9 +1,23 @@
 require 'test_helper'
 
 class TcpdfCssTest < ActiveSupport::TestCase
+  class MYPDF < TCPDF
+    def extractCSSproperties(cssdata)
+      super
+    end
+    def isValidCSSSelectorForTag(dom, key, selector)
+      super
+    end
+    def getTagStyleFromCSS(dom, key, css)
+      super
+    end
+    def getHtmlDomArray(html)
+      super
+    end
+  end
 
   test "CSS Basic" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     # empty
     css = pdf.extractCSSproperties('')
@@ -73,7 +87,7 @@ class TcpdfCssTest < ActiveSupport::TestCase
   end
 
   test "CSS Selector Valid test" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     # Simple CSS
     dom = pdf.getHtmlDomArray('<p>abc</p>')
@@ -108,7 +122,7 @@ class TcpdfCssTest < ActiveSupport::TestCase
   end
 
   test "CSS Tag Sytle test 1" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     # Simple CSS
     dom = pdf.getHtmlDomArray('<h1>abc</h1>')
@@ -125,7 +139,7 @@ class TcpdfCssTest < ActiveSupport::TestCase
   end
 
   test "CSS Tag Sytle test 2" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     dom = pdf.getHtmlDomArray('<p class="first">abc</p>')
     assert_equal dom.length, 4
@@ -141,7 +155,7 @@ class TcpdfCssTest < ActiveSupport::TestCase
   end
 
   test "CSS Dom test" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     html = '<style> table, td { border: 2px #ff0000 solid; } </style>
             <h2>HTML TABLE:</h2>
@@ -174,7 +188,7 @@ class TcpdfCssTest < ActiveSupport::TestCase
   end
 
   test "CSS Dom line-height test normal" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     html = '<style>  h2 { line-height: normal; } </style>
             <h2>HTML TEST</h2>'
@@ -193,7 +207,7 @@ class TcpdfCssTest < ActiveSupport::TestCase
   end
 
   test "CSS Dom line-height test numeric" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     html = '<style>  h2 { line-height: 1.4; } </style>
             <h2>HTML TEST</h2>'
@@ -212,7 +226,7 @@ class TcpdfCssTest < ActiveSupport::TestCase
   end
 
   test "CSS Dom line-height test percentage" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     html = '<style>  h2 { line-height: 10%; } </style>
             <h2>HTML TEST</h2>'
@@ -231,7 +245,7 @@ class TcpdfCssTest < ActiveSupport::TestCase
   end
 
   test "CSS Dom class test" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     html = '<style>p.first { color: #003300; font-family: helvetica; font-size: 12pt; }
                    p.first span { color: #006600; font-style: italic; }</style>
@@ -270,7 +284,7 @@ class TcpdfCssTest < ActiveSupport::TestCase
   end
 
   test "CSS Dom id test" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     html = '<style> p#second > span { background-color: #FFFFAA; }</style>
             <p id="second">Example <span>Fusce</span></p>'

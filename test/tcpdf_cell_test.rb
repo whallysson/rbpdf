@@ -2,8 +2,14 @@ require 'test_helper'
 
 class TcpdfTest < ActiveSupport::TestCase
 
+  class MYPDF < TCPDF
+    def getCellCode(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false, calign='T', valign='M')
+      super
+    end
+  end
+
   test "getCellCode" do
-    pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf = MYPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.add_page()
     code = pdf.getCellCode(10)
     assert_equal code, "0.57 w 0 J 0 j [] 0 d 0 G 0 g\n"
@@ -11,7 +17,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "getCellCode link url align test" do
-    pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf = MYPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.add_page()
     content = []
     contents = pdf.getCellCode(10, 10, 'abc', 'LTRB', 0, '', 0, 'http://example.com')
@@ -31,7 +37,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "getCellCode link page test" do
-    pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf = MYPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.add_page()
     content = []
     contents = pdf.getCellCode(10, 10, 'abc', 0, 0, '', 0, 1)

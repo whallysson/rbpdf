@@ -1,6 +1,11 @@
 require 'test_helper'
 
 class TcpdfTest < ActiveSupport::TestCase
+  class MYPDF < TCPDF
+    def getPageBuffer(page)
+      super
+    end
+  end
 
   test "write_html Basic test" do
     pdf = TCPDF.new
@@ -37,7 +42,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "write_html Table thead tag test 1" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
     pdf.add_page()
 
     tablehtml = '<table border="1" cellpadding="1" cellspacing="1">
@@ -61,7 +66,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "write_html Table thead tag test 2" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
     pdf.add_page()
 
     htmlcontent = '1<br><br><br><br><br><br><br><br><br><br> 2<br><br><br><br><br><br><br><br><br><br> 3<br><br><br><br><br><br><br><br><br><br> 4<br><br><br><br><br><br><br><br><br><br> 5<br><br><br><br><br><br><br><br><br><br> 6<br><br><br><br><br><br><br><br><br><br> 7<br><br><br><br><br><br><br><br><br><br> 8<br><br><br><br><br><br><br><br><br><br> 9<br><br><br><br><br><br><br><br><br><br> 10<br><br><br><br><br><br><br><br><br><br> 11<br><br><br><br><br><br><br><br><br><br>'
@@ -112,7 +117,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "write_html ASCII text test" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
     pdf.add_page()
 
     text = 'HTML Example'
@@ -133,7 +138,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "write_html Non ASCII text test" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
     pdf.add_page()
 
     text = 'HTML Example ' + "\xc2\x83\xc2\x86"

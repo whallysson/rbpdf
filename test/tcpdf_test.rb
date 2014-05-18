@@ -1,6 +1,11 @@
 require 'test_helper'
 
 class TcpdfTest < ActiveSupport::TestCase
+  class MYPDF < TCPDF
+    def getPageBuffer(page)
+      super
+    end
+  end
 
   test "set_x potision" do
     pdf = TCPDF.new
@@ -202,7 +207,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "deletePage test" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     pdf.add_page
     pdf.write(0, "Page 1")

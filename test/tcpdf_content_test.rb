@@ -1,9 +1,14 @@
 require 'test_helper'
 
 class TcpdfPageTest < ActiveSupport::TestCase
+  class MYPDF < TCPDF
+    def getPageBuffer(page)
+      super
+    end
+  end
 
   test "Basic Page content test" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     page = pdf.get_page
     assert_equal 0, page
@@ -85,7 +90,7 @@ class TcpdfPageTest < ActiveSupport::TestCase
   end
 
   test "circle content" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     pdf.set_print_header(false)
     pdf.add_page

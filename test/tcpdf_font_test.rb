@@ -1,8 +1,14 @@
 require 'test_helper'
 
 class TcpdfFontTest < ActiveSupport::TestCase
+  class MYPDF < TCPDF
+    def putfonts()
+      super
+    end
+  end
+
   test "core Font test" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     pdf.set_font('helvetica', '', 18)
     pdf.set_font('helvetica', 'B', 18)
@@ -21,10 +27,12 @@ class TcpdfFontTest < ActiveSupport::TestCase
 
     pdf.set_font('symbol', '', 18)
     pdf.set_font('zapfdingbats', '', 18)
+
+    pdf.putfonts()
   end
 
   test "TrueTypeUnicode Font test" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     pdf.set_font('freesans', '', 18)
     pdf.set_font('freesans', 'B', 18)
@@ -41,10 +49,11 @@ class TcpdfFontTest < ActiveSupport::TestCase
     pdf.set_font('dejavusans', 'I', 18)
     pdf.set_font('dejavusans', 'BI', 18)
 
+    pdf.putfonts()
   end
 
   test "cidfont0 Font test" do
-    pdf = TCPDF.new
+    pdf = MYPDF.new
 
     pdf.set_font('cid0cs', '', 18)
     pdf.set_font('cid0cs', 'B', 18)
@@ -90,5 +99,7 @@ class TcpdfFontTest < ActiveSupport::TestCase
     pdf.set_font('hysmyeongjostdmedium', 'B', 18)
     pdf.set_font('hysmyeongjostdmedium', 'I', 18)
     pdf.set_font('hysmyeongjostdmedium', 'BI', 18)
+
+    pdf.putfonts()
   end
 end
