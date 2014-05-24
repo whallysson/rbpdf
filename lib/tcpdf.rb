@@ -202,7 +202,8 @@ class TCPDF
   attr_accessor :diskcache
 
   attr_accessor :cache_file_length
-  attr_accessor :prev_cache_file_length
+
+  attr_accessor :prev_pages
   
   #
   # This is the class constructor. 
@@ -319,7 +320,6 @@ class TCPDF
 
 
     @cache_file_length = {}
-    @prev_cache_file_length = {}
     @thead ||= ''
     @thead_margins ||= {}
     @cache_utf8_string_to_array = {}
@@ -383,6 +383,7 @@ class TCPDF
       @buffer ||= ''
     end
     @pages ||= []
+    @prev_pages ||= []
     @state ||= 0
     @fonts ||= {}
     @font_files ||= {}
@@ -3520,15 +3521,14 @@ class TCPDF
           @transfmrk[@page] += (ccode + "\n").length
         elsif @in_footer
           pagemark = @footerpos[@page]
-          @footerpos[@page] += (ccode + "\n").length
         else
           pagemark = @intmrk[@page]
-          @intmrk[@page] += (ccode + "\n").length
         end
         pagebuff = getPageBuffer(@page)
         pstart = pagebuff[0, pagemark]
-        pend = pagebuff[pagemark..-1]
+        pend = pagebuff[pagemark..-1].to_s
         setPageBuffer(@page, pstart + ccode + "\n" + pend)
+        pagemark += (ccode + "\n").length
       end
     end
     
@@ -12093,15 +12093,14 @@ public
                   @transfmrk[@page] += (ccode + "\n").length
                 elsif @in_footer
                   pagemark = @footerpos[@page]
-                  @footerpos[@page] += (ccode + "\n").length
                 else
                   pagemark = @intmrk[@page]
-                  @intmrk[@page] += (ccode + "\n").length
                 end
                 pagebuff = getPageBuffer(@page)
                 pstart = pagebuff[0, pagemark]
                 pend = pagebuff[pagemark..-1]
                 setPageBuffer(@page, pstart + ccode + "\n" + pend)
+                pagemark += (ccode + "\n").length
               end
             end
           }                                       
@@ -12638,6 +12637,8 @@ protected
     # update file length (needed for transactions)
     if @cache_file_length[filename].nil?
       @cache_file_length[filename] = data.length
+    elsif append == false
+      @cache_file_length[filename] = data.length
     else
       @cache_file_length[filename] += data.length
     end
@@ -12702,6 +12703,9 @@ protected
   def setPageBuffer(page, data, append=false)
     if @diskcache
       if @pages[page].nil?
+        @pages[page] = getObjFilename('page' + page.to_s)
+      elsif (@objcopy and !append and @prev_pages[page].nil?)
+        @prev_pages[page] = @pages[page]
         @pages[page] = getObjFilename('page' + page.to_s)
       end
       writeDiskCache(@pages[page], data, append)
@@ -13419,6 +13423,13 @@ public
   #
   def commitTransaction()
     if @objcopy
+      if @objcopy.diskcache
+        @prev_pages.compact.each do |file|
+          File.delete(file.path)
+        end
+        @prev_pages = []
+      end
+
       @objcopy.destroy(true, true)
       @objcopy = nil
     end
@@ -13436,12 +13447,14 @@ public
     if @objcopy
       if @objcopy.diskcache
         # truncate files to previous values
-        @objcopy.prev_cache_file_length.each { |file, length|
-          open(file , "r+") do |f|
-            f.flock(File::LOCK_EX)
-            f.truncate(length)
-          end
+        @objcopy.cache_file_length.each { |file, length|
+          File.truncate(file, length) if File.exist?(file)
         }
+        @pages.each_with_index do |file, i|
+          if @prev_pages[i] and File.exist?(@prev_pages[i].path)
+            File.delete(file.path)
+          end
+        end
       end
       destroy(true, true)
       if this_self
@@ -13465,8 +13478,11 @@ public
   #
   def objclone(object)
     if @diskcache
-      @prev_cache_file_length = object.cache_file_length.dup
-      return object.dup
+      newobj = object.dup
+      newobj.cache_file_length = object.cache_file_length.dup
+      newobj.prev_pages = object.prev_pages.dup
+      newobj.pages = object.pages.dup
+      return newobj
     else
       return Marshal.load(Marshal.dump(object))
     end

@@ -5,9 +5,6 @@ class TcpdfTest < ActiveSupport::TestCase
     def getSpaceString
       super
     end
-    def getPageBuffer(page)
-      super
-    end
   end
 
   test "get_html_unit_to_units test" do
@@ -125,45 +122,5 @@ class TcpdfTest < ActiveSupport::TestCase
     pdf.set_line_style({'width' => 0.1, 'cap' => 'butt', 'join' => 'miter', 'dash' => '', 'phase' => 0, 'color' => [255, 0, 0]})
     pdf.set_line_style({'width' => 0.1, 'cap' => 'butt', 'join' => 'miter', 'dash' => '1,2,3,4', 'phase' => 0, 'color' => [255, 0, 0]})
     pdf.set_line_style({'width' => 0.1, 'cap' => 'butt', 'join' => 'miter', 'dash' => 'a', 'phase' => 0, 'color' => [255, 0, 0]}) # Invalid
-  end
-
-  test "Transaction test without diskcache" do
-    pdf = MYPDF.new
-    pdf.add_page()
-    page = pdf.get_page
-
-    contents01 = pdf.getPageBuffer(page).dup
-
-    pdf.start_transaction()
-
-    pdf.write(0, "LINE 1\n")
-    pdf.write(0, "LINE 2\n")
-    contents02 = pdf.getPageBuffer(page).dup
-    assert_not_equal contents01, contents02
-
-    # rolls back to the last (re)start
-    pdf = pdf.rollback_transaction()
-    contents03 = pdf.getPageBuffer(page).dup
-    assert_equal contents01, contents03
-  end
-
-  test "Transaction test with diskcache" do
-    pdf = MYPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
-    pdf.add_page()
-    page = pdf.get_page
-
-    contents01 = pdf.getPageBuffer(page).dup
-
-    pdf.start_transaction()
-
-    pdf.write(0, "LINE 1\n")
-    pdf.write(0, "LINE 2\n")
-    contents02 = pdf.getPageBuffer(page).dup
-    assert_not_equal contents01, contents02
-
-    # rolls back to the last (re)start
-    pdf = pdf.rollback_transaction()
-    contents03 = pdf.getPageBuffer(page).dup
-    assert_equal contents01, contents03
   end
 end
