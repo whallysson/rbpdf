@@ -2425,6 +2425,11 @@ class TCPDF
     end
 
     font_desc = TCPDFFontDescriptor.font(fontname)
+    if font_desc[:desc].nil?
+      desc = {}
+    else
+      desc = font_desc[:desc].dup
+    end
 
     # check font parameters
     if font_desc[:type].nil? or font_desc[:cw].nil?
@@ -2439,14 +2444,14 @@ class TCPDF
       font_desc[:cidinfo]['uni2cid'] = {}
     end
     font_desc[:ctg] ||= ''
-    font_desc[:desc] ||= {}
     font_desc[:up] ||= -100
     font_desc[:ut] ||= 50
     font_desc[:cw] ||= {}
+
     if empty_string(font_desc[:dw])
       # set default width
-      if !font_desc[:desc]['MissingWidth'].nil? and (font_desc[:desc]['MissingWidth'] > 0)
-        font_desc[:dw] = font_desc[:desc]['MissingWidth']
+      if !desc['MissingWidth'].nil? and (desc['MissingWidth'] > 0)
+        font_desc[:dw] = desc['MissingWidth']
       elsif font_desc[:cw][32]
         font_desc[:dw] = font_desc[:cw][32]
       else
@@ -2461,21 +2466,21 @@ class TCPDF
       sname = font_desc[:name] + styles[bistyle]
       # artificial bold
       if bistyle.index('B') != nil
-        if font_desc[:desc]['StemV']
-          font_desc[:desc]['StemV'] *= 2
+        if desc['StemV']
+          desc['StemV'] *= 2
         else
-          font_desc[:desc]['StemV'] = 120
+          desc['StemV'] = 120
         end
       end
       # artificial italic
       if bistyle.index('I') != nil
-        if font_desc[:desc]['ItalicAngle']
-          font_desc[:desc]['ItalicAngle'] -= 11
+        if desc['ItalicAngle']
+          desc['ItalicAngle'] -= 11
         else
-          font_desc[:desc]['ItalicAngle'] =-11 
+          desc['ItalicAngle'] = -11 
         end
       end
-      setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => sname, 'desc' => font_desc[:desc], 'cidinfo' => font_desc[:cidinfo], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc]})
+      setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => sname, 'desc' => desc, 'cidinfo' => font_desc[:cidinfo], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc]})
     elsif font_desc[:type] == 'core'
       font_desc[:name] = @core_fonts[fontkey]
     elsif (font_desc[:type] == 'TrueType') or (font_desc[:type] == 'Type1')
@@ -2485,7 +2490,7 @@ class TCPDF
     else
       Error('Unknow font type: ' + type + '')
     end
-    setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => font_desc[:name], 'desc' => font_desc[:desc], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc], 'cidinfo' => font_desc[:cidinfo], 'file' => font_desc[:file], 'ctg' => font_desc[:ctg]})
+    setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => font_desc[:name], 'desc' => desc, 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc], 'cidinfo' => font_desc[:cidinfo], 'file' => font_desc[:file], 'ctg' => font_desc[:ctg]})
 
     if (!font_desc[:diff].nil? and (!font_desc[:diff].empty?))
       #Search existing encodings

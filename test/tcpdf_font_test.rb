@@ -5,6 +5,9 @@ class TcpdfFontTest < ActiveSupport::TestCase
     def putfonts()
       super
     end
+    def getFontBuffer(font)
+      super
+    end
   end
 
   test "core Font test" do
@@ -14,6 +17,15 @@ class TcpdfFontTest < ActiveSupport::TestCase
     pdf.set_font('helvetica', 'B', 18)
     pdf.set_font('helvetica', 'I', 18)
     pdf.set_font('helvetica', 'BI', 18)
+
+    font = pdf.getFontBuffer('helvetica')
+    assert_equal font['dw'], 556
+    font = pdf.getFontBuffer('helveticaB')
+    assert_equal font['dw'], 556
+    font = pdf.getFontBuffer('helveticaI')
+    assert_equal font['dw'], 556
+    font = pdf.getFontBuffer('helveticaBI')
+    assert_equal font['dw'], 556
 
     pdf.set_font('times', '', 18)
     pdf.set_font('times', 'B', 18)
@@ -79,6 +91,22 @@ class TcpdfFontTest < ActiveSupport::TestCase
     pdf.set_font('kozgopromedium', 'B', 18)
     pdf.set_font('kozgopromedium', 'I', 18)
     pdf.set_font('kozgopromedium', 'BI', 18)
+
+    font = pdf.getFontBuffer('kozgopromedium')
+    assert_equal font['desc']['StemV'], 99
+    assert_equal font['desc']['ItalicAngle'], 0
+
+    font = pdf.getFontBuffer('kozgopromediumB')
+    assert_equal font['desc']['StemV'], 99 * 2
+    assert_equal font['desc']['ItalicAngle'], 0
+
+    font = pdf.getFontBuffer('kozgopromediumI')
+    assert_equal font['desc']['StemV'], 99
+    assert_equal font['desc']['ItalicAngle'], -11
+
+    font = pdf.getFontBuffer('kozgopromediumBI')
+    assert_equal font['desc']['StemV'], 99 * 2
+    assert_equal font['desc']['ItalicAngle'], -11
 
     pdf.set_font('kozminproregular', '', 18)
     pdf.set_font('kozminproregular', 'B', 18)
