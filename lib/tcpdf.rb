@@ -452,8 +452,17 @@ class TCPDF
     @href ||= {}
     @fontlist = ["arial", "times", "courier", "helvetica", "symbol"]
     @fgcolor = ActiveSupport::OrderedHash.new
+    @fgcolor['R'] = 0
+    @fgcolor['G'] = 0
+    @fgcolor['B'] = 0
     @strokecolor = ActiveSupport::OrderedHash.new
+    @strokecolor['R'] = 0
+    @strokecolor['G'] = 0
+    @strokecolor['B'] = 0
     @bgcolor = ActiveSupport::OrderedHash.new
+    @bgcolor['R'] = 255
+    @bgcolor['G'] = 255
+    @bgcolor['B'] = 255
     @extgstates ||= []
 
     # user's rights
