@@ -4255,6 +4255,9 @@ class TCPDF
       #First use of image, get info
       if (type == '')
         type = getImageFileType(file, imsize)
+      else
+        type.downcase!
+        type = 'jpeg' if type == 'jpg'
       end
 
       info = false
