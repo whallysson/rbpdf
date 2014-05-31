@@ -10363,11 +10363,23 @@ protected
   # Convert to accessible file path
   # @param string :attrname image file name
   #
-  def getImageFilename( attrname )
+  def get_image_filename( attrname )
     testscrtype = URI.parse(attrname)
     if testscrtype.query.nil? or testscrtype.query.empty?
       # convert URL to server path
       attrname = attrname.gsub(@@k_path_url, @@k_path_main)
+    end
+  end
+
+  #
+  # Convert to accessible url path
+  # @param string :url url path
+  #
+  def get_sever_url(url)
+    if !empty_string(url) and (url[0, 1] == '/')
+      '' 
+    else
+      url
     end
   end
 
@@ -11668,7 +11680,7 @@ public
       addHTMLVertSpace(hrHeight / 2, 0, cell, dom[key + 1].nil?)
     when 'a'
       if tag['attribute'].key?('href')
-        @href['url'] = tag['attribute']['href']
+        @href['url'] = get_sever_url(tag['attribute']['href'])
       end
     when 'img'
       if !tag['attribute']['src'].nil?
@@ -11684,7 +11696,7 @@ public
         ### T.B.D ### TCPDF 5.0.000 ###
         # tag['attribute']['src'] = CGI.escape(tag['attribute']['src'])
         type = getImageFileType(tag['attribute']['src'])
-        tag['attribute']['src'] = getImageFilename(tag['attribute']['src'])
+        tag['attribute']['src'] = get_image_filename(tag['attribute']['src'])
         if tag['attribute']['width'].nil?
           tag['attribute']['width'] = 0
         end
