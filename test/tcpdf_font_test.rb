@@ -5,9 +5,25 @@ class TcpdfFontTest < ActiveSupport::TestCase
     def putfonts()
       super
     end
+
     def getFontBuffer(font)
       super
     end
+
+    def getFontsList()
+      super
+    end
+    
+    def fontlist()
+      @fontlist
+    end
+  end
+
+  test "Font getFontsList" do
+    pdf = MYPDF.new
+    pdf.getFontsList()
+    fonts = pdf.fontlist()
+    assert fonts.include?('kozminproregular') 
   end
 
   test "core Font test" do
@@ -19,12 +35,16 @@ class TcpdfFontTest < ActiveSupport::TestCase
     pdf.set_font('helvetica', 'BI', 18)
 
     font = pdf.getFontBuffer('helvetica')
+    assert_equal font['name'], 'Helvetica'
     assert_equal font['dw'], 556
     font = pdf.getFontBuffer('helveticaB')
+    assert_equal font['name'], 'Helvetica-Bold'
     assert_equal font['dw'], 556
     font = pdf.getFontBuffer('helveticaI')
+    assert_equal font['name'], 'Helvetica-Oblique'
     assert_equal font['dw'], 556
     font = pdf.getFontBuffer('helveticaBI')
+    assert_equal font['name'], 'Helvetica-BoldOblique'
     assert_equal font['dw'], 556
 
     pdf.set_font('times', '', 18)
@@ -32,13 +52,36 @@ class TcpdfFontTest < ActiveSupport::TestCase
     pdf.set_font('times', 'I', 18)
     pdf.set_font('times', 'BI', 18)
 
+    font = pdf.getFontBuffer('times')
+    assert_equal font['name'], 'Times-Roman'
+    font = pdf.getFontBuffer('timesB')
+    assert_equal font['name'], 'Times-Bold'
+    font = pdf.getFontBuffer('timesI')
+    assert_equal font['name'], 'Times-Italic'
+    font = pdf.getFontBuffer('timesBI')
+    assert_equal font['name'], 'Times-BoldItalic'
+
     pdf.set_font('courier', '', 18)
     pdf.set_font('courier', 'B', 18)
     pdf.set_font('courier', 'I', 18)
     pdf.set_font('courier', 'BI', 18)
 
+    font = pdf.getFontBuffer('courier')
+    assert_equal font['name'], 'Courier'
+    font = pdf.getFontBuffer('courierB')
+    assert_equal font['name'], 'Courier-Bold'
+    font = pdf.getFontBuffer('courierI')
+    assert_equal font['name'], 'Courier-Oblique'
+    font = pdf.getFontBuffer('courierBI')
+    assert_equal font['name'], 'Courier-BoldOblique'
+
     pdf.set_font('symbol', '', 18)
+    font = pdf.getFontBuffer('symbol')
+    assert_equal font['name'], 'Symbol'
+
     pdf.set_font('zapfdingbats', '', 18)
+    font = pdf.getFontBuffer('zapfdingbats')
+    assert_equal font['name'], 'ZapfDingbats'
 
     pdf.putfonts()
   end

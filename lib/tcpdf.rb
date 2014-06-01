@@ -145,7 +145,7 @@ class TCPDF
   
   attr_accessor :font_files
   
-  cattr_accessor :font_path
+  cattr_accessor :k_path_fonts
   
   attr_accessor :font_style
   
@@ -450,7 +450,8 @@ class TCPDF
     @pdf_version ||= "1.7"
     @encoding = encoding
     @href ||= {}
-    @fontlist = ["arial", "times", "courier", "helvetica", "symbol"]
+    @fontlist ||= []
+    getFontsList()
     @fgcolor = ActiveSupport::OrderedHash.new
     @fgcolor['R'] = 0
     @fgcolor['G'] = 0
@@ -2317,6 +2318,16 @@ class TCPDF
     return s.length
   end
   alias_method :get_num_chars, :GetNumChars
+
+  #
+  # Fill the list of available fonts (@fontlist).
+  # @access protected
+  # @since 4.0.013 (2008-07-28)
+  #
+  def getFontsList()
+      Dir.glob(File.join getfontpath(), '*.rb').each {|file| @fontlist.push File.basename(file, '.rb').downcase }
+  end
+  protected :getFontsList
 
   #
   # Imports a TrueType, Type1, core, or CID0 font and makes it available.
@@ -4854,10 +4865,10 @@ protected
   # Return fonts path
   # @access protected
   #
-  def getfontpath(file)
-    # Is it in the @@font_path?
-    if @@font_path
-      fpath = File.join @@font_path, file
+  def getfontpath(file='')
+    # Is it in the @@k_path_fonts?
+    if @@k_path_fonts
+      fpath = File.join @@k_path_fonts, file
       if File.exists?(fpath)
         return fpath
       end
