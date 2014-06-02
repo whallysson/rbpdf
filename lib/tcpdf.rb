@@ -10559,18 +10559,18 @@ public
           # store current object
           startTransaction()
           # save this method vars
-          this_method_vars['html'] = html
+          this_method_vars['html'] = html.dup
           this_method_vars['ln'] = ln
           this_method_vars['fill'] = fill
           this_method_vars['reseth'] = reseth
           this_method_vars['cell'] = cell
-          this_method_vars['align'] = align
-          this_method_vars['gvars'] = gvars
+          this_method_vars['align'] = align.dup
+          this_method_vars['gvars'] = Marshal.load(Marshal.dump(gvars))
           this_method_vars['prevPage'] = prevPage
           this_method_vars['prevlMargin'] = prevlMargin
           this_method_vars['prevrMargin'] = prevrMargin
-          this_method_vars['curfontname'] = curfontname
-          this_method_vars['curfontstyle'] = curfontstyle
+          this_method_vars['curfontname'] = curfontname.dup
+          this_method_vars['curfontstyle'] = curfontstyle.dup
           this_method_vars['curfontsize'] = curfontsize
           this_method_vars['curfontascent'] = curfontascent
           this_method_vars['curfontdescent'] = curfontdescent
@@ -10595,7 +10595,7 @@ public
           this_method_vars['prev_lispacer'] = prev_lispacer
           this_method_vars['fontaligned'] = fontaligned
           this_method_vars['key'] = key
-          this_method_vars['dom'] = dom
+          this_method_vars['dom'] = Marshal.load(Marshal.dump(dom))
         end
       end
       # print THEAD block
@@ -11220,7 +11220,7 @@ public
             if dom[trid]['startpage'].nil?
               dom[trid]['startpage'] = @page
             else
-              @page = dom[trid]['startpage']
+               setPage(dom[trid]['startpage'])
             end
             if dom[trid]['starty'].nil?
               dom[trid]['starty'] = @y
