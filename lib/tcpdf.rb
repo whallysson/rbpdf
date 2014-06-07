@@ -1205,7 +1205,7 @@ class TCPDF
   #
   def SetCompression(compress)
     #Set page compression
-    if (respond_to?('gzcompress'))
+    if Object.const_defined?(:Zlib)
       @compress = compress
     else
       @compress = false
@@ -2801,7 +2801,7 @@ class TCPDF
       end
       filter = ''
       if @compress
-        data = gzcompress(data)
+        data = Zlib::Deflate.deflate(data)
         filter = ' /Filter /FlateDecode'
       end
       @offsets[filedata['n']] = @bufferlen
@@ -5078,7 +5078,7 @@ protected
 
       out(out)
       #Page content
-      p=(@compress) ? gzcompress(temppage) : temppage
+      p=(@compress) ? Zlib::Deflate.deflate(temppage) : temppage
       newobj();
       out('<<' + filter +' /Length ' + p.length.to_s  + '>> ' + getstream(p) + ' endobj')
       if @diskcache
@@ -5689,7 +5689,7 @@ protected
     out << ' /Subtype /Form'
     out << ' /FormType 1'
     if @compress
-      stream = gzcompress(stream)
+      stream = Zlib::Deflate.deflate(stream)
       out << ' /Filter /FlateDecode'
     end
     rect = sprintf('%.2f %.2f', w, h)
@@ -6201,7 +6201,7 @@ protected
       #Palette
       if (info['cs']=='Indexed')
         newobj();
-        pal = @compress ? gzcompress(info['pal']) : info['pal']
+        pal = @compress ? Zlib::Deflate.deflate(info['pal']) : info['pal']
         out('<<' + filter + '/Length ' + pal.length.to_s + '>> ' + getstream(pal) + ' endobj')
       end
     end
