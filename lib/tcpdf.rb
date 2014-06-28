@@ -69,17 +69,17 @@ module TCPDFFontDescriptor
   end
 end
 
-# This is a Ruby class for generating PDF files on-the-fly without requiring external extensions.<br>
-# This class is an extension and improvement of the FPDF class by Olivier Plathey (http://www.fpdf.org).<br>
-# This version contains some changes: [porting to Ruby, support for UTF-8 Unicode, code style and formatting, php documentation (www.phpdoc.org), ISO page formats, minor improvements, image scale factor]<br>
-# TCPDF project (http://www.tcpdf.org) has been originally derived in 2002 from the Public Domain FPDF class by Olivier Plathey (http://www.fpdf.org), but now is almost entirely rewritten.<br>
-# To add your own TTF fonts please read /fonts/README.TXT
-# @name TCPDF
-# @package com.tecnick.tcpdf
-# @@version 5.1.002
-# @author Nicola Asuni
-# @link http://www.tcpdf.org
-# @license http://www.gnu.org/copyleft/lesser.html LGPL
+# == This is a Ruby class for generating PDF files on-the-fly without requiring external extensions.
+# * This class is an extension and improvement of the FPDF class by Olivier Plathey (http://www.fpdf.org).
+# * This version contains some changes: [porting to Ruby, support for UTF-8 Unicode, code style and formatting, php documentation (www.phpdoc.org), ISO page formats, minor improvements, image scale factor]
+# * TCPDF project (http://www.tcpdf.org) has been originally derived in 2002 from the Public Domain FPDF class by Olivier Plathey (http://www.fpdf.org), but now is almost entirely rewritten.
+# * To add your own TTF fonts please read /fonts/README.TXT
+# @name:: TCPDF
+# @package:: com.tecnick.tcpdf
+# @@version:: 5.1.002
+# @author:: Nicola Asuni
+# @link:: http://www.tcpdf.org
+# @license:: http://www.gnu.org/copyleft/lesser.html LGPL 2.1
 #
 class TCPDF
   include ActionView::Helpers
@@ -210,13 +210,30 @@ class TCPDF
   # It allows to set up the page format, the orientation and 
   # the measure unit used in all the methods (except for the font sizes).
   # @since 1.0
-  # @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or Portrait (default)</li><li>L or Landscape</li></ul>
-  # @param string :unit User measure unit. Possible values are:<ul><li>pt: point</li><li>mm: millimeter (default)</li><li>cm: centimeter</li><li>in: inch</li></ul><br />A point equals 1/72 of inch, that is to say about 0.35 mm (an inch being 2.54 cm). This is a very common unit in typography; font sizes are expressed in that unit.
-  # @param mixed :format The format used for pages. It can be either:<b>A string indicating the page format:</b><ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul><b>An array containing page measures and advanced options:</b><ul><li>['format'] = page format name (one of the above);</li><li>['Rotate'] : The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.</li><li>['PZ'] : The page's preferred zoom (magnification) factor.</li><li>['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed:</li><li>['MediaBox']['llx'] : lower-left x coordinate in points</li><li>['MediaBox']['lly'] : lower-left y coordinate in points</li><li>['MediaBox']['urx'] : upper-right x coordinate in points</li><li>['MediaBox']['ury'] : upper-right y coordinate in points</li><li>['CropBox'] : the visible region of default user space:</li><li>['CropBox']['llx'] : lower-left x coordinate in points</li><li>['CropBox']['lly'] : lower-left y coordinate in points</li><li>['CropBox']['urx'] : upper-right x coordinate in points</li><li>['CropBox']['ury'] : upper-right y coordinate in points</li><li>['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment:</li><li>['BleedBox']['llx'] : lower-left x coordinate in points</li><li>['BleedBox']['lly'] : lower-left y coordinate in points</li><li>['BleedBox']['urx'] : upper-right x coordinate in points</li><li>['BleedBox']['ury'] : upper-right y coordinate in points</li><li>['TrimBox'] : the intended dimensions of the finished page after trimming:</li><li>['TrimBox']['llx'] : lower-left x coordinate in points</li><li>['TrimBox']['lly'] : lower-left y coordinate in points</li><li>['TrimBox']['urx'] : upper-right x coordinate in points</li><li>['TrimBox']['ury'] : upper-right y coordinate in points</li><li>['ArtBox'] : the extent of the page's meaningful content:</li><li>['ArtBox']['llx'] : lower-left x coordinate in points</li><li>['ArtBox']['lly'] : lower-left y coordinate in points</li><li>['ArtBox']['urx'] : upper-right x coordinate in points</li><li>['ArtBox']['ury'] : upper-right y coordinate in points</li><li>['BoxColorInfo'] :specify the colours and other visual characteristics that should be used in displaying guidelines on the screen for each of the possible page boundaries other than the MediaBox:</li><li>['BoxColorInfo'][BOXTYPE]['C'] : an array of three numbers in the range 0-255, representing the components in the DeviceRGB colour space.</li><li>['BoxColorInfo'][BOXTYPE]['W'] : the guideline width in default user units</li><li>['BoxColorInfo'][BOXTYPE]['S'] : the guideline style: S = Solid; D = Dashed</li><li>['BoxColorInfo'][BOXTYPE]['D'] : dash array defining a pattern of dashes and gaps to be used in drawing dashed guidelines</li><li>['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation</li><li>['trans']['Dur'] : The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.</li><li>['trans']['S'] : transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade</li><li>['trans']['D'] : The duration of the transition effect, in seconds.</li><li>['trans']['Dm'] : (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.</li><li>['trans']['M'] : (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.</li><li>['trans']['Di'] : (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.</li><li>['trans']['SS'] : (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0.</li><li>['trans']['B'] : (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.</li></ul>
-  # @param boolean :unicode TRUE means that the input text is unicode (default = true)
-  # @param String :encoding charset encoding; default is UTF-8
-  # @param boolean :diskcache if TRUE reduce the RAM memory usage by caching temporary data on filesystem (slower).
-  # @access public
+  # [@param string :orientation]
+  #   page orientation. Possible values are (case insensitive):
+  #   * P or Portrait (default)
+  #   * L or Landscape
+  # [@param string :unit]
+  #   User measure unit. Possible values are:
+  #   * pt: point
+  #   * mm: millimeter (default)
+  #   * cm: centimeter
+  #   * in: inch
+  #   A point equals 1/72 of inch, that is to say about 0.35 mm (an inch being 2.54 cm). This is a very common unit in typography; font sizes are expressed in that unit.
+  # [@param mixed :format]
+  #   The format used for pages. It can be either: <b>A string indicating the page format:</b>
+  #   * 4A0,2A0,A0,A1,A2,A3,A4 (default),A5,A6,A7,A8,A9,A10
+  #   * B0,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10
+  #   * C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10
+  #   * RA0,RA1,RA2,RA3,RA4
+  #   * SRA0,SRA1,SRA2,SRA3,SRA4
+  #   * LETTER,LEGAL,EXECUTIVE,FOLIO
+  #   <b>An array containing page measures and advanced options:</b> see setPageFormat()
+  # [@param boolean :unicode] TRUE means that the input text is unicode (default = true)
+  # [@param String :encoding] charset encoding; default is UTF-8
+  # [@param boolean :diskcache] if TRUE reduce the RAM memory usage by caching temporary data on filesystem (slower).
+  # [@access public]
   #
   def initialize(orientation = 'P',  unit = 'mm', format = 'A4', unicode = true, encoding = "UTF-8", diskcache = false)
     
@@ -490,9 +507,15 @@ class TCPDF
   
   #
   # Set the units of measure for the document.
-  # @param string :unit User measure unit. Possible values are:<ul><li>pt: point</li><li>mm: millimeter (default)</li><li>cm: centimeter</li><li>in: inch</li></ul><br />A point equals 1/72 of inch, that is to say about 0.35 mm (an inch being 2.54 cm). This is a very common unit in typography; font sizes are expressed in that unit.
-  # @access public
-  # @since 3.0.015 (2008-06-06)
+  # [@param string :unit]
+  #   User measure unit. Possible values are:
+  #   * pt: point
+  #   * mm: millimeter (default)
+  #   * cm: centimeter
+  #   * in: inch
+  #   A point equals 1/72 of inch, that is to say about 0.35 mm (an inch being 2.54 cm). This is a very common unit in typography; font sizes are expressed in that unit.
+  # [@access public]
+  # [@since 3.0.015 (2008-06-06)]
   #
   def setPageUnit(unit)
     unit = unit.downcase
@@ -514,10 +537,17 @@ class TCPDF
 
   #
   # Get page dimensions from fromat name.
-  # @param mixed :format The format name. It can be: <ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul>
-  # @return array containing page width and height in points
-  # @access public
-  # @since 5.0.010 (2010-05-17)
+  # [@param mixed :format]
+  #   The format name. It can be:
+  #   * 4A0,2A0,A0,A1,A2,A3,A4 (default),A5,A6,A7,A8,A9,A10
+  #   * B0,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10
+  #   * C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10
+  #   * RA0,RA1,RA2,RA3,RA4
+  #   * SRA0,SRA1,SRA2,SRA3,SRA4
+  #   * LETTER,LEGAL,EXECUTIVE,FOLIO
+  # [@return array] containing page width and height in points
+  # [@access public]
+  # [@since 5.0.010 (2010-05-17)]
   #
   def getPageSizeFromFormat(format)
     # Page formats (45 standard ISO paper formats and 4 american common formats).
@@ -581,10 +611,63 @@ class TCPDF
 
   #
   # Change the format of the current page
-  # @param mixed :format The format used for pages. It can be either:<b>A string indicating the page format:</b><ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul><b>An array containing page measures and advanced options:</b><ul><li>['format'] = page format name (one of the above);</li><li>['Rotate'] : The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.</li><li>['PZ'] : The page's preferred zoom (magnification) factor.</li><li>['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed:</li><li>['MediaBox']['llx'] : lower-left x coordinate in points</li><li>['MediaBox']['lly'] : lower-left y coordinate in points</li><li>['MediaBox']['urx'] : upper-right x coordinate in points</li><li>['MediaBox']['ury'] : upper-right y coordinate in points</li><li>['CropBox'] : the visible region of default user space:</li><li>['CropBox']['llx'] : lower-left x coordinate in points</li><li>['CropBox']['lly'] : lower-left y coordinate in points</li><li>['CropBox']['urx'] : upper-right x coordinate in points</li><li>['CropBox']['ury'] : upper-right y coordinate in points</li><li>['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment:</li><li>['BleedBox']['llx'] : lower-left x coordinate in points</li><li>['BleedBox']['lly'] : lower-left y coordinate in points</li><li>['BleedBox']['urx'] : upper-right x coordinate in points</li><li>['BleedBox']['ury'] : upper-right y coordinate in points</li><li>['TrimBox'] : the intended dimensions of the finished page after trimming:</li><li>['TrimBox']['llx'] : lower-left x coordinate in points</li><li>['TrimBox']['lly'] : lower-left y coordinate in points</li><li>['TrimBox']['urx'] : upper-right x coordinate in points</li><li>['TrimBox']['ury'] : upper-right y coordinate in points</li><li>['ArtBox'] : the extent of the page's meaningful content:</li><li>['ArtBox']['llx'] : lower-left x coordinate in points</li><li>['ArtBox']['lly'] : lower-left y coordinate in points</li><li>['ArtBox']['urx'] : upper-right x coordinate in points</li><li>['ArtBox']['ury'] : upper-right y coordinate in points</li><li>['BoxColorInfo'] :specify the colours and other visual characteristics that should be used in displaying guidelines on the screen for each of the possible page boundaries other than the MediaBox:</li><li>['BoxColorInfo'][BOXTYPE]['C'] : an array of three numbers in the range 0-255, representing the components in the DeviceRGB colour space.</li><li>['BoxColorInfo'][BOXTYPE]['W'] : the guideline width in default user units</li><li>['BoxColorInfo'][BOXTYPE]['S'] : the guideline style: S = Solid; D = Dashed</li><li>['BoxColorInfo'][BOXTYPE]['D'] : dash array defining a pattern of dashes and gaps to be used in drawing dashed guidelines</li><li>['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation</li><li>['trans']['Dur'] : The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.</li><li>['trans']['S'] : transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade</li><li>['trans']['D'] : The duration of the transition effect, in seconds.</li><li>['trans']['Dm'] : (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.</li><li>['trans']['M'] : (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.</li><li>['trans']['Di'] : (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.</li><li>['trans']['SS'] : (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0.</li><li>['trans']['B'] : (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.</li></ul>
-  # @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
-  # @access protected
-  # @since 3.0.015 (2008-06-06)
+  # [@param mixed :format]
+  #   The format used for pages. It can be either: <b>A string indicating the page format:</b>
+  #   * 4A0,2A0,A0,A1,A2,A3,A4 (default),A5,A6,A7,A8,A9,A10
+  #   * B0,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10
+  #   * C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10
+  #   * RA0,RA1,RA2,RA3,RA4
+  #   * SRA0,SRA1,SRA2,SRA3,SRA4
+  #   * LETTER,LEGAL,EXECUTIVE,FOLIO
+  #   <b>An array containing page measures and advanced options:</b>
+  #     ['format'] = page format name (one of the above)
+  #     ['Rotate'] : The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.
+  #     ['PZ'] : The page's preferred zoom (magnification) factor.
+  #     ['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed:
+  #     ['MediaBox']['llx'] : lower-left x coordinate in points
+  #     ['MediaBox']['lly'] : lower-left y coordinate in points
+  #     ['MediaBox']['urx'] : upper-right x coordinate in points
+  #     ['MediaBox']['ury'] : upper-right y coordinate in points
+  #     ['CropBox'] : the visible region of default user space:
+  #     ['CropBox']['llx'] : lower-left x coordinate in points
+  #     ['CropBox']['lly'] : lower-left y coordinate in points
+  #     ['CropBox']['urx'] : upper-right x coordinate in points
+  #     ['CropBox']['ury'] : upper-right y coordinate in points
+  #     ['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment:
+  #     ['BleedBox']['llx'] : lower-left x coordinate in points
+  #     ['BleedBox']['lly'] : lower-left y coordinate in points
+  #     ['BleedBox']['urx'] : upper-right x coordinate in points
+  #     ['BleedBox']['ury'] : upper-right y coordinate in points
+  #     ['TrimBox'] : the intended dimensions of the finished page after trimming:
+  #     ['TrimBox']['llx'] : lower-left x coordinate in points
+  #     ['TrimBox']['lly'] : lower-left y coordinate in points
+  #     ['TrimBox']['urx'] : upper-right x coordinate in points
+  #     ['TrimBox']['ury'] : upper-right y coordinate in points
+  #     ['ArtBox'] : the extent of the page's meaningful content:
+  #     ['ArtBox']['llx'] : lower-left x coordinate in points
+  #     ['ArtBox']['lly'] : lower-left y coordinate in points
+  #     ['ArtBox']['urx'] : upper-right x coordinate in points
+  #     ['ArtBox']['ury'] : upper-right y coordinate in points
+  #     ['BoxColorInfo'] :specify the colours and other visual characteristics that should be used in displaying guidelines on the screen for each of the possible page boundaries other than the MediaBox:
+  #     ['BoxColorInfo'][BOXTYPE]['C'] : an array of three numbers in the range 0-255, representing the components in the DeviceRGB colour space.
+  #     ['BoxColorInfo'][BOXTYPE]['W'] : the guideline width in default user units
+  #     ['BoxColorInfo'][BOXTYPE]['S'] : the guideline style: S = Solid; D = Dashed
+  #     ['BoxColorInfo'][BOXTYPE]['D'] : dash array defining a pattern of dashes and gaps to be used in drawing dashed guidelines
+  #     ['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation
+  #     ['trans']['Dur'] : The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.
+  #     ['trans']['S'] : transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade
+  #     ['trans']['D'] : The duration of the transition effect, in seconds.
+  #     ['trans']['Dm'] : (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.
+  #     ['trans']['M'] : (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.
+  #     ['trans']['Di'] : (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.
+  #     ['trans']['SS'] : (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0.
+  #     ['trans']['B'] : (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.
+  # [@param string :orientation]
+  #   page orientation. Possible values are (case insensitive):
+  #   * P or PORTRAIT (default)
+  #   * L or LANDSCAPE
+  # [@access protected]
+  # [@since 3.0.015 (2008-06-06)]
   #
   def setPageFormat(format, orientation="P")
     if !format.empty? and @pagedim[@page]
@@ -694,14 +777,20 @@ class TCPDF
 
   #
   # Set page boundaries.
-  # @param int :page page number
-  # @param string :type valid values are: <ul><li>'MediaBox' : the boundaries of the physical medium on which the page shall be displayed or printed;</li>
-  # @param float :llx lower-left x coordinate in user units</li>
-  # @param float :lly lower-left y coordinate in user units</li>
-  # @param float :urx upper-right x coordinate in user units</li>
-  # @param float :ury upper-right y coordinate in user units</li>
-  # @access public
-  # @since 5.0.010 (2010-05-17)
+  # [@param int :page] page number
+  # [@param string :type]
+  #   valid values are: 
+  #   * 'MediaBox' : the boundaries of the physical medium on which the page shall be displayed or printed
+  #   * 'CropBox' : the visible region of default user space
+  #   * 'BleedBox' : the region to which the contents of the page shall be clipped when output in a production environment
+  #   * 'TrimBox' : the intended dimensions of the finished page after trimming
+  #   * 'ArtBox' : the page's meaningful content (including potential white space).
+  # [@param float :llx] lower-left x coordinate in user units
+  # [@param float :lly] lower-left y coordinate in user units
+  # [@param float :urx] upper-right x coordinate in user units
+  # [@param float :ury] upper-right y coordinate in user units
+  # [@access public]
+  # [@since 5.0.010 (2010-05-17)]
   #
   def setPageBoxes(page, type, llx, lly, urx, ury)
     if @pagedim[@page].nil?
@@ -722,9 +811,9 @@ class TCPDF
 
   #
   # Swap X and Y coordinates of page boxes (change page boxes orientation).
-  # @param int :page page number
-  # @access protected
-  # @since 5.0.010 (2010-05-17)
+  # [@param int :page] page number
+  # [@access protected]
+  # [@since 5.0.010 (2010-05-17)]
   #
   def swapPageBoxCoordinates(page)
     pageboxes = ['MediaBox', 'CropBox', 'BleedBox', 'TrimBox', 'ArtBox']
@@ -744,11 +833,14 @@ class TCPDF
 
   #
   # Set page orientation.
-  # @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
-  # @param boolean :autopagebreak Boolean indicating if auto-page-break mode should be on or off.
-  # @param float :bottommargin bottom margin of the page.
-  # @access public
-  # @since 3.0.015 (2008-06-06)
+  # [@param string :orientation]
+  #   page orientation. Possible values are (case insensitive):
+  #   * P or PORTRAIT (default)
+  #   * L or LANDSCAPE
+  # [@param boolean :autopagebreak] Boolean indicating if auto-page-break mode should be on or off.
+  # [@param float :bottommargin] bottom margin of the page.
+  # [@access public]
+  # [@since 3.0.015 (2008-06-06)]
   #
   def setPageOrientation(orientation, autopagebreak='', bottommargin='')
     if @pagedim[@page].nil? or @pagedim[@page]['MediaBox'].nil?
@@ -842,10 +934,10 @@ class TCPDF
 
   #
   # Enable or disable Right-To-Left language mode
-  # @param Boolean :enable if true enable Right-To-Left language mode.
-  # @param Boolean :resetx if true reset the X position on direction change.
-  # @access public
-  # @since 2.0.000 (2008-01-03)
+  # [@param Boolean :enable] if true enable Right-To-Left language mode.
+  # [@param Boolean :resetx] if true reset the X position on direction change.
+  # [@access public]
+  # [@since 2.0.000 (2008-01-03)]
   #
   def setRTL(enable, resetx=true)
     enable = enable ? true : false
@@ -858,9 +950,9 @@ class TCPDF
 
   #
   # Return the RTL status
-  # @return boolean
-  # @access public
-  # @since 4.0.012 (2008-07-24)
+  # [@return boolean]
+  # [@access public]
+  # [@since 4.0.012 (2008-07-24)]
   #
   def getRTL()
     return @rtl
@@ -869,9 +961,9 @@ class TCPDF
 
   #
   # Force temporary RTL language direction
-  # @param mixed :mode can be false, 'L' for LTR or 'R' for RTL
-  # @access public
-  # @since 2.1.000 (2008-01-09)
+  # [@param mixed :mode] can be false, 'L' for LTR or 'R' for RTL
+  # [@access public]
+  # [@since 2.1.000 (2008-01-09)]
   #
   def setTempRTL(mode)
     newmode = false
@@ -887,9 +979,9 @@ class TCPDF
 
   #
   # Return the current temporary RTL status
-  # @return boolean
-  # @access public
-  # @since 4.8.014 (2009-11-04)
+  # [@return boolean]
+  # [@access public]
+  # [@since 4.8.014 (2009-11-04)]
   #
   def isRTLTextDir()
     return (@rtl or (@tmprtl == 'R'))
@@ -898,10 +990,10 @@ class TCPDF
 
   #
   # Set the last cell height.
-  # @param float :h cell height.
-  # @author Nicola Asuni
-  # @access public
-  # @since 1.53.0.TC034
+  # [@param float :h] cell height.
+  # [@author] Nicola Asuni
+  # [@access public]
+  # [@since 1.53.0.TC034]
   #
   def setLastH(h)
     @lasth = h
@@ -910,9 +1002,9 @@ class TCPDF
 
   #
   # Get the last cell height.
-  # @return last cell height
-  # @access public
-  # @since 4.0.017 (2008-08-05)
+  # [@return] last cell height
+  # [@access public]
+  # [@since 4.0.017 (2008-08-05)]
   #
   def getLastH()
     return @lasth
@@ -921,10 +1013,10 @@ class TCPDF
 
   #
   # Set the adjusting factor to convert pixels to user units.
-  # @param float :scale adjusting factor to convert pixels to user units.
-  # @author Nicola Asuni
-  # @access public
-  # @since 1.5.2
+  # [@param float :scale] adjusting factor to convert pixels to user units.
+  # [@author] Nicola Asuni
+  # [@access public]
+  # [@since 1.5.2]
   #
   def setImageScale(scale)
     @img_scale = scale;
@@ -938,10 +1030,10 @@ class TCPDF
   
   #
   # Returns the adjusting factor to convert pixels to user units.
-  # @return float adjusting factor to convert pixels to user units.
-  # @author Nicola Asuni
-  # @access public
-  # @since 1.5.2
+  # [@return float] adjusting factor to convert pixels to user units.
+  # [@author] Nicola Asuni
+  # [@access public]
+  # [@since 1.5.2]
   #
   def getImageScale()
     return @img_scale;
@@ -955,12 +1047,59 @@ class TCPDF
 
   #
   # Returns an array of page dimensions:
-  # <ul><li>@pagedim[@page]['w'] = page width in points</li><li>@pagedim[@page]['h'] = height in points</li><li>@pagedim[@page]['wk'] = page width in user units</li><li>@pagedim[@page]['hk'] = page height in user units</li><li>@pagedim[@page]['tm'] = top margin</li><li>@pagedim[@page]['bm'] = bottom margin</li><li>@pagedim[@page]['lm'] = left margin</li><li>@pagedim[@page]['rm'] = right margin</li><li>@pagedim[@page]['pb'] = auto page break</li><li>@pagedim[@page]['or'] = page orientation</li><li>@pagedim[@page]['olm'] = original left margin</li><li>@pagedim[@page]['orm'] = original right margin</li><li>@pagedim[@page]['Rotate'] = The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.</li><li>@pagedim[@page]['PZ'] = The page's preferred zoom (magnification) factor.</li><li>@pagedim[@page]['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation<ul><li>@pagedim[@page]['trans']['Dur'] = The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.</li><li>@pagedim[@page]['trans']['S'] = transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade</li><li>@pagedim[@page]['trans']['D'] = The duration of the transition effect, in seconds.</li><li>@pagedim[@page]['trans']['Dm'] = (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.</li><li>@pagedim[@page]['trans']['M'] = (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.</li><li>@pagedim[@page]['trans']['Di'] = (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.</li><li>@pagedim[@page]['trans']['SS'] = (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0. </li><li>@pagedim[@page]['trans']['B'] = (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.</li></ul></li><li>@pagedim[@page]['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed<ul><li>@pagedim[@page]['MediaBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['MediaBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['MediaBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['MediaBox']['ury'] = upper-right y coordinate in points</li></ul></li><li>@pagedim[@page]['CropBox'] : the visible region of default user space<ul><li>@pagedim[@page]['CropBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['CropBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['CropBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['CropBox']['ury'] = upper-right y coordinate in points</li></ul></li><li>@pagedim[@page]['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment<ul><li>@pagedim[@page]['BleedBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['BleedBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['BleedBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['BleedBox']['ury'] = upper-right y coordinate in points</li></ul></li><li>@pagedim[@page]['TrimBox'] : the intended dimensions of the finished page after trimming<ul><li>@pagedim[@page]['TrimBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['TrimBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['TrimBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['TrimBox']['ury'] = upper-right y coordinate in points</li></ul></li><li>@pagedim[@page]['ArtBox'] : the extent of the page's meaningful content<ul><li>@pagedim[@page]['ArtBox']['llx'] = lower-left x coordinate in points</li><li>@pagedim[@page]['ArtBox']['lly'] = lower-left y coordinate in points</li><li>@pagedim[@page]['ArtBox']['urx'] = upper-right x coordinate in points</li><li>@pagedim[@page]['ArtBox']['ury'] = upper-right y coordinate in points</li></ul></li></ul>
-  # @param int :pagenum page number (empty = current page)
-  # @return array of page dimensions.
-  # @author Nicola Asuni
-  # @access public
-  # @since 4.5.027 (2009-03-16)
+  #   @pagedim[@page]['w'] = page width in points
+  #   @pagedim[@page]['h'] = height in points
+  #   @pagedim[@page]['wk'] = page width in user units
+  #   @pagedim[@page]['hk'] = page height in user units
+  #   @pagedim[@page]['tm'] = top margin
+  #   @pagedim[@page]['bm'] = bottom margin
+  #   @pagedim[@page]['lm'] = left margin
+  #   @pagedim[@page]['rm'] = right margin
+  #   @pagedim[@page]['pb'] = auto page break
+  #   @pagedim[@page]['or'] = page orientation
+  #   @pagedim[@page]['olm'] = original left margin
+  #   @pagedim[@page]['orm'] = original right margin
+  #   @pagedim[@page]['Rotate'] = The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.
+  #   @pagedim[@page]['PZ'] = The page's preferred zoom (magnification) factor.
+  #   @pagedim[@page]['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation
+  #     @pagedim[@page]['trans']['Dur'] = The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.
+  #     @pagedim[@page]['trans']['S'] = transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade
+  #     @pagedim[@page]['trans']['D'] = The duration of the transition effect, in seconds.
+  #     @pagedim[@page]['trans']['Dm'] = (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.
+  #     @pagedim[@page]['trans']['M'] = (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.
+  #     @pagedim[@page]['trans']['Di'] = (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.
+  #     @pagedim[@page]['trans']['SS'] = (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0. 
+  #     @pagedim[@page]['trans']['B'] = (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.
+  #   @pagedim[@page]['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed
+  #     @pagedim[@page]['MediaBox']['llx'] = lower-left x coordinate in points
+  #     @pagedim[@page]['MediaBox']['lly'] = lower-left y coordinate in points
+  #     @pagedim[@page]['MediaBox']['urx'] = upper-right x coordinate in points
+  #     @pagedim[@page]['MediaBox']['ury'] = upper-right y coordinate in points
+  #   @pagedim[@page]['CropBox'] : the visible region of default user space
+  #     @pagedim[@page]['CropBox']['llx'] = lower-left x coordinate in points
+  #     @pagedim[@page]['CropBox']['lly'] = lower-left y coordinate in points
+  #     @pagedim[@page]['CropBox']['urx'] = upper-right x coordinate in points
+  #     @pagedim[@page]['CropBox']['ury'] = upper-right y coordinate in points
+  #   @pagedim[@page]['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment
+  #     @pagedim[@page]['BleedBox']['llx'] = lower-left x coordinate in points
+  #     @pagedim[@page]['BleedBox']['lly'] = lower-left y coordinate in points
+  #     @pagedim[@page]['BleedBox']['urx'] = upper-right x coordinate in points
+  #     @pagedim[@page]['BleedBox']['ury'] = upper-right y coordinate in points
+  #   @pagedim[@page]['TrimBox'] : the intended dimensions of the finished page after trimming
+  #     @pagedim[@page]['TrimBox']['llx'] = lower-left x coordinate in points
+  #     @pagedim[@page]['TrimBox']['lly'] = lower-left y coordinate in points
+  #     @pagedim[@page]['TrimBox']['urx'] = upper-right x coordinate in points
+  #     @pagedim[@page]['TrimBox']['ury'] = upper-right y coordinate in points
+  #   @pagedim[@page]['ArtBox'] : the extent of the page's meaningful content
+  #     @pagedim[@page]['ArtBox']['llx'] = lower-left x coordinate in points
+  #     @pagedim[@page]['ArtBox']['lly'] = lower-left y coordinate in points
+  #     @pagedim[@page]['ArtBox']['urx'] = upper-right x coordinate in points
+  #     @pagedim[@page]['ArtBox']['ury'] = upper-right y coordinate in points
+  # [@param int :pagenum] page number (empty = current page)
+  # [@return] array of page dimensions.
+  # [@author] Nicola Asuni
+  # [@access public]
+  # [@since 4.5.027 (2009-03-16)]
   #
   def getPageDimensions(pagenum='')
     if pagenum.empty?
@@ -972,10 +1111,10 @@ class TCPDF
 
   #
   # Returns the page width in units.
-  # @return int page width.
-  # @author Nicola Asuni
-  # @access public
-  # @since 1.5.2
+  # [@return int] page width.
+  # [@author] Nicola Asuni
+  # [@access public]
+  # [@since 1.5.2]
   #
   def getPageWidth()
     return @w;
@@ -989,10 +1128,10 @@ class TCPDF
   
   #
   # Returns the page height in units.
-  # @return int page height.
-  # @author Nicola Asuni
-  # @access public
-  # @since 1.5.2
+  # [@return int] page height.
+  # [@author] Nicola Asuni
+  # [@access public]
+  # [@since 1.5.2]
   #
   def getPageHeight()
     return @h;
@@ -1006,12 +1145,12 @@ class TCPDF
 
   #
   # Returns the page break margin.
-  # @param int :pagenum page number (empty = current page)
-  # @return int page break margin.
-  # @author Nicola Asuni
-  # @access public
-  # @since 1.5.2
-  # @see getPageDimensions()
+  # [@param int :pagenum] page number (empty = current page)
+  # [@return int page] break margin.
+  # [@author] Nicola Asuni
+  # [@access publi]c
+  # [@since 1.5.2]
+  # [@see] getPageDimensions()
   #
   def getBreakMargin(pagenum='')
     if pagenum.empty?
@@ -1028,10 +1167,10 @@ class TCPDF
 
   #
   # Returns the scale factor (number of points in user unit).
-  # @return int scale factor.
-  # @author Nicola Asuni
-  # @access public
-  # @since 1.5.2
+  # [@return int] scale factor.
+  # [@author] Nicola Asuni
+  # [@access public]
+  # [@since 1.5.2]
   #
   def getScaleFactor()
     return @k;
@@ -1045,13 +1184,13 @@ class TCPDF
 
   #
   # Defines the left, top and right margins.
-  # @param float :left Left margin.
-  # @param float :top Top margin.
-  # @param float :right Right margin. Default value is the left one.
-  # @param boolean :keepmargins if true overwrites the default page margins
-  # @access public
-  # @since 1.0
-  # @see SetLeftMargin(), SetTopMargin(), SetRightMargin(), SetAutoPageBreak()
+  # [@param float :left] Left margin.
+  # [@param float :top] Top margin.
+  # [@param float :right] Right margin. Default value is the left one.
+  # [@param boolean :keepmargins] if true overwrites the default page margins
+  # [@access public]
+  # [@since 1.0]
+  # [@see] SetLeftMargin(), SetTopMargin(), SetRightMargin(), SetAutoPageBreak()
   #
   def SetMargins(left, top, right=-1, keepmargins=false)
     #Set left, top and right margins
@@ -1071,10 +1210,10 @@ class TCPDF
 
   #
   # Defines the left margin. The method can be called before creating the first page. If the current abscissa gets out of page, it is brought back to the margin.
-  # @param float :margin The margin.
-  # @access public
-  # @since 1.4
-  # @see SetTopMargin(), SetRightMargin(), SetAutoPageBreak(), SetMargins()
+  # [@param float :margin] The margin.
+  # [@access public]
+  # [@since 1.4]
+  # [@see] SetTopMargin(), SetRightMargin(), SetAutoPageBreak(), SetMargins()
   #
   def SetLeftMargin(margin)
     #Set left margin
@@ -1087,10 +1226,10 @@ class TCPDF
 
   #
   # Defines the top margin. The method can be called before creating the first page.
-  # @param float :margin The margin.
-  # @access public
-  # @since 1.5
-  # @see SetLeftMargin(), SetRightMargin(), SetAutoPageBreak(), SetMargins()
+  # [@param float :margin] The margin.
+  # [@access public]
+  # [@since 1.5]
+  # [@see] SetLeftMargin(), SetRightMargin(), SetAutoPageBreak(), SetMargins()
   #
   def SetTopMargin(margin)
     #Set top margin
@@ -1103,10 +1242,10 @@ class TCPDF
 
   #
   # Defines the right margin. The method can be called before creating the first page.
-  # @param float :margin The margin.
-  # @access public
-  # @since 1.5
-  # @see SetLeftMargin(), SetTopMargin(), SetAutoPageBreak(), SetMargins()
+  # [@param float :margin] The margin.
+  # [@access public]
+  # [@since 1.5]
+  # [@see] SetLeftMargin(), SetTopMargin(), SetAutoPageBreak(), SetMargins()
   #
   def SetRightMargin(margin)
     @r_margin = margin
@@ -1118,10 +1257,10 @@ class TCPDF
 
   #
   # Set the internal Cell padding.
-  # @param float :pad internal padding.
-  # @access public
-  # @since 2.1.000 (2008-01-09)
-  # @see Cell(), SetLeftMargin(), SetTopMargin(), SetAutoPageBreak(), SetMargins()
+  # [@param float :pad] internal padding.
+  # [@access public]
+  # [@since 2.1.000 (2008-01-09)]
+  # [@see] Cell(), SetLeftMargin(), SetTopMargin(), SetAutoPageBreak(), SetMargins()
   #
   def SetCellPadding(pad)
     @c_margin = pad
@@ -1130,11 +1269,11 @@ class TCPDF
 
   #
   # Enables or disables the automatic page breaking mode. When enabling, the second parameter is the distance from the bottom of the page that defines the triggering limit. By default, the mode is on and the margin is 2 cm.
-  # @param boolean :auto Boolean indicating if mode should be on or off.
-  # @param float :margin Distance from the bottom of the page.
-  # @access public
-  # @since 1.0
-  # @see Cell(), MultiCell(), AcceptPageBreak()
+  # [@param boolean :auto] Boolean indicating if mode should be on or off.
+  # [@param float :margin] Distance from the bottom of the page.
+  # [@access public]
+  # [@since 1.0]
+  # [@see] Cell(), MultiCell(), AcceptPageBreak()
   #
   def SetAutoPageBreak(auto, margin=0)
     #Set auto page break mode and triggering margin
@@ -1146,11 +1285,30 @@ class TCPDF
 
   #
   # Defines the way the document is to be displayed by the viewer.
-  # @param mixed :zoom The zoom to use. It can be one of the following string values or a number indicating the zooming factor to use. <ul><li>fullpage: displays the entire page on screen </li><li>fullwidth: uses maximum width of window</li><li>real: uses real size (equivalent to 100% zoom)</li><li>default: uses viewer default mode</li></ul>
-  # @param string :layout The page layout. Possible values are:<ul><li>SinglePage Display one page at a time</li><li>OneColumn Display the pages in one column</li><li>TwoColumnLeft Display the pages in two columns, with odd-numbered pages on the left</li><li>TwoColumnRight Display the pages in two columns, with odd-numbered pages on the right</li><li>TwoPageLeft (PDF 1.5) Display the pages two at a time, with odd-numbered pages on the left</li><li>TwoPageRight (PDF 1.5) Display the pages two at a time, with odd-numbered pages on the right</li></ul>
-  # @param string :mode A name object specifying how the document should be displayed when opened:<ul><li>UseNone Neither document outline nor thumbnail images visible</li><li>UseOutlines Document outline visible</li><li>UseThumbs Thumbnail images visible</li><li>FullScreen Full-screen mode, with no menu bar, window controls, or any other window visible</li><li>UseOC (PDF 1.5) Optional content group panel visible</li><li>UseAttachments (PDF 1.6) Attachments panel visible</li></ul>
-  # @access public
-  # @since 1.2
+  # [@param mixed :zoom]
+  #   The zoom to use. It can be one of the following string values or a number indicating the zooming factor to use.
+  #   * fullpage: displays the entire page on screen
+  #   * fullwidth: uses maximum width of window
+  #   * real: uses real size (equivalent to 100% zoom)
+  #   * default: uses viewer default mode
+  # [@param string :layout]
+  #   The page layout. Possible values are:
+  #   * SinglePage Display one page at a time
+  #   * OneColumn Display the pages in one column
+  #   * TwoColumnLeft Display the pages in two columns, with odd-numbered pages on the left
+  #   * TwoColumnRight Display the pages in two columns, with odd-numbered pages on the right
+  #   * TwoPageLeft (PDF 1.5) Display the pages two at a time, with odd-numbered pages on the left
+  #   * TwoPageRight (PDF 1.5) Display the pages two at a time, with odd-numbered pages on the right
+  # [@param string :mode]
+  #   A name object specifying how the document should be displayed when opened:
+  #   * UseNone Neither document outline nor thumbnail images visible
+  #   * UseOutlines Document outline visible
+  #   * UseThumbs Thumbnail images visible
+  #   * FullScreen Full-screen mode, with no menu bar, window controls, or any other window visible
+  #   * UseOC (PDF 1.5) Optional content group panel visible
+  #   * UseAttachments (PDF 1.6) Attachments panel visible
+  # [@access public]
+  # [@since 1.2]
   #
   def SetDisplayMode(zoom, layout='SinglePage', mode='UseNone')
     #Set display mode in viewer
@@ -1198,10 +1356,10 @@ class TCPDF
 
   #
   # Activates or deactivates page compression. When activated, the internal representation of each page is compressed, which leads to a compression ratio of about 2 for the resulting document. Compression is on by default.
-  # Note: the Zlib extension is required for this feature. If not present, compression will be turned off.
-  # @param boolean :compress Boolean indicating if compression must be enabled.
-  # @access public
-  # @since 1.4
+  # * Note: the Zlib extension is required for this feature. If not present, compression will be turned off.
+  # [@param boolean :compress] Boolean indicating if compression must be enabled.
+  # [@access public]
+  # [@since 1.4]
   #
   def SetCompression(compress)
     #Set page compression
@@ -1215,10 +1373,10 @@ class TCPDF
 
   #
   # Defines the title of the document.
-  # @param string :title The title.
-  # @access public
-  # @since 1.2
-  # @see SetAuthor(), SetCreator(), SetKeywords(), SetSubject()
+  # [@param string :title] The title.
+  # [@access public$
+  # [@since 1.2]
+  # [@see] SetAuthor(), SetCreator(), SetKeywords(), SetSubject()
   #
   def SetTitle(title)
     #Title of document
@@ -1228,10 +1386,10 @@ class TCPDF
 
   #
   # Defines the subject of the document.
-  # @param string :subject The subject.
-  # @access public
-  # @since 1.2
-  # @see SetAuthor(), SetCreator(), SetKeywords(), SetTitle()
+  # [@param string :subject] The subject.
+  # [@access public]
+  # [@since 1.2]
+  # [@see] SetAuthor(), SetCreator(), SetKeywords(), SetTitle()
   #
   def SetSubject(subject)
     #Subject of document
@@ -1241,10 +1399,10 @@ class TCPDF
 
   #
   # Defines the author of the document.
-  # @param string :author The name of the author.
-  # @access public
-  # @since 1.2
-  # @see SetCreator(), SetKeywords(), SetSubject(), SetTitle()
+  # [@param string :author] The name of the author.
+  # [@access public]
+  # [@since 1.2]
+  # [@see] SetCreator(), SetKeywords(), SetSubject(), SetTitle()
   #
   def SetAuthor(author)
     #Author of document
@@ -1254,10 +1412,10 @@ class TCPDF
 
   #
   # Associates keywords with the document, generally in the form 'keyword1 keyword2 ...'.
-  # @param string :keywords The list of keywords.
-  # @access public
-  # @since 1.2
-  # @see SetAuthor(), SetCreator(), SetSubject(), SetTitle()
+  # [@param string :keywords] The list of keywords.
+  # [@access public]
+  # [@since 1.2]
+  # [@see] SetAuthor(), SetCreator(), SetSubject(), SetTitle()
   #
   def SetKeywords(keywords)
     #Keywords of document
@@ -1267,10 +1425,10 @@ class TCPDF
 
   #
   # Defines the creator of the document. This is typically the name of the application that generates the PDF.
-  # @param string :creator The name of the creator.
-  # @access public
-  # @since 1.2
-  # @see SetAuthor(), SetKeywords(), SetSubject(), SetTitle()
+  # [@param string :creator] The name of the creator.
+  # [@access public]
+  # [@since 1.2]
+  # [@see] SetAuthor(), SetKeywords(), SetSubject(), SetTitle()
   #
   def SetCreator(creator)
     #Creator of document
@@ -1280,10 +1438,10 @@ class TCPDF
 
   #
   # This method is automatically called in case of fatal error; it simply outputs the message and halts the execution. An inherited class may override it to customize the error handling but should always halt the script, or the resulting document would probably be invalid.
-  # 2004-06-11 :: Nicola Asuni : changed bold tag with strong
-  # @param string :msg The error message
-  # @access public
-  # @since 1.0
+  # * 2004-06-11 :: Nicola Asuni : changed bold tag with strong
+  # [@param string :msg] The error message
+  # [@access public]
+  # [@since 1.0]
   #
   def Error(msg)
     destroy(true)
@@ -1294,10 +1452,10 @@ class TCPDF
 
   #
   # This method begins the generation of the PDF document. It is not necessary to call it explicitly because AddPage() does it automatically.
-  # Note: no page is created by this method
-  # @access public
-  # @since 1.0
-  # @see AddPage(), Close()
+  # * Note: no page is created by this method
+  # [@access public]
+  # [@since 1.0]
+  # [@see] AddPage(), Close()
   #
   def Open()
     #Begin document
@@ -1307,8 +1465,8 @@ class TCPDF
 
   #
   # Terminates the PDF document. It is not necessary to call this method explicitly because Output() does it automatically. If the document contains no page, AddPage() is called to prevent from getting an invalid document.
-  # @since 1.0
-  # @see Open(), Output()
+  # [@since 1.0]
+  # [@see] Open(), Output()
   #
   def Close()
     #Terminate document
@@ -1343,11 +1501,11 @@ class TCPDF
 
   #
   # Move pointer at the specified document page and update page dimensions.
-  # @param int :pnum page number (1 ... numpages)
-  # @param boolean :resetmargins if true reset left, right, top margins and Y position.
-  # @access public
-  # @since 2.1.000 (2008-01-07)
-  # @see getPage(), lastPage(), getNumPages()
+  # [@param int :pnum] page number (1 ... numpages)
+  # [@param boolean :resetmargins] if true reset left, right, top margins and Y position.
+  # [@access public]
+  # [@since 2.1.000 (2008-01-07)]
+  # [@see] getPage(), lastPage(), getNumPages()
   #
   def setPage(pnum, resetmargins=false)
     if pnum == @page
@@ -1392,10 +1550,10 @@ class TCPDF
 
   #
   # Reset pointer to the last document page.
-  # @param boolean :resetmargins if true reset left, right, top margins and Y position.
-  # @access public
-  # @since 2.0.000 (2008-01-04)
-  # @see setPage(), getPage(), getNumPages()
+  # [@param boolean :resetmargins] if true reset left, right, top margins and Y position.
+  # [@access public]
+  # [@since 2.0.000 (2008-01-04)]
+  # [@see] setPage(), getPage(), getNumPages()
   #
   def lastPage(resetmargins=false)
     setPage(getNumPages(), resetmargins)
@@ -1404,10 +1562,10 @@ class TCPDF
 
   #
   # Get current document page number.
-  # @return int page number
-  # @access public
-  # @since 2.1.000 (2008-01-07)
-  # @see setPage(), lastPage(), getNumPages()
+  # [@return int] page number
+  # [@access public]
+  # [@since 2.1.000 (2008-01-07)]
+  # [@see] setPage(), lastPage(), getNumPages()
   #
   def getPage()
     return @page
@@ -1416,10 +1574,10 @@ class TCPDF
 
   #
   # Get the total number of insered pages.
-  # @return int number of pages
-  # @access public
-  # @since 2.1.000 (2008-01-07)
-  # @see setPage(), getPage(), lastPage()
+  # [@return int] number of pages
+  # [@access public]
+  # [@since 2.1.000 (2008-01-07)]
+  # [@see] setPage(), getPage(), lastPage()
   #
   def getNumPages()
     return @numpages
@@ -1428,11 +1586,11 @@ class TCPDF
 
   #
   # Adds a new TOC (Table Of Content) page to the document.
-  # @param string :orientation page orientation.
-  # @param boolean :keepmargins if true overwrites the default page margins with the current margins
-  # @access public
-  # @since 5.0.001 (2010-05-06)
-  # @see AddPage(), startPage(), endPage(), endTOCPage()
+  # [@param string :orientation] page orientation.
+  # [@param boolean :keepmargins] if true overwrites the default page margins with the current margins
+  # [@access public]
+  # [@since 5.0.001 (2010-05-06)]
+  # [@see] AddPage(), startPage(), endPage(), endTOCPage()
   #
   def addTOCPage(orientation='', format='', keepmargins=false)
     AddPage(orientation, format, keepmargins, true)
@@ -1441,9 +1599,9 @@ class TCPDF
 
   #
   # Terminate the current TOC (Table Of Content) page
-  # @access public
-  # @since 5.0.001 (2010-05-06)
-  # @see AddPage(), startPage(), endPage(), addTOCPage()
+  # [@access public]
+  # [@since 5.0.001 (2010-05-06)]
+  # [@see] AddPage(), startPage(), endPage(), addTOCPage()
   #
   def endTOCPage()
     endPage(true)
@@ -1453,13 +1611,24 @@ class TCPDF
   #
   # Adds a new page to the document. If a page is already present, the Footer() method is called first to output the footer (if enabled). Then the page is added, the current position set to the top-left corner according to the left and top margins (or top-right if in RTL mode), and Header() is called to display the header (if enabled).
   # The origin of the coordinate system is at the top-left corner (or top-right for RTL) and increasing ordinates go downwards.
-  # @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
-  # @param mixed :format The format used for pages. It can be either:<b>A string indicating the page format:</b><ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul><b>An array containing page measures and advanced options:</b><ul><li>['format'] = page format name (one of the above);</li><li>['Rotate'] : The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.</li><li>['PZ'] : The page's preferred zoom (magnification) factor.</li><li>['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed:</li><li>['MediaBox']['llx'] : lower-left x coordinate in points</li><li>['MediaBox']['lly'] : lower-left y coordinate in points</li><li>['MediaBox']['urx'] : upper-right x coordinate in points</li><li>['MediaBox']['ury'] : upper-right y coordinate in points</li><li>['CropBox'] : the visible region of default user space:</li><li>['CropBox']['llx'] : lower-left x coordinate in points</li><li>['CropBox']['lly'] : lower-left y coordinate in points</li><li>['CropBox']['urx'] : upper-right x coordinate in points</li><li>['CropBox']['ury'] : upper-right y coordinate in points</li><li>['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment:</li><li>['BleedBox']['llx'] : lower-left x coordinate in points</li><li>['BleedBox']['lly'] : lower-left y coordinate in points</li><li>['BleedBox']['urx'] : upper-right x coordinate in points</li><li>['BleedBox']['ury'] : upper-right y coordinate in points</li><li>['TrimBox'] : the intended dimensions of the finished page after trimming:</li><li>['TrimBox']['llx'] : lower-left x coordinate in points</li><li>['TrimBox']['lly'] : lower-left y coordinate in points</li><li>['TrimBox']['urx'] : upper-right x coordinate in points</li><li>['TrimBox']['ury'] : upper-right y coordinate in points</li><li>['ArtBox'] : the extent of the page's meaningful content:</li><li>['ArtBox']['llx'] : lower-left x coordinate in points</li><li>['ArtBox']['lly'] : lower-left y coordinate in points</li><li>['ArtBox']['urx'] : upper-right x coordinate in points</li><li>['ArtBox']['ury'] : upper-right y coordinate in points</li><li>['BoxColorInfo'] :specify the colours and other visual characteristics that should be used in displaying guidelines on the screen for each of the possible page boundaries other than the MediaBox:</li><li>['BoxColorInfo'][BOXTYPE]['C'] : an array of three numbers in the range 0-255, representing the components in the DeviceRGB colour space.</li><li>['BoxColorInfo'][BOXTYPE]['W'] : the guideline width in default user units</li><li>['BoxColorInfo'][BOXTYPE]['S'] : the guideline style: S = Solid; D = Dashed</li><li>['BoxColorInfo'][BOXTYPE]['D'] : dash array defining a pattern of dashes and gaps to be used in drawing dashed guidelines</li><li>['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation</li><li>['trans']['Dur'] : The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.</li><li>['trans']['S'] : transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade</li><li>['trans']['D'] : The duration of the transition effect, in seconds.</li><li>['trans']['Dm'] : (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.</li><li>['trans']['M'] : (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.</li><li>['trans']['Di'] : (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.</li><li>['trans']['SS'] : (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0.</li><li>['trans']['B'] : (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.</li></ul>
-  # @param boolean :keepmargins if true overwrites the default page margins with the current margin
-  # @param boolean :tocpage if true set the tocpage state to true (the added page will be used to display Table Of Content).
-  # @access public
-  # @since 1.0
-  # @see startPage(), endPage(), addTOCPage(), endTOCPage()
+  # [@param string :orientation]
+  #   page orientation. Possible values are (case insensitive):
+  #   * P or PORTRAIT (default)
+  #   * L or LANDSCAPE
+  # [@param mixed :format]
+  #   The format used for pages. It can be either: <b>A string indicating the page format:</b>
+  #   * 4A0,2A0,A0,A1,A2,A3,A4 (default),A5,A6,A7,A8,A9,A10
+  #   * B0,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10
+  #   * C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10
+  #   * RA0,RA1,RA2,RA3,RA4
+  #   * SRA0,SRA1,SRA2,SRA3,SRA4
+  #   * LETTER,LEGAL,EXECUTIVE,FOLIO
+  #   <b>An array containing page measures and advanced options:</b> see setPageFormat()
+  # [@param boolean :keepmargins] if true overwrites the default page margins with the current margin
+  # [@param boolean :tocpage] if true set the tocpage state to true (the added page will be used to display Table Of Content).
+  # [@access public]
+  # [@since 1.0]
+  # [@see] startPage, endPage(), addTOCPage(), endTOCPage()
   #
   def AddPage(orientation='', format='', keepmargins=false, tocpage=false)
     if @original_l_margin.nil? or keepmargins
@@ -1477,10 +1646,10 @@ class TCPDF
 
   #
   # Terminate the current page
-  # @param boolean :tocpage if true set the tocpage state to false (end the page used to display Table Of Content).
-  # @access public
-  # @since 4.2.010 (2008-11-14)
-  # @see AddPage(), startPage(), addTOCPage(), endTOCPage()
+  # [@param boolean :tocpage] if true set the tocpage state to false (end the page used to display Table Of Content).
+  # [@access public]
+  # [@since 4.2.010 (2008-11-14)]
+  # [@see] AddPage(), startPage(), addTOCPage(), endTOCPage()
   #
   def endPage(tocpage=false)
     # check if page is already closed
@@ -1504,12 +1673,23 @@ class TCPDF
   #
   # Starts a new page to the document. The page must be closed using the endPage() function.
   # The origin of the coordinate system is at the top-left corner and increasing ordinates go downwards.
-  # @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
-  # @param mixed :format The format used for pages. It can be either:<b>A string indicating the page format:</b><ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul><b>An array containing page measures and advanced options:</b><ul><li>['format'] = page format name (one of the above);</li><li>['Rotate'] : The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.</li><li>['PZ'] : The page's preferred zoom (magnification) factor.</li><li>['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed:</li><li>['MediaBox']['llx'] : lower-left x coordinate in points</li><li>['MediaBox']['lly'] : lower-left y coordinate in points</li><li>['MediaBox']['urx'] : upper-right x coordinate in points</li><li>['MediaBox']['ury'] : upper-right y coordinate in points</li><li>['CropBox'] : the visible region of default user space:</li><li>['CropBox']['llx'] : lower-left x coordinate in points</li><li>['CropBox']['lly'] : lower-left y coordinate in points</li><li>['CropBox']['urx'] : upper-right x coordinate in points</li><li>['CropBox']['ury'] : upper-right y coordinate in points</li><li>['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment:</li><li>['BleedBox']['llx'] : lower-left x coordinate in points</li><li>['BleedBox']['lly'] : lower-left y coordinate in points</li><li>['BleedBox']['urx'] : upper-right x coordinate in points</li><li>['BleedBox']['ury'] : upper-right y coordinate in points</li><li>['TrimBox'] : the intended dimensions of the finished page after trimming:</li><li>['TrimBox']['llx'] : lower-left x coordinate in points</li><li>['TrimBox']['lly'] : lower-left y coordinate in points</li><li>['TrimBox']['urx'] : upper-right x coordinate in points</li><li>['TrimBox']['ury'] : upper-right y coordinate in points</li><li>['ArtBox'] : the extent of the page's meaningful content:</li><li>['ArtBox']['llx'] : lower-left x coordinate in points</li><li>['ArtBox']['lly'] : lower-left y coordinate in points</li><li>['ArtBox']['urx'] : upper-right x coordinate in points</li><li>['ArtBox']['ury'] : upper-right y coordinate in points</li><li>['BoxColorInfo'] :specify the colours and other visual characteristics that should be used in displaying guidelines on the screen for each of the possible page boundaries other than the MediaBox:</li><li>['BoxColorInfo'][BOXTYPE]['C'] : an array of three numbers in the range 0-255, representing the components in the DeviceRGB colour space.</li><li>['BoxColorInfo'][BOXTYPE]['W'] : the guideline width in default user units</li><li>['BoxColorInfo'][BOXTYPE]['S'] : the guideline style: S = Solid; D = Dashed</li><li>['BoxColorInfo'][BOXTYPE]['D'] : dash array defining a pattern of dashes and gaps to be used in drawing dashed guidelines</li><li>['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation</li><li>['trans']['Dur'] : The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.</li><li>['trans']['S'] : transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade</li><li>['trans']['D'] : The duration of the transition effect, in seconds.</li><li>['trans']['Dm'] : (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.</li><li>['trans']['M'] : (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.</li><li>['trans']['Di'] : (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.</li><li>['trans']['SS'] : (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0.</li><li>['trans']['B'] : (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.</li></ul>
-  # @param boolean :tocpage if true set the tocpage state to true (the added page will be used to display Table of Content).
-  # @access public
-  # @since 4.2.010 (2008-11-14)
-  # @see AddPage(), endPage(), addTOCPage(), endTOCPage()
+  # [@param string :orientation]
+  #   page orientation. Possible values are (case insensitive):
+  #   * P or PORTRAIT (default)
+  #   * L or LANDSCAPE
+  # [@param mixed :format]
+  #   The format used for pages. It can be either: <b>A string indicating the page format:</b>
+  #   * 4A0,2A0,A0,A1,A2,A3,A4 (default),A5,A6,A7,A8,A9,A10
+  #   * B0,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10
+  #   * C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10
+  #   * RA0,RA1,RA2,RA3,RA4
+  #   * SRA0,SRA1,SRA2,SRA3,SRA4
+  #   * LETTER,LEGAL,EXECUTIVE,FOLIO
+  #   <b>An array containing page measures and advanced options:</b> see setPageFormat()
+  # [@param boolean :tocpage] if true set the tocpage state to true (the added page will be used to display Table of Content).
+  # [@access public]
+  # [@since 4.2.010 (2008-11-14)]
+  # [@see] AddPage(), endPage(), addTOCPage(), endTOCPage()
   #
   def startPage(orientation='', format='', tocpage=false)
     if tocpage
@@ -1553,8 +1733,8 @@ class TCPDF
   # Borders and fills are always created after content and inserted on the position marked by this method.
   # This function must be called after calling Image() function for a background image.
   # Background images must be always inserted before calling Multicell() or WriteHTMLCell() or WriteHTML() functions.
-  # @access public
-  # @since 4.0.016 (2008-07-30)
+  # [@access public]
+  # [@since 4.0.016 (2008-07-30)]
   #
   def setPageMark()
     @intmrk[@page] = @pagelen[@page]
@@ -1565,9 +1745,9 @@ class TCPDF
   #
   # Set start-writing mark on selected page.
   # Borders and fills are always created after content and inserted on the position marked by this method.
-  # @param int :page page number (default is the current page)
-  # @access protected
-  # @since 4.6.021 (2009-07-20)
+  # [@param int :page] page number (default is the current page)
+  # [@access protected]
+  # [@since 4.6.021 (2009-07-20)]
   #
   def setContentMark(page=0)
     if page <= 0
@@ -1583,11 +1763,11 @@ class TCPDF
 
   #
   # Set header data.
-  # @param string :ln header image logo
-  # @param string :lw header image logo width in mm
-  # @param string :ht string to print as title on document header
-  # @param string :hs string to print on document header
-  # @access public
+  # [@param string :ln] header image logo
+  # [@param string :lw] header image logo width in mm
+  # [@param string :ht] string to print as title on document header
+  # [@param string :hs] string to print on document header
+  # [@access public]
   #
   def setHeaderData(ln="", lw=0, ht="", hs="")
     @header_logo = ln || ""
@@ -1604,10 +1784,13 @@ class TCPDF
 
   #
   # Returns header data:
-  # <ul><li>:ret['logo'] = logo image</li><li>:ret['logo_width'] = width of the image logo in user units</li><li>:ret['title'] = header title</li><li>:ret['string'] = header description string</li></ul>
-  # @return hash
-  # @access public
-  # @since 4.0.012 (2008-07-24)
+  #   ret['logo'] = logo image
+  #   ret['logo_width'] = width of the image logo in user units
+  #   ret['title'] = header title
+  #   ret['string'] = header description string
+  # [@return hash]
+  # [@access public]
+  # [@since 4.0.012 (2008-07-24)]
   #
   def getHeaderData()
     ret = {}
@@ -1622,8 +1805,8 @@ class TCPDF
   #
   # Set header margin.
   # (minimum distance between header and top page margin)
-  # @param int :hm distance in user units
-  # @access public
+  # [@param int :hm] distance in user units
+  # [@access public]
   #
   def setHeaderMargin(hm=10)
     @header_margin = hm;
@@ -1637,9 +1820,9 @@ class TCPDF
 
   #
   # Returns header margin in user units.
-  # @return float
-  # @since 4.0.012 (2008-07-24)
-  # @access public
+  # [@return float]
+  # [@since 4.0.012 (2008-07-24)]
+  # [@access public]
   #
   def getHeaderMargin()
     return @header_margin
@@ -1649,8 +1832,8 @@ class TCPDF
   #
   # Set footer margin.
   # (minimum distance between footer and bottom page margin)
-  # @param int :fm distance in millimeters
-  # @access public
+  # [@param int :fm] distance in millimeters
+  # [@access public]
   #
   def setFooterMargin(fm=10)
     @footer_margin = fm;
@@ -1664,9 +1847,9 @@ class TCPDF
 
   #
   # Returns footer margin in user units.
-  # @return float
-  # @since 4.0.012 (2008-07-24)
-  # @access public
+  # [@return float]
+  # [@since 4.0.012 (2008-07-24)]
+  # [@access public]
   #
   def getFooterMargin()
     return @footer_margin
@@ -1675,8 +1858,8 @@ class TCPDF
 
   #
   # Set a flag to print page header.
-  # @param boolean :val set to true to print the page header (default), false otherwise. 
-  # @access public
+  # [@param boolean :val] set to true to print the page header (default), false otherwise. 
+  # [@access public]
   #
   def setPrintHeader(val=true)
     @print_header = val;
@@ -1690,8 +1873,8 @@ class TCPDF
 
   #
   # Set a flag to print page footer.
-  # @param boolean :value set to true to print the page footer (default), false otherwise. 
-  # @access public
+  # [@param boolean :value] set to true to print the page footer (default), false otherwise. 
+  # [@access public]
   #
   def setPrintFooter(val=true)
     @print_footer = val;
@@ -1705,8 +1888,8 @@ class TCPDF
 
   #
   # Return the right-bottom (or left-bottom for RTL) corner X coordinate of last inserted image
-  # @return float 
-  # @access public
+  # [@return float]
+  # [@access public]
   #
   def getImageRBX()
     return @img_rb_x
@@ -1715,8 +1898,8 @@ class TCPDF
 
   #
   # Return the right-bottom (or left-bottom for RTL) corner Y coordinate of last inserted image
-  # @return float 
-  # @access public
+  # [@return float]
+  # [@access public]
   #
   def getImageRBY()
     return @img_rb_y
@@ -1726,7 +1909,7 @@ class TCPDF
   #
   # This method is used to render the page header.
   # It is automatically called by AddPage() and could be overwritten in your own inherited class.
-  # @access public
+  # [@access public]
   #
   def Header()
     ormargins = getOriginalMargins()
@@ -1777,6 +1960,7 @@ class TCPDF
   #
   # This method is used to render the page footer. 
   # It is automatically called by AddPage() and could be overwritten in your own inherited class.
+  # [@access public]
   #
   def Footer()
     cur_y = GetY()
@@ -1812,8 +1996,8 @@ class TCPDF
   
   #
   # This method is used to render the page header. 
-  # @access protected
-  # @since 4.0.012 (2008-07-24)
+  # [@access protected]
+  # [@since 4.0.012 (2008-07-24)]
   #
   def setHeader()
     if @print_header
@@ -1849,8 +2033,8 @@ class TCPDF
 
   #
   # This method is used to render the page footer. 
-  # @access protected
-  # @since 4.0.012 (2008-07-24)
+  # [@access protected]
+  # [@since 4.0.012 (2008-07-24)]
   #
   def setFooter()
     # Page footer
@@ -1896,8 +2080,8 @@ class TCPDF
 
   #
   # This method is used to render the table header on new page (if any). 
-  # @access protected
-  # @since 4.5.030 (2009-03-25)
+  # [@access protected]
+  # [@since 4.5.030 (2009-03-25)]
   #
   def setTableHeader()
     if @num_columns > 1
@@ -1939,10 +2123,10 @@ class TCPDF
 
   #
   # Returns the current page number.
-  # @return int page number
-  # @access public
-  # @since 1.0
-  # @see alias_nb_pages()
+  # [@return int] page number
+  # [@access public]
+  # [@since 1.0]
+  # [@see] alias_nb_pages()
   #
   def PageNo()
     #Get current page number
@@ -1954,13 +2138,13 @@ class TCPDF
   # Defines a new spot color.
   # It can be expressed in RGB components or gray scale.
   # The method can be called before the first page is created and the value is retained from page to page.
-  # @param int :c Cyan color for CMYK. Value between 0 and 255
-  # @param int :m Magenta color for CMYK. Value between 0 and 255
-  # @param int :y Yellow color for CMYK. Value between 0 and 255
-  # @param int :k Key (Black) color for CMYK. Value between 0 and 255
-  # @access public
-  # @since 4.0.024 (2008-09-12)
-  # @see SetDrawSpotColor(), SetFillSpotColor(), SetTextSpotColor()
+  # [@param int :c] Cyan color for CMYK. Value between 0 and 255
+  # [@param int :m] Magenta color for CMYK. Value between 0 and 255
+  # [@param int :y] Yellow color for CMYK. Value between 0 and 255
+  # [@param int :k] Key (Black) color for CMYK. Value between 0 and 255
+  # [@access public]
+  # [@since 4.0.024 (2008-09-12)]
+  # [@see] SetDrawSpotColor(), SetFillSpotColor(), SetTextSpotColor()
   #
   def AddSpotColor(name, c, m, y, k)
     if @spot_colors[name].nil?
@@ -1974,10 +2158,10 @@ class TCPDF
   # Defines the color used for all drawing operations (lines, rectangles and cell borders). 
   # It can be expressed in RGB components or gray scale. 
   # The method can be called before the first page is created and the value is retained from page to page.
-  # @param array or ordered hash :color array(or ordered hash) of colors
-  # @access public
-  # @since 3.1.000 (2008-6-11)
-  # @see SetDrawColor()
+  # [@param array or ordered hash :color] array(or ordered hash) of colors
+  # [@access public]
+  # [@since 3.1.000 (2008-6-11)]
+  # [@see] SetDrawColor()
   #
   def SetDrawColorArray(color)
     if !color.nil?
@@ -1995,13 +2179,13 @@ class TCPDF
 
   #
   # Defines the color used for all drawing operations (lines, rectangles and cell borders). It can be expressed in RGB components or gray scale. The method can be called before the first page is created and the value is retained from page to page.
-  # @param int :col1 Gray level for single color, or Red color for RGB, or Cyan color for CMYK. Value between 0 and 255
-  # @param int :col2 Green color for RGB, or Magenta color for CMYK. Value between 0 and 255
-  # @param int :col3 Blue color for RGB, or Yellow color for CMYK. Value between 0 and 255
-  # @param int :col4 Key (Black) color for CMYK. Value between 0 and 255
-  # @access public
-  # @since 1.3
-  # @see SetFillColor(), SetTextColor(), Line(), Rect(), Cell(), MultiCell()
+  # [@param int :col1] Gray level for single color, or Red color for RGB, or Cyan color for CMYK. Value between 0 and 255
+  # [@param int :col2] Green color for RGB, or Magenta color for CMYK. Value between 0 and 255
+  # [@param int :col3] Blue color for RGB, or Yellow color for CMYK. Value between 0 and 255
+  # [@param int :col4] Key (Black) color for CMYK. Value between 0 and 255
+  # [@access public]
+  # [@since 1.3]
+  # [@see] SetFillColor(), SetTextColor(), Line(), Rect(), Cell(), MultiCell()
   #
   def SetDrawColor(col1=0, col2=-1, col3=-1, col4=-1)
     # set default values
@@ -2046,10 +2230,10 @@ class TCPDF
   # Defines the color used for all filling operations (filled rectangles and cell backgrounds). 
   # It can be expressed in RGB components or gray scale. 
   # The method can be called before the first page is created and the value is retained from page to page.
-  # @param array or ordered hash :color array(or ordered hash) of colors
-  # @access public
-  # @since 3.1.000 (2008-6-11)
-  # @see SetFillColor()
+  # [@param array or ordered hash :color] array(or ordered hash) of colors
+  # [@access public]
+  # [@since 3.1.000 (2008-6-11)]
+  # [@see] SetFillColor()
   #
   def SetFillColorArray(color)
     if !color.nil?
@@ -2067,13 +2251,13 @@ class TCPDF
 
   #
   # Defines the color used for all filling operations (filled rectangles and cell backgrounds). It can be expressed in RGB components or gray scale. The method can be called before the first page is created and the value is retained from page to page.
-  # @param int :col1 Gray level for single color, or Red color for RGB, or Cyan color for CMYK. Value between 0 and 255
-  # @param int :col2 Green color for RGB, or Magenta color for CMYK. Value between 0 and 255
-  # @param int :col3 Blue color for RGB, or Yellow color for CMYK. Value between 0 and 255
-  # @param int :col4 Key (Black) color for CMYK. Value between 0 and 255
-  # @access public
-  # @since 1.3
-  # @see SetDrawColor(), SetTextColor(), Rect(), Cell(), MultiCell()
+  # [@param int :col1] Gray level for single color, or Red color for RGB, or Cyan color for CMYK. Value between 0 and 255
+  # [@param int :col2] Green color for RGB, or Magenta color for CMYK. Value between 0 and 255
+  # [@param int :col3] Blue color for RGB, or Yellow color for CMYK. Value between 0 and 255
+  # [@param int :col4] Key (Black) color for CMYK. Value between 0 and 255
+  # [@access public]
+  # [@since 1.3]
+  # [@see] SetDrawColor(), SetTextColor(), Rect(), Cell(), MultiCell()
   #
   def SetFillColor(col1=0, col2=-1, col3=-1, col4=-1)
     # set default values
@@ -2136,10 +2320,10 @@ class TCPDF
   #
   # Defines the color used for text. It can be expressed in RGB components or gray scale. 
   # The method can be called before the first page is created and the value is retained from page to page.
-  # @param array or ordered hash :color array(or ordered hash) of colors
-  # @access public
-  # @since 3.1.000 (2008-6-11)
-  # @see SetFillColor()
+  # [@param array or ordered hash :color] array(or ordered hash) of colors
+  # [@access public]
+  # [@since 3.1.000 (2008-6-11)]
+  # [@see] SetFillColor()
   #
   def SetTextColorArray(color)
     unless color.nil?
@@ -2157,13 +2341,13 @@ class TCPDF
 
   #
   # Defines the color used for text. It can be expressed in RGB components or gray scale. The method can be called before the first page is created and the value is retained from page to page.
-  # @param int :col1 Gray level for single color, or Red color for RGB, or Cyan color for CMYK. Value between 0 and 255
-  # @param int :col2 Green color for RGB, or Magenta color for CMYK. Value between 0 and 255
-  # @param int :col3 Blue color for RGB, or Yellow color for CMYK. Value between 0 and 255
-  # @param int :col4 Key (Black) color for CMYK. Value between 0 and 255
-  # @access public
-  # @since 1.3
-  # @see SetDrawColor(), SetFillColor(), Text(), Cell(), MultiCell()
+  # [@param int :col1] Gray level for single color, or Red color for RGB, or Cyan color for CMYK. Value between 0 and 255
+  # [@param int :col2] Green color for RGB, or Magenta color for CMYK. Value between 0 and 255
+  # [@param int :col3] Blue color for RGB, or Yellow color for CMYK. Value between 0 and 255
+  # [@param int :col4] Key (Black) color for CMYK. Value between 0 and 255
+  # [@access public]
+  # [@since 1.3]
+  # [@see] SetDrawColor(), SetFillColor(), Text(), Cell(), MultiCell()
   #
   def SetTextColor(col1=0, col2=-1, col3=-1, col4=-1)
     # set default values
@@ -2218,16 +2402,24 @@ class TCPDF
 =end
   
   #
-  # Returns the length of a string in user unit. A font must be selected.<br>
-  # @param string :s The string whose length is to be computed
-  # @param string :fontname Family font. It can be either a name defined by AddFont() or one of the standard families. It is also possible to pass an empty string, in that case, the current family is retained.
-  # @param string :fontstyle Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li><li>O: overline</li></ul> or any combination. The default value is regular.
-  # @param float :fontsize Font size in points. The default value is the current size.
-  # @param boolean :getarray if true returns an array of characters widths, if false returns the total length.
-  # @return mixed int total string length or array of characted widths
-  # @author Nicola Asuni
-  # @access public
-  # @since 1.2
+  # Returns the length of a string in user unit. A font must be selected.
+  # [@param string :s] The string whose length is to be computed
+  # [@param string :fontname] Family font. It can be either a name defined by AddFont() or one of the standard families. It is also possible to pass an empty string, in that case, the current family is retained.
+  # [@param string :fontstyle]
+  #   Font style. Possible values are (case insensitive):
+  #   * empty string: regular
+  #   * B: bold
+  #   * I: italic
+  #   * U: underline
+  #   * D: line trough
+  #   * O: overline
+  #   or any combination. The default value is regular.
+  # [@param float :fontsize] Font size in points. The default value is the current size.
+  # [@param boolean :getarray] if true returns an array of characters widths, if false returns the total length.
+  # [@return mixed int] total string length or array of characted widths
+  # [@author] Nicola Asuni
+  # [@access public]
+  # [@since 1.2]
   #
   def GetStringWidth(s, fontname='', fontstyle='', fontsize=0, getarray=false)
     return GetArrStringWidth(utf8Bidi(UTF8StringToArray(s), s, @tmprtl), fontname, fontstyle, fontsize, getarray)
@@ -2235,16 +2427,24 @@ class TCPDF
   alias_method :get_string_width, :GetStringWidth
 
   #
-  # Returns the string length of an array of chars in user unit or an array of characters widths. A font must be selected.<br>
-  # @param string :sa The array of chars whose total length is to be computed
-  # @param string :fontname Family font. It can be either a name defined by AddFont() or one of the standard families. It is also possible to pass an empty string, in that case, the current family is retained.
-  # @param string :fontstyle Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li><li>O: overline</li></ul></ul> or any combination. The default value is regular.
-  # @param float :fontsize Font size in points. The default value is the current size.
-  # @param boolean :getarray if true returns an array of characters widths, if false returns the total length.
-  # @return mixed int total string length or array of characted widths
-  # @author Nicola Asuni
-  # @access public
-  # @since 2.4.000 (2008-03-06)
+  # Returns the string length of an array of chars in user unit or an array of characters widths. A font must be selected.
+  # [@param string :sa] The array of chars whose total length is to be computed
+  # [@param string :fontname] Family font. It can be either a name defined by AddFont() or one of the standard families. It is also possible to pass an empty string, in that case, the current family is retained.
+  # [@param string :fontstyle]
+  #   Font style. Possible values are (case insensitive):
+  #   * empty string: regular
+  #   * B: bold
+  #   * I: italic
+  #   * U: underline
+  #   * D: line trough
+  #   * O: overline
+  #   or any combination. The default value is regular.
+  # [@param float :fontsize] Font size in points. The default value is the current size.
+  # [@param boolean :getarray] if true returns an array of characters widths, if false returns the total length.
+  # [@return mixed int] total string length or array of characted widths
+  # [@author] Nicola Asuni
+  # [@access public]
+  # [@since 2.4.000 (2008-03-06)]
   #
   def GetArrStringWidth(sa, fontname='', fontstyle='', fontsize=0, getarray=false)
     # store current values
@@ -2277,11 +2477,11 @@ class TCPDF
 
   #
   # Returns the length of the char in user unit for the current font.
-  # @param int :char The char code whose length is to be returned
-  # @return int char width
-  # @author Nicola Asuni
-  # @access public
-  # @since 2.4.000 (2008-03-06)
+  # [@param int :char] The char code whose length is to be returned
+  # [@return int] char width
+  # [@author] Nicola Asuni
+  # [@access public]
+  # [@since 2.4.000 (2008-03-06)]
   #
   def GetCharWidth(char)
     if char == 173
@@ -2306,10 +2506,10 @@ class TCPDF
 
   #
   # Returns the numbero of characters in a string.
-  # @param string :s The input string.
-  # @return int number of characters
-  # @access public
-  # @since 2.0.0001 (2008-01-07)
+  # [@param string :s] The input string.
+  # [@return int] number of characters
+  # [@access public]
+  # [@since 2.0.0001 (2008-01-07)]
   #
   def GetNumChars(s)
     if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
@@ -2321,8 +2521,8 @@ class TCPDF
 
   #
   # Fill the list of available fonts (@fontlist).
-  # @access protected
-  # @since 4.0.013 (2008-07-28)
+  # [@access protected]
+  # [@since 4.0.013 (2008-07-28)]
   #
   def getFontsList()
       Dir.glob(File.join getfontpath(), '*.rb').each {|file| @fontlist.push File.basename(file, '.rb').downcase }
@@ -2333,19 +2533,25 @@ class TCPDF
   # Imports a TrueType, Type1, core, or CID0 font and makes it available.
   # It is necessary to generate a font definition file first with the makefont.rb utility.
   # The definition file (and the font file itself when embedding) must be present either in the current directory or in the one indicated by FPDF_FONTPATH if the constant is defined. If it could not be found, the error "Could not include font definition file" is generated.
-  # <b>Example</b>:<br />
-  # <pre>
-  # :pdf->AddFont('Comic','I');
-  # # is equivalent to:
-  # :pdf->AddFont('Comic','I','comici.rb');
-  # </pre>
-  # @param string :family Font family. The name can be chosen arbitrarily. If it is a standard family name, it will override the corresponding font.
-  # @param string :style Font style. Possible values are (case insensitive):<ul><li>empty string: regular (default)</li><li>B: bold</li><li>I: italic</li><li>BI or IB: bold italic</li></ul>
-  # @param string :fontfile The font definition file. By default, the name is built from the family and style, in lower case with no space.
-  # @return array containing the font data, or false in case of error.
-  # @access public
-  # @since 1.5
-  # @see SetFont()
+  # 
+  # === Example
+  # 
+  #   :pdf.add_font('Comic','I')
+  #   # is equivalent to:
+  #   :pdf.add_font('Comic','I','comici.rb')
+  #
+  # [@param string :family] Font family. The name can be chosen arbitrarily. If it is a standard family name, it will override the corresponding font.
+  # [@param string :style]
+  #   Font style. Possible values are (case insensitive):
+  #   * empty string: regular (default)
+  #   * B: bold
+  #   * I: italic
+  #   * BI or IB: bold italic
+  # [@param string :fontfile] The font definition file. By default, the name is built from the family and style, in lower case with no space.
+  # [@return array] containing the font data, or false in case of error.
+  # [@access public]
+  # [@since 1.5]
+  # [@see] SetFont()
   #
   def AddFont(family, style='', fontfile='')
     if empty_string(family)
@@ -2544,14 +2750,41 @@ class TCPDF
   # The font can be either a standard one or a font added via the AddFont() method. Standard fonts use Windows encoding cp1252 (Western Europe).
   # The method can be called before the first page is created and the font is retained from page to page.
   # If you just wish to change the current font size, it is simpler to call SetFontSize().
-  # Note: for the standard fonts, the font metric files must be accessible. There are three possibilities for this:<ul><li>They are in the current directory (the one where the running script lies)</li><li>They are in one of the directories defined by the include_path parameter</li><li>They are in the directory defined by the FPDF_FONTPATH constant</li></ul><br />
-  # @param string :family Family font. It can be either a name defined by AddFont() or one of the standard Type1 families (case insensitive):<ul><li>times (Times-Roman)</li><li>timesb (Times-Bold)</li><li>timesi (Times-Italic)</li><li>timesbi (Times-BoldItalic)</li><li>helvetica (Helvetica)</li><li>helveticab (Helvetica-Bold)</li><li>helveticai (Helvetica-Oblique)</li><li>helveticabi (Helvetica-BoldOblique)</li><li>courier (Courier)</li><li>courierb (Courier-Bold)</li><li>courieri (Courier-Oblique)</li><li>courierbi (Courier-BoldOblique)</li><li>symbol (Symbol)</li><li>zapfdingbats (ZapfDingbats)</li></ul> It is also possible to pass an empty string. In that case, the current family is retained.
-  # @param string :style Font style. Possible values are (case insensitive):<ul><li>empty string: regular</li><li>B: bold</li><li>I: italic</li><li>U: underline</li><li>D: line trough</li><li>O: overline</li></ul> or any combination. The default value is regular. Bold and italic styles do not apply to Symbol and ZapfDingbats basic fonts or other fonts when not defined.
-  # @param float :size Font size in points. The default value is the current size. If no size has been specified since the beginning of the document, the value taken is 12
-  # @param string :fontfile The font definition file. By default, the name is built from the family and style, in lower case with no spaces.
-  # @access public
-  # @since 1.0
-  # @see AddFont(), SetFontSize()
+  # * Note: for the standard fonts, the font metric files must be accessible. There are three possibilities for this:
+  #   * They are in the current directory (the one where the running script lies)
+  #   * They are in one of the directories defined by the include_path parameter
+  #   * They are in the directory defined by the FPDF_FONTPATH constant
+  # [@param string :family]
+  #   Family font. It can be either a name defined by AddFont() or one of the standard Type1 families (case insensitive):
+  #   * times (Times-Roman)
+  #   * timesb (Times-Bold)
+  #   * timesi (Times-Italic)
+  #   * timesbi (Times-BoldItalic)
+  #   * helvetica (Helvetica)
+  #   * helveticab (Helvetica-Bold)
+  #   * helveticai (Helvetica-Oblique)
+  #   * helveticabi (Helvetica-BoldOblique)
+  #   * courier (Courier)
+  #   * courierb (Courier-Bold)
+  #   * courieri (Courier-Oblique)
+  #   * courierbi (Courier-BoldOblique)
+  #   * symbol (Symbol)
+  #   * zapfdingbats (ZapfDingbats)
+  #   It is also possible to pass an empty string. In that case, the current family is retained.
+  # [@param string :style]
+  #   Font style. Possible values are (case insensitive):
+  #   * empty string: regular
+  #   * B: bold
+  #   * I: italic
+  #   * U: underline
+  #   * D: line trough
+  #   * O: overline
+  #   or any combination. The default value is regular. Bold and italic styles do not apply to Symbol and ZapfDingbats basic fonts or other fonts when not defined.
+  # [@param float :size] Font size in points. The default value is the current size. If no size has been specified since the beginning of the document, the value taken is 12
+  # [@param string :fontfile] The font definition file. By default, the name is built from the family and style, in lower case with no spaces.
+  # [@access public]
+  # [@since 1.0]
+  # [@see] AddFont(), SetFontSize()
   #
   def SetFont(family, style='', size=0, fontfile='')
     # Select a font; size given in points
@@ -2569,10 +2802,10 @@ class TCPDF
 
   #
   # Defines the size of the current font.
-  # @param float :size The size (in points)
-  # @access public
-  # @since 1.0
-  # @see SetFont()
+  # [@param float :size] The size (in points)
+  # [@access public]
+  # [@since 1.0]
+  # [@see] SetFont()
   #
   def SetFontSize(size)
     #Set font size in points
@@ -2596,12 +2829,12 @@ class TCPDF
 
   #
   # Return the font descent value
-  # @param string :font font name
-  # @param string :style font style
-  # @param float :size The size (in points)
-  # @return int font descent
-  # @access public
-  # @since 4.9.003 (2010-03-30)
+  # [@param string :font] font name
+  # [@param string :style] font style
+  # [@param float :size] The size (in points)
+  # [@return int] font descent
+  # [@access public]
+  # [@since 4.9.003 (2010-03-30)]
   #
   def getFontDescent(font, style='', size=0)
     # Set font size in points
@@ -2619,12 +2852,12 @@ class TCPDF
 
   #
   # Return the font ascent value
-  # @param string :font font name
-  # @param string :style font style
-  # @param float :size The size (in points)
-  # @return int font ascent
-  # @access public
-  # @since 4.9.003 (2010-03-30)
+  # [@param string :font] font name
+  # [@param string :style] font style
+  # [@param float :size] The size (in points)
+  # [@return int] font ascent
+  # [@access public]
+  # [@since 4.9.003 (2010-03-30)]
   #
   def getFontAscent(font, style='', size=0)
     # Set font size in points
@@ -2642,9 +2875,9 @@ class TCPDF
 
   #
   # Defines the default monospaced font.
-  # @param string :font Font name.
-  # @access public
-  # @since 4.5.025
+  # [@param string :font] Font name.
+  # [@access public]
+  # [@since 4.5.025]
   #
   def SetDefaultMonospacedFont(font)
     @default_monospaced_font = font
@@ -2652,10 +2885,11 @@ class TCPDF
   alias_method :set_default_monospaced_font, :SetDefaultMonospacedFont
 
   #
-  # Creates a new internal link and returns its identifier. An internal link is a clickable area which directs to another place within the document.<br />
+  # Creates a new internal link and returns its identifier. An internal link is a clickable area which directs to another place within the document.
   # The identifier can then be passed to Cell(), Write(), Image() or Link(). The destination is defined with SetLink().
-  # @since 1.5
-  # @see Cell(), Write(), Image(), Link(), SetLink()
+  # [@access public]
+  # [@since 1.5]
+  # [@see] Cell(), Write(), Image(), Link(), SetLink()
   #
   def AddLink()
     #Create a new internal link
@@ -2667,11 +2901,11 @@ class TCPDF
 
   #
   # Defines the page and position a link points to
-  # @param int :link The link identifier returned by AddLink()
-  # @param float :y Ordinate of target position; -1 indicates the current position. The default value is 0 (top of page)
-  # @param int :page Number of target page; -1 indicates the current page. This is the default value
-  # @since 1.5
-  # @see AddLink()
+  # [@param int :link] The link identifier returned by AddLink()
+  # [@param float :y] Ordinate of target position; -1 indicates the current position. The default value is 0 (top of page)
+  # [@param int :page] Number of target page; -1 indicates the current page. This is the default value
+  # [@since 1.5]
+  # [@see] AddLink()
   #
   def SetLink(link, y=0, page=-1)
     #Set destination of internal link
@@ -2688,15 +2922,15 @@ class TCPDF
   #
   # Puts a link on a rectangular area of the page.
   # Text or image links are generally put via Cell(), Write() or Image(), but this method can be useful for instance to define a clickable area inside an image.
-  # @param float :x Abscissa of the upper-left corner of the rectangle
-  # @param float :y Ordinate of the upper-left corner of the rectangle
-  # @param float :w Width of the rectangle
-  # @param float :h Height of the rectangle
-  # @param mixed :link URL or identifier returned by AddLink()
-  # @param int :spaces number of spaces on the text to link
-  # @access public
-  # @since 1.5
-  # @see AddLink(), Annotation(), Cell(), Write(), Image()
+  # [@param float :x] Abscissa of the upper-left corner of the rectangle
+  # [@param float :y] Ordinate of the upper-left corner of the rectangle
+  # [@param float :w] Width of the rectangle
+  # [@param float :h] Height of the rectangle
+  # [@param mixed :link] URL or identifier returned by AddLink()
+  # [@param int :spaces] number of spaces on the text to link
+  # [@access public]
+  # [@since 1.5]
+  # [@see] AddLink(), Annotation(), Cell(), Write(), Image()
   #
   def Link(x, y, w, h, link, spaces=0)
     Annotation(x, y, w, h, link, {'Subtype'=>'Link'}, spaces)
@@ -2705,16 +2939,16 @@ class TCPDF
 
   #
   # Puts a markup annotation on a rectangular area of the page.
-  # !!!!THE ANNOTATION SUPPORT IS NOT YET FULLY IMPLEMENTED !!!!
-  # @param float :x Abscissa of the upper-left corner of the rectangle
-  # @param float :y Ordinate of the upper-left corner of the rectangle
-  # @param float :w Width of the rectangle
-  # @param float :h Height of the rectangle
-  # @param mixed :text annotation text or alternate content
-  # @param array :opt array of options (see section 8.4 of PDF reference 1.7).
-  # @param int :spaces number of spaces on the text to link
-  # @access public
-  # @since 4.0.018 (2008-08-06)
+  # * !!!!THE ANNOTATION SUPPORT IS NOT YET FULLY IMPLEMENTED !!!!
+  # [@param float :x] Abscissa of the upper-left corner of the rectangle
+  # [@param float :y] Ordinate of the upper-left corner of the rectangle
+  # [@param float :w] Width of the rectangle
+  # [@param float :h] Height of the rectangle
+  # [@param mixed :text] annotation text or alternate content
+  # [@param array :opt] array of options (see section 8.4 of PDF reference 1.7).
+  # [@param int :spaces] number of spaces on the text to link
+  # [@access public]
+  # [@since 4.0.018 (2008-08-06)]
   #
   def Annotation(x, y, w, h, text, opt={'Subtype'=>'Text'}, spaces=0)
     x = @x if x == ''
@@ -2788,9 +3022,9 @@ class TCPDF
 
   #
   # Embedd the attached files.
-  # @since 4.4.000 (2008-12-07)
-  # @access protected
-  # @see Annotation()
+  # [@since 4.4.000 (2008-12-07)]
+  # [@access protected]
+  # [@see] Annotation()
   #
   def putEmbeddedFiles()
     # reset(@embeddedfiles)
@@ -2818,25 +3052,59 @@ class TCPDF
   # Prints a text cell at the specified position.
   # The origin is on the left of the first charcter, on the baseline.
   # This method allows to place a string precisely on the page.
-  # @param float :x Abscissa of the cell origin
-  # @param float :y Ordinate of the cell origin
-  # @param string :txt String to print
-  # @param int :fstroke outline size in user units (false = disable)
-  # @param boolean :fclip if true activate clipping mode (you must call StartTransform() before this function and StopTransform() to stop the clipping tranformation).
-  # @param boolean :ffill if true fills the text
-  # @param mixed :border Indicates if borders must be drawn around the cell. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
-  # @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right (or left for RTL languages)</li><li>1: to the beginning of the next line</li><li>2: below</li></ul>Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
-  # @param string :align Allows to center or align the text. Possible values are:<ul><li>L or empty string: left align (default value)</li><li>C: center</li><li>R: right align</li><li>J: justify</li></ul>
-  # @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
-  # @param mixed :link URL or identifier returned by AddLink().
-  # @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
-  # @param boolean :ignore_min_height if true ignore automatic minimum height value.
-  # @param string :calign cell vertical alignment relative to the specified Y value. Possible values are:<ul><li>T : cell top</li><li>A : font top</li><li>L : font baseline</li><li>D : font bottom</li><li>B : cell bottom</li></ul>
-  # @param string :valign text vertical alignment inside the cell. Possible values are:<ul><li>T : top</li><li>C : center</li><li>B : bottom</li></ul>
-  # @param boolean :rtloff if true uses the page top-left corner as origin of axis for :x and :y initial position.
-  # @access public
-  # @since 1.0
-  # @see SetFont(), SetTextColor(), Cell(), MultiCell(), Write()
+  # [@param float :x] Abscissa of the cell origin
+  # [@param float :y] Ordinate of the cell origin
+  # [@param string :txt] String to print
+  # [@param int :fstroke] outline size in user units (false = disable)
+  # [@param boolean :fclip] if true activate clipping mode (you must call StartTransform() before this function and StopTransform() to stop the clipping tranformation).
+  # [@param boolean :ffill] if true fills the text
+  # [@param mixed :border]
+  #   Indicates if borders must be drawn around the cell. The value can be either a number:
+  #   * 0: no border (default)
+  #   * 1: frame
+  #   or a string containing some or all of the following characters (in any order):
+  #   * L: left
+  #   * T: top
+  #   * R: right
+  #   * B: bottom
+  # [@param int :ln]
+  #   Indicates where the current position should go after the call. Possible values are:
+  #   * 0: to the right (or left for RTL languages)
+  #   * 1: to the beginning of the next line
+  #   * 2: below
+  #   Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
+  # [@param string :align]
+  #   Allows to center or align the text. Possible values are:
+  #   * L or empty string: left align (default value)
+  #   * C: center
+  #   * R: right align
+  #   * J: justify
+  # [@param int :fill] Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
+  # [@param mixed :link] URL or identifier returned by AddLink().
+  # [@param int :stretch]
+  #   stretch carachter mode: 
+  #   * 0 = disabled
+  #   * 1 = horizontal scaling only if necessary
+  #   * 2 = forced horizontal scaling
+  #   * 3 = character spacing only if necessary
+  #   * 4 = forced character spacing
+  # [@param boolean :ignore_min_height] if true ignore automatic minimum height value.
+  # [@param string :calign]
+  #   cell vertical alignment relative to the specified Y value. Possible values are:
+  #   * T : cell top
+  #   * A : font top
+  #   * L : font baseline
+  #   * D : font bottom
+  #   * B : cell bottom
+  # [@param string :valign]
+  #   text vertical alignment inside the cell. Possible values are:
+  #   * T : top
+  #   * C : center
+  #   * B : bottom
+  # [@param boolean :rtloff] if true uses the page top-left corner as origin of axis for :x and :y initial position.
+  # [@access public]
+  # [@since 1.0]
+  # [@see] SetFont(), SetTextColor(), Cell(), MultiCell(), Write()
   #
   def Text(x, y, txt, fstroke=false, fclip=false, ffill=true, border=0, ln=0, align='', fill=0, link='', stretch=0, ignore_min_height=false, calign='T', valign='M', rtloff=false)
     fstroke = 0 if fstroke == false
@@ -2854,12 +3122,12 @@ class TCPDF
 
   #
   # Whenever a page break condition is met, the method is called, and the break is issued or not depending on the returned value.
-  # The default implementation returns a value according to the mode selected by SetAutoPageBreak().<br />
+  # The default implementation returns a value according to the mode selected by SetAutoPageBreak().
   # This method is called automatically and should not be called directly by the application.
-  # @return boolean
-  # @access public
-  # @since 1.4
-  # @see SetAutoPageBreak()
+  # [@return boolean]
+  # [@access public]
+  # [@since 1.4]
+  # [@see] SetAutoPageBreak()
   #
   def AcceptPageBreak()
     #if @num_columns > 1
@@ -2882,12 +3150,12 @@ class TCPDF
 
   #
   # Add page if needed.
-  # @param float :h Cell height. Default value: 0.
-  # @param mixed :y starting y position, leave empty for current position.
-  # @param boolean :addpage if true add a page, otherwise only return the true/false state
-  # @return boolean true in case of page break, false otherwise.
-  # @since 3.2.000 (2008-07-01)
-  # @access protected
+  # [@param float :h] Cell height. Default value: 0.
+  # [@param mixed :y] starting y position, leave empty for current position.
+  # [@param boolean :addpage] if true add a page, otherwise only return the true/false state
+  # [@return boolean] true in case of page break, false otherwise.
+  # [@since 3.2.000 (2008-07-01)]
+  # [@access protected]
   #
   def checkPageBreak(h=0, y='', addpage=true)
     if empty_string(y)
@@ -2937,24 +3205,57 @@ class TCPDF
   alias_method :break_the_page?, :BreakThePage?
 
   #
-  # Prints a cell (rectangular area) with optional borders, background color and character string. The upper-left corner of the cell corresponds to the current position. The text can be aligned or centered. After the call, the current position moves to the right or to the next line. It is possible to put a link on the text.<br />
+  # Prints a cell (rectangular area) with optional borders, background color and character string. The upper-left corner of the cell corresponds to the current position. The text can be aligned or centered. After the call, the current position moves to the right or to the next line. It is possible to put a link on the text.
   # If automatic page breaking is enabled and the cell goes beyond the limit, a page break is done before outputting.
-  # @param float :w Cell width. If 0, the cell extends up to the right margin.
-  # @param float :h Cell height. Default value: 0.
-  # @param string :txt String to print. Default value: empty string.
-  # @param mixed :border Indicates if borders must be drawn around the cell. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
-  # @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right</li><li>1: to the beginning of the next line</li><li>2: below</li></ul>
-  # Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
-  # @param string :align Allows to center or align the text. Possible values are:<ul><li>L or empty string: left align (default value)</li><li>C: center</li><li>R: right align</li></ul>
-  # @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
-  # @param mixed :link URL or identifier returned by AddLink().
-  # @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
-  # @param boolean :ignore_min_height if true ignore automatic minimum height value.
-  # @param string :calign cell vertical alignment relative to the specified Y value. Possible values are:<ul><li>T : cell top</li><li>C : center</li><li>B : cell bottom</li><li>A : font top</li><li>L : font baseline</li><li>D : font bottom</li><li>
-  # @param string :valign text vertical alignment inside the cell. Possible values are:<ul><li>T : top</li><li>C : center</li><li>B : bottom</li></ul>
-  # public
-  # @since 1.0
-  # @see SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), AddLink(), Ln(), MultiCell(), Write(), SetAutoPageBreak()
+  # [@param float :w] Cell width. If 0, the cell extends up to the right margin.
+  # [@param float :h] Cell height. Default value: 0.
+  # [@param string :txt] String to print. Default value: empty string.
+  # [@param mixed :border]
+  #   Indicates if borders must be drawn around the cell. The value can be either a number:
+  #   * 0: no border (default)
+  #   * 1: frame
+  #   or a string containing some or all of the following characters (in any order):
+  #   * L: left
+  #   * T: top
+  #   * R: right
+  #   * B: bottom
+  # [@param int :ln]
+  #   Indicates where the current position should go after the call. Possible values are:
+  #   * 0: to the right
+  #   * 1: to the beginning of the next line
+  #   * 2: below
+  #   Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
+  # [@param string :align]
+  #   Allows to center or align the text. Possible values are:
+  #   * L or empty string: left align (default value)
+  #   * C: center
+  #   * R: right align
+  # [@param int :fill] Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
+  # [@param mixed :link] URL or identifier returned by AddLink().
+  # [@param int :stretch]
+  #   stretch carachter mode:
+  #   * 0 = disabled
+  #   * 1 = horizontal scaling only if necessary
+  #   * 2 = forced horizontal scaling
+  #   * 3 = character spacing only if necessary
+  #   * 4 = forced character spacing
+  # [@param boolean :ignore_min_height] if true ignore automatic minimum height value.
+  # [@param string :calign]
+  #   cell vertical alignment relative to the specified Y value. Possible values are:
+  #   * T : cell top
+  #   * C : center
+  #   * B : cell bottom
+  #   * A : font top
+  #   * L : font baseline
+  #   * D : font bottom
+  # [@param string :valign]
+  #   text vertical alignment inside the cell. Possible values are:
+  #   * T : top
+  #   * M : middle
+  #   * B : bottom
+  # [@access public]
+  # [@since 1.0]
+  # [@see] SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), AddLink(), Ln(), MultiCell(), Write(), SetAutoPageBreak()
   #
   def Cell(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false, calign='T', valign='M')
     if !ignore_min_height
@@ -2970,10 +3271,10 @@ class TCPDF
 
   #
   # Removes SHY characters from text.
-  # @param string :txt input string
-  # @return string without SHY characters.
-  # @access public
-  # @since (4.5.019) 2009-02-28
+  # [@param string :txt] input string
+  # [@return string] without SHY characters.
+  # [@access public]
+  # [@since (4.5.019) 2009-02-28]
   #
   def removeSHY(txt='')
     # Unicode Data
@@ -2997,23 +3298,58 @@ class TCPDF
   alias_method :remove_shy, :removeSHY
 
   #
-  # Returns the PDF string code to print a cell (rectangular area) with optional borders, background color and character string. The upper-left corner of the cell corresponds to the current position. The text can be aligned or centered. After the call, the current position moves to the right or to the next line. It is possible to put a link on the text.<br />
+  # Returns the PDF string code to print a cell (rectangular area) with optional borders, background color and character string. The upper-left corner of the cell corresponds to the current position. The text can be aligned or centered. After the call, the current position moves to the right or to the next line. It is possible to put a link on the text.
   # If automatic page breaking is enabled and the cell goes beyond the limit, a page break is done before outputting.
-  # @param float :w Cell width. If 0, the cell extends up to the right margin.
-  # @param float :h Cell height. Default value: 0.
-  # @param string :txt String to print. Default value: empty string.
-  # @param mixed :border Indicates if borders must be drawn around the cell. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
-  # @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right (or left for RTL languages)</li><li>1: to the beginning of the next line</li><li>2: below</li></ul>Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
-  # @param string :align Allows to center or align the text. Possible values are:<ul><li>L or empty string: left align (default value)</li><li>C: center</li><li>R: right align</li><li>J: justify</li></ul>
-  # @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
-  # @param mixed :link URL or identifier returned by AddLink().
-  # @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
-  # @param boolean :ignore_min_height if true ignore automatic minimum height value.
-  # @param string :calign cell vertical alignment relative to the specified Y value. Possible values are:<ul><li>T : cell top</li><li>C : center</li><li>B : cell bottom</li><li>A : font top</li><li>L : font baseline</li><li>D : font bottom</li><li>
-  # @param string :valign text vertical alignment inside the cell. Possible values are:<ul><li>T : top</li><li>C : center</li><li>B : bottom</li></ul>
-  # @access protected
-  # @since 1.0
-  # @see Cell()
+  # [@param float :w] Cell width. If 0, the cell extends up to the right margin.
+  # [@param float :h] Cell height. Default value: 0.
+  # [@param string :txt] String to print. Default value: empty string.
+  # [@param mixed :border]
+  #   Indicates if borders must be drawn around the cell. The value can be either a number:
+  #   * 0: no border (default)
+  #   * 1: frame
+  #   or a string containing some or all of the following characters (in any order):
+  #   * L: left
+  #   * T: top
+  #   * R: right
+  #   * B: bottom
+  # [@param int :ln]
+  #   Indicates where the current position should go after the call. Possible values are:
+  #   * 0: to the right (or left for RTL languages)
+  #   * 1: to the beginning of the next line
+  #   * 2: below
+  #   Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
+  # [@param string :align]
+  #   Allows to center or align the text. Possible values are:
+  #   * L or empty string: left align (default value)
+  #   * C: center
+  #   * R: right align
+  #   * J: justify
+  # [@param int :fill] Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
+  # [@param mixed :link] URL or identifier returned by AddLink().
+  # [@param int :stretch]
+  #   stretch carachter mode:
+  #   * 0 = disabled
+  #   * 1 = horizontal scaling only if necessary
+  #   * 2 = forced horizontal scaling
+  #   * 3 = character spacing only if necessary
+  #   * 4 = forced character spacing
+  # [@param boolean :ignore_min_height] if true ignore automatic minimum height value.
+  # [@param string :calign]
+  #   cell vertical alignment relative to the specified Y value. Possible values are:
+  #   * T : cell top
+  #   * C : center
+  #   * B : cell bottom
+  #   * A : font top
+  #   * L : font baseline
+  #   * D : font bottom
+  # [@param string :valign]
+  #   text vertical alignment inside the cell. Possible values are:
+  #   * T : top
+  #   * M : middle
+  #   * B : bottom
+  # [@access protected]
+  # [@since 1.0]
+  # [@see] Cell()
   #
   def getCellCode(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false, calign='T', valign='M')
     rs = "" # string to be returned
@@ -3368,26 +3704,51 @@ class TCPDF
 
   #
   # This method allows printing text with line breaks.
-  # They can be automatic (as soon as the text reaches the right border of the cell) or explicit (via the \n character). As many cells as necessary are output, one below the other.<br />
+  # They can be automatic (as soon as the text reaches the right border of the cell) or explicit (via the \n character). As many cells as necessary are output, one below the other.
   # Text can be aligned, centered or justified. The cell block can be framed and the background painted.
-  # @param float :w Width of cells. If 0, they extend up to the right margin of the page.
-  # @param float :h Cell minimum height. The cell extends automatically if needed.
-  # @param string :txt String to print
-  # @param mixed :border Indicates if borders must be drawn around the cell block. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
-  # @param string :align Allows to center or align the text. Possible values are:<ul><li>L or empty string: left align</li><li>C: center</li><li>R: right align</li><li>J: justification (default value when :ishtml=false)</li></ul>
-  # @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
-  # @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right</li><li>1: to the beginning of the next line [DEFAULT]</li><li>2: below</li></ul>
-  # @param float :x x position in user units
-  # @param float :y y position in user units
-  # @param boolean :reseth if true reset the last cell height (default true).
-  # @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
-  # @param boolean :ishtml set to true if :txt is HTML content (default = false).
-  # @param boolean :autopadding if true, uses internal padding and automatically adjust it to account for line width.
-  # @param float :maxh maximum height. It should be >= :h and less then remaining space to the bottom of the page, or 0 for disable this feature. This feature works only when :ishtml=false.
-  # @return int Rerurn the number of cells or 1 for html mode.
-  # @access public
-  # @since 1.3
-  # @see SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), Cell(), Write(), SetAutoPageBreak()
+  #
+  # [@param float :w] Width of cells. If 0, they extend up to the right margin of the page.
+  # [@param float :h] Cell minimum height. The cell extends automatically if needed.
+  # [@param string :txt] String to print
+  # [@param mixed :border]
+  #   Indicates if borders must be drawn around the cell block. The value can be either a number:
+  #   * 0: no border (default)
+  #   * 1: frame
+  #   or a string containing some or all of the following characters (in any order):
+  #   * L: left
+  #   * T: top
+  #   * R: right
+  #   * B: bottom
+  # [@param string :align]
+  #   Allows to center or align the text. Possible values are:
+  #   * L or empty string: left align
+  #   * C: center
+  #   * R: right align
+  #   * J: justification (default value when :ishtml=false)
+  # [@param int :fill] Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
+  # [@param int :ln]
+  #   Indicates where the current position should go after the call. Possible values are:
+  #   * 0: to the right
+  #   * 1: to the beginning of the next line [DEFAULT]
+  #   * 2: below
+  # [@param float :x] x position in user units
+  # [@param float :y] y position in user units
+  # [@param boolean :reseth] if true reset the last cell height (default true).
+  # [@param int :stretch]
+  #   stretch carachter mode: 
+  #   * 0 = disabled
+  #   * 1 = horizontal scaling only if necessary
+  #   * 2 = forced horizontal scaling
+  #   * 3 = character spacing only if necessary
+  #   * 4 = forced character spacing
+  # [@param boolean :ishtml] set to true if :txt is HTML content (default = false).
+  # [@param boolean :autopadding] if true, uses internal padding and automatically adjust it to account for line width.
+  # [@param float :maxh] maximum height. It should be >= :h and less then remaining space to the bottom of the page, or 0 for disable this feature. This feature works only when :ishtml=false.
+  # [@return int] Rerurn the number of cells or 1 for html mode.
+  # [@access public]
+  # [@since 1.3]
+  # [@see]
+  #   SetFont(), SetDrawColor(), SetFillColor(), SetTextColor(), SetLineWidth(), Cell(), Write(), SetAutoPageBreak()
   #
   def MultiCell(w, h, txt, border=0, align='J', fill=0, ln=1, x='', y='', reseth=true, stretch=0, ishtml=false, autopadding=true, maxh=0)
     w = 0 unless w.is_a?(Numeric)
@@ -3584,11 +3945,19 @@ class TCPDF
 
   #
   # Get the border mode accounting for multicell position (opens bottom side of multicell crossing pages)
-  # @param mixed :border Indicates if borders must be drawn around the cell block. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
-  # @param string multicell position: 'start', 'middle', 'end'
-  # @return border mode
-  # @access protected
-  # @since 4.4.002 (2008-12-09)
+  # [@param mixed :border]
+  #   Indicates if borders must be drawn around the cell block. The value can be either a number:
+  #   * 0: no border (default)
+  #   * 1: frame
+  #   or a string containing some or all of the following characters (in any order):
+  #   * L: left
+  #   * T: top
+  #   * R: right
+  #   * B: bottom
+  # [@param string multicell position: 'start', 'middle', 'end'
+  # [@return mixed] border mode
+  # [@access protected]
+  # [@since 4.4.002 (2008-12-09)]
   #
   def getBorderMode(border, position='start')
     if !@opencell and (border == 1)
@@ -3656,20 +4025,31 @@ class TCPDF
   protected :getBorderMode
 
   #
-  # This method prints text from the current position.<br />
-  # @param float :h Line height
-  # @param string :txt String to print
-  # @param mixed :link URL or identifier returned by AddLink()
-  # @param int :fill Indicates if the background must be painted (1) or transparent (0). Default value: 0.
-  # @param string :align Allows to center or align the text. Possible values are:<ul><li>L or empty string: left align (default value)</li><li>C: center</li><li>R: right align</li><li>J: justify</li></ul>
-  # @param boolean :ln if true set cursor at the bottom of the line, otherwise set cursor at the top of the line.
-  # @param int :stretch stretch carachter mode: <ul><li>0 = disabled</li><li>1 = horizontal scaling only if necessary</li><li>2 = forced horizontal scaling</li><li>3 = character spacing only if necessary</li><li>4 = forced character spacing</li></ul>
-  # @param boolean :firstline if true prints only the first line and return the remaining string.
-  # @param boolean :firstblock if true the string is the starting of a line.
-  # @param float :maxh maximum height. The remaining unprinted text will be returned. It should be >= :h and less then remaining space to the bottom of the page, or 0 for disable this feature.
-  # @return mixed Return the number of cells or the remaining string if :firstline = true.
-  # @access public
-  # @since 1.5
+  # This method prints text from the current position.
+  # [@param float :h] Line height
+  # [@param string :txt] String to print
+  # [@param mixed :link] URL or identifier returned by AddLink()
+  # [@param int :fill] Indicates if the background must be painted (1) or transparent (0). Default value: 0.
+  # [@param string :align]
+  #   Allows to center or align the text. Possible values are:
+  #   * L or empty string: left align (default value)
+  #   * C: center
+  #   * R: right align
+  #   * J: justify
+  # [@param boolean :ln] if true set cursor at the bottom of the line, otherwise set cursor at the top of the line.
+  # [@param int :stretch]
+  #   stretch carachter mode:
+  #   * 0 = disabled
+  #   * 1 = horizontal scaling only if necessary
+  #   * 2 = forced horizontal scaling
+  #   * 3 = character spacing only if necessary
+  #   * 4 = forced character spacing
+  # [@param boolean :firstline] if true prints only the first line and return the remaining string.
+  # [@param boolean :firstblock] if true the string is the starting of a line.
+  # [@param float :maxh] maximum height. The remaining unprinted text will be returned. It should be >= :h and less then remaining space to the bottom of the page, or 0 for disable this feature.
+  # [@return mixed] Return the number of cells or the remaining string if :firstline = true.
+  # [@access public]
+  # [@since 1.5]
   #
   def Write(h, txt, link=nil, fill=0, align='', ln=false, stretch=0, firstline=false, firstblock=false, maxh=0)
     txt.force_encoding('ASCII-8BIT') if txt.respond_to?(:force_encoding)
@@ -4010,8 +4390,8 @@ class TCPDF
 
   #
   # Returns the remaining width between the current position and margins.
-  # @return int Return the remaining width
-  # @access protected
+  # [@return int] Return the remaining width
+  # [@access protected]
   #
   def getRemainingWidth()
     if @rtl
@@ -4024,11 +4404,11 @@ class TCPDF
 
   #
   # Extract a slice of the :strarr array and return it as string.
-  # @param string :strarr The input array of characters. (UCS4)
-  # @param int :start the starting element of :strarr.
-  # @param int :last first element that will not be returned.
-  # @return Return part of a string (UTF-8)
-  # @access public
+  # [@param string :strarr] The input array of characters. (UCS4)
+  # [@param int :start] the starting element of :strarr.
+  # [@param int :last] first element that will not be returned.
+  # [@return] Return part of a string (UTF-8)
+  # [@access public]
   #
   def UTF8ArrSubString(strarr, start=0, last=strarr.size)
     string = ""
@@ -4041,12 +4421,12 @@ class TCPDF
 
   #
   # Extract a slice of the :uniarr array and return it as string.
-  # @param string :uniarr The input array of characters. (UTF-8)
-  # @param int :start the starting element of :strarr.
-  # @param int :last first element that will not be returned.
-  # @return Return part of a string (UTF-8)
-  # @access public
-  # @since 4.5.037 (2009-04-07)
+  # [@param string :uniarr] The input array of characters. (UTF-8)
+  # [@param int :start] the starting element of :strarr.
+  # [@param int :las]t first element that will not be returned.
+  # [@return] Return part of a string (UTF-8)
+  # [@access public]
+  # [@since 4.5.037 (2009-04-07)]
   #
   def UniArrSubString(uniarr, start=0, last=uniarr.length)
     string = ''
@@ -4059,10 +4439,10 @@ class TCPDF
 
   #
   # Convert an array of UTF8 values to array of unicode characters
-  # @param string :ta The input array of UTF8 values. (UCS4)
-  # @return Return array of unicode characters (UTF-8)
-  # @access public
-  # @since 4.5.037 (2009-04-07)
+  # [@param string :ta] The input array of UTF8 values. (UCS4)
+  # [@return] Return array of unicode characters (UTF-8)
+  # [@access public]
+  # [@since 4.5.037 (2009-04-07)]
   #
   def UTF8ArrayToUniArray(ta)
     string = []
@@ -4075,11 +4455,11 @@ class TCPDF
 
   #
   # Returns the unicode caracter specified by UTF-8 value
-  # @param int :c UTF-8 value (UCS4)
-  # @return Returns the specified character. (UTF-8)
-  # @author Miguel Perez, Nicola Asuni
-  # @access public
-  # @since 2.3.000 (2008-03-05)
+  # [@param int :c] UTF-8 value (UCS4)
+  # [@return] Returns the specified character. (UTF-8)
+  # [@author] Miguel Perez, Nicola Asuni
+  # [@access public]
+  # [@since 2.3.000 (2008-03-05)]
   #
   def unichr(c)
     if !@is_unicode
@@ -4103,11 +4483,11 @@ class TCPDF
 
   #
   # Return the image type given the file name or array returned by getimagesize() function.
-  # @param string :imgfile image file name
-  # @param hash :iminfo array of image information returned by getimagesize() function.
-  # @return string image type
-  # @access public
-  # @since 4.8.017 (2009-11-27)
+  # [@param string :imgfile] image file name
+  # [@param hash :iminfo] array of image information returned by getimagesize() function.
+  # [@return string] image type
+  # [@access public]
+  # [@since 4.8.017 (2009-11-27)]
   #
   def getImageFileType(imgfile, iminfo={})
     if iminfo.is_a? Hash and iminfo['mime'] and !iminfo['mime'].empty?
@@ -4131,37 +4511,61 @@ class TCPDF
   #
   # Puts an image in the page. 
   # The upper-left corner must be given. 
-  # The dimensions can be specified in different ways:<ul>
-  # <li>explicit width and height (expressed in user unit)</li>
-  # <li>one explicit dimension, the other being calculated automatically in order to keep the original proportions</li>
-  # <li>no explicit dimension, in which case the image is put at 72 dpi</li></ul>
+  # The dimensions can be specified in different ways:
+  # * explicit width and height (expressed in user unit)
+  # * one explicit dimension, the other being calculated automatically in order to keep the original proportions
+  # * no explicit dimension, in which case the image is put at 72 dpi
   # Supported formats are PNG images whitout RMagick library and JPEG and GIF images supported by RMagick.
-  # For JPEG, all flavors are allowed:<ul><li>gray scales</li><li>true colors (24 bits)</li><li>CMYK (32 bits)</li></ul>
-  # For PNG, are allowed:<ul><li>gray scales on at most 8 bits (256 levels)</li><li>indexed colors</li><li>true colors (24 bits)</li></ul>
-  # If a transparent color is defined, it will be taken into account (but will be only interpreted by Acrobat 4 and above).<br />
-  # The format can be specified explicitly or inferred from the file extension.<br />
-  # It is possible to put a link on the image.<br />
-  # Remark: if an image is used several times, only one copy will be embedded in the file.<br />
-  # @param string :file Name of the file containing the image.
-  # @param float :x Abscissa of the upper-left corner.
-  # @param float :y Ordinate of the upper-left corner.
-  # @param float :w Width of the image in the page. If not specified or equal to zero, it is automatically calculated.
-  # @param float :h Height of the image in the page. If not specified or equal to zero, it is automatically calculated.
-  # @param string :type Image format. Possible values are (case insensitive): JPG, JPEG, PNG. If not specified, the type is inferred from the file extension.
-  # @param mixed :link URL or identifier returned by AddLink().
-  # @param string :align Indicates the alignment of the pointer next to image insertion relative to image height. The value can be:<ul><li>T: top-right for LTR or top-left for RTL</li><li>M: middle-right for LTR or middle-left for RTL</li><li>B: bottom-right for LTR or bottom-left for RTL</li><li>N: next line</li></ul>
-  # @param mixed :resize If true resize (reduce) the image to fit :w and :h (requires RMagick library); if false do not resize; if 2 force resize in all cases (upscaling and downscaling).
-  # @param int :dpi dot-per-inch resolution used on resize
-  # @param string :palign Allows to center or align the image on the current line. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
-  # @param boolean :ismask true if this image is a mask, false otherwise
-  # @param mixed :imgmask image object returned by this function or false
-  # @param mixed :border Indicates if borders must be drawn around the image. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
-  # @param boolean :fitbox If true scale image dimensions proportionally to fit within the (:w, :h) box.
-  # @param boolean :hidden if true do not display the image.
-  # @param boolean :fitonpage if true the image is resized to not exceed page dimensions.
-  # @return image information
-  # @access public
-  # @since 1.1
+  # For JPEG, all flavors are allowed:
+  # * gray scales
+  # * true colors (24 bits)
+  # * CMYK (32 bits)
+  # For PNG, are allowed:
+  # * gray scales on at most 8 bits (256 levels)
+  # * indexed colors
+  # * true colors (24 bits)
+  # If a transparent color is defined, it will be taken into account (but will be only interpreted by Acrobat 4 and above).
+  # The format can be specified explicitly or inferred from the file extension.
+  # It is possible to put a link on the image.
+  # * Remark: if an image is used several times, only one copy will be embedded in the file.
+  # [@param string :file] Name of the file containing the image.
+  # [@param float :x] Abscissa of the upper-left corner.
+  # [@param float :y] Ordinate of the upper-left corner.
+  # [@param float :w] Width of the image in the page. If not specified or equal to zero, it is automatically calculated.
+  # [@param float :h] Height of the image in the page. If not specified or equal to zero, it is automatically calculated.
+  # [@param string :type] Image format. Possible values are (case insensitive): JPG, JPEG, PNG. If not specified, the type is inferred from the file extension.
+  # [@param mixed :link] URL or identifier returned by AddLink().
+  # [@param string :align]
+  #   Indicates the alignment of the pointer next to image insertion relative to image height. The value can be:
+  #   * T: top-right for LTR or top-left for RTL
+  #   * M: middle-right for LTR or middle-left for RTL
+  #   * B: bottom-right for LTR or bottom-left for RTL
+  #   * N: next line
+  # [@param mixed :resize] If true resize (reduce) the image to fit :w and :h (requires RMagick library); if false do not resize; if 2 force resize in all cases (upscaling and downscaling).
+  # [@param int :dpi] dot-per-inch resolution used on resize
+  # [@param string :palign]
+  #   Allows to center or align the image on the current line. Possible values are:
+  #   * L : left align
+  #   * C : center
+  #   * R : right align
+  #   * '' : empty string : left for LTR or right for RTL
+  # [@param boolean :ismask] true if this image is a mask, false otherwise
+  # [@param mixed :imgmask] image object returned by this function or false
+  # [@param mixed :border]
+  #   Indicates if borders must be drawn around the image. The value can be either a number:
+  #   * 0: no border (default)
+  #   * 1: frame
+  #   or a string containing some or all of the following characters (in any order):
+  #   * L: left
+  #   * T: top
+  #   * R: right
+  #   * B: bottom
+  # [@param boolean :fitbox] If true scale image dimensions proportionally to fit within the (:w, :h) box.
+  # [@param boolean :hidden] if true do not display the image.
+  # [@param boolean :fitonpage] if true the image is resized to not exceed page dimensions.
+  # [@return] image information
+  # [@access public]
+  # [@since 1.1]
   #
   def Image(file, x='', y='', w=0, h=0, type='', link=nil, align='', resize=false, dpi=300, palign='', ismask=false, imgmask=false, border=0, fitbox=false, hidden=false, fitonpage=false)
     w = 0 if w == ''
@@ -4410,7 +4814,7 @@ class TCPDF
 
   #
   # Extract info from a JPEG file
-  # @access protected
+  # [@access protected]
   #
   def parsejpeg(file)
     a=getimagesize(file);
@@ -4454,7 +4858,7 @@ class TCPDF
 
   #
   # Extract info from a PNG file
-  # @access protected
+  # [@access protected]
   #
   def parsepng(file)
     f=open(file,'rb');
@@ -4547,11 +4951,11 @@ class TCPDF
   #
   # Performs a line break. 
   # The current abscissa goes back to the left margin and the ordinate increases by the amount passed in parameter.
-  # @param float :h The height of the break. By default, the value equals the height of the last printed cell.
-  # @param boolean :cell if true add a c_margin to the x coordinate
-  # @access public
-  # @since 1.0
-  # @see Cell()
+  # [@param float :h] The height of the break. By default, the value equals the height of the last printed cell.
+  # [@param boolean :cell] if true add a c_margin to the x coordinate
+  # [@access public]
+  # [@since 1.0]
+  # [@see] Cell()
   #
   def Ln(h='', cell=false)
     if (@num_columns > 0) and (@y == @columns[@current_column]['y']) and @columns[@current_column]['x'] and (@x == @columns[@current_column]['x'])
@@ -4580,10 +4984,10 @@ class TCPDF
   #
   # Returns the relative X value of current position.
   # The value is relative to the left border for LTR languages and to the right border for RTL languages.
-  # @return float
-  # @access public
-  # @since 1.2
-  # @see SetX(), GetY(), SetY()
+  # [@return float]
+  # [@access public]
+  # [@since 1.2]
+  # [@see] SetX(), GetY(), SetY()
   #
   def GetX()
     if @rtl
@@ -4596,10 +5000,10 @@ class TCPDF
 
   #
   # Returns the absolute X value of current position.
-  # @return float
-  # @access public
-  # @since 1.2
-  # @see SetY(), GetX(), SetX()
+  # [@return float]
+  # [@access public]
+  # [@since 1.2]
+  # [@see] SetY(), GetX(), SetX()
   #
   def GetAbsX()
     return @x
@@ -4608,10 +5012,10 @@ class TCPDF
 
   #
   # Returns the ordinate of the current position.
-  # @return float
-  # @access public
-  # @since 1.0
-  # @see SetY(), GetX(), SetX()
+  # [@return float]
+  # [@access public]
+  # [@since 1.0]
+  # [@see] SetY(), GetX(), SetX()
   #
   def GetY()
     return @y;
@@ -4621,11 +5025,11 @@ class TCPDF
   #
   # Defines the abscissa of the current position.
   # If the passed value is negative, it is relative to the right of the page (or left if language is RTL).
-  # @param float :x The value of the abscissa.
-  # @param boolean :rtloff if true always uses the page top-left corner as origin of axis.
-  # @access public
-  # @since 1.2
-  # @see GetX(), GetY(), SetY(), SetXY()
+  # [@param float :x] The value of the abscissa.
+  # [@param boolean :rtloff] if true always uses the page top-left corner as origin of axis.
+  # [@access public]
+  # [@since 1.2]
+  # [@see] GetX(), GetY(), SetY(), SetXY()
   #
   def SetX(x, rtloff=false)
     #Set x position
@@ -4648,12 +5052,12 @@ class TCPDF
   #
   # Moves the current abscissa back to the left margin and sets the ordinate.
   # If the passed value is negative, it is relative to the bottom of the page.
-  # @param float :y The value of the ordinate.
-  # @param bool :resetx if true (default) reset the X position.
-  # @param boolean :rtloff if true always uses the page top-left corner as origin of axis.
-  # @access public
-  # @since 1.0
-  # @see GetX(), GetY(), SetY(), SetXY()
+  # [@param float :y] The value of the ordinate.
+  # [@param bool :resetx] if true (default) reset the X position.
+  # [@param boolean :rtloff] if true always uses the page top-left corner as origin of axis.
+  # [@access public]
+  # [@since 1.0]
+  # [@see] GetX(), GetY(), SetY(), SetXY()
   #
   def SetY(y, resetx=true, rtloff=false)
     if resetx
@@ -4681,12 +5085,12 @@ class TCPDF
 
   #
   # Defines the abscissa and ordinate of the current position. If the passed values are negative, they are relative respectively to the right and bottom of the page.
-  # @param float :x The value of the abscissa.
-  # @param float :y The value of the ordinate.
-  # @param boolean :rtloff if true always uses the page top-left corner as origin of axis.
-  # @access public
-  # @since 1.2
-  # @see SetX(), SetY()
+  # [@param float :x] The value of the abscissa.
+  # [@param float :y] The value of the ordinate.
+  # [@param boolean :rtloff] if true always uses the page top-left corner as origin of axis.
+  # [@access public]
+  # [@since 1.2]
+  # [@see] SetX(), SetY()
   #
   def SetXY(x, y, rtloff=false)
     SetY(y, false, rtloff)
@@ -4696,13 +5100,20 @@ class TCPDF
 
   #
   # Send the document to a given destination: string, local file or browser.
-  # In the last case, the plug-in may be used (if present) or a download ("Save as" dialog box) may be forced.<br />
+  # In the last case, the plug-in may be used (if present) or a download ("Save as" dialog box) may be forced.
   # The method first calls Close() if necessary to terminate the document.
-  # @param string :name The name of the file when saved. Note that special characters are removed and blanks characters are replaced with the underscore character.
-  # @param string :dest Destination where to send the document. It can take one of the following values:<ul><li>I: send the file inline to the browser (default). The plug-in is used if available. The name given by name is used when one selects the "Save as" option on the link generating the PDF.</li><li>D: send to the browser and force a file download with the name given by name.</li><li>F: save to a local server file with the name given by name.</li><li>S: return the document as a string. name is ignored.</li><li>FI: equivalent to F + I option</li><li>FD: equivalent to F + D option</li></ul>
-  # @access public
-  # @since 1.0
-  # @see Close()
+  # [@param string :name] The name of the file when saved. Note that special characters are removed and blanks characters are replaced with the underscore character.
+  # [@param string :dest]
+  #   Destination where to send the document. It can take one of the following values:
+  #   * I: send the file inline to the browser (default). The plug-in is used if available. The name given by name is used when one selects the "Save as" option on the link generating the PDF.
+  #   * D: send to the browser and force a file download with the name given by name.
+  #   * F: save to a local server file with the name given by name.
+  #   * S: return the document as a string. name is ignored.
+  #   * FI: equivalent to F + I option
+  #   * FD: equivalent to F + D option
+  # [@access public]
+  # [@since 1.0]
+  # [@see] Close()
   #
   def Output(name='', dest='')
     #Output PDF to some destination
@@ -4824,9 +5235,9 @@ class TCPDF
 
   #
   # Unset all class variables except the following critical variables: internal_encoding, state, bufferlen, buffer and diskcache.
-  # @param boolean :destroyall if true destroys all class variables, otherwise preserves critical variables.
-  # @param boolean :preserve_objcopy if true preserves the objcopy variable
-  # @access public
+  # [@param boolean :destroyall] if true destroys all class variables, otherwise preserves critical variables.
+  # [@param boolean :preserve_objcopy] if true preserves the objcopy variable
+  # [@access public]
   #
   def destroy(destroyall=false, preserve_objcopy=false)
     if destroyall and @diskcache and !preserve_objcopy and !empty_string(@buffer.path)
@@ -4848,7 +5259,7 @@ protected
 
   #
   # Check for locale-related bug
-  # @access protected
+  # [@access protected]
   #
   def dochecks()
     #Check for locale-related bug
@@ -4863,7 +5274,7 @@ protected
 
   #
   # Return fonts path
-  # @access protected
+  # [@access protected]
   #
   def getfontpath(file='')
     # Is it in the @@k_path_fonts?
@@ -4884,7 +5295,7 @@ protected
 
   #
   # Start document
-  # @access protected
+  # [@access protected]
   #
   def begindoc()
     #Start document
@@ -4894,7 +5305,7 @@ protected
 
   #
   # putpages
-  # @access protected
+  # [@access protected]
   #
   def putpages()
     nb = @numpages
@@ -5098,11 +5509,11 @@ protected
 
   #
   # Output references to page annotations
-  # @param int :n page number
-  # @access protected
-  # @author Nicola Asuni
-  # @deprecated
-  # @since 4.7.000 (2008-08-29)
+  # [@param int :n] page number
+  # [@access protected]
+  # [@author] Nicola Asuni
+  # [@deprecated]
+  # [@since 4.7.000 (2008-08-29)]
   #
   def putannotsrefs(n)
     out(getannotsrefs(n))
@@ -5110,11 +5521,11 @@ protected
 
   #
   # Get references to page annotations.
-  # @param int :n page number
-  # @return string
-  # @access protected
-  # @author Nicola Asuni
-  # @since 5.0.010 (2010-05-17)
+  # [@param int :n] page number
+  # [@return string]
+  # [@access protected]
+  # [@author] Nicola Asuni
+  # [@since 5.0.010 (2010-05-17)]
   #
   def getannotsrefs(n)
     unless @page_annots[n] or (@sign and @signature_data['cert_type'])
@@ -5143,11 +5554,11 @@ protected
 
   #
   # Output annotations objects for all pages.
-  # !!! THIS METHOD IS NOT YET COMPLETED !!!
-  # See section 12.5 of PDF 32000_2008 reference.
-  # @access protected
-  # @author Nicola Asuni
-  # @since 4.0.018 (2008-08-06)
+  # * !!! THIS METHOD IS NOT YET COMPLETED !!!
+  # * See section 12.5 of PDF 32000_2008 reference.
+  # [@access protected]
+  # [@author] Nicola Asuni
+  # [@since 4.0.018 (2008-08-06)]
   #
   def putannotsobjs()
     # reset object counter
@@ -5672,12 +6083,12 @@ protected
 
   #
   # Put appearance streams XObject used to define annotation's appearance states
-  # @param int :w annotation width
-  # @param int :h annotation height
-  # @param string :stream appearance stream
-  # @return int object ID
-  # @access protected
-  # @since 4.8.001 (2009-09-09)
+  # [@param int :w] annotation width
+  # [@param int :h] annotation height
+  # [@param string :stream] appearance stream
+  # [@return int] object ID
+  # [@access protected]
+  # [@since 4.8.001 (2009-09-09)]
   #
   def putAPXObject(w=0, h=0, stream='')
     stream = stream.strip
@@ -5706,7 +6117,7 @@ protected
 
   #
   # Output fonts.
-  # @access protected
+  # [@access protected]
   #
   def putfonts()
     nf=@n;
@@ -5841,12 +6252,12 @@ protected
 
   #
   # Outputs font widths
-  # @parameter array :font font data
-  # @parameter int :cidoffset offset for CID values
-  # @return PDF command string for font widths
-  # @author Nicola Asuni
-  # @access protected
-  # @since 4.4.000 (2008-12-07)
+  # [@parameter array :font] font data
+  # [@parameter int :cidoffset] offset for CID values
+  # [@return] PDF command string for font widths
+  # [@author] Nicola Asuni
+  # [@access protected]
+  # [@since 4.4.000 (2008-12-07)]
   #
   def putfontwidths(font, cidoffset=0)
     font_cw = font['cw'].sort
@@ -5979,13 +6390,13 @@ protected
   end
 
   #
-  # Adds unicode fonts.<br>
+  # Adds unicode fonts.
   # Based on PDF Reference 1.3 (section 5)
-  # @parameter array :font font data
-  # @return int font object ID
-  # @access protected
-  # @author Nicola Asuni
-  # @since 1.52.0.TC005 (2005-01-05)
+  # [@parameter array :font] font data
+  # [@return int] font object ID
+  # [@access protected]
+  # [@author] Nicola Asuni
+  # [@since 1.52.0.TC005 (2005-01-05)]
   #
   def puttruetypeunicode(font)
     # Type0 Font
@@ -6084,11 +6495,11 @@ protected
   #
   # Output CID-0 fonts.
   # A Type 0 CIDFont contains glyph descriptions based on the Adobe Type 1 font format
-  # @param array :font font data
-  # @return int font object ID
-  # @access protected
-  # @author Andrew Whitehead, Nicola Asuni, Yukihiro Nakadaira
-  # @since 3.2.000 (2008-06-23)
+  # [@param array :font] font data
+  # [@return int] font object ID
+  # [@access protected]
+  # [@author] Andrew Whitehead, Nicola Asuni, Yukihiro Nakadaira
+  # [@since 3.2.000 (2008-06-23)]
   #
   def putcidfont0(font)
     cidoffset = 0
@@ -6156,7 +6567,7 @@ protected
 
   #
   # Output images.
-  # @access protected
+  # [@access protected]
   #
   def putimages()
     filter=(@compress) ? '/Filter /FlateDecode ' : '';
@@ -6209,8 +6620,8 @@ protected
 
   #
   # Output Spot Colors Resources.
-  # @access protected
-  # @since 4.0.024 (2008-09-12)
+  # [@access protected[
+  # [@since 4.0.024 (2008-09-12)]
   #
   def putspotcolors()
     @spot_colors.each { |name, color|
@@ -6228,7 +6639,7 @@ protected
 
   #
   # putresourcedict
-  # @access protected
+  # [@access protected]
   #
   def putresourcedict()
     out = '2 0 obj'
@@ -6292,7 +6703,7 @@ protected
 
   #
   # Output Resources.
-  # @access protected
+  # [@access protected]
   #
   def putresources()
     putextgstates()
@@ -6313,8 +6724,8 @@ protected
   
   #
   # Adds some Metadata information (Document Information Dictionary)
-  # (see Chapter 14.3.3 Document Information Dictionary of PDF32000_2008.pdf Reference)
-  # @access protected
+  # * (see Chapter 14.3.3 Document Information Dictionary of PDF32000_2008.pdf Reference)
+  # [@access protected]
   #
   def putinfo()
     newobj()
@@ -6358,7 +6769,7 @@ protected
 
   #
   # putcatalog
-  # @access protected
+  # [@access protected]
   #
   def putcatalog()
     newobj()
@@ -6407,10 +6818,10 @@ protected
 
   #
   # Output viewer preferences.
-  # @return string for viewer preferences
-  # @author Nicola asuni
-  # @since 3.1.000 (2008-06-09)
-  # @access protected
+  # [@return string] for viewer preferences
+  # [@author] Nicola asuni
+  # [@since 3.1.000 (2008-06-09)]
+  # [@access protected]
   #
   def putviewerpreferences() 
     out = '/ViewerPreferences <<'
@@ -6483,7 +6894,7 @@ protected
 
   #
   # puttrailer
-  # @access protected
+  # [@access protected]
   #
   def puttrailer()
     out = 'trailer <<'
@@ -6500,7 +6911,7 @@ protected
 
   #
   # putheader
-  # @access protected
+  # [@access protected]
   #
   def putheader()
     out('%PDF-' + @pdf_version);
@@ -6508,7 +6919,7 @@ protected
 
   #
   # Output end of document (EOF).
-  # @access protected
+  # [@access protected]
   #
   def enddoc()
     @state = 1
@@ -6566,9 +6977,20 @@ protected
   #
   # Initialize a new page
   # beginpage
-  # @param string :orientation page orientation. Possible values are (case insensitive):<ul><li>P or PORTRAIT (default)</li><li>L or LANDSCAPE</li></ul>
-  # @param mixed :format The format used for pages. It can be either:<b>A string indicating the page format:</b><ul><li>4A0</li><li>2A0</li><li>A0</li><li>A1</li><li>A2</li><li>A3</li><li>A4 (default)</li><li>A5</li><li>A6</li><li>A7</li><li>A8</li><li>A9</li><li>A10</li><li>B0</li><li>B1</li><li>B2</li><li>B3</li><li>B4</li><li>B5</li><li>B6</li><li>B7</li><li>B8</li><li>B9</li><li>B10</li><li>C0</li><li>C1</li><li>C2</li><li>C3</li><li>C4</li><li>C5</li><li>C6</li><li>C7</li><li>C8</li><li>C9</li><li>C10</li><li>RA0</li><li>RA1</li><li>RA2</li><li>RA3</li><li>RA4</li><li>SRA0</li><li>SRA1</li><li>SRA2</li><li>SRA3</li><li>SRA4</li><li>LETTER</li><li>LEGAL</li><li>EXECUTIVE</li><li>FOLIO</li></ul><b>An array containing page measures and advanced options:</b><ul><li>['format'] = page format name (one of the above);</li><li>['Rotate'] : The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.</li><li>['PZ'] : The page's preferred zoom (magnification) factor.</li><li>['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed:</li><li>['MediaBox']['llx'] : lower-left x coordinate in points</li><li>['MediaBox']['lly'] : lower-left y coordinate in points</li><li>['MediaBox']['urx'] : upper-right x coordinate in points</li><li>['MediaBox']['ury'] : upper-right y coordinate in points</li><li>['CropBox'] : the visible region of default user space:</li><li>['CropBox']['llx'] : lower-left x coordinate in points</li><li>['CropBox']['lly'] : lower-left y coordinate in points</li><li>['CropBox']['urx'] : upper-right x coordinate in points</li><li>['CropBox']['ury'] : upper-right y coordinate in points</li><li>['BleedBox'] : the region to which the contents of the page shall be clipped when output in a production environment:</li><li>['BleedBox']['llx'] : lower-left x coordinate in points</li><li>['BleedBox']['lly'] : lower-left y coordinate in points</li><li>['BleedBox']['urx'] : upper-right x coordinate in points</li><li>['BleedBox']['ury'] : upper-right y coordinate in points</li><li>['TrimBox'] : the intended dimensions of the finished page after trimming:</li><li>['TrimBox']['llx'] : lower-left x coordinate in points</li><li>['TrimBox']['lly'] : lower-left y coordinate in points</li><li>['TrimBox']['urx'] : upper-right x coordinate in points</li><li>['TrimBox']['ury'] : upper-right y coordinate in points</li><li>['ArtBox'] : the extent of the page's meaningful content:</li><li>['ArtBox']['llx'] : lower-left x coordinate in points</li><li>['ArtBox']['lly'] : lower-left y coordinate in points</li><li>['ArtBox']['urx'] : upper-right x coordinate in points</li><li>['ArtBox']['ury'] : upper-right y coordinate in points</li><li>['BoxColorInfo'] :specify the colours and other visual characteristics that should be used in displaying guidelines on the screen for each of the possible page boundaries other than the MediaBox:</li><li>['BoxColorInfo'][BOXTYPE]['C'] : an array of three numbers in the range 0-255, representing the components in the DeviceRGB colour space.</li><li>['BoxColorInfo'][BOXTYPE]['W'] : the guideline width in default user units</li><li>['BoxColorInfo'][BOXTYPE]['S'] : the guideline style: S = Solid; D = Dashed</li><li>['BoxColorInfo'][BOXTYPE]['D'] : dash array defining a pattern of dashes and gaps to be used in drawing dashed guidelines</li><li>['trans'] : the style and duration of the visual transition to use when moving from another page to the given page during a presentation</li><li>['trans']['Dur'] : The page's display duration (also called its advance timing): the maximum length of time, in seconds, that the page shall be displayed during presentations before the viewer application shall automatically advance to the next page.</li><li>['trans']['S'] : transition style : Split, Blinds, Box, Wipe, Dissolve, Glitter, R, Fly, Push, Cover, Uncover, Fade</li><li>['trans']['D'] : The duration of the transition effect, in seconds.</li><li>['trans']['Dm'] : (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.</li><li>['trans']['M'] : (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.</li><li>['trans']['Di'] : (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.</li><li>['trans']['SS'] : (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0.</li><li>['trans']['B'] : (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.</li></ul>
-  # @access protected
+  # [@param string :orientation]
+  #   page orientation. Possible values are (case insensitive):
+  #   * P or PORTRAIT (default)
+  #   * L or LANDSCAPE
+  # [@param mixed :format]
+  #   The format used for pages. It can be either:<b>A string indicating the page format:</b>
+  #   * 4A0,2A0,A0,A1,A2,A3,A4 (default),A5,A6,A7,A8,A9,A10
+  #   * B0,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10
+  #   * C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10
+  #   * RA0,RA1,RA2,RA3,RA4
+  #   * SRA0,SRA1,SRA2,SRA3,SRA4
+  #   * LETTER,LEGAL,EXECUTIVE,FOLIO
+  #   <b>An array containing page measures and advanced options:</b> see setPageFormat()
+  # [@access protected]
   #
   def beginpage(orientation='', format='')
     @page += 1;
@@ -6611,7 +7033,7 @@ protected
 
   #
   # End of page contents
-  # @access protected
+  # [@access protected]
   #
   def endpage()
     setVisibility('all')
@@ -6620,8 +7042,8 @@ protected
 
   #
   # Begin a new object and return the object number
-  # @return int object number
-  # @access protected
+  # [@return int] object number
+  # [@access protected]
   #
   def newobj()
     @n += 1;
@@ -6633,10 +7055,10 @@ protected
 
   #
   # Underline text
-  # @param int :x X coordinate
-  # @param int :y Y coordinate
-  # @param string :txt text to underline
-  # @access protected
+  # [@param int :x] X coordinate
+  # [@param int :y] Y coordinate
+  # [@param string :txt] text to underline
+  # [@access protected]
   #
   def dounderline(x, y, txt)
     w = GetStringWidth(txt)
@@ -6645,11 +7067,11 @@ protected
 
   #
   # Underline for rectangular text area.
-  # @param int :x X coordinate
-  # @param int :y Y coordinate
-  # @param int :w width to underline
-  # @access protected
-  # @since 4.8.008 (2009-09-29)
+  # [@param int :x] X coordinate
+  # [@param int :y] Y coordinate
+  # [@param int :w] width to underline
+  # [@access protected]
+  # [@since 4.8.008 (2009-09-29)]
   #
   def dounderlinew(x, y, w)
     linew = - @current_font['ut'] / 1000.0 * @font_size_pt
@@ -6658,10 +7080,10 @@ protected
 
   #
   # Line through text
-  # @param int :x X coordinate
-  # @param int :y Y coordinate
-  # @param string :txt text to linethrough
-  # @access protected
+  # [@param int :x] X coordinate
+  # [@param int :y] Y coordinate
+  # [@param string :txt] text to linethrough
+  # [@access protected]
   #
   def dolinethrough(x, y, txt)
     w = GetStringWidth(txt)
@@ -6670,11 +7092,11 @@ protected
 
   #
   # Line through for rectangular text area.
-  # @param int :x X coordinate
-  # @param int :y Y coordinate
-  # @param int :w width to linethrough
-  # @access protected
-  # @since 4.9.008 (2009-09-29)
+  # [@param int :x] X coordinate
+  # [@param int :y] Y coordinate
+  # [@param int :w] width to linethrough
+  # [@access protected]
+  # [@since 4.9.008 (2009-09-29)]
   #
   def dolinethroughw(x, y, w)
     linew = - @current_font['ut'] / 1000.0 * @font_size_pt
@@ -6683,11 +7105,11 @@ protected
 
   #
   # Overline text.
-  # @param int :x X coordinate
-  # @param int :y Y coordinate
-  # @param string :txt text to overline
-  # @access protected
-  # @since 4.9.015 (2010-04-19)
+  # [@param int :x] X coordinate
+  # [@param int :y] Y coordinate
+  # [@param string :txt] text to overline
+  # [@access protected]
+  # [@since 4.9.015 (2010-04-19)]
   #
   def dooverline(x, y, txt)
     w = GetStringWidth(txt)
@@ -6696,11 +7118,11 @@ protected
 
   #
   # Overline for rectangular text area.
-  # @param int :x X coordinate
-  # @param int :y Y coordinate
-  # @param int :w width to overline
-  # @access protected
-  # @since 4.9.015 (2010-04-19)
+  # [@param int :x] X coordinate
+  # [@param int :y] Y coordinate
+  # [@param int :w] width to overline
+  # [@access protected]
+  # [@since 4.9.015 (2010-04-19)]
   #
   def dooverlinew(x, y, w)
     linew = - @current_font['ut'] / 1000.0 * @font_size_pt
@@ -6709,9 +7131,9 @@ protected
 
   #
   # Read a 4-byte integer from file
-  # @param string :f file name.
-  # @return 4-byte integer
-  # @access protected
+  # [@param string :f] file name.
+  # [@return] 4-byte integer
+  # [@access protected]
   #
   def freadint(f)
     # Read a 4-byte integer from file
@@ -6721,7 +7143,7 @@ protected
 
   #
   # Add \ before \, ( and )
-  # @access protected
+  # [@access protected]
   #
   def escape(s)
     # Add \ before \, ( and )
@@ -6730,9 +7152,9 @@ protected
 
   #
   # Format a data string for meta information
-  # @param string :s data string to escape.
-  # @return string escaped string.
-  # @access protected
+  # [@param string :s] data string to escape.
+  # [@return string] escaped string.
+  # [@access protected]
   #
   def datastring(s)
     s = encrypt_data(@n, s)
@@ -6741,9 +7163,9 @@ protected
 
   #
   # Format a data string for annotation objects
-  # @param string :s data string to escape.
-  # @return string escaped string.
-  # @access protected
+  # [@param string :s] data string to escape.
+  # [@return string] escaped string.
+  # [@access protected]
   #
   def dataannobjstring(s)
     s = encrypt_data(@annot_obj_id + 1, s)
@@ -6751,9 +7173,9 @@ protected
   end
   #
   # Returns a formatted date for meta information
-  # @return string escaped date string.
-  # @access protected
-  # @since 4.6.028 (2009-08-25)
+  # [@return string] escaped date string.
+  # [@access protected]
+  # [@since 4.6.028 (2009-08-25)]
   #
   def datestring()
     current_time = Time.now.strftime('%Y%m%d%H%M%S%z').insert(-3, '\'') + '\''
@@ -6762,9 +7184,9 @@ protected
 
   #
   # Format a text string for meta information
-  # @param string :s string to escape.
-  # @return string escaped string.
-  # @access protected
+  # [@param string :s] string to escape.
+  # [@return string] escaped string.
+  # [@access protected]
   #
   def textstring(s)
     if (@is_unicode)
@@ -6776,9 +7198,9 @@ protected
 
   #
   # Format a UTF-8 text string for meta information on annotations
-  # @param string :s string to escape.
-  # @return string escaped string.
-  # @access protected
+  # [@param string :s] string to escape.
+  # [@return string] escaped string.
+  # [@access protected]
   #
   def textannobjstring(s)
     if @is_unicode
@@ -6790,9 +7212,9 @@ protected
 
   #
   # Format a text string
-  # @param string :s string to escape.
-  # @return string escaped string.
-  # @access protected
+  # [@param string :s] string to escape.
+  # [@return string] escaped string.
+  # [@access protected]
   #
   def escapetext(s)
     if (@is_unicode)
@@ -6823,9 +7245,9 @@ protected
 
   #
   # Output a stream.
-  # @param string :s string to output.
-  # @param int :n object reference for encryption mode
-  # @access protected
+  # [@param string :s] string to output.
+  # [@param int :n] object reference for encryption mode
+  # [@access protected]
   #
   def putstream(s, n=0)
     out(getstream(s, n))
@@ -6833,8 +7255,8 @@ protected
 
   #
   # Output a string to the document.
-  # @param string :s string to output.
-  # @access protected
+  # [@param string :s] string to output.
+  # [@access protected]
   #
   def out(s)
     s.force_encoding('ASCII-8BIT') if s.respond_to?(:force_encoding)
@@ -6856,18 +7278,18 @@ protected
   end
 
   #
-  # Converts UTF-8 strings to codepoints array.<br>
-  # Invalid byte sequences will be replaced with 0xFFFD (replacement character)<br>
-  # Based on: http://www.faqs.org/rfcs/rfc3629.html
-  # <pre>
-  #     Char. number range  |        UTF-8 octet sequence
-  #       (hexadecimal)    |              (binary)
-  #    --------------------+-----------------------------------------------
-  #    0000 0000-0000 007F | 0xxxxxxx
-  #    0000 0080-0000 07FF | 110xxxxx 10xxxxxx
-  #    0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx
-  #    0001 0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-  #    ---------------------------------------------------------------------
+  # Converts UTF-8 strings to codepoints array.
+  # Invalid byte sequences will be replaced with 0xFFFD (replacement character)
+  # * Based on: http://www.faqs.org/rfcs/rfc3629.html
+  # 
+  #   Char. number range  |        UTF-8 octet sequence
+  #      (hexadecimal)    |              (binary)
+  #   --------------------+------------------------------------------------
+  #   0000 0000-0000 007F | 0xxxxxxx
+  #   0000 0080-0000 07FF | 110xxxxx 10xxxxxx
+  #   0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx
+  #   0001 0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+  #   ---------------------------------------------------------------------
   #
   #   ABFN notation:
   #   ---------------------------------------------------------------------
@@ -6882,12 +7304,12 @@ protected
   #                 %xF4 %x80-8F 2( UTF8-tail )
   #   UTF8-tail   = %x80-BF
   #   ---------------------------------------------------------------------
-  # </pre>
-  # @param string :str string to process. (UTF-8)
-  # @return array containing codepoints (UTF-8 characters values) (UCS4)
-  # @access protected
-  # @author Nicola Asuni
-  # @since 1.53.0.TC005 (2005-01-05)
+  #
+  # [@param string :str] string to process. (UTF-8)
+  # [@return array] containing codepoints (UTF-8 characters values) (UCS4)
+  # [@access protected]
+  # [@author] Nicola Asuni
+  # [@since 1.53.0.TC005 (2005-01-05)]
   #
   def UTF8StringToArray(str)
     if @cache_utf8_string_to_array[str]
@@ -6972,14 +7394,14 @@ protected
   end
   
   #
-  # Converts UTF-8 strings to UTF16-BE.<br>
-  # @param string :str string to process.
-  # @param boolean :setbom if true set the Byte Order Mark (BOM = 0xFEFF)
-  # @return string
-  # @access protected
-  # @author Nicola Asuni
-  # @since 1.53.0.TC005 (2005-01-05)
-  # @uses UTF8StringToArray(), arrUTF8ToUTF16BE()
+  # Converts UTF-8 strings to UTF16-BE.
+  # [@param string :str] string to process.
+  # [@param boolean :setbom] if true set the Byte Order Mark (BOM = 0xFEFF)
+  # [@return string]
+  # [@access protected]
+  # [@author] Nicola Asuni
+  # [@since 1.53.0.TC005 (2005-01-05)]
+  # [@uses] UTF8StringToArray(), arrUTF8ToUTF16BE()
   #
   def UTF8ToUTF16BE(str, setbom=true)
     if !@is_unicode
@@ -6990,12 +7412,12 @@ protected
   end
 
   #
-  # Converts UTF-8 strings to Latin1 when using the standard 14 core fonts.<br>
-  # @param string :str string to process.
-  # @return string
-  # @author Andrew Whitehead, Nicola Asuni
-  # @access protected
-  # @since 3.2.000 (2008-06-23)
+  # Converts UTF-8 strings to Latin1 when using the standard 14 core fonts.
+  # [@param string :str] string to process.
+  # [@return string]
+  # [@author] Andrew Whitehead, Nicola Asuni
+  # [@access protected]
+  # [@since 3.2.000 (2008-06-23)]
   #
   def UTF8ToLatin1(str)
     if !@is_unicode
@@ -7019,12 +7441,12 @@ protected
   end
 
   #
-  # Converts UTF-8 characters array to array of Latin1 characters<br>
-  # @param array :unicode array containing UTF-8 unicode values
-  # @return array
-  # @author Nicola Asuni
-  # @access protected
-  # @since 4.8.023 (2010-01-15)
+  # Converts UTF-8 characters array to array of Latin1 characters
+  # [@param array :unicode] array containing UTF-8 unicode values
+  # [@return array]
+  # [@author] Nicola Asuni
+  # [@access protected]
+  # [@since 4.8.023 (2010-01-15)]
   #
   def UTF8ArrToLatin1(unicode)
     if !@is_unicode or (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
@@ -7047,12 +7469,12 @@ protected
   end
 
   #
-  # Converts array of UTF-8 characters to UTF16-BE string.<br>
-  # Based on: http://www.faqs.org/rfcs/rfc2781.html
-  # <pre>
+  # Converts array of UTF-8 characters to UTF16-BE string.
+  # * Based on: http://www.faqs.org/rfcs/rfc2781.html
+  #
   #   Encoding UTF-16:
   # 
-    #   Encoding of a single character from an ISO 10646 character value to
+  #   Encoding of a single character from an ISO 10646 character value to
   #    UTF-16 proceeds as follows. Let U be the character number, no greater
   #    than 0x10FFFF.
   # 
@@ -7075,14 +7497,14 @@ protected
   #    U' = yyyyyyyyyyxxxxxxxxxx
   #    W1 = 110110yyyyyyyyyy
   #    W2 = 110111xxxxxxxxxx
-  # </pre>
-  # @param array :unicode array containing UTF-8 unicode values (UCS4)
-  # @param boolean :setbom if true set the Byte Order Mark (BOM = 0xFEFF)
-  # @return string (UTF-16BE)
-  # @access protected
-  # @author Nicola Asuni
-  # @since 2.1.000 (2008-01-08)
-  # @see UTF8ToUTF16BE()
+  #
+  # [@param array :unicode] array containing UTF-8 unicode values (UCS4)
+  # [@param boolean :setbom] if true set the Byte Order Mark (BOM = 0xFEFF)
+  # [@return] string (UTF-16BE)
+  # [@access protected]
+  # [@author] Nicola Asuni
+  # [@since 2.1.000 (2008-01-08)]
+  # [@see] UTF8ToUTF16BE()
   #
   def arrUTF8ToUTF16BE(unicode, setbom=true)
     outstr = ""; # string to be returned
@@ -7113,9 +7535,9 @@ public
   
   #
   # Set header font.
-  # @param array :font font
-  # @access public
-  # @since 1.1
+  # [@param array :font] font
+  # [@access public]
+  # [@since 1.1]
   #
   def setHeaderFont(font)
     @header_font = font;
@@ -7129,9 +7551,9 @@ public
 
   #
   # Get header font.
-  # @return array()
-  # @access public
-  # @since 4.0.012 (2008-07-24)
+  # [@return array]
+  # [@access public]
+  # [@since 4.0.012 (2008-07-24)]
   #
   def getHeaderFont()
     return @header_font
@@ -7140,9 +7562,9 @@ public
 
   #
   # Set footer font.
-  # @param array :font font
-  # @access public
-  # @since 1.1
+  # [@param array :font] font
+  # [@access public]
+  # [@since 1.1]
   #
   def setFooterFont(font)
     @footer_font = font;
@@ -7156,9 +7578,9 @@ public
 
   #
   # Get Footer font.
-  # @return array()
-  # @access public
-  # @since 4.0.012 (2008-07-24)
+  # [@return array]
+  # [@access public]
+  # [@since 4.0.012 (2008-07-24)]
   #
   def getFooterFont(font)
     return @footer_font
@@ -7167,8 +7589,8 @@ public
 
   #
   # Set language array.
-  # @param array :language
-  # @since 1.1
+  # [@param array :language]
+  # [@since 1.1]
   #
   def setLanguageArray(language)
     @l = language;
@@ -7187,6 +7609,7 @@ public
 
   #
   # Returns the PDF data.
+  # [@access public]
   #
   def getPDFData()
     if (@state < 3)
@@ -7203,15 +7626,15 @@ public
 
   #
   # Output anchor link.
-  # @param string :url link URL or internal link (i.e.: <a href="#23">link to page 23</a>)
-  # @param string :name link name
-  # @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
-  # @param boolean :firstline if true prints only the first line and return the remaining string.
-  # @param array :color array of RGB text color
-  # @param string :style font style (U, D, B, I)
-  # @param boolean :firstblock if true the string is the starting of a line.
-  # @return the number of cells used or the remaining text if :firstline = true
-  # @access public
+  # [@param string :url] link URL or internal link (i.e.: <a href="#23">link to page 23</a>)
+  # [@param string :name] link name
+  # [@param int :fill] Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
+  # [@param boolean :firstline] if true prints only the first line and return the remaining string.
+  # [@param array :color] array of RGB text color
+  # [@param string :style] font style (U, D, B, I)
+  # [@param boolean :firstblock] if true the string is the starting of a line.
+  # [@return] the number of cells used or the remaining text if :firstline = true
+  # [@access public]
   #
   def addHtmlLink(url, name, fill=0, firstline=false, color='', style=-1, firstblock=false)
     if !empty_string(url) and (url[0, 1] == '#')
@@ -7243,9 +7666,9 @@ public
   
   #
   # Returns an associative array (keys: R,G,B) from an html color name or a six-digit or three-digit hexadecimal color representation (i.e. #3FE5AA or #7FF).
-  # @param string :color html color 
-  # @return array RGB color or empty array in case of error.
-  # @access public
+  # [@param string :color] html color 
+  # [@return array] RGB color or empty array in case of error.
+  # [@access public]
   #
   def convertHTMLColorToDec(color = "#FFFFFF")
     color = color.gsub(/[\s]*/, '') # remove extra spaces
@@ -7313,10 +7736,10 @@ public
   
   #
   # Converts pixels to Units.
-  # @param int :px pixels
-  # @return float millimeters
-  # @access public
-  # @see setImageScale(), getImageScale()
+  # [@param int] :px pixels
+  # [@return float] millimeters
+  # [@access public]
+  # [@see] setImageScale(), getImageScale()
   #
   def pixelsToUnits(px)
     return (px.to_f / (@img_scale * @k))
@@ -7327,9 +7750,9 @@ public
   # Reverse function for htmlentities.
   # Convert entities in UTF-8.
   #
-  # @param :text_to_convert Text to convert.
-  # @return string converted
-  # @access public
+  # [@param :text_to_convert] Text to convert.
+  # [@return string] converted
+  # [@access public]
   #
   def unhtmlentities(string)
     if @@decoder.nil?
@@ -7343,11 +7766,12 @@ public
 
   #
   # Encrypt the input string.
-  # @param int :n object number
-  # @param string :s data string to encrypt
-  # @access protected
-  # @author Nicola Asuni
-  # @since 5.0.005 (2010-05-11)
+  # * Note: not yet implemented.
+  # [@param int :n] object number
+  # [@param string :s] data string to encrypt
+  # [@access protected]
+  # [@author] Nicola Asuni
+  # [@since 5.0.005 (2010-05-11)]
   #
   def encrypt_data(n, s)
     #unless @encrypted
@@ -7371,9 +7795,9 @@ public
   # Starts a 2D tranformation saving current graphic state.
   # This function must be called before scaling, mirroring, translation, rotation and skewing.
   # Use StartTransform() before, and StopTransform() after the transformations to restore the normal behavior.
-  # @access public
-  # @since 2.1.000 (2008-01-07)
-  # @see StartTransform(), StopTransform()
+  # [@access public]
+  # [@since 2.1.000 (2008-01-07)]
+  # [@see] StartTransform(), StopTransform()
   #
   def StartTransform
     out('q');
@@ -7387,9 +7811,9 @@ public
   # Stops a 2D tranformation restoring previous graphic state.
   # This function must be called after scaling, mirroring, translation, rotation and skewing.
   # Use StartTransform() before, and StopTransform() after the transformations to restore the normal behavior.
-  # @access public
-  # @since 2.1.000 (2008-01-07)
-  # @see StartTransform(), StopTransform()
+  # [@access public]
+  # [@since 2.1.000 (2008-01-07)]
+  # [@see] StartTransform(), StopTransform()
   #
   def StopTransform
     out('Q');
@@ -7403,12 +7827,12 @@ public
   
   #
   # Rotate object.
-  # @param float :angle angle in degrees for counter-clockwise rotation
-  # @param int :x abscissa of the rotation center. Default is current x position
-  # @param int :y ordinate of the rotation center. Default is current y position
-  # @access public
-  # @since 2.1.000 (2008-01-07)
-  # @see StartTransform(), StopTransform()
+  # [@param float :angle] angle in degrees for counter-clockwise rotation
+  # [@param int :x] abscissa of the rotation center. Default is current x position
+  # [@param int :y] ordinate of the rotation center. Default is current y position
+  # [@access public]
+  # [@since 2.1.000 (2008-01-07)]
+  # [@see] StartTransform(), StopTransform()
   #
   def Rotate(angle, x="", y="")
     if (x == '')
@@ -7438,10 +7862,10 @@ public
   
   #
   # Apply graphic transformations.
-  # @param array :tm transformation matrix
-  # @access protected
-  # @since 2.1.000 (2008-01-07)
-  # @see StartTransform(), StopTransform()
+  # [@param array :tm] transformation matrix
+  # [@access protected]
+  # [@since 2.1.000 (2008-01-07)]
+  # [@see] StartTransform(), StopTransform()
   #
   def Transform(tm)
     out(sprintf('%.3f %.3f %.3f %.3f %.3f %.3f cm', tm[0], tm[1], tm[2], tm[3], tm[4], tm[5]))
@@ -7461,10 +7885,10 @@ public
 
   #
   # Defines the line width. By default, the value equals 0.2 mm. The method can be called before the first page is created and the value is retained from page to page.
-  # @param float :width The width.
-  # @access public
-  # @since 1.0
-  # @see Line(), Rect(), Cell(), MultiCell()
+  # [@param float :width] The width.
+  # [@access public]
+  # [@since 1.0]
+  # [@see] Line(), Rect(), Cell(), MultiCell()
   #
   def SetLineWidth(width)
     #Set line width
@@ -7478,10 +7902,10 @@ public
 
   #
   # Returns the current the line width.
-  # @return int Line width
-  # @access public
-  # @since 2.1.000 (2008-01-07)
-  # @see Line(), SetLineWidth()
+  # [@return int] Line width
+  # [@access public]
+  # [@since 2.1.000 (2008-01-07)]
+  # [@see] Line(), SetLineWidth()
   #
   def GetLineWidth()
     return @line_width
@@ -7490,17 +7914,16 @@ public
 
   #
   # Set line style.
-  # @param hash :style Line style. Array with keys among the following:
-  # <ul>
-  #        <li>width (float): Width of the line in user units.</li>
-  #        <li>cap (string): Type of cap to put on the line. Possible values are: butt, round, square. The difference between "square" and "butt" is that "square" projects a flat end past the end of the line.</li>
-  #        <li>join (string): Type of join. Possible values are: miter, round, bevel.</li>
-  #        <li>dash (mixed): Dash pattern. Is 0 (without dash) or string with series of length values, which are the lengths of the on and off dashes. For example: "2" represents 2 on, 2 off, 2 on, 2 off, ...; "2,1" is 2 on, 1 off, 2 on, 1 off, ...</li>
-  #        <li>phase (integer): Modifier on the dash pattern which is used to shift the point at which the pattern starts.</li>
-  #        <li>color (array): Draw color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K).</li>
-  # </ul>
-  # @access public
-  # @since 2.1.000 (2008-01-08)
+  # [@param hash :style]
+  #   Line style. Array with keys among the following:
+  #   * width (float): Width of the line in user units.
+  #   * cap (string): Type of cap to put on the line. Possible values are: butt, round, square. The difference between "square" and "butt" is that "square" projects a flat end past the end of the line.
+  #   * join (string): Type of join. Possible values are: miter, round, bevel.
+  #   * dash (mixed): Dash pattern. Is 0 (without dash) or string with series of length values, which are the lengths of the on and off dashes. For example: "2" represents 2 on, 2 off, 2 on, 2 off, ...; "2,1" is 2 on, 1 off, 2 on, 1 off, ...
+  #   * phase (integer): Modifier on the dash pattern which is used to shift the point at which the pattern starts.
+  #   * color (array): Draw color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K).
+  # [@access public]
+  # [@since 2.1.000 (2008-01-08)]
   #
   def SetLineStyle(style)
     unless style.is_a? Hash
@@ -7560,10 +7983,10 @@ protected
 
   #
   # Begin a new subpath by moving the current point to coordinates (x, y), omitting any connecting line segment.
-  # @param float :x Abscissa of point.
-  # @param float :y Ordinate of point.
-  # @access protected
-  # @since 2.1.000 (2008-01-08)
+  # [@param float :x] Abscissa of point.
+  # [@param float :y] Ordinate of point.
+  # [@access protected]
+  # [@since 2.1.000 (2008-01-08)]
   #
   def outPoint(x, y)
     out(sprintf("%.2f %.2f m", x * @k, (@h - y) * @k))
@@ -7572,10 +7995,10 @@ protected
   #
   # Append a straight line segment from the current point to the point (x, y).
   # The new current point shall be (x, y).
-  # @param float :x Abscissa of end point.
-  # @param float :y Ordinate of end point.
-  # @access protected
-  # @since 2.1.000 (2008-01-08)
+  # [@param float :x] Abscissa of end point.
+  # [@param float :y] Ordinate of end point.
+  # [@access protected]
+  # [@since 2.1.000 (2008-01-08)]
   #
   def outLine(x, y)
     out(sprintf("%.2f %.2f l", x * @k, (@h - y) * @k))
@@ -7583,13 +8006,13 @@ protected
 
   #
   # Append a rectangle to the current path as a complete subpath, with lower-left corner (x, y) and dimensions widthand height in user space.
-  # @param float :x Abscissa of upper-left corner (or upper-right corner for RTL language).
-  # @param float :y Ordinate of upper-left corner (or upper-right corner for RTL language).
-  # @param float :w Width.
-  # @param float :h Height.
-  # @param string :op options
-  # @access protected
-  # @since 2.1.000 (2008-01-08)
+  # [@param float :x] Abscissa of upper-left corner (or upper-right corner for RTL language).
+  # [@param float :y] Ordinate of upper-left corner (or upper-right corner for RTL language).
+  # [@param float :w] Width.
+  # [@param float :h] Height.
+  # [@param string :op] options
+  # [@access protected]
+  # [@since 2.1.000 (2008-01-08)]
   #
   def outRect(x, y, w, h, op)
     out(sprintf('%.2f %.2f %.2f %.2f re %s', x * @k, (@h - y) * @k, w * @k, -h * @k, op))
@@ -7598,14 +8021,14 @@ protected
   #
   # Append a cubic Bezier curve to the current path. The curve shall extend from the current point to the point (x3, y3), using (x1, y1) and (x2, y2) as the Bezier control points.
   # The new current point shall be (x3, y3).
-  # @param float :x1 Abscissa of control point 1.
-  # @param float :y1 Ordinate of control point 1.
-  # @param float :x2 Abscissa of control point 2.
-  # @param float :y2 Ordinate of control point 2.
-  # @param float :x3 Abscissa of end point.
-  # @param float :y3 Ordinate of end point.
-  # @access protected
-  # @since 2.1.000 (2008-01-08)
+  # [@param float :x1] Abscissa of control point 1.
+  # [@param float :y1] Ordinate of control point 1.
+  # [@param float :x2] Abscissa of control point 2.
+  # [@param float :y2] Ordinate of control point 2.
+  # [@param float :x3] Abscissa of end point.
+  # [@param float :y3] Ordinate of end point.
+  # [@access protected]
+  # [@since 2.1.000 (2008-01-08)]
   #
   def outCurve(x1, y1, x2, y2, x3, y3)
     out(sprintf("%.2f %.2f %.2f %.2f %.2f %.2f c", x1 * @k, (@h - y1) * @k, x2 * @k, (@h - y2) * @k, x3 * @k, (@h - y3) * @k))
@@ -7614,12 +8037,12 @@ protected
   #
   # Append a cubic Bezier curve to the current path. The curve shall extend from the current point to the point (x3, y3), using the current point and (x2, y2) as the Bezier control points.
   # The new current point shall be (x3, y3).
-  # @param float :x2 Abscissa of control point 2.
-  # @param float :y2 Ordinate of control point 2.
-  # @param float :x3 Abscissa of end point.
-  # @param float :y3 Ordinate of end point.
-  # @access protected
-  # @since 4.9.019 (2010-04-26)
+  # [@param float :x2] Abscissa of control point 2.
+  # [@param float :y2] Ordinate of control point 2.
+  # [@param float :x3] Abscissa of end point.
+  # [@param float :y3] Ordinate of end point.
+  # [@access protected]
+  # [@since 4.9.019 (2010-04-26)]
   #
   def outCurveV(x2, y2, x3, y3)
     out(sprintf('%.2f %.2f %.2f %.2f v', x2 * @k, (@h - y2) * @k, x3 * @k, (@h - y3) * @k))
@@ -7628,14 +8051,14 @@ protected
   #
   # Append a cubic Bezier curve to the current path. The curve shall extend from the current point to the point (x3, y3), using (x1, y1) and (x3, y3) as the Bezier control points.
   # The new current point shall be (x3, y3).
-  # @param float :x1 Abscissa of control point 1.
-  # @param float :y1 Ordinate of control point 1.
-  # @param float :x2 Abscissa of control point 2.
-  # @param float :y2 Ordinate of control point 2.
-  # @param float :x3 Abscissa of end point.
-  # @param float :y3 Ordinate of end point.
-  # @access protected
-  # @since 4.9.019 (2010-04-26)
+  # [@param float :x1] Abscissa of control point 1.
+  # [@param float :y1] Ordinate of control point 1.
+  # [@param float :x2] Abscissa of control point 2.
+  # [@param float :y2] Ordinate of control point 2.
+  # [@param float :x3] Abscissa of end point.
+  # [@param float :y3] Ordinate of end point.
+  # [@access protected]
+  # [@since 4.9.019 (2010-04-26)]
   #
   def outCurveY(x1, y1, x3, y3)
     out(sprintf('%.2f %.2f %.2f %.2f y', x1 * @k, (@h - y1) * @k, x3 * @k, (@h - y3) * @k))
@@ -7645,14 +8068,14 @@ public
 
   #
   # Draws a line between two points.
-  # @param float :x1 Abscissa of first point
-  # @param float :y1 Ordinate of first point
-  # @param float :x2 Abscissa of second point
-  # @param float :y2 Ordinate of second point
-  # @param hash :style Line style. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-  # @access public
-  # @since 1.0
-  # @see SetLineWidth(), SetDrawColor(), SetLineStyle()
+  # [@param float :x1] Abscissa of first point
+  # [@param float :y1] Ordinate of first point
+  # [@param float :x2] Abscissa of second point
+  # [@param float :y2]] Ordinate of second point
+  # [@param hash :style] Line style. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+  # [@access public]
+  # [@since 1.0]
+  # [@see] SetLineWidth(), SetDrawColor(), SetLineStyle()
   #
   def Line(x1, y1, x2, y2, style=nil)
     if style.is_a? Hash
@@ -7666,21 +8089,20 @@ public
                 
   #
   # Draws a rectangle.
-  # @param float :x Abscissa of upper-left corner (or upper-right corner for RTL language).
-  # @param float :y Ordinate of upper-left corner (or upper-right corner for RTL language).
-  # @param float :w Width.
-  # @param float :h Height.
-  # @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-  # <ul>
-  #        <li>all: Line style of all borders. Array like for {@link SetLineStyle SetLineStyle}.</li>
-  #        <li>L, T, R, B or combinations: Line style of left, top, right or bottom border. Array like for {@link SetLineStyle SetLineStyle}.</li>
-  # </ul>
-  # If a key is not present or is null, not draws the border. Default value: default line style (empty array).
-  # @param array :border_style Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-  # @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-  # @access public
-  # @since 1.0
-  # @see SetLineStyle()
+  # [@param float :x] Abscissa of upper-left corner (or upper-right corner for RTL language).
+  # [@param float :y] Ordinate of upper-left corner (or upper-right corner for RTL language).
+  # [@param float :w] Width.
+  # [@param float :h] Height.
+  # [@param string :style]
+  #   Style of rendering. See the getPathPaintOperator() function for more information.
+  #   * all: Line style of all borders. Array like for {@link SetLineStyle SetLineStyle}.
+  #   * L, T, R, B or combinations: Line style of left, top, right or bottom border. Array like for {@link SetLineStyle SetLineStyle}.
+  #   If a key is not present or is null, not draws the border. Default value: default line style (empty array).
+  # [@param array :border_style] Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+  # [@param array :fill_color] Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+  # [@access public]
+  # [@since 1.0]
+  # [@see] SetLineStyle()
   #
   def Rect(x, y, w, h, style='', border_style={}, fill_color={})
     if style.index('F') != nil and !fill_color.empty?
@@ -7724,20 +8146,20 @@ public
   # Draws a Bezier curve.
   # The Bezier curve is a tangent to the line between the control points at
   # either end of the curve.
-  # @param float :x0 Abscissa of start point.
-  # @param float :y0 Ordinate of start point.
-  # @param float :x1 Abscissa of control point 1.
-  # @param float :y1 Ordinate of control point 1.
-  # @param float :x2 Abscissa of control point 2.
-  # @param float :y2 Ordinate of control point 2.
-  # @param float :x3 Abscissa of end point.
-  # @param float :y3 Ordinate of end point.
-  # @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-  # @param array :line_style Line style of curve. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-  # @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-  # @access public
-  # @see SetLineStyle()
-  # @since 2.1.000 (2008-01-08)
+  # [@param float :x0] Abscissa of start point.
+  # [@param float :y0] Ordinate of start point.
+  # [@param float :x1] Abscissa of control point 1.
+  # [@param float :y1] Ordinate of control point 1.
+  # [@param float :x2] Abscissa of control point 2.
+  # [@param float :y2] Ordinate of control point 2.
+  # [@param float :x3] Abscissa of end point.
+  # [@param float :y3] Ordinate of end point.
+  # [@param string :style] Style of rendering. See the getPathPaintOperator() function for more information.
+  # [@param array :line_style] Line style of curve. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+  # [@param array :fill_color] Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+  # [@access public]
+  # [@see] SetLineStyle()
+  # [@since 2.1.000 (2008-01-08)]
   #
   def Curve(x0, y0, x1, y1, x2, y2, x3, y3, style='', line_style=nil, fill_color=nil)
     if style and (style.index('F') != nil) and fill_color
@@ -7756,20 +8178,20 @@ public
   #
   # Draws an ellipse.
   # An ellipse is formed from n Bezier curves.
-  # @param float :x0 Abscissa of center point.
-  # @param float :y0 Ordinate of center point.
-  # @param float :rx Horizontal radius.
-  # @param float :ry Vertical radius (if ry = 0 then is a circle, see {@link Circle Circle}). Default value: 0.
-  # @param float :angle: Angle oriented (anti-clockwise). Default value: 0.
-  # @param float :astart: Angle start of draw line. Default value: 0.
-  # @param float :afinish: Angle finish of draw line. Default value: 360.
-  # @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-  # @param array :line_style Line style of ellipse. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-  # @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-  # @param integer :nc Number of curves used to draw a 90 degrees portion of ellipse.
-  # @author Nicola Asuni
-  # @access public
-  # @since 2.1.000 (2008-01-08)
+  # [@param float :x0] Abscissa of center point.
+  # [@param float :y0] Ordinate of center point.
+  # [@param float :rx] Horizontal radius.
+  # [@param float :ry] Vertical radius (if ry = 0 then is a circle, see {@link Circle Circle}). Default value: 0.
+  # [@param float :angle] Angle oriented (anti-clockwise). Default value: 0.
+  # [@param float :astart] Angle start of draw line. Default value: 0.
+  # [@param float :afinish] Angle finish of draw line. Default value: 360.
+  # [@param string :style] Style of rendering. See the getPathPaintOperator() function for more information.
+  # [@param array :line_style] Line style of ellipse. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+  # [@param array :fill_color] Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+  # [@param integer :nc] Number of curves used to draw a 90 degrees portion of ellipse.
+  # [@author] Nicola Asuni
+  # [@access public]
+  # [@since 2.1.000 (2008-01-08)]
   #
   def Ellipse(x0, y0, rx, ry='', angle=0, astart=0, afinish=360, style='', line_style=nil, fill_color=nil, nc=2)
     style = '' if style.nil?
@@ -7795,18 +8217,18 @@ public
   #
   # Append an elliptical arc to the current path.
   # An ellipse is formed from n Bezier curves.
-  # @param float :xc Abscissa of center point.
-  # @param float :yc Ordinate of center point.
-  # @param float :rx Horizontal radius.
-  # @param float :ry Vertical radius (if ry = 0 then is a circle, see {@link Circle Circle}). Default value: 0.
-  # @param float :xang: Angle between the X-axis and the major axis of the ellipse. Default value: 0.
-  # @param float :angs: Angle start of draw line. Default value: 0.
-  # @param float :angf: Angle finish of draw line. Default value: 360.
-  # @param boolean :pie if true do not mark the border point (used to draw pie sectors).
-  # @param integer :nc Number of curves used to draw a 90 degrees portion of ellipse.
-  # @author Nicola Asuni
-  # @access protected
-  # @since 4.9.019 (2010-04-26)
+  # [@param float :xc] Abscissa of center point.
+  # [@param float :yc] Ordinate of center point.
+  # [@param float :rx] Horizontal radius.
+  # [@param float :ry] Vertical radius (if ry = 0 then is a circle, see {@link Circle Circle}). Default value: 0.
+  # [@param float :xang] Angle between the X-axis and the major axis of the ellipse. Default value: 0.
+  # [@param float :angs] Angle start of draw line. Default value: 0.
+  # [@param float :angf] Angle finish of draw line. Default value: 360.
+  # [@param boolean :pie] if true do not mark the border point (used to draw pie sectors).
+  # [@param integer :nc] Number of curves used to draw a 90 degrees portion of ellipse.
+  # [@author] Nicola Asuni
+  # [@access protected]
+  # [@since 4.9.019 (2010-04-26)]
   #
   def outellipticalarc(xc, yc, rx, ry, xang=0, angs=0, angf=360, pie=false, nc=2)
     k = @k
@@ -7893,17 +8315,17 @@ public
   #
   # Draws a circle.
   # A circle is formed from n Bezier curves.
-  # @param float :x0 Abscissa of center point.
-  # @param float :y0 Ordinate of center point.
-  # @param float :r Radius.
-  # @param float :angstr: Angle start of draw line. Default value: 0.
-  # @param float :angend: Angle finish of draw line. Default value: 360.
-  # @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-  # @param array :line_style Line style of circle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-  # @param array :fill_color Fill color. Format: array(red, green, blue). Default value: default color (empty array).
-  # @param integer :nc Number of curves used to draw a 90 degrees portion of circle.
-  # @access public
-  # @since 2.1.000 (2008-01-08)
+  # [@param float :x0] Abscissa of center point.
+  # [@param float :y0] Ordinate of center point.
+  # [@param float :r] Radius.
+  # [@param float :angstr] Angle start of draw line. Default value: 0.
+  # [@param float :angend] Angle finish of draw line. Default value: 360.
+  # [@param string :style] Style of rendering. See the getPathPaintOperator() function for more information.
+  # [@param array :line_style] Line style of circle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+  # [@param array :fill_color] Fill color. Format: array(red, green, blue). Default value: default color (empty array).
+  # [@param integer :nc] Number of curves used to draw a 90 degrees portion of circle.
+  # [@access public]
+  # [@since 2.1.000 (2008-01-08)]
   #
   def Circle(x0, y0, r, angstr=0, angend=360, style='', line_style=nil, fill_color=nil, nc=2)
     Ellipse(x0, y0, r, r, 0, angstr, angend, style, line_style, fill_color, nc)
@@ -7912,18 +8334,17 @@ public
 
   #
   # Draws a polygonal line
-  # @param array :p Points 0 to (:np - 1). Array with values (x0, y0, x1, y1,..., x(np-1), y(np - 1))
-  # @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-  # @param array :line_style Line style of polygon. Array with keys among the following:
-  # <ul>
-  #       <li>all: Line style of all lines. Array like for {@link SetLineStyle SetLineStyle}.</li>
-  #       <li>0 to (:np - 1): Line style of each line. Array like for {@link SetLineStyle SetLineStyle}.</li>
-  # </ul>
-  # If a key is not present or is null, not draws the line. Default value is default line style (empty array).
-  # @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-  # @param boolean :closed if true the polygon is closes, otherwise will remain open
-  # @access public
-  # @since 4.8.003 (2009-09-15)
+  # [@param array :p] Points 0 to (:np - 1). Array with values (x0, y0, x1, y1,..., x(np-1), y(np - 1))
+  # [@param string :style] Style of rendering. See the getPathPaintOperator() function for more information.
+  # [@param array :line_style]
+  #   Line style of polygon. Array with keys among the following:
+  #   * all: Line style of all lines. Array like for {@link SetLineStyle SetLineStyle}.
+  #   * 0 to (:np - 1): Line style of each line. Array like for {@link SetLineStyle SetLineStyle}.
+  #   If a key is not present or is null, not draws the line. Default value is default line style (empty array).
+  # [@param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+  # [@param boolean :closed if true the polygon is closes, otherwise will remain open
+  # [@access public]
+  # [@since 4.8.003 (2009-09-15)]
   #
   def PolyLine(p, style='', line_style=nil, fill_color=nil)
     Polygon(p, style, line_style, fill_color, false)
@@ -7932,18 +8353,17 @@ public
 
   #
   # Draws a polygon.
-  # @param array :p Points 0 to (np - 1). Array with values (x0, y0, x1, y1,..., x(np-1), y(np - 1))
-  # @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-  # @param array :line_style Line style of polygon. Array with keys among the following:
-  # <ul>
-  #       <li>all: Line style of all lines. Array like for {@link SetLineStyle SetLineStyle}.</li>
-  #       <li>0 to (:np - 1): Line style of each line. Array like for {@link SetLineStyle SetLineStyle}.</li>
-  # </ul>
+  # [@param array :p] Points 0 to (np - 1). Array with values (x0, y0, x1, y1,..., x(np-1), y(np - 1))
+  # [@param string :style] Style of rendering. See the getPathPaintOperator() function for more information.
+  # [@param array :line_style]
+  #   Line style of polygon. Array with keys among the following:
+  #   * all: Line style of all lines. Array like for {@link SetLineStyle SetLineStyle}.
+  #   * 0 to (:np - 1): Line style of each line. Array like for {@link SetLineStyle SetLineStyle}.
   # If a key is not present or is null, not draws the line. Default value is default line style (empty array).
-  # @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-  # @param boolean :closed if true the polygon is closes, otherwise will remain open
-  # @access public
-  # @since 2.1.000 (2008-01-08)
+  # [@param array :fill_color] Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+  # [@param boolean :closed] if true the polygon is closes, otherwise will remain open
+  # [@access public]
+  # [@since 2.1.000 (2008-01-08)]
   #
   def Polygon(p, style='', line_style=nil, fill_color=nil, closed=true)
     style = '' if style.nil?
@@ -8022,32 +8442,30 @@ public
 
   #
   # Draws a regular polygon.
-  # @param float :x0 Abscissa of center point.
-  # @param float :y0 Ordinate of center point.
-  # @param float :r: Radius of inscribed circle.
-  # @param integer :ns Number of sides.
-  # @param float :angle Angle oriented (anti-clockwise). Default value: 0.
-  # @param boolean :draw_circle Draw inscribed circle or not. Default value: false.
-  # @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-  # @param array :line_style Line style of polygon sides. Array with keys among the following:
-  # <ul>
-  #       <li>all: Line style of all sides. Array like for {@link SetLineStyle SetLineStyle}.</li>
-  #       <li>0 to (:ns - 1): Line style of each side. Array like for {@link SetLineStyle SetLineStyle}.</li>
-  # </ul>
-  # If a key is not present or is null, not draws the side. Default value is default line style (empty array).
-  # @param array :fill_color Fill color. Format: array(red, green, blue). Default value: default color (empty array).
-  # @param string :circle_style Style of rendering of inscribed circle (if draws). Possible values are:
-  # <ul>
-  #       <li>D or empty string: Draw (default).</li>
-  #       <li>F: Fill.</li>
-  #       <li>DF or FD: Draw and fill.</li>
-  #       <li>CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).</li>
-  #       <li>CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).</li>
-  # </ul>
-  # @param array :circle_outLine_style Line style of inscribed circle (if draws). Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-  # @param array :circle_fill_color Fill color of inscribed circle (if draws). Format: array(red, green, blue). Default value: default color (empty array).
-  # @access public
-  # @since 2.1.000 (2008-01-08)
+  # [@param float :x0] Abscissa of center point.
+  # [@param float :y0] Ordinate of center point.
+  # [@param float :r] Radius of inscribed circle.
+  # [@param integer :ns] Number of sides.
+  # [@param float :angle] Angle oriented (anti-clockwise). Default value: 0.
+  # [@param boolean :draw_circle] Draw inscribed circle or not. Default value: false.
+  # [@param string :style] Style of rendering. See the getPathPaintOperator() function for more information.
+  # [@param array :line_style]
+  #   Line style of polygon sides. Array with keys among the following:
+  #   * all: Line style of all sides. Array like for {@link SetLineStyle SetLineStyle}.
+  #   * 0 to (:ns - 1): Line style of each side. Array like for {@link SetLineStyle SetLineStyle}.
+  #   If a key is not present or is null, not draws the side. Default value is default line style (empty array).
+  # [@param array :fill_color] Fill color. Format: array(red, green, blue). Default value: default color (empty array).
+  # [@param string :circle_style]
+  #   Style of rendering of inscribed circle (if draws). Possible values are:
+  #   * D or empty string: Draw (default).
+  #   * F: Fill.
+  #   * DF or FD: Draw and fill.
+  #   * CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).
+  #   * CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).
+  # [@param array :circle_outLine_style] Line style of inscribed circle (if draws). Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+  # [@param array :circle_fill_color] Fill color of inscribed circle (if draws). Format: array(red, green, blue). Default value: default color (empty array).
+  # [@access public]
+  # [@since 2.1.000 (2008-01-08)]
   #
   def RegularPolygon(x0, y0, r, ns, angle=0, draw_circle=false, style='', line_style=nil, fill_color=nil, circle_style='', circle_outLine_style=nil, circle_fill_color=nil)
     draw_circle = false if draw_circle == 0
@@ -8070,34 +8488,31 @@ public
 
   #
   # Draws a star polygon
-  # @param float :x0 Abscissa of center point.
-  # @param float :y0 Ordinate of center point.
-  # @param float :r Radius of inscribed circle.
-  # @param integer :nv Number of vertices.
-  # @param integer :ng Number of gap (if (:ng % :nv = 1) then is a regular polygon).
-  # @param float :angle: Angle oriented (anti-clockwise). Default value: 0.
-  # @param boolean :draw_circle: Draw inscribed circle or not. Default value is false.
-  # @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-  # @param array :line_style Line style of polygon sides. Array with keys among the following:
-  # <ul>
-  #       <li>all: Line style of all sides. Array like for
-  # {@link SetLineStyle SetLineStyle}.</li>
-  #       <li>0 to (n - 1): Line style of each side. Array like for {@link SetLineStyle SetLineStyle}.</li>
-  # </ul>
+  # [@param float :x0] Abscissa of center point.
+  # [@param float :y0] Ordinate of center point.
+  # [@param float :r] Radius of inscribed circle.
+  # [@param integer :nv] Number of vertices.
+  # [@param integer :ng] Number of gap (if (:ng % :nv = 1) then is a regular polygon).
+  # [@param float :angle] Angle oriented (anti-clockwise). Default value: 0.
+  # [@param boolean :draw_circle] Draw inscribed circle or not. Default value is false.
+  # [@param string :style] Style of rendering. See the getPathPaintOperator() function for more information.
+  # [@param array :line_style]
+  #   Line style of polygon sides. Array with keys among the following:
+  #   * all: Line style of all sides. Array like for {@link SetLineStyle SetLineStyle}.
+  #   * 0 to (n - 1): Line style of each side. Array like for {@link SetLineStyle SetLineStyle}.
   # If a key is not present or is null, not draws the side. Default value is default line style (empty array).
-  # @param array :fill_color Fill color. Format: array(red, green, blue). Default value: default color (empty array).
-  # @param string :circle_style Style of rendering of inscribed circle (if draws). Possible values are:
-  # <ul>
-  #       <li>D or empty string: Draw (default).</li>
-  #       <li>F: Fill.</li>
-  #       <li>DF or FD: Draw and fill.</li>
-  #       <li>CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).</li>
-  #       <li>CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).</li>
-  # </ul>
-  # @param array :circle_outLine_style Line style of inscribed circle (if draws). Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-  # @param array :circle_fill_color Fill color of inscribed circle (if draws). Format: array(red, green, blue). Default value: default color (empty array).
-  # @access public
-  # @since 2.1.000 (2008-01-08)
+  # [@param array :fill_color ]Fill color. Format: array(red, green, blue). Default value: default color (empty array).
+  # [@param string :circle_style]
+  #   Style of rendering of inscribed circle (if draws). Possible values are:
+  #   * D or empty string: Draw (default).
+  #   * F: Fill.
+  #   * DF or FD: Draw and fill.
+  #   * CNZ: Clipping mode (using the even-odd rule to determine which regions lie inside the clipping path).
+  #   * CEO: Clipping mode (using the nonzero winding number rule to determine which regions lie inside the clipping path).
+  # [@param array :circle_outLine_style] Line style of inscribed circle (if draws). Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+  # [@param array :circle_fill_color] Fill color of inscribed circle (if draws). Format: array(red, green, blue). Default value: default color (empty array).
+  # [@access public]
+  # [@since 2.1.000 (2008-01-08)]
   #
   def StarPolygon(x0, y0, r, nv, ng, angle=0, draw_circle=false, style='', line_style=nil, fill_color=nil, circle_style='', circle_outLine_style=nil, circle_fill_color=nil)
     draw_circle = false if draw_circle == 0
@@ -8132,17 +8547,17 @@ public
 
   #
   # Draws a rounded rectangle.
-  # @param float :x Abscissa of upper-left corner.
-  # @param float :y Ordinate of upper-left corner.
-  # @param float :w Width.
-  # @param float :h Height.
-  # @param float :r the radius of the circle used to round off the corners of the rectangle.
-  # @param string :round_corner Draws rounded corner or not. String with a 0 (not rounded i-corner) or 1 (rounded i-corner) in i-position. Positions are, in order and begin to 0: top left, top right, bottom right and bottom left. Default value: all rounded corner ("1111").
-  # @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-  # @param array :border_style Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-  # @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-  # @access public
-  # @since 2.1.000 (2008-01-08)
+  # [@param float :x] Abscissa of upper-left corner.
+  # [@param float :y] Ordinate of upper-left corner.
+  # [@param float :w] Width.
+  # [@param float :h] Height.
+  # [@param float :r] the radius of the circle used to round off the corners of the rectangle.
+  # [@param string :round_corner] Draws rounded corner or not. String with a 0 (not rounded i-corner) or 1 (rounded i-corner) in i-position. Positions are, in order and begin to 0: top left, top right, bottom right and bottom left. Default value: all rounded corner ("1111").
+  # [@param string :style] Style of rendering. See the getPathPaintOperator() function for more information.
+  # [@param array :border_style] Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+  # [@param array :fill_color] Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+  # [@access public]
+  # [@since 2.1.000 (2008-01-08)]
   #
   def RoundedRect(x, y, w, h, r, round_corner='1111', style='', border_style=nil, fill_color=nil)
     RoundedRectXY(x, y, w, h, r, r, round_corner, style, border_style, fill_color)
@@ -8151,18 +8566,18 @@ public
 
   #
   # Draws a rounded rectangle.
-  # @param float :x Abscissa of upper-left corner.
-  # @param float :y Ordinate of upper-left corner.
-  # @param float :w Width.
-  # @param float :h Height.
-  # @param float :rx the x-axis radius of the ellipse used to round off the corners of the rectangle.
-  # @param float :ry the y-axis radius of the ellipse used to round off the corners of the rectangle.
-  # @param string :round_corner Draws rounded corner or not. String with a 0 (not rounded i-corner) or 1 (rounded i-corner) in i-position. Positions are, in order and begin to 0: top left, top right, bottom right and bottom left. Default value: all rounded corner ("1111").
-  # @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-  # @param array :border_style Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
-  # @param array :fill_color Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
-  # @access public
-  # @since 4.9.019 (2010-04-22)
+  # [@param float :x] Abscissa of upper-left corner.
+  # [@param float :y] Ordinate of upper-left corner.
+  # [@param float :w] Width.
+  # [@param float :h] Height.
+  # [@param float :rx] the x-axis radius of the ellipse used to round off the corners of the rectangle.
+  # [@param float :ry] the y-axis radius of the ellipse used to round off the corners of the rectangle.
+  # [@param string :round_corner] Draws rounded corner or not. String with a 0 (not rounded i-corner) or 1 (rounded i-corner) in i-position. Positions are, in order and begin to 0: top left, top right, bottom right and bottom left. Default value: all rounded corner ("1111").
+  # [@param string :style] Style of rendering. See the getPathPaintOperator() function for more information.
+  # [@param array :border_style] Border style of rectangle. Array like for {@link SetLineStyle SetLineStyle}. Default value: default line style (empty array).
+  # [@param array :fill_color] Fill color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K). Default value: default color (empty array).
+  # [@access public]
+  # [@since 4.9.019 (2010-04-22)]
   #
   def RoundedRectXY(x, y, w, h, rx, ry, round_corner='1111', style='', border_style=nil, fill_color=nil)
     style = '' if style.nil?
@@ -8223,16 +8638,16 @@ public
 
   #
   # Draws a grahic arrow.
-  # @parameter float :x0 Abscissa of first point.
-  # @parameter float :y0 Ordinate of first point.
-  # @parameter float :x0 Abscissa of second point.
-  # @parameter float :y1 Ordinate of second point.
-  # @parameter int :head_style (0 = draw only arrowhead arms, 1 = draw closed arrowhead, but no fill, 2 = closed and filled arrowhead, 3 = filled arrowhead)
-  # @parameter float :arm_size length of arrowhead arms
-  # @parameter int :arm_angle angle between an arm and the shaft
-  # @author Piotr Galecki, Nicola Asuni, Andy Meier
-  # @access public
-  # @since 4.6.018 (2009-07-10)
+  # [@parameter float :x0] Abscissa of first point.
+  # [@parameter float :y0] Ordinate of first point.
+  # [@parameter float :x0] Abscissa of second point.
+  # [@parameter float :y1] Ordinate of second point.
+  # [@parameter int :head_style] (0 = draw only arrowhead arms, 1 = draw closed arrowhead, but no fill, 2 = closed and filled arrowhead, 3 = filled arrowhead)
+  # [@parameter float :arm_size] length of arrowhead arms
+  # [@parameter int :arm_angle] angle between an arm and the shaft
+  # [@author] Piotr Galecki, Nicola Asuni, Andy Meier
+  # [@access public]
+  # [@since 4.6.018 (2009-07-10)]
   #
   def Arrow(x0, y0, x1, y1, head_style=0, arm_size=5, arm_angle=15)
     # getting arrow direction angle
@@ -8284,13 +8699,13 @@ public
 
   #
   # Reverse the RLT substrings using the Bidirectional Algorithm (http://unicode.org/reports/tr9/).
-  # @param string :str string to manipulate. (UTF-8)
-  # @param bool :setbom  if true set the Byte Order Mark (BOM = 0xFEFF)
-  # @param bool :forcertl if true forces RTL text direction
-  # @return string (UTF-16BE)
-  # @access protected
-  # @author Nicola Asuni
-  # @since 2.1.000 (2008-01-08)
+  # [@param string :str] string to manipulate. (UTF-8)
+  # [@param bool :setbom] if true set the Byte Order Mark (BOM = 0xFEFF)
+  # [@param bool :forcertl] if true forces RTL text direction
+  # [@return] string (UTF-16BE)
+  # [@access protected]
+  # [@author] Nicola Asuni
+  # [@since 2.1.000 (2008-01-08)]
   #
   def utf8StrRev(str, setbom=false, forcertl=false)
     return utf8StrArrRev(UTF8StringToArray(str), str, setbom, forcertl)
@@ -8299,14 +8714,14 @@ public
 
   #
   # Reverse the RLT substrings array using the Bidirectional Algorithm (http://unicode.org/reports/tr9/).
-  # @param array :arr array of unicode values.
-  # @param string :str string to manipulate (or empty value).
-  # @param bool :setbom  if true set the Byte Order Mark (BOM = 0xFEFF)
-  # @param bool :forcertl if true forces RTL text direction
-  # @return string
-  # @access protected
-  # @author Nicola Asuni
-  # @since 4.9.000 (2010-03-27)
+  # [@param array :arr] array of unicode values.
+  # [@param string :str] string to manipulate (or empty value).
+  # [@param bool :setbom] if true set the Byte Order Mark (BOM = 0xFEFF)
+  # [@param bool :forcertl] if true forces RTL text direction
+  # [@return string]
+  # [@access protected]
+  # [@author] Nicola Asuni
+  # [@since 4.9.000 (2010-03-27)]
   #
   def utf8StrArrRev(arr, str='', setbom=false, forcertl=false)
     return arrUTF8ToUTF16BE(utf8Bidi(arr, str, forcertl), setbom)
@@ -8315,13 +8730,13 @@ public
 
   #
   # Reverse the RLT substrings using the Bidirectional Algorithm (http://unicode.org/reports/tr9/).
-  # @param array :ta array of characters composing the string. (UCS4)
-  # @param string :str string to process
-  # @param bool :forcertl if 'R' forces RTL, if 'L' forces LTR
-  # @return array of unicode chars (UCS4)
-  # @author Nicola Asuni
-  # @access protected
-  # @since 2.4.000 (2008-03-06)
+  # [@param array :ta] array of characters composing the string. (UCS4)
+  # [@param string :str] string to process
+  # [@param bool :forcertl] if 'R' forces RTL, if 'L' forces LTR
+  # [@return] array of unicode chars (UCS4)
+  # [@author] Nicola Asuni
+  # [@access protected]
+  # [@since 2.4.000 (2008-03-06)]
   #
   def utf8Bidi(ta, str='', forcertl=false)
     # paragraph embedding level
@@ -8892,13 +9307,13 @@ public
 
   #
   # Adds a bookmark.
-  # @param string :txt bookmark description.
-  # @param int :level bookmark level.
-  # @param float :y Ordinate of the boorkmark position (default = -1 = current position).
-  # @param int :page target page number (leave empty for current page).
-  # @access public
-  # @author Olivier Plathey, Nicola Asuni
-  # @since 2.1.002 (2008-02-12)
+  # [@param string :txt] bookmark description.
+  # [@param int :level] bookmark level.
+  # [@param float :y] Ordinate of the boorkmark position (default = -1 = current position).
+  # [@param int :page] target page number (leave empty for current page).
+  # [@access public]
+  # [@author] Olivier Plathey, Nicola Asuni
+  # [@since 2.1.002 (2008-02-12)]
   #
   def Bookmark(txt, level=0, y=-1, page=nil)
     if level < 0
@@ -8925,9 +9340,9 @@ public
 
   #
   # Create a bookmark PDF string.
-  # @access private
-  # @author Olivier Plathey, Nicola Asuni
-  # @since 2.1.002 (2008-02-12)
+  # [@access private]
+  # [@author] Olivier Plathey, Nicola Asuni
+  # [@since 2.1.002 (2008-02-12)]
   #
   def putbookmarks()
     nb = @outlines.size
@@ -8993,10 +9408,10 @@ public
 
   #
   # Create a new page group.
-  # NOTE: call this function before calling AddPage()
-  # @param int :page starting group page (leave empty for next page).
-  # @access public
-  # @since 3.0.000 (2008-03-27)
+  # * NOTE: call this function before calling AddPage()
+  # [@param int :page] starting group page (leave empty for next page).
+  # [@access public]
+  # [@since 3.0.000 (2008-03-27)]
   #
   def startPageGroup(page='')
     if page.empty?
@@ -9009,10 +9424,10 @@ public
   #
   # Defines an alias for the total number of pages.
   # It will be substituted as the document is closed.
-  # @param string :alias The alias.
-  # @access public
-  # @since 1.4
-  # @see getAliasNbPages(), PageNo(), Footer()
+  # [@param string :alias] The alias.
+  # [@access public]
+  # [@since 1.4]
+  # [@see] getAliasNbPages(), PageNo(), Footer()
   #
   def AliasNbPages(alias_nb ='{nb}')
     @alias_nb_pages = alias_nb
@@ -9022,10 +9437,10 @@ public
   #
   # Returns the string alias used for the total number of pages.
   # If the current font is unicode type, the returned string is surrounded by additional curly braces.
-  # @return string
-  # @access public
-  # @since 4.0.018 (2008-08-08)
-  # @see AliasNbPages(), PageNo(), Footer()
+  # [@return string]
+  # [@access public]
+  # [@since 4.0.018 (2008-08-08)]
+  # [@see] AliasNbPages(), PageNo(), Footer()
   #
   def getAliasNbPages()
     if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
@@ -9038,10 +9453,10 @@ public
   #
   # Defines an alias for the page number.
   # It will be substituted as the document is closed.
-  # @param string :alias The alias.
-  # @access public
-  # @since 4.5.000 (2009-01-02)
-  # @see getAliasNbPages(), PageNo(), Footer()
+  # [@param string :alias] The alias.
+  # [@access public]
+  # [@since 4.5.000 (2009-01-02)]
+  # [@see] getAliasNbPages(), PageNo(), Footer()
   #
   def AliasNumPage(alias_num='{pnb}')
     # Define an alias for total number of pages
@@ -9052,10 +9467,10 @@ public
   #
   # Returns the string alias used for the page number.
   # If the current font is unicode type, the returned string is surrounded by additional curly braces.
-  # @return string
-  # @access public
-  # @since 4.5.000 (2009-01-02)
-  # @see AliasNbPages(), PageNo(), Footer()
+  # [@return string]
+  # [@access public]
+  # [@since 4.5.000 (2009-01-02)]
+  # [@see] AliasNbPages(), PageNo(), Footer()
   #
   def getAliasNumPage()
     if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
@@ -9067,9 +9482,9 @@ public
 
   #
   # Return the current page in the group.
-  # @return current page in the group
-  # @access public
-  # @since 3.0.000 (2008-03-27)
+  # [@return] current page in the group
+  # [@access public]
+  # [@since 3.0.000 (2008-03-27)]
   #
   def getGroupPageNo()
     return @pagegroups[@currpagegroup]
@@ -9078,9 +9493,9 @@ public
 
   #
   # Returns the current group page number formatted as a string.
-  # @access public
-  # @since 4.3.003 (2008-11-18)
-  # @see PaneNo(), formatPageNumber()
+  # [@access public]
+  # [@since 4.3.003 (2008-11-18)]
+  # [@see] PaneNo(), formatPageNumber()
   #
   def getGroupPageNoFormatted()
     return formatPageNumber(getGroupPageNo())
@@ -9091,9 +9506,9 @@ public
   # Return the alias of the current page group
   # If the current font is unicode type, the returned string is surrounded by additional curly braces.
   # (will be replaced by the total number of pages in this group).
-  # @return alias of the current page group
-  # @access public
-  # @since 3.0.000 (2008-03-27)
+  # [@return] alias of the current page group
+  # [@access public]
+  # [@since 3.0.000 (2008-03-27)]
   #
   def getPageGroupAlias()
     if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont1')
@@ -9107,9 +9522,9 @@ public
   # Return the alias for the page number on the current page group
   # If the current font is unicode type, the returned string is surrounded by additional curly braces.
   # (will be replaced by the total number of pages in this group).
-  # @return alias of the current page group
-  # @access public
-  # @since 4.5.000 (2009-01-02)
+  # [@return] alias of the current page group
+  # [@access public]
+  # [@since 4.5.000 (2009-01-02)]
   #
   def getPageNumGroupAlias()
     if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
@@ -9122,9 +9537,9 @@ public
   #
   # Format the page numbers.
   # This method can be overriden for custom formats.
-  # @param int :num page number
-  # @access protected
-  # @since 4.2.005 (2008-11-06)
+  # [@param int :num] page number
+  # [@access protected]
+  # [@since 4.2.005 (2008-11-06)]
   #
   def formatPageNumber(num)
     return number_with_delimiter(num, :delimiter => ",")
@@ -9134,10 +9549,10 @@ public
   #
   # Format the page numbers on the Table Of Content.
   # This method can be overriden for custom formats.
-  # @param int :num page number
-  # @access protected
-  # @since 4.5.001 (2009-01-04)
-  # @see addTOC(), addHTMLTOC()
+  # [@param int :num] page number
+  # [@access protected]
+  # [@since 4.5.001 (2009-01-04)]
+  # [@see] addTOC(), addHTMLTOC()
   #
   def formatTOCPageNumber(num)
     return number_with_delimiter(num, :delimiter => ",")
@@ -9146,9 +9561,9 @@ public
 
   #
   # Returns the current page number formatted as a string.
-  # @access public
-  # @since 4.2.005 (2008-11-06)
-  # @see PaneNo(), formatPageNumber()
+  # [@access public]
+  # [@since 4.2.005 (2008-11-06)]
+  # [@see] PaneNo(), formatPageNumber()
   #
   def PageNoFormatted()
     return formatPageNumber(PageNo())
@@ -9157,8 +9572,8 @@ public
 
   #
   # Put visibility settings.
-  # @access protected
-  # @since 3.0.000 (2008-03-27)
+  # [@access protected]
+  # [@since 3.0.000 (2008-03-27)]
   #
   def putocg()
     newobj()
@@ -9174,9 +9589,9 @@ public
   # Set the visibility of the successive elements.
   # This can be useful, for instance, to put a background
   # image or color that will show on screen but won't print.
-  # @param string :v visibility mode. Legal values are: all, print, screen.
-  # @access public
-  # @since 3.0.000 (2008-03-27)
+  # [@param string :v] visibility mode. Legal values are: all, print, screen.
+  # [@access public]
+  # [@since 3.0.000 (2008-03-27)]
   #
   def setVisibility(v)
     if @open_marked_content
@@ -9202,10 +9617,10 @@ public
 
   #
   # Add transparency parameters to the current extgstate
-  # @param array :params parameters
-  # @return the number of extgstates
-  # @access protected
-  # @since 3.0.000 (2008-03-27)
+  # [@param array :params] parameters
+  # [@return] the number of extgstates
+  # [@access protected]
+  # [@since 3.0.000 (2008-03-27)]
   #
   def addExtGState(parms)
     n = @extgstates.length + 1
@@ -9224,9 +9639,9 @@ public
 
   #
   # Add an extgstate
-  # @param array :gs extgstate
-  # @access protected
-  # @since 3.0.000 (2008-03-27)
+  # [@param array :gs] extgstate
+  # [@access protected]
+  # [@since 3.0.000 (2008-03-27)]
   #
   def setExtGState(gs)
     out(sprintf('/GS%d gs', gs))
@@ -9235,9 +9650,9 @@ public
 
   #
   # Put extgstates for object transparency
-  # @param array :gs extgstate
-  # @access protected
-  # @since 3.0.000 (2008-03-27)
+  # [@param array :gs] extgstate
+  # [@access protected]
+  # [@since 3.0.000 (2008-03-27)]
   #
   def putextgstates()
     ne = @extgstates.length
@@ -9262,10 +9677,10 @@ public
 
   #
   # Set alpha for stroking (CA) and non-stroking (ca) operations.
-  # @param float :alpha real value from 0 (transparent) to 1 (opaque)
-  # @param string :bm blend mode, one of the following: Normal, Multiply, Screen, Overlay, Darken, Lighten, ColorDodge, ColorBurn, HardLight, SoftLight, Difference, Exclusion, Hue, Saturation, Color, Luminosity
-  # @access public
-  # @since 3.0.000 (2008-03-27)
+  # [@param float :alpha] real value from 0 (transparent) to 1 (opaque)
+  # [@param string :bm] blend mode, one of the following: Normal, Multiply, Screen, Overlay, Darken, Lighten, ColorDodge, ColorBurn, HardLight, SoftLight, Difference, Exclusion, Hue, Saturation, Color, Luminosity
+  # [@access public]
+  # [@since 3.0.000 (2008-03-27)]
   #
   def setAlpha(alpha, bm='Normal')
     gs = addExtGState({'ca' => alpha, 'CA' => alpha, 'BM' => '/' + bm, 'AIS' => 'false'})
@@ -9275,9 +9690,9 @@ public
 
   #
   # Set the default JPEG compression quality (1-100)
-  # @param int :quality JPEG quality, integer between 1 and 100
-  # @access public
-  # @since 3.0.000 (2008-03-27)
+  # [@param int :quality] JPEG quality, integer between 1 and 100
+  # [@access public]
+  # [@since 3.0.000 (2008-03-27)]
   #
   def setJPEGQuality(quality)
     if (quality < 1) or (quality > 100)
@@ -9289,9 +9704,9 @@ public
 
   #
   # Set the height of cell repect font height.
-  # @param int :h cell proportion respect font height (typical value = 1.25).
-  # @access public
-  # @since 3.0.014 (2008-06-04)
+  # [@param int :h] cell proportion respect font height (typical value = 1.25).
+  # [@access public]
+  # [@since 3.0.014 (2008-06-04)]
   #
   def setCellHeightRatio(h) 
     @cell_height_ratio = h 
@@ -9300,8 +9715,8 @@ public
 
   #
   # return the height of cell repect font height.
-  # @access public
-  # @since 4.0.012 (2008-07-24)
+  # [@access public]
+  # [@since 4.0.012 (2008-07-24)]
   #
   def getCellHeightRatio()
     return @cell_height_ratio
@@ -9311,8 +9726,8 @@ public
   #
   # Set the PDF version (check PDF reference for valid values).
   # Default value is 1.t
-  # @access public
-  # @since 3.1.000 (2008-06-09)
+  # [@access public]
+  # [@since 3.1.000 (2008-06-09)]
   #
   def setPDFVersion(version='1.7')
     @pdf_version = version
@@ -9322,11 +9737,57 @@ public
   #
   # Set the viewer preferences dictionary controlling the way the document is to be presented on the screen or in print.
   # (see Section 8.1 of PDF reference, "Viewer Preferences").
-  # <ul><li>HideToolbar boolean (Optional) A flag specifying whether to hide the viewer application's tool bars when the document is active. Default value: false.</li><li>HideMenubar boolean (Optional) A flag specifying whether to hide the viewer application's menu bar when the document is active. Default value: false.</li><li>HideWindowUI boolean (Optional) A flag specifying whether to hide user interface elements in the document's window (such as scroll bars and navigation controls), leaving only the document's contents displayed. Default value: false.</li><li>FitWindow boolean (Optional) A flag specifying whether to resize the document's window to fit the size of the first displayed page. Default value: false.</li><li>CenterWindow boolean (Optional) A flag specifying whether to position the document's window in the center of the screen. Default value: false.</li><li>DisplayDocTitle boolean (Optional; PDF 1.4) A flag specifying whether the window's title bar should display the document title taken from the Title entry of the document information dictionary (see Section 10.2.1, "Document Information Dictionary"). If false, the title bar should instead display the name of the PDF file containing the document. Default value: false.</li><li>NonFullScreenPageMode name (Optional) The document's page mode, specifying how to display the document on exiting full-screen mode:<ul><li>UseNone Neither document outline nor thumbnail images visible</li><li>UseOutlines Document outline visible</li><li>UseThumbs Thumbnail images visible</li><li>UseOC Optional content group panel visible</li></ul>This entry is meaningful only if the value of the PageMode entry in the catalog dictionary (see Section 3.6.1, "Document Catalog") is FullScreen; it is ignored otherwise. Default value: UseNone.</li><li>ViewArea name (Optional; PDF 1.4) The name of the page boundary representing the area of a page to be displayed when viewing the document on the screen. Valid values are (see Section 10.10.1, "Page Boundaries").:<ul><li>MediaBox</li><li>CropBox (default)</li><li>BleedBox</li><li>TrimBox</li><li>ArtBox</li></ul></li><li>ViewClip name (Optional; PDF 1.4) The name of the page boundary to which the contents of a page are to be clipped when viewing the document on the screen. Valid values are (see Section 10.10.1, "Page Boundaries").:<ul><li>MediaBox</li><li>CropBox (default)</li><li>BleedBox</li><li>TrimBox</li><li>ArtBox</li></ul></li><li>PrintArea name (Optional; PDF 1.4) The name of the page boundary representing the area of a page to be rendered when printing the document. Valid values are (see Section 10.10.1, "Page Boundaries").:<ul><li>MediaBox</li><li>CropBox (default)</li><li>BleedBox</li><li>TrimBox</li><li>ArtBox</li></ul></li><li>PrintClip name (Optional; PDF 1.4) The name of the page boundary to which the contents of a page are to be clipped when printing the document. Valid values are (see Section 10.10.1, "Page Boundaries").:<ul><li>MediaBox</li><li>CropBox (default)</li><li>BleedBox</li><li>TrimBox</li><li>ArtBox</li></ul></li><li>PrintScaling name (Optional; PDF 1.6) The page scaling option to be selected when a print dialog is displayed for this document. Valid values are: <ul><li>None, which indicates that the print dialog should reflect no page scaling</li><li>AppDefault (default), which indicates that applications should use the current print scaling</li></ul></li><li>Duplex name (Optional; PDF 1.7) The paper handling option to use when printing the file from the print dialog. The following values are valid:<ul><li>Simplex - Print single-sided</li><li>DuplexFlipShortEdge - Duplex and flip on the short edge of the sheet</li><li>DuplexFlipLongEdge - Duplex and flip on the long edge of the sheet</li></ul>Default value: none</li><li>PickTrayByPDFSize boolean (Optional; PDF 1.7) A flag specifying whether the PDF page size is used to select the input paper tray. This setting influences only the preset values used to populate the print dialog presented by a PDF viewer application. If PickTrayByPDFSize is true, the check box in the print dialog associated with input paper tray is checked. Note: This setting has no effect on Mac OS systems, which do not provide the ability to pick the input tray by size.</li><li>PrintPageRange array (Optional; PDF 1.7) The page numbers used to initialize the print dialog box when the file is printed. The first page of the PDF file is denoted by 1. Each pair consists of the first and last pages in the sub-range. An odd number of integers causes this entry to be ignored. Negative numbers cause the entire array to be ignored. Default value: as defined by PDF viewer application</li><li>NumCopies integer (Optional; PDF 1.7) The number of copies to be printed when the print dialog is opened for this file. Supported values are the integers 2 through 5. Values outside this range are ignored. Default value: as defined by PDF viewer application, but typically 1</li></ul>
-  # @param array :preferences array of options.
-  # @author Nicola Asuni
-  # @access public
-  # @since 3.1.000 (2008-06-09)
+  # * HideToolbar boolean (Optional) A flag specifying whether to hide the viewer application's tool bars when the document is active. Default value: false.
+  # * HideMenubar boolean (Optional) A flag specifying whether to hide the viewer application's menu bar when the document is active. Default value: false.
+  # * HideWindowUI boolean (Optional) A flag specifying whether to hide user interface elements in the document's window (such as scroll bars and navigation controls), leaving only the document's contents displayed. Default value: false.
+  # * FitWindow boolean (Optional) A flag specifying whether to resize the document's window to fit the size of the first displayed page. Default value: false.
+  # * CenterWindow boolean (Optional) A flag specifying whether to position the document's window in the center of the screen. Default value: false.
+  # * DisplayDocTitle boolean (Optional; PDF 1.4) A flag specifying whether the window's title bar should display the document title taken from the Title entry of the document information dictionary (see Section 10.2.1, "Document Information Dictionary"). If false, the title bar should instead display the name of the PDF file containing the document. Default value: false.
+  # * NonFullScreenPageMode name (Optional) The document's page mode, specifying how to display the document on exiting full-screen mode:
+  #   * UseNone Neither document outline nor thumbnail images visible
+  #   * UseOutlines Document outline visible
+  #   * UseThumbs Thumbnail images visible
+  #   * UseOC Optional content group panel visible
+  #   This entry is meaningful only if the value of the PageMode entry in the catalog dictionary (see Section 3.6.1, "Document Catalog") is FullScreen; it is ignored otherwise. Default value: UseNone.
+  # * ViewArea name (Optional; PDF 1.4) The name of the page boundary representing the area of a page to be displayed when viewing the document on the screen. Valid values are (see Section 10.10.1, "Page Boundaries").:
+  #   * MediaBox
+  #   * CropBox (default)
+  #   * BleedBox
+  #   * TrimBox
+  #   * ArtBox
+  # * ViewClip name (Optional; PDF 1.4) The name of the page boundary to which the contents of a page are to be clipped when viewing the document on the screen. Valid values are (see Section 10.10.1, "Page Boundaries").:
+  #   * MediaBox
+  #   * CropBox (default)
+  #   * BleedBox
+  #   * TrimBox
+  #   * ArtBox
+  # * PrintArea name (Optional; PDF 1.4) The name of the page boundary representing the area of a page to be rendered when printing the document. Valid values are (see Section 10.10.1, "Page Boundaries").:
+  #   * MediaBox
+  #   * CropBox (default)
+  #   * BleedBox
+  #   * TrimBox
+  #   * ArtBox
+  # * PrintClip name (Optional; PDF 1.4) The name of the page boundary to which the contents of a page are to be clipped when printing the document. Valid values are (see Section 10.10.1, "Page Boundaries").:
+  #   * MediaBox
+  #   * CropBox (default)
+  #   * BleedBox
+  #   * TrimBox
+  #   * ArtBox
+  # * PrintScaling name (Optional; PDF 1.6) The page scaling option to be selected when a print dialog is displayed for this document. Valid values are: 
+  #   * None, which indicates that the print dialog should reflect no page scaling
+  #   * AppDefault (default), which indicates that applications should use the current print scaling
+  # * Duplex name (Optional; PDF 1.7) The paper handling option to use when printing the file from the print dialog. The following values are valid:
+  #   * Simplex - Print single-sided
+  #   * DuplexFlipShortEdge - Duplex and flip on the short edge of the sheet
+  #   * DuplexFlipLongEdge - Duplex and flip on the long edge of the sheet
+  #   Default value: none
+  # * PickTrayByPDFSize boolean (Optional; PDF 1.7) A flag specifying whether the PDF page size is used to select the input paper tray. This setting influences only the preset values used to populate the print dialog presented by a PDF viewer application. If PickTrayByPDFSize is true, the check box in the print dialog associated with input paper tray is checked. Note: This setting has no effect on Mac OS systems, which do not provide the ability to pick the input tray by size.
+  # * PrintPageRange array (Optional; PDF 1.7) The page numbers used to initialize the print dialog box when the file is printed. The first page of the PDF file is denoted by 1. Each pair consists of the first and last pages in the sub-range. An odd number of integers causes this entry to be ignored. Negative numbers cause the entire array to be ignored. Default value: as defined by PDF viewer application
+  # * NumCopies integer (Optional; PDF 1.7) The number of copies to be printed when the print dialog is opened for this file. Supported values are the integers 2 through 5. Values outside this range are ignored. Default value: as defined by PDF viewer application, but typically 1
+  # [@param array :preferences] array of options.
+  # [@author] Nicola Asuni
+  # [@access public]
+  # [@since 3.1.000 (2008-06-09)]
   #
   def setViewerPreferences(preferences)
     @viewer_preferences = preferences
@@ -9336,17 +9797,17 @@ public
   #
   # Draw the sector of a circle.
   # It can be used for instance to render pie charts.
-  # @param float :xc abscissa of the center.
-  # @param float :yc ordinate of the center.
-  # @param float :r radius.
-  # @param float :a start angle (in degrees).
-  # @param float :b end angle (in degrees).
-  # @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-  # @param float :cw: indicates whether to go clockwise (default: true).
-  # @param float :o: origin of angles (0 for 3 o'clock, 90 for noon, 180 for 9 o'clock, 270 for 6 o'clock). Default: 90.
-  # @author Maxime Delorme, Nicola Asuni
-  # @since 3.1.000 (2008-06-09)
-  # @access public
+  # [@param float :xc] abscissa of the center.
+  # [@param float :yc] ordinate of the center.
+  # [@param float :r] radius.
+  # [@param float :a] start angle (in degrees).
+  # [@param float :b] end angle (in degrees).
+  # [@param string :style] Style of rendering. See the getPathPaintOperator() function for more information.
+  # [@param float :cw] indicates whether to go clockwise (default: true).
+  # [@param float :o] origin of angles (0 for 3 o'clock, 90 for noon, 180 for 9 o'clock, 270 for 6 o'clock). Default: 90.
+  # [@author] Maxime Delorme, Nicola Asuni
+  # [@since 3.1.000 (2008-06-09)]
+  # [@access public]
   #
   def PieSector(xc, yc, r, a, b, style='FD', cw=true, o=90)
     PieSectorXY(xc, yc, r, r, a, b, style, cw, o)
@@ -9356,19 +9817,19 @@ public
   #
   # Draw the sector of an ellipse.
   # It can be used for instance to render pie charts.
-  # @param float :xc abscissa of the center.
-  # @param float :yc ordinate of the center.
-  # @param float :rx the x-axis radius.
-  # @param float :ry the y-axis radius.
-  # @param float :a start angle (in degrees).
-  # @param float :b end angle (in degrees).
-  # @param string :style Style of rendering. See the getPathPaintOperator() function for more information.
-  # @param float :cw: indicates whether to go clockwise.
-  # @param float :o: origin of angles (0 for 3 o'clock, 90 for noon, 180 for 9 o'clock, 270 for 6 o'clock).
-  # @param integer :nc Number of curves used to draw a 90 degrees portion of arc.
-  # @author Maxime Delorme, Nicola Asuni
-  # @since 3.1.000 (2008-06-09)
-  # @access public
+  # [@param float :xc] abscissa of the center.
+  # [@param float :yc] ordinate of the center.
+  # [@param float :rx] the x-axis radius.
+  # [@param float :ry] the y-axis radius.
+  # [@param float :a] start angle (in degrees).
+  # [@param float :b] end angle (in degrees).
+  # [@param string :style] Style of rendering. See the getPathPaintOperator() function for more information.
+  # [@param float :cw] indicates whether to go clockwise.
+  # [@param float :o] origin of angles (0 for 3 o'clock, 90 for noon, 180 for 9 o'clock, 270 for 6 o'clock).
+  # [@param integer :nc] Number of curves used to draw a 90 degrees portion of arc.
+  # [@author] Maxime Delorme, Nicola Asuni
+  # [@since 3.1.000 (2008-06-09)]
+  # [@access public]
   #
   def PieSectorXY(xc, yc, rx, ry, a, b, style='FD', cw=false, o=0, nc=2)
     if @rtl
@@ -9394,8 +9855,8 @@ public
 
   #
   # Set document barcode.
-  # @param string :bc barcode
-  # @access public
+  # [@param string :bc] barcode
+  # [@access public]
   #
   def setBarcode(bc="")
     @barcode = bc;
@@ -9409,9 +9870,9 @@ public
 
   #
   # Get current barcode.
-  # @return string
-  # @access public
-  # @since 4.0.012 (2008-07-24)
+  # [@return string]
+  # [@access public]
+  # [@since 4.0.012 (2008-07-24)]
   #
   def getBarcode()
     return @barcode
@@ -9420,16 +9881,16 @@ public
   
   #
   # Print Barcode.
-  # @param int :x x position in user units
-  # @param int :y y position in user units
-  # @param int :w width in user units
-  # @param int :h height position in user units
-  # @param string :type type of barcode (I25, C128A, C128B, C128C, C39)
-  # @param string :style barcode style
-  # @param string :font font for text
-  # @param int :xres x resolution
-  # @param string :code code to print
-  # @access public
+  # [@param int :x] x position in user units
+  # [@param int :y] y position in user units
+  # [@param int :w] width in user units
+  # [@param int :h] height position in user units
+  # [@param string :type] type of barcode (I25, C128A, C128B, C128C, C39)
+  # [@param string :style] barcode style
+  # [@param string :font] font for text
+  # [@param int :xres] x resolution
+  # [@param string :code] code to print
+  # [@access public]
   #
   def writeBarcode(x, y, w, h, type, style, font, xres, code)
     require(File.dirname(__FILE__) + "/barcode/barcode.rb");
@@ -9487,13 +9948,11 @@ public
   
   #
   # Returns an array containing original margins:
-  # <ul>
-  #   <li>:ret['left'] = left  margin</li>
-  #   <li>:ret['right'] = right margin</li>
-  # </ul>
-  # @return array containing all margins measures 
-  # @access public
-  # @since 4.0.012 (2008-07-24)
+  #   ret['left'] = left  margin
+  #   ret['right'] = right margin
+  # [@return array] containing all margins measures 
+  # [@access public]
+  # [@since 4.0.012 (2008-07-24)]
   #
   def getOriginalMargins()
     ret = { 'left' => @original_l_margin, 'right' => @original_r_margin }
@@ -9503,9 +9962,9 @@ public
 
   #
   # Returns the current font size.
-  # @return current font size
-  # @access public
-  # @since 3.2.000 (2008-06-23)
+  # [@return] current font size
+  # [@access public]
+  # [@since 3.2.000 (2008-06-23)]
   #
   def getFontSize()
     return @font_size
@@ -9514,9 +9973,9 @@ public
 
   #
   # Returns the current font size in points unit.
-  # @return current font size in points unit
-  # @access public
-  # @since 3.2.000 (2008-06-23)
+  # [@return] current font size in points unit
+  # [@access public]
+  # [@since 3.2.000 (2008-06-23)]
   #
   def getFontSizePt()
     return @font_size_pt
@@ -9525,9 +9984,9 @@ public
 
   #
   # Returns the current font family name.
-  # @return string current font family name
-  # @access public
-  # @since 4.3.008 (2008-12-05)
+  # [@return string] current font family name
+  # [@access public]
+  # [@since 4.3.008 (2008-12-05)]
   #
   def getFontFamily()
     return @font_family
@@ -9536,9 +9995,9 @@ public
 
   #
   # Returns the current font style.
-  # @return string current font style
-  # @access public
-  # @since 4.3.008 (2008-12-05)
+  # [@return string] current font style
+  # [@access public]
+  # [@since 4.3.008 (2008-12-05)]
   #
   def getFontStyle()
     return @font_style
@@ -9551,11 +10010,11 @@ protected
 
   #
   # Extracts the CSS properties from a CSS string.
-  # @param string :cssdata string containing CSS definitions.
-  # @return A hash where the keys are the CSS selectors and the values are the CSS properties.
-  # @author Nicola Asuni
-  # @since 5.1.000 (2010-05-25)
-  # @access protected
+  # [@param string :cssdata] string containing CSS definitions.
+  # [@return] A hash where the keys are the CSS selectors and the values are the CSS properties.
+  # [@author] Nicola Asuni
+  # [@since 5.1.000 (2010-05-25)]
+  # [@access protected]
   #
   def extractCSSproperties(cssdata)
     if cssdata.empty?
@@ -9637,12 +10096,12 @@ protected
 
   #
   # Returns true if the CSS selector is valid for the selected HTML tag
-  # @param array :dom array of HTML tags and properties
-  # @param int :key key of the current HTML tag
-  # @param string :selector CSS selector string
-  # @return true if the selector is valid, false otherwise
-  # @access protected
-  # @since 5.1.000 (2010-05-25)
+  # [@param array :dom] array of HTML tags and properties
+  # [@param int :key] key of the current HTML tag
+  # [@param string :selector] CSS selector string
+  # [@return] true if the selector is valid, false otherwise
+  # [@access protected]
+  # [@since 5.1.000 (2010-05-25)]
   #
   def isValidCSSSelectorForTag(dom, key, selector)
     valid = false; # value to be returned
@@ -9759,12 +10218,12 @@ protected
 
   #
   # Returns the styles that apply for the selected HTML tag.
-  # @param array :dom array of HTML tags and properties
-  # @param int :key key of the current HTML tag
-  # @param hash :css array of CSS properties
-  # @return string containing CSS properties
-  # @access protected
-  # @since 5.1.000 (2010-05-25)
+  # [@param array :dom] array of HTML tags and properties
+  # [@param int :key] key of the current HTML tag
+  # [@param hash :css] array of CSS properties
+  # [@return string] containing CSS properties
+  # [@access protected]
+  # [@since 5.1.000 (2010-05-25)]
   #
   def getTagStyleFromCSS(dom, key, css)
     tagstyle = '' # style to be returned
@@ -9789,11 +10248,26 @@ protected
 
   #
   # Returns the HTML DOM array.
-  # <ul><li>dom[key]['tag'] = true if tag, false otherwise;</li><li>dom[key]['value'] = tag name or text;</li><li>dom[key]['opening'] = true if opening tag, false otherwise;</li><li>dom[key]['attribute'] = array of attributes (attribute name is the key);</li><li>dom[key]['style'] = array of style attributes (attribute name is the key);</li><li>dom[key]['parent'] = id of parent element;</li><li>dom[key]['fontname'] = font family name;</li><li>dom[key]['fontstyle'] = font style;</li><li>dom[key]['fontsize'] = font size in points;</li><li>dom[key]['bgcolor'] = RGB array of background color;</li><li>dom[key]['fgcolor'] = RGB array of foreground color;</li><li>dom[key]['width'] = width in pixels;</li><li>dom[key]['height'] = height in pixels;</li><li>dom[key]['align'] = text alignment;</li><li>dom[key]['cols'] = number of colums in table;</li><li>dom[key]['rows'] = number of rows in table;</li></ul>
-  # @param string :html html code
-  # @return array
-  # @access protected
-  # @since 3.2.000 (2008-06-20)
+  #   dom[key]['tag'] = true if tag, false otherwise
+  #   dom[key]['value'] = tag name or text
+  #   dom[key]['opening'] = true if opening tag, false otherwise
+  #   dom[key]['attribute'] = array of attributes (attribute name is the key)
+  #   dom[key]['style'] = array of style attributes (attribute name is the key)
+  #   dom[key]['parent'] = id of parent element
+  #   dom[key]['fontname'] = font family name
+  #   dom[key]['fontstyle'] = font style
+  #   dom[key]['fontsize'] = font size in points
+  #   dom[key]['bgcolor'] = RGB array of background color
+  #   dom[key]['fgcolor'] = RGB array of foreground color
+  #   dom[key]['width'] = width in pixels
+  #   dom[key]['height'] = height in pixels
+  #   dom[key]['align'] = text alignment
+  #   dom[key]['cols'] = number of colums in table
+  #   dom[key]['rows'] = number of rows in table
+  # [@param string :html] html code
+  # [@return array]
+  # [@access protected]
+  # [@since 3.2.000 (2008-06-20)]
   #
   def getHtmlDomArray(html)
     html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
@@ -10375,7 +10849,7 @@ protected
 
   #
   # Convert to accessible file path
-  # @param string :attrname image file name
+  # [@param string :attrname] image file name
   #
   def get_image_filename( attrname )
     testscrtype = URI.parse(attrname)
@@ -10387,7 +10861,7 @@ protected
 
   #
   # Convert to accessible url path
-  # @param string :url url path
+  # [@param string :url] url path
   #
   def get_sever_url(url)
     if !empty_string(url) and (url[0, 1] == '/')
@@ -10399,10 +10873,10 @@ protected
 
   #
   # Returns the string used to find spaces
-  # @return string
-  # @access protected
-  # @author Nicola Asuni
-  # @since 4.8.024 (2010-01-15)
+  # [@return string]
+  # [@access protected]
+  # [@author] Nicola Asuni
+  # [@since 4.8.024 (2010-01-15)]
   #
   def getSpaceString()
     spacestr = 32.chr
@@ -10415,23 +10889,40 @@ protected
 public
 
   #
-  # Prints a cell (rectangular area) with optional borders, background color and html text string. The upper-left corner of the cell corresponds to the current position. After the call, the current position moves to the right or to the next line.<br />
+  # Prints a cell (rectangular area) with optional borders, background color and html text string. The upper-left corner of the cell corresponds to the current position. After the call, the current position moves to the right or to the next line.
   # If automatic page breaking is enabled and the cell goes beyond the limit, a page break is done before outputting.
-  # @param float :w Cell width. If 0, the cell extends up to the right margin.
-  # @param float :h Cell minimum height. The cell extends automatically if needed.
-  # @param float :x upper-left corner X coordinate
-  # @param float :y upper-left corner Y coordinate
-  # @param string :html html text to print. Default value: empty string.
-  # @param mixed :border Indicates if borders must be drawn around the cell. The value can be either a number:<ul><li>0: no border (default)</li><li>1: frame</li></ul>or a string containing some or all of the following characters (in any order):<ul><li>L: left</li><li>T: top</li><li>R: right</li><li>B: bottom</li></ul>
-  # @param int :ln Indicates where the current position should go after the call. Possible values are:<ul><li>0: to the right (or left for RTL language)</li><li>1: to the beginning of the next line</li><li>2: below</li></ul>
-  # Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
-  # @param int :fill Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
-  # @param boolean :reseth if true reset the last cell height (default true).
-  # @param string :align Allows to center or align the text. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
-  # @param boolean :autopadding if true, uses internal padding and automatically adjust it to account for line width.
-  # @access public
-  # @uses MultiCell()
-  # @see Multicell(), writeHTML(), Cell()
+  # [@param float :w] Cell width. If 0, the cell extends up to the right margin.
+  # [@param float :h] Cell minimum height. The cell extends automatically if needed.
+  # [@param float :x] upper-left corner X coordinate
+  # [@param float :y] upper-left corner Y coordinate
+  # [@param string :html] html text to print. Default value: empty string.
+  # [@param mixed :border]
+  #   Indicates if borders must be drawn around the cell. The value can be either a number:
+  #   * 0: no border (default)
+  #   * 1: frame
+  #   or a string containing some or all of the following characters (in any order):
+  #   * L: left
+  #   * T: top
+  #   * R: right
+  #   * B: bottom
+  # [@param int :ln]
+  #   Indicates where the current position should go after the call. Possible values are:
+  #   * 0: to the right (or left for RTL language)
+  #   * 1: to the beginning of the next line
+  #   * 2: below
+  #   Putting 1 is equivalent to putting 0 and calling Ln() just after. Default value: 0.
+  # [@param int :fill] Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
+  # [@param boolean :reseth] if true reset the last cell height (default true).
+  # [@param string :align]
+  #   Allows to center or align the text. Possible values are:
+  #   * L : left align
+  #   * C : center
+  #   * R : right align
+  #   * '' : empty string : left for LTR or right for RTL
+  # [@param boolean :autopadding] if true, uses internal padding and automatically adjust it to account for line width.
+  # [@access public]
+  # [@uses] MultiCell()
+  # [@see] Multicell(), writeHTML(), Cell()
   #
   def writeHTMLCell(w, h, x, y, html='', border=0, ln=0, fill=0, reseth=true, align='', autopadding=true)
     return MultiCell(w, h, html, border, align, fill, ln, x, y, reseth, 0, true, autopadding, 0)
@@ -10439,16 +10930,21 @@ public
   alias_method :write_html_cell, :writeHTMLCell
 
   #
-  # Allows to preserve some HTML formatting (limited support).<br />
+  # Allows to preserve some HTML formatting (limited support).
   # IMPORTANT: The HTML must be well formatted - try to clean-up it using an application like HTML-Tidy before submitting.
   # Supported tags are: a, b, blockquote, br, dd, del, div, dl, dt, em, font, h1, h2, h3, h4, h5, h6, hr, i, img, li, ol, p, pre, small, span, strong, sub, sup, table, td, th, thead, tr, tt, u, ul
-  # @param string :html text to display
-  # @param boolean :ln if true add a new line after text (default = true)
-  # @param int :fill Indicates if the background must be painted (1:true) or transparent (0:false).
-  # @param boolean :reseth if true reset the last cell height (default false).
-  # @param boolean :cell if true add the default c_margin space to each Write (default false).
-  # @param string :align Allows to center or align the text. Possible values are:<ul><li>L : left align</li><li>C : center</li><li>R : right align</li><li>'' : empty string : left for LTR or right for RTL</li></ul>
-  # @access public
+  # [@param string :html] text to display
+  # [@param boolean :ln] if true add a new line after text (default = true)
+  # [@param int :fill] Indicates if the background must be painted (1:true) or transparent (0:false).
+  # [@param boolean :reseth] if true reset the last cell height (default false).
+  # [@param boolean :cell] if true add the default c_margin space to each Write (default false).
+  # [@param string :align]
+  #   Allows to center or align the text. Possible values are:
+  #   * L : left align
+  #   * C : center
+  #   * R : right align
+  #   * '' : empty string : left for LTR or right for RTL
+  # [@access public]
   #
   def writeHTML(html, ln=true, fill=0, reseth=false, cell=false, align='')
     ln = false if ln == 0
@@ -11593,10 +12089,10 @@ public
 
   #
   # Process opening tags.
-  # @param array :dom html dom array 
-  # @param int :key current element id
-  # @param boolean :cell if true add the default c_margin space to each new line (default false).
-  # @access protected
+  # [@param array :dom] html dom array 
+  # [@param int :key] current element id
+  # [@param boolean :cell] if true add the default c_margin space to each new line (default false).
+  # [@access protected]
   #
   def openHTMLTagHandler(dom, key, cell)
     tag = dom[key]
@@ -11912,11 +12408,11 @@ public
   
   #
   # Process closing tags.
-  # @param array :dom html dom array 
-  # @param int :key current element id
-  # @param boolean :cell if true add the default c_margin space to each new line (default false).
-  # @param int :maxbottomliney maximum y value of current line
-  # @access protected
+  # [@param array :dom] html dom array 
+  # [@param int :key] current element id
+  # [@param boolean :cell] if true add the default c_margin space to each new line (default false).
+  # [@param int :maxbottomliney] maximum y value of current line
+  # [@access protected]
   #
   def closeHTMLTagHandler(dom, key, cell, maxbottomliney=0)
     tag = dom[key].dup
@@ -12261,11 +12757,11 @@ public
   
   #
   # Add vertical spaces if needed.
-  # @param string :hbz Distance between current y and line bottom.
-  # @param string :hb The height of the break.
-  # @param boolean :cell if true add the default cMargin space to each new line (default false).
-  # @param boolean :firstorlast if true do not print additional empty lines.
-  # @access protected
+  # [@param string :hbz] Distance between current y and line bottom.
+  # [@param string :hb] The height of the break.
+  # [@param boolean :cell] if true add the default cMargin space to each new line (default false).
+  # [@param boolean :firstorlast] if true do not print additional empty lines.
+  # [@access protected]
   #
   def addHTMLVertSpace(hbz=0, hb=0, cell=false, firstorlast=false)
     if firstorlast
@@ -12286,11 +12782,11 @@ public
 
   #
   # Set the booklet mode for double-sided pages.
-  # @param boolean :booklet true set the booklet mode on, fals eotherwise.
-  # @param float :inner Inner page margin.
-  # @param float :outer Outer page margin.
-  # @access public
-  # @since 4.2.000 (2008-10-29)
+  # [@param boolean :booklet] true set the booklet mode on, fals eotherwise.
+  # [@param float :inner] Inner page margin.
+  # [@param float :outer] Outer page margin.
+  # [@access public]
+  # [@since 4.2.000 (2008-10-29)]
   #
   def SetBooklet(booklet=true, inner=-1, outer=-1)
     @booklet = booklet
@@ -12305,9 +12801,9 @@ public
 
   #
   # Swap the left and right margins.
-  # @param boolean :reverse if true swap left and right margins.
-  # @access protected
-  # @since 4.2.000 (2008-10-29)
+  # [@param boolean :reverse] if true swap left and right margins.
+  # [@access protected]
+  # [@since 4.2.000 (2008-10-29)]
   #
   def swapMargins(reverse=true)
     if reverse
@@ -12325,14 +12821,14 @@ public
   #
   # Set the vertical spaces for HTML tags.
   # The array must have the following structure (example):
-  # :tagvs = {'h1' => [{'h' => '', 'n' => 2}, {'h' => 1.3, 'n' => 1}]}
+  #   :tagvs = {'h1' => [{'h' => '', 'n' => 2}, {'h' => 1.3, 'n' => 1}]}
   # The first array level contains the tag names,
   # the second level contains 0 for opening tags or 1 for closing tags,
   # the third level contains the vertical space unit (h) and the number spaces to add (n).
   # If the h parameter is not specified, default values are used.
-  # @param array :tagvs array of tags and relative vertical spaces.
-  # @access public
-  # @since 4.2.001 (2008-10-30)
+  # [@param array :tagvs] array of tags and relative vertical spaces.
+  # [@access public]
+  # [@since 4.2.001 (2008-10-30)]
   #
   def setHtmlVSpace(tagvs)
     @tagvspaces = tagvs
@@ -12341,13 +12837,13 @@ public
 
   #
   # convert HTML string containing value and unit of measure to user's units or points.
-  # @param string :htmlval string containing values and unit
-  # @param string :refsize reference value in points
-  # @param string :defaultunit default unit (can be one of the following: %, em, ex, px, in, mm, pc, pt).
-  # @param boolean :point if true returns points, otherwise returns value in user's units
-  # @return float value in user's unit or point if :points=true
-  # @access public
-  # @since 4.4.004 (2008-12-10)
+  # [@param string :htmlval] string containing values and unit
+  # [@param string :refsize] reference value in points
+  # [@param string :defaultunit] default unit (can be one of the following: %, em, ex, px, in, mm, pc, pt).
+  # [@param boolean :point] if true returns points, otherwise returns value in user's units
+  # [@return float] value in user's unit or point if :points=true
+  # [@access public]
+  # [@since 4.4.004 (2008-12-10)]
   #
   def getHTMLUnitToUnits(htmlval, refsize=1, defaultunit='px', points=false)
     supportedunits = ['%', 'em', 'ex', 'px', 'in', 'cm', 'mm', 'pc', 'pt']
@@ -12401,10 +12897,10 @@ public
 
   #
   # Returns the Roman representation of an integer number
-  # @param int :number to convert
-  # @return string roman representation of the specified number
-  # @access public
-  # @since 4.4.004 (2008-12-10)
+  # [@param int :number] to convert
+  # [@return string] roman representation of the specified number
+  # [@access public]
+  # [@since 4.4.004 (2008-12-10)]
   #
   def intToRoman(number)
     roman = ''
@@ -12468,11 +12964,11 @@ protected
 
   #
   # Output an HTML list bullet or ordered item symbol
-  # @param int :listdepth list nesting level
-  # @param string :listtype type of list
-  # @param float :size current font size
-  # @access protected
-  # @since 4.4.004 (2008-12-10)
+  # [@param int :listdepth] list nesting level
+  # [@param string :listtype] type of list
+  # [@param float :size] current font size
+  # [@access protected]
+  # [@since 4.4.004 (2008-12-10)]
   #
   def putHtmlListBullet(listdepth, listtype='', size=10)
     size /= @k
@@ -12556,9 +13052,9 @@ protected
 
   #
   # Returns current graphic variables as array.
-  # @return array graphic variables
-  # @access protected
-  # @since 4.2.010 (2008-11-14)
+  # [@return array] graphic variables
+  # [@access protected]
+  # [@since 4.2.010 (2008-11-14)]
   #
   def getGraphicVars()
     grapvars = {
@@ -12595,9 +13091,9 @@ protected
 
   #
   # Set graphic variables.
-  # @param :gvars array graphic variables
-  # @access protected
-  # @since 4.2.010 (2008-11-14)
+  # [@param :gvars] array graphic variables
+  # [@access protected]
+  # [@since 4.2.010 (2008-11-14)]
   #
   def setGraphicVars(gvars)
     @font_family = gvars['FontFamily']
@@ -12638,10 +13134,10 @@ protected
 
   #
   # Returns a temporary filename for caching object on filesystem.
-  # @param string :name prefix to add to filename
-  # return string filename.
-  # @access protected
-  # @since 4.5.000 (2008-12-31)
+  # [@param string :name] prefix to add to filename
+  # [@return string] filename.
+  # [@access protected]
+  # [@since 4.5.000 (2008-12-31)]
   #
   def getObjFilename(name)
     tmpFile = Tempfile.new(name + '_', @@k_path_cache)
@@ -12653,11 +13149,11 @@ protected
 
   #
   # Writes data to a temporary file on filesystem.
-  # @param string :filename file name
-  # @param mixed :data data to write on file
-  # @param boolean :append if true append data, false replace.
-  # @access protected
-  # @since 4.5.000 (2008-12-31)
+  # [@param string :filename] file name
+  # [@param mixed :data] data to write on file
+  # [@param boolean :append] if true append data, false replace.
+  # [@access protected]
+  # [@since 4.5.000 (2008-12-31)]
   #
   def writeDiskCache(filename, data, append=false)
     filename = filename.path
@@ -12686,10 +13182,10 @@ protected
 
   #
   # Read data from a temporary file on filesystem.
-  # @param string :filename file name
-  # @return mixed retrieved data
-  # @access protected
-  # @since 4.5.000 (2008-12-31)
+  # [@param string :filename] file name
+  # [@return mixed] retrieved data
+  # [@access protected]
+  # [@since 4.5.000 (2008-12-31)]
   #
   def readDiskCache(filename)
     filename = filename.path
@@ -12702,9 +13198,9 @@ protected
 
   #
   # Set buffer content (always append data).
-  # @param string :data data
-  # @access protected
-  # @since 4.5.000 (2009-01-02)
+  # [@param string :data] data
+  # [@access protected]
+  # [@since 4.5.000 (2009-01-02)]
   #
   def setBuffer(data)
     @bufferlen += data.length
@@ -12720,9 +13216,9 @@ protected
 
   #
   # Get buffer content.
-  # @return string buffer content
-  # @access protected
-  # @since 4.5.000 (2009-01-02)
+  # [@return string] buffer content
+  # [@access protected]
+  # [@since 4.5.000 (2009-01-02)]
   #
   def getBuffer
     if @diskcache
@@ -12734,11 +13230,11 @@ protected
 
   #
   # Set page buffer content.
-  # @param int :page page number
-  # @param string :data page data
-  # @param boolean :append if true append data, false replace.
-  # @access protected
-  # @since 4.5.000 (2008-12-31)
+  # [@param int :page] page number
+  # [@param string :data] page data
+  # [@param boolean :append] if true append data, false replace.
+  # [@access protected]
+  # [@since 4.5.000 (2008-12-31)]
   #
   def setPageBuffer(page, data, append=false)
     if @diskcache
@@ -12765,10 +13261,10 @@ protected
 
   #
   # Get page buffer content.
-  # @param int :page page number
-  # @return string page buffer content or false in case of error
-  # @access protected
-  # @since 4.5.000 (2008-12-31)
+  # [@param int :page] page number
+  # [@return string] page buffer content or false in case of error
+  # [@access protected]
+  # [@since 4.5.000 (2008-12-31)]
   #
   def getPageBuffer(page)
     if @diskcache
@@ -12781,10 +13277,10 @@ protected
 
   #
   # Set image buffer content.
-  # @param string :image image key
-  # @param array :data image data
-  # @access protected
-  # @since 4.5.000 (2008-12-31)
+  # [@param string :image] image key
+  # [@param array :data] image data
+  # [@access protected]
+  # [@since 4.5.000 (2008-12-31)]
   #
   def setImageBuffer(image, data)
     if @diskcache
@@ -12803,11 +13299,11 @@ protected
 
   #
   # Set image buffer content for a specified sub-key.
-  # @param string :image image key
-  # @param string :key image sub-key
-  # @param hash :data image data
-  # @access protected
-  # @since 4.5.000 (2008-12-31)
+  # [@param string :image] image key
+  # [@param string :key] image sub-key
+  # [@param hash :data] image data
+  # [@access protected]
+  # [@since 4.5.000 (2008-12-31)]
   #
   def setImageSubBuffer(image, key, data)
     if @images[image].nil?
@@ -12824,10 +13320,10 @@ protected
                 
   #
   # Get image buffer content.
-  # @param string :image image key
-  # @return string image buffer content or false in case of error
-  # @access protected
-  # @since 4.5.000 (2008-12-31)
+  # [@param string :image] image key
+  # [@return string image] buffer content or false in case of error
+  # [@access protected]
+  # [@since 4.5.000 (2008-12-31)]
   #
   def getImageBuffer(image)
     if @diskcache and !@images[image].nil?
@@ -12840,10 +13336,10 @@ protected
 
   #
   # Set font buffer content.
-  # @param string :font font key
-  # @param hash :data font data
-  # @access protected
-  # @since 4.5.000 (2009-01-02)
+  # [@param string :font] font key
+  # [@param hash :data] font data
+  # [@access protected]
+  # [@since 4.5.000 (2009-01-02)]
   #
   def setFontBuffer(font, data)
     if @diskcache
@@ -12861,11 +13357,11 @@ protected
 
   #
   # Set font buffer content.
-  # @param string :font font key
-  # @param string :key font sub-key
-  # @param array :data font data
-  # @access protected
-  # @since 4.5.000 (2009-01-02)
+  # [@param string :font] font key
+  # [@param string :key] font sub-key
+  # [@param array :data] font data
+  # [@access protected]
+  # [@since 4.5.000 (2009-01-02)]
   #
   def setFontSubBuffer(font, key, data)
     if @fonts[font].nil?
@@ -12882,10 +13378,10 @@ protected
 
   #
   # Get font buffer content.
-  # @param string :font font key
-  # @return string font buffer content or false in case of error
-  # @access protected
-  # @since 4.5.000 (2009-01-02)
+  # [@param string :font] font key
+  # [@return string font] buffer content or false in case of error
+  # [@access protected]
+  # [@since 4.5.000 (2009-01-02)]
   #
   def getFontBuffer(font)
     if @diskcache and !@fonts[font].nil?
@@ -12903,11 +13399,11 @@ public
 
   #
   # Move a page to a previous position.
-  # @param int :frompage number of the source page
-  # @param int :topage number of the destination page (must be less than :frompage)
-  # @return true in case of success, false in case of error.
-  # @access public
-  # @since 4.5.000 (2009-01-02)
+  # [@param int :frompage] number of the source page
+  # [@param int :topage] number of the destination page (must be less than :frompage)
+  # [@return] true in case of success, false in case of error.
+  # [@access public]
+  # [@since 4.5.000 (2009-01-02)]
   #
   def movePage(frompage, topage)
     if (frompage > @numpages) or (frompage <= topage)
@@ -13045,10 +13541,10 @@ public
 
   #
   # Remove the specified page.
-  # @param int :page page to remove
-  # @return true in case of success, false in case of error.
-  # @access public
-  # @since 4.6.004 (2009-04-23)
+  # [@param int :page] page to remove
+  # [@return] true in case of success, false in case of error.
+  # [@access public]
+  # [@since 4.6.004 (2009-04-23)]
   #
   def deletePage(page)
     if page > @numpages
@@ -13187,14 +13683,14 @@ public
   # Before calling this method you have to open the page using the addTOCPage() method.
   # After calling this method you have to call endTOCPage() to close the TOC page.
   # You can override this method to achieve different styles.
-  # @param int :page page number where this TOC should be inserted (leave empty for current page).
-  # @param string :numbersfont set the font for page numbers (please use monospaced font for better alignment).
-  # @param string :filler string used to fill the space between text and page number.
-  # @param string :toc_name name to use for TOC bookmark.
-  # @access public
-  # @author Nicola Asuni
-  # @since 4.5.000 (2009-01-02)
-  # @see addTOCPage(), endTOCPage(), addHTMLTOC()
+  # [@param int :page] page number where this TOC should be inserted (leave empty for current page).
+  # [@param string :numbersfont] set the font for page numbers (please use monospaced font for better alignment).
+  # [@param string :filler] string used to fill the space between text and page number.
+  # [@param string :toc_name] name to use for TOC bookmark.
+  # [@access public]
+  # [@author] Nicola Asuni
+  # [@since 4.5.000 (2009-01-02)]
+  # [@see] addTOCPage(), endTOCPage(), addHTMLTOC()
   #
   def addTOC(page='', numbersfont='', filler='.', toc_name='TOC')
     fontsize = @font_size_pt
@@ -13338,14 +13834,14 @@ public
   # Output a Table Of Content Index (TOC) using HTML templates.
   # Before calling this method you have to open the page using the addTOCPage() method.
   # After calling this method you have to call endTOCPage() to close the TOC page.
-  # @param int :page page number where this TOC should be inserted (leave empty for current page).
-  # @param string :toc_name name to use for TOC bookmark.
-  # @param array :templates array of html templates. Use: #TOC_DESCRIPTION# for bookmark title, #TOC_PAGE_NUMBER# for page number.
-  # @parma boolean :correct_align if true correct the number alignment (numbers must be in monospaced font like courier and right aligned on LTR, or left aligned on RTL)
-  # @access public
-  # @author Nicola Asuni
-  # @since 5.0.001 (2010-05-06)
-  # @see addTOCPage(), endTOCPage(), addTOC()
+  # [@param int :page] page number where this TOC should be inserted (leave empty for current page).
+  # [@param string :toc_name] name to use for TOC bookmark.
+  # [@param array :templates] array of html templates. Use: #TOC_DESCRIPTION# for bookmark title, #TOC_PAGE_NUMBER# for page number.
+  # [@parma boolean :correct_align] if true correct the number alignment (numbers must be in monospaced font like courier and right aligned on LTR, or left aligned on RTL)
+  # [@access public]
+  # [@author] Nicola Asuni
+  # [@since 5.0.001 (2010-05-06)]
+  # [@see] addTOCPage(), endTOCPage(), addTOC()
   #
   def addHTMLTOC(page='', toc_name='TOC', templates=[], correct_align=true)
     prev_htmlLinkColorArray = @html_link_color_array
@@ -13440,8 +13936,8 @@ public
 
   #
   # Stores a copy of the current TCPDF object used for undo operation.
-  # @access public
-  # @since 4.5.029 (2009-03-19)
+  # [@access public]
+  # [@since 4.5.029 (2009-03-19)]
   #
   def startTransaction()
     if @objcopy
@@ -13458,8 +13954,8 @@ public
 
   #
   # Delete the copy of the current TCPDF object used for undo operation.
-  # @access public
-  # @since 4.5.029 (2009-03-19)
+  # [@access public]
+  # [@since 4.5.029 (2009-03-19)]
   #
   def commitTransaction()
     if @objcopy
@@ -13478,10 +13974,10 @@ public
 
   #
   # This method allows to undo the latest transaction by returning the latest saved TCPDF object with startTransaction().
-  # @param boolean :this_self if true restores current class object to previous state without the need of reassignment via the returned value.
-  # @return TCPDF object.
-  # @access public
-  # @since 4.5.029 (2009-03-19)
+  # [@param boolean :this_self] if true restores current class object to previous state without the need of reassignment via the returned value.
+  # [@return] TCPDF object.
+  # [@access public]
+  # [@since 4.5.029 (2009-03-19)]
   #
   def rollbackTransaction(this_self=false)
     if @objcopy
@@ -13511,10 +14007,10 @@ public
 
   #
   # Creates a copy of a class object
-  # @param object :object class object to be cloned
-  # @return cloned object
-  # @access public
-  # @since 4.5.029 (2009-03-19)
+  # [@param object :object] class object to be cloned
+  # [@return] cloned object
+  # [@access public]
+  # [@since 4.5.029 (2009-03-19)]
   #
   def objclone(object)
     if @diskcache
@@ -13533,10 +14029,10 @@ public
 
   #
   # Determine whether a string is empty.
-  # @param string :str string to be checked
-  # @return boolean true if string is empty
-  # @access public
-  # @since 4.5.044 (2009-04-16)
+  # [@param string :str] string to be checked
+  # [@return boolean] true if string is empty
+  # [@access public]
+  # [@since 4.5.044 (2009-04-16)]
   #
   def empty_string(str)
     return (str.nil? or (str.is_a?(String) and (str.length == 0)))
@@ -13544,12 +14040,12 @@ public
 
   #
   # Find position of last occurrence of a substring in a string
-  # @param string :haystack The string to search in.
-  # @param string :needle substring to search.
-  # @param int :offset May be specified to begin searching an arbitrary number of characters into the string.
-  # @return Returns the position where the needle exists. Returns FALSE if the needle was not found. 
-  # @access public
-  # @since 4.8.038 (2010-03-13)
+  # [@param string :haystack] The string to search in.
+  # [@param string :needle] substring to search.
+  # [@param int :offset] May be specified to begin searching an arbitrary number of characters into the string.
+  # [@return] Returns the position where the needle exists. Returns FALSE if the needle was not found. 
+  # [@access public]
+  # [@since 4.8.038 (2010-03-13)]
   #
   def revstrpos(haystack, needle, offset = 0)
     length = haystack.length
@@ -13563,11 +14059,11 @@ public
 
   #
   # Set Text rendering mode.
-  # @param int :stroke outline size in user units (0 = disable).
-  # @param boolean :fill if true fills the text (default).
-  # @param boolean :clip if true activate clipping mode
-  # @access public
-  # @since 4.9.008 (2009-04-02)
+  # [@param int :stroke] outline size in user units (0 = disable).
+  # [@param boolean :fill] if true fills the text (default).
+  # [@param boolean :clip] if true activate clipping mode
+  # [@access public]
+  # [@since 4.9.008 (2009-04-02)]
   #
   def setTextRenderingMode(stroke=0, fill=true, clip=false)
     # Ref.: PDF 32000-1:2008 - 9.3.6 Text Rendering Mode
@@ -13621,25 +14117,24 @@ public
 
   #
   # Get the Path-Painting Operators.
-  # @param string :style Style of rendering. Possible values are:
-  # <ul>
-  #   <li>S or D: Stroke the path.</li>
-  #   <li>s or d: Close and stroke the path.</li>
-  #   <li>f or F: Fill the path, using the nonzero winding number rule to determine the region to fill.</li>
-  #   <li>f* or F*: Fill the path, using the even-odd rule to determine the region to fill.</li>
-  #   <li>B or FD or DF: Fill and then stroke the path, using the nonzero winding number rule to determine the region to fill.</li>
-  #   <li>B* or F*D or DF*: Fill and then stroke the path, using the even-odd rule to determine the region to fill.</li>
-  #   <li>b or fd or df: Close, fill, and then stroke the path, using the nonzero winding number rule to determine the region to fill.</li>
-  #   <li>b or f*d or df*: Close, fill, and then stroke the path, using the even-odd rule to determine the region to fill.</li>
-  #   <li>CNZ: Clipping mode using the even-odd rule to determine which regions lie inside the clipping path.</li>
-  #   <li>CEO: Clipping mode using the nonzero winding number rule to determine which regions lie inside the clipping path</li>
-  #   <li>n: End the path object without filling or stroking it.</li>
-  # </ul>
-  # @param string :default default style
-  # @param boolean :mode if true enable rasterization, false otherwise.
-  # @author Nicola Asuni
-  # @access protected
-  # @since 5.0.000 (2010-04-30)
+  # [@param string :style]
+  #   Style of rendering. Possible values are:
+  #   * S or D: Stroke the path.
+  #   * s or d: Close and stroke the path.
+  #   * f or F: Fill the path, using the nonzero winding number rule to determine the region to fill.
+  #   * f* or F*: Fill the path, using the even-odd rule to determine the region to fill.
+  #   * B or FD or DF: Fill and then stroke the path, using the nonzero winding number rule to determine the region to fill.
+  #   * B* or F*D or DF*: Fill and then stroke the path, using the even-odd rule to determine the region to fill.
+  #   * b or fd or df: Close, fill, and then stroke the path, using the nonzero winding number rule to determine the region to fill.
+  #   * b or f*d or df*: Close, fill, and then stroke the path, using the even-odd rule to determine the region to fill.
+  #   * CNZ: Clipping mode using the even-odd rule to determine which regions lie inside the clipping path.
+  #   * CEO: Clipping mode using the nonzero winding number rule to determine which regions lie inside the clipping path
+  #   * n: End the path object without filling or stroking it.
+  # [@param string :default] default style
+  # [@param boolean :mode] if true enable rasterization, false otherwise.
+  # [@author] Nicola Asuni
+  # [@access protected:
+  # [@since 5.0.000 (2010-04-30)]
   #
   def getPathPaintOperator(style, default='S')
     op = ''
