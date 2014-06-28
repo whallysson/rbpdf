@@ -9852,6 +9852,7 @@ public
   end
   alias_method :pie_sector_xy, :PieSectorXY
 
+=begin
   #
   # Set document barcode.
   # [@param string :bc] barcode
@@ -9944,6 +9945,7 @@ public
     unlink(tmpName);
   end
   alias_method :write_barcode, :writeBarcode
+=end
   
   #
   # Returns an array containing original margins:
