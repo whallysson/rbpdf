@@ -84,8 +84,6 @@ end
 class TCPDF
   include ActionView::Helpers
   include RFPDF
-  include Core::RFPDF
-  include RFPDF::Math
   require 'unicode_data.rb'
   require 'htmlcolors.rb'
   include Unicode_data
@@ -108,13 +106,10 @@ class TCPDF
   @@k_small_ratio = 2/3.0
 
   cattr_accessor :k_path_cache
-  @@k_path_cache = Rails.root.join('tmp').to_s
 
   cattr_accessor :k_path_main
-  @@k_path_main = Rails.root.join('tmp').to_s
   
   cattr_accessor :k_path_url
-  @@k_path_url = Rails.root.join('tmp').to_s
 
   @@k_path_images = ""
   @@k_thai_topchars = nil
@@ -243,6 +238,10 @@ class TCPDF
     #   @internal_encoding = mb_internal_encoding();
     #   mb_internal_encoding("ASCII");
     # }
+
+    @@k_path_cache = Rails.root.join('tmp').to_s
+    @@k_path_main = Rails.root.join('tmp').to_s
+    @@k_path_url = Rails.root.join('tmp').to_s
 
     # set disk caching
     @diskcache = diskcache ? true : false
