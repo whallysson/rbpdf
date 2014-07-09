@@ -94,6 +94,11 @@ class TcpdfFontTest < ActiveSupport::TestCase
     pdf.set_font('freesans', 'I', 18)
     pdf.set_font('freesans', 'BI', 18)
 
+    pdf.set_font('freeserif', '', 18)
+    pdf.set_font('freeserif', 'B', 18)
+    pdf.set_font('freeserif', 'I', 18)
+    pdf.set_font('freeserif', 'BI', 18)
+
     pdf.set_font('freemono', '', 18)
     pdf.set_font('freemono', 'B', 18)
     pdf.set_font('freemono', 'I', 18)

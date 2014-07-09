@@ -42,7 +42,7 @@ function ReadUFM($file, &$cidtogidmap)
           $cidtogidmap{$cc*2 + 1} = chr($glyph & 0xFF);
         }        
       }
-      if($gn=='.notdef' && !isset($fm['MissingWidth']))
+      if ((isset($gn) AND ($gn == '.notdef')) AND !isset($fm['MissingWidth']))
         $fm['MissingWidth']=$w;
     }
     elseif($code=='FontName')
@@ -115,7 +115,7 @@ function MakeFontDescriptor($fm)
   //StemV
   if(isset($fm['StdVW']))
     $stemv=$fm['StdVW'];
-  elseif(isset($fm['Weight']) and eregi('(bold|black)',$fm['Weight']))
+  elseif (isset($fm['Weight']) AND preg_match('/(bold|black)/i', $fm['Weight']))
     $stemv=120;
   else
     $stemv=70;
