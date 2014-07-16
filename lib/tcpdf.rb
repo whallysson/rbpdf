@@ -4576,6 +4576,7 @@ class TCPDF
 
     # set bottomcoordinates
     @img_rb_y = y + h
+    Error('Image filename is empty.') if file.nil? or file.length == 0
 
     # get image dimensions
     imsize = getimagesize(file)
@@ -12280,20 +12281,21 @@ public
 #        else
           result_img = Image(tag['attribute']['src'], xpos, @y, iw, ih, '', imglink, align, false, 300, '', false, false, border, false, false, true)
 #        end
+          case align
+          when 'T'
+            @y = prevy
+          when 'M'
+            @y = (@img_rb_y + prevy - (tag['fontsize'] / @k)) / 2
+          when 'B'
+            @y = @img_rb_y - (tag['fontsize'] / @k)
+          end
         rescue => err
           logger.error "pdf: Image: error: #{err.message}"
           result_img = false
-        end
-        case align
-        when 'T'
           @y = prevy
-        when 'M'
-          @y = (@img_rb_y + prevy - (tag['fontsize'] / @k)) / 2
-        when 'B'
-          @y = @img_rb_y - (tag['fontsize'] / @k)
         end
         if result_img == false
-          Write(@lasth, File::basename(img_name), '', false, '', false, 0, false)
+          Write(@lasth, File::basename(img_name) + ' ', '', false, '', false, 0, false) unless img_name.nil?
         end
       end
     when 'dl'

@@ -51,4 +51,22 @@ class TcpdfTest < ActiveSupport::TestCase
     type = pdf.get_image_file_type(nil, [])
     assert_equal type, ''
   end
+
+  test "Image basic filename test" do
+    pdf = TCPDF.new
+    err = assert_raises(RuntimeError) { 
+      pdf.image(nil)
+    }
+    assert_equal( err.message, 'TCPDF error: Image filename is empty.')
+
+    err = assert_raises(RuntimeError) { 
+      pdf.image('')
+    }
+    assert_equal( err.message, 'TCPDF error: Image filename is empty.')
+
+    err = assert_raises(RuntimeError) { 
+      pdf.image('foo.png')
+    }
+    assert_equal( err.message, 'TCPDF error: Missing image file: foo.png')
+  end
 end
