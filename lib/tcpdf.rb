@@ -3182,6 +3182,7 @@ class TCPDF
           end
         end
       end
+      @newline = true
       return true
     end
     if current_page != @page
@@ -3836,7 +3837,7 @@ class TCPDF
     # get latest page number
     end_page = @page
     if resth > 0
-      skip = endpage - startpage
+      skip = end_page - startpage
       tmpresth = resth
       while tmpresth > 0
         if skip <= 0
@@ -3847,7 +3848,7 @@ class TCPDF
         skip -= 1
       end
       currentY = @y
-      endpage = @page
+      end_page = @page
     end
 
     # check if a new page has been created
@@ -11611,10 +11612,10 @@ public
           minstartliney = startliney
           maxbottomliney = startliney + @font_size * @cell_height_ratio
         end
-        startlinepage = @page
-        if !endlinepos.nil? and !pbrk
+        if startlinepage == @page and !endlinepos.nil? and !pbrk # fix startlinepos at page break case.
           startlinepos = endlinepos
         else
+          startlinepage = @page
           if !@in_footer
             if !@footerlen[@page].nil?
               @footerpos[@page] = @pagelen[@page] - @footerlen[@page]
