@@ -14,6 +14,7 @@ put your assignment in a before_filter (perhaps overriding :filename, etc in you
 1.15 2009-11-20 Rails 2.* support - Thanks to Prawnto plugin for showing the way to the new TemplateHandler
 1.16 2012-09-08 Rails 3.* and Ruby 1.9.* support, and fix FPDF severral bug.
      Jun NAITOH took over development of RFPDF from Edwin Moss.
-1.17 2014-05-18 Update base version to TCPDF 5.1.002. Ruby 2.0/2.1 support. FPDF is deprecated.
-1.17.2 2014-06-30 FreeSerif font added from GNU FreeFont(20080912).
+1.17   2014-05-18 Update base version to TCPDF 5.1.002. Ruby 2.0/2.1 support. FPDF is deprecated.
+1.17.2 2014-07-09 FreeSerif font added from GNU FreeFont(20080912).
+1.17.3 2014-07-16 Several bug fixed.
 
