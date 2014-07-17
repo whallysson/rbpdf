@@ -124,8 +124,6 @@ class TCPDF
   
   attr_accessor :color_flag
   
-  attr_accessor :default_table_columns
-  
   attr_accessor :default_font
 
   attr_accessor :draw_color
@@ -278,7 +276,6 @@ class TCPDF
     @header_logo_width ||= 30
     @header_title ||= ""
     @header_string ||= ""
-    @default_table_columns ||= 4
     @listordered ||= []
     @listcount ||= []
     @listindent ||= 0
@@ -4618,6 +4615,23 @@ class TCPDF
         w = h * pixw / pixh
       end
     end
+
+    # resize image to be contained on a single page          # fix at page break case.
+    if fitonpage
+      ratio_wh = w / h
+      if (@t_margin + h) > @page_break_trigger
+        h = @page_break_trigger - @t_margin
+        w = h * ratio_wh
+      end
+      if !@rtl and ((x + w) > (@w - @r_margin))
+        w = @w - @r_margin - x
+        h = w / ratio_wh
+      elsif @rtl and ((x - w) < @l_margin)
+        w = x - @l_margin
+        h = w / ratio_wh
+      end
+    end
+
     # Check whether we need a new page first as this does not fit
     prev_x = @x
     if checkPageBreak(h, y)
