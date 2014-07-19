@@ -3349,6 +3349,7 @@ class TCPDF
   # [@see] Cell()
   #
   def getCellCode(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false, calign='T', valign='M')
+    txt = '' if txt.nil?
     rs = "" # string to be returned
     txt = removeSHY(txt)
     if !ignore_min_height
@@ -4020,6 +4021,151 @@ class TCPDF
     return cborder
   end
   protected :getBorderMode
+
+  #
+  # This method return the estimated number of lines for print a simple text string in Multicell() method.
+  # [@param string :txt] String for calculating his height
+  # [@param float :w] Width of cells. If 0, they extend up to the right margin of the page.
+  # [@param boolean :reseth] if true reset the last cell height (default false).
+  # [@param boolean :autopadding] if true, uses internal padding and automatically adjust it to account for line width (default true).
+  # [@param float :cellMargin] Internal cell margin, if empty or <= 0, extended up to current pdf cell margin (default '').
+  # [@param float :lineWidth] Line width, if empty or <= 0, extended up to current pdf line width (default '').
+  # [@return float] Return the minimal height needed for multicell method for printing the :txt param.
+  # [@author] Alexander Escalona Fernendez, Nicola Asuni
+  # [@access public]
+  # [@since 4.5.011]
+  #
+  def getNumLines(txt, w=0, reseth=false, autopadding=true, cellMargin='', lineWidth='')
+    if empty_string(w) or (w <= 0)
+      if @rtl
+        w = @x - @l_margin
+      else
+        w = @w - @r_margin - @x
+      end
+    end
+    if empty_string(cellMargin) or (cellMargin <= 0)
+      cellMargin = @c_margin
+    end
+    if empty_string(lineWidth) or (lineWidth <= 0)
+      lineWidth = @line_width
+    end
+    if autopadding
+      # adjust internal padding
+      if cellMargin < (lineWidth / 2)
+        cellMargin = lineWidth / 2
+      end
+    end
+    wmax = w - (2 * cellMargin)
+    if reseth
+      @lasth = @font_size * @cell_height_ratio
+    end
+    lines = 1
+    sum = 0
+    chars = UTF8StringToArray(txt)
+    chars = utf8Bidi(chars, txt, @tmprtl)
+    charsWidth = GetArrStringWidth(chars, '', '', 0, true)
+    if @rtl
+      charsWidth.reverse!
+      chars.reverse!
+    end
+    length = chars.length
+    lastSeparator = -1
+
+    i = 0
+    while i < length
+      charWidth = charsWidth[i]
+      if unichr(chars[i]) =~ /\s/
+        lastSeparator = i
+      end
+      if sum + charWidth >= wmax 
+        lines += 1
+        if lastSeparator != -1
+          i = lastSeparator
+          lastSeparator = -1
+          sum = 0
+        else
+          sum = charWidth
+        end
+      else
+        sum += charWidth
+      end
+      i += 1
+    end
+    return lines
+  end
+  alias_method :get_num_lines, :getNumLines
+
+  #
+  # This method return the estimated needed height for print a simple text string in Multicell() method.
+  # Generally, if you want to know the exact height for a block of content you can use the following technique:
+  # 
+  #   # store current object
+  #   pdf.start_transaction()
+  #   # store starting values
+  #   start_y = pdf.get_y()
+  #   start_page = pdf.get_page()
+  #   # call your printing functions with your parameters
+  #   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  #   pdf.multi_cell(w=0, h=0, txt, border=1, align='L', fill=0, ln=1, x='', y='', reseth=true, stretch=0, ishtml=false, autopadding=true, maxh=0)
+  #   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  #   # get the new Y
+  #   end_y = pdf.get_y()
+  #   end_page = pdf.get_page()
+  #   # calculate height
+  #   height = 0
+  #   if end_page == start_page
+  #     height = end_y - start_y
+  #   else
+  #     start_page.upto(end_page) do |page|
+  #       pdf.set_page(page)
+  #       if page == start_page
+  #         # first page
+  #         height = @h - start_y - @b_margin
+  #       elsif page == end_page
+  #         # last page
+  #         height = end_y - @t_margin
+  #       else
+  #         height = @h - @t_margin - @b_margin
+  #       end
+  #     end
+  #   end
+  #   # restore previous object
+  #   pdf = pdf.rollbackTransaction()
+  # 
+  # [@param float :w] Width of cells. If 0, they extend up to the right margin of the page.
+  # [@param string :txt] String for calculating his height
+  # [@param boolean :reseth] if true reset the last cell height (default false).
+  # [@param boolean :autopadding] if true, uses internal padding and automatically adjust it to account for line width (default true).
+  # [@param float :cellMargin] Internal cell margin, if empty or <= 0, extended up to current pdf cell margin (default '').
+  # [@param float :lineWidth] Line width, if empty or <= 0, extended up to current pdf line width (default '').
+  # [@return float] Return the minimal height needed for multicell method for printing the :txt param.
+  # [@author] Nicola Asuni, Alexander Escalona Fern<E1>ndez
+  # [@access public]
+  #
+  def getStringHeight(w, txt, reseth=false, autopadding=true, cellMargin='', lineWidth='')
+    lines = getNumLines(txt, w, reseth, autopadding, cellMargin, lineWidth)
+    height = lines * (@font_size * @cell_height_ratio)
+    if autopadding
+      if empty_string(cellMargin) or (cellMargin <= 0)
+        cellMargin = @c_margin
+      end
+      if empty_string(lineWidth) or (lineWidth <= 0)
+        lineWidth = @line_width
+      end
+      # adjust internal padding
+      if cellMargin < (lineWidth / 2)
+        cellMargin = lineWidth / 2
+      end
+      # add top and bottom space if needed
+      if (@lasth - @font_size) < lineWidth
+        height += lineWidth
+      end
+      # add top and bottom padding
+      height += 2 * cellMargin
+    end
+    return height
+  end
+  alias_method :get_string_height, :getStringHeight
 
   #
   # This method prints text from the current position.
@@ -9963,6 +10109,35 @@ public
   alias_method :write_barcode, :writeBarcode
 =end
   
+  #
+  # Returns an array containing current margins:
+  #
+  #  * ret['left'] = left  margin
+  #  * ret['right'] = right margin
+  #  * ret['top'] = top margin
+  #  * ret['bottom'] = bottom margin
+  #  * ret['header'] = header margin
+  #  * ret['footer'] = footer margin
+  #  * ret['cell'] = cell margin
+  #
+  # [@return array] containing all margins measures
+  # [@access public]
+  # [@since 3.2.000 (2008-06-23)]
+  #
+  def getMargins()
+    ret = {
+        'left' => @l_margin,
+        'right' => @r_margin,
+        'top' => @t_margin,
+        'bottom' => @b_margin,
+        'header' => @header_margin,
+        'footer' => @footer_margin,
+        'cell' => @c_margin,
+    }
+    return ret
+  end
+  alias_method :get_margins, :getMargins
+
   #
   # Returns an array containing original margins:
   #   ret['left'] = left  margin

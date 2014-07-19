@@ -51,4 +51,182 @@ class TcpdfTest < ActiveSupport::TestCase
     #    [(abc)] TJ
     # ET
   end
+
+  test "getStringHeight Basic test" do
+    pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf.add_page
+
+    txt = 'abcdefg'
+
+    w = 50
+    y1 = pdf.get_y
+    pdf.multi_cell(w, 0, txt)
+    pno = pdf.get_page
+    assert_equal pno, 1
+    y2 = pdf.get_y
+    h1 = y2 - y1
+
+    h2 = pdf.getStringHeight(w, txt)
+    assert_in_delta h1, h2, 0.01
+
+    line = pdf.get_num_lines(txt, w)
+    assert_equal line, 1
+
+    w = 20
+    y1 = pdf.get_y
+    pdf.multi_cell(w, 0, txt)
+    pno = pdf.get_page
+    assert_equal pno, 1
+    y2 = pdf.get_y
+    h1 = y2 - y1
+
+    h2 = pdf.getStringHeight(w, txt)
+    assert_in_delta h1, h2, 0.01
+
+    line = pdf.get_num_lines(txt, w)
+    assert_equal line, 1
+  end
+
+  test "getStringHeight Line Break test" do
+    pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf.add_page
+
+    txt = 'abcdefg'
+
+    w = 10
+    y1 = pdf.get_y
+    pdf.multi_cell(w, 0, txt)
+    pno = pdf.get_page
+    assert_equal pno, 1
+    y2 = pdf.get_y
+    h1 = y2 - y1
+
+    h2 = pdf.getStringHeight(w, txt)
+    assert_in_delta h1, h2, 0.01
+
+    line = pdf.get_num_lines(txt, w)
+    assert_equal line, 3
+
+
+    w = 5
+    y1 = pdf.get_y
+    pdf.multi_cell(w, 0, txt)
+    pno = pdf.get_page
+    assert_equal pno, 1
+    y2 = pdf.get_y
+    h1 = y2 - y1
+
+    h2 = pdf.getStringHeight(w, txt)
+    assert_in_delta h1, h2, 0.01
+
+    line = pdf.get_num_lines(txt, w)
+    assert_equal line, 7
+  end
+
+  test "getStringHeight Minimum Width test 1" do
+    pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf.add_page
+
+    w = pdf.get_string_width('OO')
+
+    txt = "Export to PDF: align is Good."
+
+    y1 = pdf.get_y
+    pdf.multi_cell(w, 0, txt)
+    pno = pdf.get_page
+    assert_equal pno, 1
+    y2 = pdf.get_y
+    h1 = y2 - y1
+
+    h2 = pdf.getStringHeight(w, txt)
+    assert_in_delta h1, h2, 0.01
+
+    line = pdf.get_num_lines(txt, w)
+    assert_equal line, 16
+  end
+
+ test "getStringHeight Minimum Width test 2" do
+    pdf = TCPDF.new('L', 'mm', 'A4', true, "UTF-8", true)
+    pdf.set_font('kozminproregular', '', 8)
+    pdf.add_page
+
+    margins = pdf.get_margins
+    w = pdf.get_string_width('20') + margins['cell'] * 2
+
+    txt = "20"
+
+    y1 = pdf.get_y
+    pdf.multi_cell(w, 0, txt)
+    pno = pdf.get_page
+    assert_equal pno, 1
+    y2 = pdf.get_y
+    h1 = y2 - y1
+
+    h2 = pdf.getStringHeight(w, txt)
+    assert_in_delta h1, h2, 0.01
+
+    line = pdf.get_num_lines(txt, w)
+    assert_equal line, 2
+  end
+
+  test "getStringHeight Minimum Bidi test 1" do
+    pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf.add_page
+
+    w = pdf.get_string_width('OO')
+
+    txt  = "\xd7\xa2\xd7\x91\xd7\xa8\xd7\x99\xd7\xaa"
+    y1 = pdf.get_y
+    pdf.multi_cell(w, 0, txt)
+    pno = pdf.get_page
+    assert_equal pno, 1
+    y2 = pdf.get_y
+    h1 = y2 - y1
+    h2 = pdf.getStringHeight(w, txt)
+    assert_in_delta h1, h2, 0.01
+
+    line = pdf.get_num_lines(txt, w)
+    assert_equal line, 5
+
+    txt = "? \xd7\x93\xd7\x92 \xd7\xa1\xd7\xa7\xd7\xa8\xd7\x9f \xd7\xa9\xd7\x98 \xd7\x91\xd7\x99\xd7\x9d \xd7\x9e\xd7\x90\xd7\x95\xd7\x9b\xd7\x96\xd7\x91 \xd7\x95\xd7\x9c\xd7\xa4\xd7\xaa\xd7\xa2 \xd7\x9e\xd7\xa6\xd7\x90 \xd7\x9c\xd7\x95 \xd7\x97\xd7\x91\xd7\xa8\xd7\x94 \xd7\x90\xd7\x99\xd7\x9a \xd7\x94\xd7\xa7\xd7\x9c\xd7\x99\xd7\x98\xd7\x94"
+
+    y1 = pdf.get_y
+    pdf.multi_cell(w, 0, txt)
+    pno = pdf.get_page
+    assert_equal pno, 1
+    y2 = pdf.get_y
+    h1 = y2 - y1
+
+    h2 = pdf.getStringHeight(w, txt)
+    assert_in_delta h1, h2, 0.01
+
+    line = pdf.get_num_lines(txt, w)
+    assert_equal line, 41
+  end
+
+  test "getStringHeight Minimum Bidi test 2" do
+    pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf.set_font('freesans', '')
+    pdf.set_rtl(true)
+    pdf.set_temp_rtl('R')
+    pdf.add_page
+
+    margins = pdf.get_margins
+    w = pdf.get_string_width('OO') + margins['cell'] * 2
+
+    txt =  "\xd7\x9c 000"
+
+    y1 = pdf.get_y
+    pdf.multi_cell(w, 0, txt)
+    pno = pdf.get_page
+    assert_equal pno, 1
+    y2 = pdf.get_y
+    h1 = y2 - y1
+
+    h2 = pdf.getStringHeight(w, txt)
+    assert_in_delta h1, h2, 0.01
+
+    line = pdf.get_num_lines(txt, w)
+    assert_equal line, 3
+  end
 end
