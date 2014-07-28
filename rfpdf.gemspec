@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
                        Dir.glob("lib/fonts/dejavu-fonts-ttf-*/{AUTHORS,BUGS,LICENSE,NEWS,README}") +
                        Dir.glob("test/*") +
                        ["Rakefile", "rfpdf.gemspec", "Gemfile",
-                        "CHANGELOG", "test_unicode.rfpdf",
+                        "CHANGELOG", "test_unicode.rfpdf", "README.md",
                         "utf8test.txt", "logo_example.png" ]
   spec.rdoc_options  += [ '--exclude', 'lib/fonts/',
                           '--exclude', 'lib/htmlcolors.rb',
