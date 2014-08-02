@@ -4837,7 +4837,7 @@ class TCPDF
       end
 
       info = false
-      if !resize or !Object.const_defined?(:Magick)
+      if !resize
         if (type == 'jpeg')
           info=parsejpeg(file)
         elsif (type == 'png')
@@ -4854,10 +4854,9 @@ class TCPDF
           end
           info=send(mtd, file);
         end
-        # not use
-        #if info == 'pngalpha'
-        #  return ImagePngAlpha(file, x, y, w, h, 'PNG', link, align, resize, dpi, palign)
-        #end
+        if info == 'pngalpha' and Object.const_defined?(:Magick)
+          return ImagePngAlpha(file, x, y, w, h, 'PNG', link, align, resize, dpi, palign)
+        end
       end
       if !info
         if Object.const_defined?(:Magick)
@@ -4979,7 +4978,7 @@ class TCPDF
   #
   def parsejpeg(file)
     a=getimagesize(file);
-    if a.nil? or a.empty?
+    if a == false or a.nil? or a.empty?
       Error('Missing or incorrect image file: ' + file);
     end
     if (a[2]!='JPEG')
@@ -5013,9 +5012,25 @@ class TCPDF
     tmpFile.print img.to_blob
     tmpFile
   ensure
-    tmpFile.close
+    tmpFile.close unless tmpFile.nil?
   end
   protected :imageToPNG
+
+  def image_alpha_mask(file)
+    img = Magick::ImageList.new(file)
+
+    img2 = img.separate(Magick::OpacityChannel)
+    img = img2.negate(true)
+
+    #use a temporary file....
+    tmpFile = Tempfile.new(['msk_', '.png'], @@k_path_cache)
+    tmpFile.binmode
+    tmpFile.print img.to_blob
+    tmpFile
+  ensure
+    tmpFile.close unless tmpFile.nil?
+  end
+  protected :image_alpha_mask
 
   #
   # Extract info from a PNG file
@@ -5047,8 +5062,8 @@ class TCPDF
     elsif (ct==3)
       colspace='Indexed';
     else
-      # Error('Alpha channel not supported: ' + file)
-      return false
+      # alpha channel
+      return 'pngalpha'
     end
     if (f.read(1).unpack('C')[0] != 0)
       # Error('Unknown compression method: ' + file)
@@ -5108,6 +5123,64 @@ class TCPDF
     f.close unless f.nil?
   end
   protected :parsepng
+
+  def image_alpha_mask(file)
+    img = Magick::ImageList.new(file)
+
+    img2 = img.separate(Magick::OpacityChannel)
+    img = img2.negate(true)
+
+    #use a temporary file....
+    tmpFile = Tempfile.new(['msk_', '.png'], @@k_path_cache)
+    tmpFile.binmode
+    tmpFile.print img.to_blob
+    tmpFile
+  ensure
+    tmpFile.close  unless tmpFile.nil?
+  end
+
+  #
+  # Extract info from a PNG image with alpha channel using the GD library.
+  # [@param string :file] Name of the file containing the image.
+  # [@param float :x] Abscissa of the upper-left corner.
+  # [@param float :y] Ordinate of the upper-left corner.
+  # [@param float :w] Width of the image in the page. If not specified or equal to zero, it is automatically calculated.
+  # [@param float :h] Height of the image in the page. If not specified or equal to zero, it is automatically calculated.
+  # [@param string :type] Image format. Possible values are (case insensitive): JPEG and PNG (whitout GD library) and all images supported by GD: GD, GD2, GD2PART, GIF, JPEG, PNG, BMP, XBM, XPM;. If not specified, the type is inferred from the file extension.
+  # [@param mixed :link] URL or identifier returned by AddLink().
+  # [@param string :align]
+  #   Indicates the alignment of the pointer next to image insertion relative to image height. The value can be:
+  #   * T: top-right for LTR or top-left for RTL
+  #   * M: middle-right for LTR or middle-left for RTL
+  #   * B: bottom-right for LTR or bottom-left for RTL
+  #   * N: next line
+  # [@param boolean :resize] If true resize (reduce) the image to fit :w and :h (requires GD library).
+  # [@param int :dpi] dot-per-inch resolution used on resize
+  # [@param string :palign]
+  #   Allows to center or align the image on the current line. Possible values are:
+  #   * L : left align
+  #   * C : center
+  #   * R : right align
+  #   * '' : empty string : left for LTR or right for RTL
+  # [@author] Valentin Schmidt, Nicola Asuni
+  # [@access protected]
+  # [[@since 4.3.007 (2008-12-04)]
+  # [@see] Image()
+  #
+  def ImagePngAlpha(file, x='', y='', w=0, h=0, type='', link='', align='', resize=false, dpi=300, palign='')
+    tempfile_alpha = image_alpha_mask(file)
+    tempfile_plain = imageToPNG(file)
+
+    # embed mask image
+    imgmask = Image(tempfile_alpha.path, x, y, w, h, 'PNG', '', '', resize, dpi, '', true, false)
+
+    # embed image, masked with previously embedded mask
+    Image(tempfile_plain.path, x, y, w, h, type, link, align, resize, dpi, palign, false, imgmask)
+    # remove temp files
+    tempfile_alpha.delete
+    tempfile_plain.delete
+  end
+  protected :ImagePngAlpha
 
   #
   # Performs a line break. 
