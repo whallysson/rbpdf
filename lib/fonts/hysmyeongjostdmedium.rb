@@ -1,4 +1,4 @@
-TCPDFFontDescriptor.define('hysmyeongjostdmedium') do |font|
+RBPDFFontDescriptor.define('hysmyeongjostdmedium') do |font|
   font[:type]='cidfont0'
   font[:name]='HYSMyeongJoStd-Medium-Acro' # AdobeMyungjoStd-Medium-Acro in acrobat 6
   font[:displayname]='MyungJo Medium (Korean)'

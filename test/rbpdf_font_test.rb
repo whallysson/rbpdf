@@ -1,7 +1,7 @@
 require 'test_helper'
 
-class TcpdfFontTest < ActiveSupport::TestCase
-  class MYPDF < TCPDF
+class RbpdfFontTest < ActiveSupport::TestCase
+  class MYPDF < RBPDF
     def putfonts()
       super
     end

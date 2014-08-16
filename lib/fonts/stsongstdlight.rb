@@ -1,4 +1,4 @@
-TCPDFFontDescriptor.define('stsongstdlight') do |font|
+RBPDFFontDescriptor.define('stsongstdlight') do |font|
   font[:type]='cidfont0'
   font[:name]='STSongStd-Light-Acro'
   font[:displayname]='STSong Light (Simp. Chinese)'

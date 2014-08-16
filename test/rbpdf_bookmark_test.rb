@@ -1,9 +1,9 @@
 require 'test_helper'
 
-class TcpdfTest < ActiveSupport::TestCase
+class RbpdfTest < ActiveSupport::TestCase
 
   test "bookmark test" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     pdf.add_page()
 
     book = pdf.bookmark('Chapter 1', 0, 0)

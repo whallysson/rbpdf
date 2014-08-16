@@ -1,8 +1,8 @@
 require 'test_helper'
 
-class TcpdfTest < ActiveSupport::TestCase
+class RbpdfTest < ActiveSupport::TestCase
   test "write_html_cell Basic test" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     pdf.add_page()
 
     htmlcontent = '<p>foo</p>'
@@ -19,7 +19,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "write_html_cell Page Break test 1" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     pdf.add_page()
 
     pdf.set_top_margin(30)
@@ -41,7 +41,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "write_html_cell Page Break test 2" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     pdf.add_page()
 
     pdf.set_top_margin(30)

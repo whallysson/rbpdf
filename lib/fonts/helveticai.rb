@@ -1,5 +1,5 @@
-TCPDFFontDescriptor.define('helveticai') do |font|
-  # core font definition file for TCPDF (www.tcpdf.org)
+RBPDFFontDescriptor.define('helveticai') do |font|
+  # core font definition file for RBPDF
   font[:type]='core'
   font[:dw]=556
   font[:cw]={

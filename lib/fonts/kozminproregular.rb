@@ -1,4 +1,4 @@
-TCPDFFontDescriptor.define('kozminproregular') do |font|
+RBPDFFontDescriptor.define('kozminproregular') do |font|
   font[:type]='cidfont0'
   font[:name]='KozMinPro-Regular-Acro'
   font[:displayname]='Kozuka Mincho Pro (Japanese Serif)'

@@ -20,11 +20,11 @@
 
 
   # create new PDF document (document units are set by default to millimeters)
-  pdf = TCPDF.new
+  pdf = RBPDF.new
 
   # set document information
-  pdf.set_creator("TCPDF")
-  pdf.set_author("TCPDF")
+  pdf.set_creator("RBPDF")
+  pdf.set_author("RBPDF")
   pdf.set_title(doc_title)
   pdf.set_subject(doc_subject)
   pdf.set_keywords(doc_keywords)

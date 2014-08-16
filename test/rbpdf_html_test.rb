@@ -1,14 +1,14 @@
 require 'test_helper'
 
-class TcpdfTest < ActiveSupport::TestCase
-  class MYPDF < TCPDF
+class RbpdfTest < ActiveSupport::TestCase
+  class MYPDF < RBPDF
     def getPageBuffer(page)
       super
     end
   end
 
   test "write_html Basic test" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     pdf.add_page()
 
 
@@ -26,7 +26,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "write_html Table test" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     pdf.add_page()
 
     tablehtml = '<table border="1" cellspacing="1" cellpadding="1"><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>'

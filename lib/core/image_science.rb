@@ -21,7 +21,7 @@
 # This implements native php methods used by tcpdf, which have had to be
 # reimplemented within Ruby.
 
-module RFPDF
+module Rbpdf
 
   # http://uk2.php.net/getimagesize
   def getimagesize(filename)

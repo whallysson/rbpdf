@@ -1,4 +1,4 @@
-TCPDFFontDescriptor.define('dejavusans') do |font|
+RBPDFFontDescriptor.define('dejavusans') do |font|
   font[:type]='TrueTypeUnicode'
   font[:name]='DejaVuSans'
   font[:desc]={'Ascent'=>928,'Descent'=>-236,'CapHeight'=>30,'Flags'=>96,'FontBBox'=>'[-1021 -415 1681 1167]','ItalicAngle'=>20.8,'StemV'=>70,'MissingWidth'=>600}

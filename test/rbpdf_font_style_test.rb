@@ -1,8 +1,8 @@
 require 'test_helper'
 
-class TcpdfFontStyleTest < ActiveSupport::TestCase
+class RbpdfFontStyleTest < ActiveSupport::TestCase
 
-  class MYPDF < TCPDF
+  class MYPDF < RBPDF
     def dounderline(x, y, txt)
       super
     end

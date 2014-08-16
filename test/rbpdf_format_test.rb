@@ -1,9 +1,9 @@
 require 'test_helper'
 
-class TcpdfFormatTest < ActiveSupport::TestCase
+class RbpdfFormatTest < ActiveSupport::TestCase
 
   test "set_page_orientation" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
 
     pagedim = pdf.set_page_orientation('')
     assert_equal pagedim['or'], 'P'

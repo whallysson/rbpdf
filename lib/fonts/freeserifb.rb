@@ -1,4 +1,4 @@
-TCPDFFontDescriptor.define('freeserifb') do |font|
+RBPDFFontDescriptor.define('freeserifb') do |font|
   font[:type]='TrueTypeUnicode'
   font[:name]='FreeSerifBold'
   font[:desc]={'Ascent'=>900,'Descent'=>-300,'CapHeight'=>16,'Flags'=>32,'FontBBox'=>'[-560 -300 1860 932]','ItalicAngle'=>0,'StemV'=>120,'MissingWidth'=>600}

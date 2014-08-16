@@ -1,26 +1,26 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'rfpdf/version'
+require 'rbpdf/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "rfpdf"
-  spec.version       = Rfpdf::VERSION
+  spec.name          = "rbpdf"
+  spec.version       = Rbpdf::VERSION
   spec.authors       = ["NAITOH Jun"]
   spec.email         = ["naitoh@gmail.com"]
-  spec.summary       = %q{TCPDF via RFPDF.}
-  spec.description   = %q{A template plugin allowing the inclusion of ERB-enabled RFPDF template files.}
+  spec.summary       = %q{RBPDF via TCPDF.}
+  spec.description   = %q{A template plugin allowing the inclusion of ERB-enabled RBPDF template files.}
   spec.homepage      = ""
   spec.license       = "LGPL 2.1 or later"
-  spec.files         = Dir.glob("lib/rfpdf/version.rb") +
+  spec.files         = Dir.glob("lib/rbpdf/version.rb") +
                        Dir.glob("lib/*.rb") +
                        Dir.glob("lib/core/rmagick.rb") +
                        Dir.glob("lib/fonts/*.{rb,z}") +
                        Dir.glob("lib/fonts/freefont-*/*") +
                        Dir.glob("lib/fonts/dejavu-fonts-ttf-*/{AUTHORS,BUGS,LICENSE,NEWS,README}") +
                        Dir.glob("test/*") +
-                       ["Rakefile", "rfpdf.gemspec", "Gemfile",
-                        "CHANGELOG", "test_unicode.rfpdf", "README.md",
+                       ["Rakefile", "rbpdf.gemspec", "Gemfile",
+                        "CHANGELOG", "test_unicode.rbpdf", "README.md",
                         "utf8test.txt", "logo_example.png" ]
   spec.rdoc_options  += [ '--exclude', 'lib/fonts/',
                           '--exclude', 'lib/htmlcolors.rb',

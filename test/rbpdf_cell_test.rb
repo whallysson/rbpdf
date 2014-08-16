@@ -1,8 +1,8 @@
 require 'test_helper'
 
-class TcpdfTest < ActiveSupport::TestCase
+class RbpdfTest < ActiveSupport::TestCase
 
-  class MYPDF < TCPDF
+  class MYPDF < RBPDF
     def getCellCode(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false, calign='T', valign='M')
       super
     end
@@ -53,7 +53,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "getStringHeight Basic test" do
-    pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.add_page
 
     txt = 'abcdefg'
@@ -88,7 +88,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "getStringHeight Line Break test" do
-    pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.add_page
 
     txt = 'abcdefg'
@@ -124,7 +124,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "getStringHeight Minimum Width test 1" do
-    pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.add_page
 
     w = pdf.get_string_width('OO')
@@ -146,7 +146,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
  test "getStringHeight Minimum Width test 2" do
-    pdf = TCPDF.new('L', 'mm', 'A4', true, "UTF-8", true)
+    pdf = RBPDF.new('L', 'mm', 'A4', true, "UTF-8", true)
     pdf.set_font('kozminproregular', '', 8)
     pdf.add_page
 
@@ -170,7 +170,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "getStringHeight Minimum Bidi test 1" do
-    pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.add_page
 
     w = pdf.get_string_width('OO')
@@ -205,7 +205,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "getStringHeight Minimum Bidi test 2" do
-    pdf = TCPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.set_font('freesans', '')
     pdf.set_rtl(true)
     pdf.set_temp_rtl('R')

@@ -1,5 +1,5 @@
-TCPDFFontDescriptor.define('zapfdingbats') do |font|
-  # core font definition file for TCPDF (www.tcpdf.org)
+RBPDFFontDescriptor.define('zapfdingbats') do |font|
+  # core font definition file for RBPDF
   font[:type]='core'
   font[:dw]=788
   font[:cw]={

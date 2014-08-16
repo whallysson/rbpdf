@@ -1,5 +1,5 @@
-TCPDFFontDescriptor.define('times') do |font|
-  # core font definition file for TCPDF (www.tcpdf.org)
+RBPDFFontDescriptor.define('times') do |font|
+  # core font definition file for RBPDF
   font[:type]='core'
   font[:dw]=500
   font[:cw]={

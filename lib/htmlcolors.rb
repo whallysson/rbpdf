@@ -41,8 +41,6 @@
 # Array of WEB safe colors.
 # @author Nicola Asuni
 # @copyright 2004-2009 Nicola Asuni - Tecnick.com S.r.l (www.tecnick.com) Via Della Pace, 11 - 09044 - Quartucciu (CA) - ITALY - www.tecnick.com - info@tecnick.com
-# @package com.tecnick.tcpdf
-# @link http://www.tcpdf.org
 # @license http://www.gnu.org/copyleft/lesser.html LGPL
 # @since 2.9.000 (2008-03-26)
 #

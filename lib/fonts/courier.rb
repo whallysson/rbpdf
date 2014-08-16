@@ -1,5 +1,5 @@
-TCPDFFontDescriptor.define('courier') do |font|
-  # core font definition file for TCPDF (www.tcpdf.org)
+RBPDFFontDescriptor.define('courier') do |font|
+  # core font definition file for RBPDF
   font[:type]='core'
   font[:dw]=600
   font[:cw] = {}
@@ -7,8 +7,8 @@ TCPDFFontDescriptor.define('courier') do |font|
   	font[:cw][i]=600
 	end
 end
-TCPDFFontDescriptor.define('courierb') do |font|
-  # core font definition file for TCPDF (www.tcpdf.org)
+RBPDFFontDescriptor.define('courierb') do |font|
+  # core font definition file for RBPDF
   font[:type]='core'
   font[:dw]=600
   font[:cw] = {}
@@ -16,8 +16,8 @@ TCPDFFontDescriptor.define('courierb') do |font|
   	font[:cw][i]=600
 	end
 end
-TCPDFFontDescriptor.define('courierbi') do |font|
-  # core font definition file for TCPDF (www.tcpdf.org)
+RBPDFFontDescriptor.define('courierbi') do |font|
+  # core font definition file for RBPDF
   font[:type]='core'
   font[:dw]=600
   font[:cw] = {}
@@ -25,8 +25,8 @@ TCPDFFontDescriptor.define('courierbi') do |font|
   	font[:cw][i]=600
 	end
 end
-TCPDFFontDescriptor.define('courieri') do |font|
-  # core font definition file for TCPDF (www.tcpdf.org)
+RBPDFFontDescriptor.define('courieri') do |font|
+  # core font definition file for RBPDF
   font[:type]='core'
   font[:dw]=600
   font[:cw] = {}

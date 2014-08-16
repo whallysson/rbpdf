@@ -1,8 +1,8 @@
 # coding: ASCII-8BIT
 require 'test_helper'
 
-class TcpdfTest < ActiveSupport::TestCase
-  class MYPDF < TCPDF
+class RbpdfTest < ActiveSupport::TestCase
+  class MYPDF < RBPDF
     def UTF8StringToArray(str)
       super
     end

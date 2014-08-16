@@ -1,11 +1,11 @@
 
-# RFPDF Template Plugin
+# RBPDF Template Plugin
 
-A template plugin allowing the inclusion of ERB-enabled RFPDF template files.
+A template plugin allowing the inclusion of ERB-enabled RBPDF template files.
 
 ##
 ##
-## TCPDF Version (The New or UTF8 Version)
+## RBPDF Version (The New or UTF8 Version)
 ##
 ##
 
@@ -15,14 +15,14 @@ A template plugin allowing the inclusion of ERB-enabled RFPDF template files.
 * CSS minimum support.
 * Image
  - 8bit PNG image support without RMagick liblary.
- - PNG/JPEG/GIF image support. (use RMagick liblary)
+ - PNG(with alpha channel)/JPEG/GIF image support. (use RMagick liblary)
 
 
 ##
-## Installing RFPDF
+## Installing RBPDF
 ##
 
-RFPDF is distributed via RubyGems, and can be installed the usual way that you install gems: by simply typing `gem install rfpdf` on the command line. 
+RBPDF is distrifuted via RubyGems, and can be installed the usual way that you install gems: by simply typing `gem install rbpdf` on the command line. 
 
 ==
 
@@ -36,11 +36,11 @@ If you are using image file, it is recommended you install:
 gem install rmagick
 ```
 
-TCPDF Example of simple use in .html.erb:
+RBPDF Example of simple use in .html.erb:
 
 ```
 <%
-  @pdf = TCPDF.new()
+  @pdf = RBPDF.new()
   @pdf.set_margins(15, 27, 15)
   @pdf.set_font('FreeSans','', 8)
   @pdf.add_page()
@@ -48,10 +48,10 @@ TCPDF Example of simple use in .html.erb:
 %><%==@pdf.output()%>
 ```
 
-TCPDF Japanese Example of simple use in .html.erb:
+RBPDF Japanese Example of simple use in .html.erb:
 ```
 <%
-  @pdf = TCPDF.new()
+  @pdf = RBPDF.new()
   @pdf.set_margins(15, 27, 15)
   @pdf.set_font('kozminproregular','', 8)
   @pdf.add_page()
@@ -61,7 +61,7 @@ TCPDF Japanese Example of simple use in .html.erb:
 
 See the following files for sample of useage:
 
-test_unicode.rfpdf
+test_unicode.rbpdf
 utf8test.txt
 logo_example.png
 

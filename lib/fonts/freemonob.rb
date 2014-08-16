@@ -1,4 +1,4 @@
-TCPDFFontDescriptor.define('freemonob') do |font|
+RBPDFFontDescriptor.define('freemonob') do |font|
   font[:type]='TrueTypeUnicode'
   font[:name]='FreeMonoBold'
   font[:desc]={'Ascent'=>800,'Descent'=>-200,'CapHeight'=>10,'Flags'=>33,'FontBBox'=>'[-547 -200 754 800]','ItalicAngle'=>0,'StemV'=>120,'MissingWidth'=>600}

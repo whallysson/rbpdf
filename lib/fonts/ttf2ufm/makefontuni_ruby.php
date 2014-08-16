@@ -233,7 +233,7 @@ function MakeFont($fontfile,$ufmfile)
   }
   //Start generation
   $basename=strtolower(substr(basename($ufmfile),0,-4));
-  $s='TCPDFFontDescriptor.define(\''.$basename."') do |font|\n";
+  $s='RBPDFFontDescriptor.define(\''.$basename."') do |font|\n";
   $s.="  font[:type]='".$type."'\n";
   $s.="  font[:name]='".$fm['FontName']."'\n";
   $s.="  font[:desc]=".$fd."\n";

@@ -1,7 +1,7 @@
 require 'test_helper'
 
-class TcpdfTest < ActiveSupport::TestCase
-  class MYPDF < TCPDF
+class RbpdfTest < ActiveSupport::TestCase
+  class MYPDF < RBPDF
     def getHtmlDomArray(html)
       super
     end

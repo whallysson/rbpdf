@@ -1,14 +1,14 @@
 require 'test_helper'
 
-class TcpdfTest < ActiveSupport::TestCase
-  class MYPDF < TCPDF
+class RbpdfTest < ActiveSupport::TestCase
+  class MYPDF < RBPDF
     def getSpaceString
       super
     end
   end
 
   test "get_html_unit_to_units test" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     unit = pdf.get_html_unit_to_units("100", 1)
     assert_in_delta unit, 35.27, 0.01
 
@@ -63,7 +63,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "revstrpos test" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     pos = pdf.revstrpos('abcd efgh ', 'cd')
     assert_equal pos, 2
 
@@ -78,7 +78,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "revstrpos offset test 1" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
 
     pos = pdf.revstrpos('abcd efgh ', 'cd', 3)          # 'abc'
     assert_equal pos, nil
@@ -100,7 +100,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "revstrpos offset test 2" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
 
     pos = pdf.revstrpos('abcd efgh ', 'cd', -6)         # 'abcd'
     assert_equal pos, 2
@@ -116,7 +116,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "set_line_style Basic test" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
 
     pdf.set_line_style({'width' => 0.1, 'cap' => 'butt', 'join' => 'miter', 'dash' => 0, 'color' => [0, 0, 0]})
     pdf.set_line_style({'width' => 0.1, 'cap' => 'butt', 'join' => 'miter', 'dash' => '', 'phase' => 0, 'color' => [255, 0, 0]})

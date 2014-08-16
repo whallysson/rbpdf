@@ -1,4 +1,4 @@
-module RFPDF
+module Rbpdf
   module TemplateHandler
 
     class CompileSupport
@@ -11,7 +11,7 @@ module RFPDF
       end
 
       def pull_options
-        @controller.send :compute_rfpdf_options || {}
+        @controller.send :compute_rbpdf_options || {}
       end
 
       def set_headers

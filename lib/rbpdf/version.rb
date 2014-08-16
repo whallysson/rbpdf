@@ -1,3 +1,3 @@
-module Rfpdf
-  VERSION = "1.17.4"
+module Rbpdf
+  VERSION = "1.18.0"
 end

@@ -4,7 +4,7 @@
 # Begin       : 2008-01-01
 # Last Update : 2008-01-08
 #
-# Description : Unicode Include file for TCPDF.
+# Description : Unicode Include file for RBPDF.
 #
 # Author: Nicola Asuni
 #
@@ -22,12 +22,10 @@
 # Saleh AlMatrafe
 
 #
-# Unicode Include file for TCPDF.
+# Unicode Include file for RBPDF.
 # @author Nicola Asuni
 # @copyright 2004-2008 Nicola Asuni - Tecnick.com S.r.l (www.tecnick.com) Via Della Pace, 11 - 09044 - Quartucciu (CA) - ITALY - www.tecnick.com - info@tecnick.com
-# @package com.tecnick.tcpdf
 # @version 2.1.000
-# @link http://www.tcpdf.org
 # @license http://www.gnu.org/copyleft/lesser.html LGPL
 # @since 2.1.000 (2008-01-08)
 #

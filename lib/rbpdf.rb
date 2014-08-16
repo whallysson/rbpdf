@@ -1,6 +1,6 @@
 # coding: ASCII-8BIT
 #============================================================+
-# File name   : tcpdf.rb
+# File name   : rbpdf.rb
 # Begin       : 2002-08-03
 # Last Update : 2010-05-27
 # Author      : Nicola Asuni
@@ -46,16 +46,29 @@
 #
 #============================================================+
 
+require "rbpdf/version"
+
+begin
+  require('htmlentities') 
+rescue LoadError
+  # This gem is not required - just nice to have.
+end
+begin
+  require 'RMagick' unless Object.const_defined?(:Magick)
+rescue LoadError
+  # RMagick is not available
+end
+
 require 'core/rmagick'
 
 #
-# TCPDF Class.
-# @package com.tecnick.tcpdf
+# RBPDF Class.
 #
- 
-PDF_PRODUCER = 'TCPDF via RFPDF 5.1.002 (http://www.tcpdf.org)'
 
-module TCPDFFontDescriptor
+ 
+PDF_PRODUCER = 'RBPDF 5.1.002'
+
+module RBPDFFontDescriptor
   @@descriptors = { 'freesans' => {} }
   @@font_name = 'freesans'
 
@@ -70,20 +83,20 @@ module TCPDFFontDescriptor
 end
 
 # == This is a Ruby class for generating PDF files on-the-fly without requiring external extensions.
+# * This class is a Ruby port of the TCPDF class by Nicola Asuni (http://www.tcpdf.org).
 # * This class is an extension and improvement of the FPDF class by Olivier Plathey (http://www.fpdf.org).
 # * This version contains some changes: [porting to Ruby, support for UTF-8 Unicode, code style and formatting, php documentation (www.phpdoc.org), ISO page formats, minor improvements, image scale factor]
 # * TCPDF project (http://www.tcpdf.org) has been originally derived in 2002 from the Public Domain FPDF class by Olivier Plathey (http://www.fpdf.org), but now is almost entirely rewritten.
 # * To add your own TTF fonts please read /fonts/README.TXT
-# @name:: TCPDF
-# @package:: com.tecnick.tcpdf
+# @name:: RBPDF
 # @@version:: 5.1.002
 # @author:: Nicola Asuni
-# @link:: http://www.tcpdf.org
 # @license:: http://www.gnu.org/copyleft/lesser.html LGPL 2.1
 #
-class TCPDF
+
+class RBPDF
   include ActionView::Helpers
-  include RFPDF
+  include Rbpdf
   require 'unicode_data.rb'
   require 'htmlcolors.rb'
   include Unicode_data
@@ -1442,7 +1455,7 @@ class TCPDF
   def Error(msg)
     destroy(true)
     #Fatal error
-    raise ("TCPDF error: #{msg}")
+    raise ("RBPDF error: #{msg}")
   end
   alias_method :error, :Error
 
@@ -2646,7 +2659,7 @@ class TCPDF
       Error('Could not include font definition file: ' + family + '')
     end
 
-    font_desc = TCPDFFontDescriptor.font(fontname)
+    font_desc = RBPDFFontDescriptor.font(fontname)
     if font_desc[:desc].nil?
       desc = {}
     else
@@ -6989,7 +7002,7 @@ protected
       out << ' /Producer ' + textstring(PDF_PRODUCER)
     else
       # default producer
-      out << ' /Producer ' + textstring('TCPDF')
+      out << ' /Producer ' + textstring('RBPDF')
     end
     # The date and time the document was created, in human-readable form
     out << ' /CreationDate ' + datestring()
@@ -9614,7 +9627,7 @@ public
     @outlines.each_with_index do |o, i|
       newobj()
       # covert HTML title to string
-      nltags = /<br[\s]?\/>|<\/(blockquote|dd|dl|div|dt|h1|h2|h3|h4|h5|h6|hr|li|ol|p|pre|ul|tcpdf|table|tr|td)>/mi
+      nltags = /<br[\s]?\/>|<\/(blockquote|dd|dl|div|dt|h1|h2|h3|h4|h5|h6|hr|li|ol|p|pre|ul|table|tr|td)>/mi
       title = o[:t].gsub(nltags, "\n")
       title = title.gsub(/[\r]+/mi, '')
       title = title.gsub(/[\n]+/mi, "\n")
@@ -14201,7 +14214,7 @@ public
   alias_method :add_html_toc, :addHTMLTOC
 
   #
-  # Stores a copy of the current TCPDF object used for undo operation.
+  # Stores a copy of the current RBPDF object used for undo operation.
   # [@access public]
   # [@since 4.5.029 (2009-03-19)]
   #
@@ -14219,7 +14232,7 @@ public
   alias_method :start_transaction, :startTransaction
 
   #
-  # Delete the copy of the current TCPDF object used for undo operation.
+  # Delete the copy of the current RBPDF object used for undo operation.
   # [@access public]
   # [@since 4.5.029 (2009-03-19)]
   #
@@ -14239,9 +14252,9 @@ public
   alias_method :commit_transaction, :commitTransaction
 
   #
-  # This method allows to undo the latest transaction by returning the latest saved TCPDF object with startTransaction().
+  # This method allows to undo the latest transaction by returning the latest saved RBPDF object with startTransaction().
   # [@param boolean :this_self] if true restores current class object to previous state without the need of reassignment via the returned value.
-  # [@return] TCPDF object.
+  # [@return] RBPDF object.
   # [@access public]
   # [@since 4.5.029 (2009-03-19)]
   #
@@ -14441,7 +14454,7 @@ public
   # -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-
   # SVG METHODS (not implement, yet.)
   # -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-
-end # END OF TCPDF CLASS
+end # END OF RBPDF CLASS
 
 #TODO 2007-05-25 (EJM) Level=0 - 
 #Handle special IE contype request

@@ -1,14 +1,14 @@
 require 'test_helper'
 
-class TcpdfTest < ActiveSupport::TestCase
-  class MYPDF < TCPDF
+class RbpdfTest < ActiveSupport::TestCase
+  class MYPDF < RBPDF
     def getPageBuffer(page)
       super
     end
   end
 
   test "set_x potision" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     width = pdf.get_page_width
 
     pdf.set_x(5)
@@ -39,7 +39,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "set_y potision" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     width = pdf.get_page_width
 
     pdf.set_left_margin(10)
@@ -82,7 +82,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "add_page potision" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     width = pdf.get_page_width
 
     pdf.add_page
@@ -116,7 +116,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "add_page" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
 
     page = pdf.get_page
     assert_equal 0, page
@@ -163,7 +163,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "add_page set_page Under Error" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
 
     page = pdf.get_page
     assert_equal 0, page
@@ -180,7 +180,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "add_page set_page Over Error" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
 
     page = pdf.get_page
     assert_equal 0, page

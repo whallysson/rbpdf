@@ -1,9 +1,9 @@
 require 'test_helper'
 
-class TcpdfTest < ActiveSupport::TestCase
+class RbpdfTest < ActiveSupport::TestCase
 
   test "write Basic test" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
 
     line = pdf.write(0, "LINE 1")
     assert_equal line,  1
@@ -29,7 +29,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "write Break test single line 1" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     pdf.add_page()
 
     cell_hight = pdf.get_cell_height_ratio()
@@ -57,7 +57,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "write Break test single line 2" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     pdf.add_page()
 
     0.upto(49) do |i|
@@ -75,7 +75,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "write Break test multi line 1" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     pdf.add_page()
     pno = pdf.get_page
     assert_equal pno, 1
@@ -92,7 +92,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "write Break test multi line 2" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     pdf.add_page()
     pno = pdf.get_page
     assert_equal pno, 1
@@ -104,7 +104,7 @@ class TcpdfTest < ActiveSupport::TestCase
   end
 
   test "write firstline test" do
-    pdf = TCPDF.new
+    pdf = RBPDF.new
     pdf.add_page()
     pno = pdf.get_page
     assert_equal pno, 1
@@ -128,7 +128,7 @@ class TcpdfTest < ActiveSupport::TestCase
     assert_equal line,  "\nabcde\nefgh"
   end
 
-  class MYPDF < TCPDF
+  class MYPDF < RBPDF
     def endlinex
       @endlinex
     end

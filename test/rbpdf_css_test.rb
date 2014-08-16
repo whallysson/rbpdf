@@ -1,7 +1,7 @@
 require 'test_helper'
 
-class TcpdfCssTest < ActiveSupport::TestCase
-  class MYPDF < TCPDF
+class RbpdfCssTest < ActiveSupport::TestCase
+  class MYPDF < RBPDF
     def extractCSSproperties(cssdata)
       super
     end

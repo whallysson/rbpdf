@@ -1,4 +1,4 @@
-TCPDFFontDescriptor.define('sjis') do |font|
+RBPDFFontDescriptor.define('sjis') do |font|
   font[:type]='Type0';
   font[:name]='KozMinPro-Regular-Acro';
   font[:desc]={'Ascent'=>995,'Descent'=>-203,'CapHeight'=>6,'Flags'=>32,'FontBBox'=>'[-50 -203 1041 995]','ItalicAngle'=>0,'StemV'=>70,'MissingWidth'=>1000}

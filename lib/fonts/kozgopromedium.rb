@@ -1,4 +1,4 @@
-TCPDFFontDescriptor.define('kozgopromedium') do |font|
+RBPDFFontDescriptor.define('kozgopromedium') do |font|
   font[:type]='cidfont0'
   font[:name]='KozGoPro-Medium-Acro'
   font[:displayname]='Kozuka Gothic Pro (Japanese Sans-Serif)'

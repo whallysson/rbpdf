@@ -1,4 +1,4 @@
-TCPDFFontDescriptor.define('freesansbi') do |font|
+RBPDFFontDescriptor.define('freesansbi') do |font|
   font[:type]='TrueTypeUnicode'
   font[:name]='FreeSansBoldOblique'
   font[:desc]={'Ascent'=>1000,'Descent'=>-300,'CapHeight'=>22,'Flags'=>96,'FontBBox'=>'[-324 -1175 1591 1639]','ItalicAngle'=>-12,'StemV'=>120,'MissingWidth'=>600}

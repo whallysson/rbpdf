@@ -25,6 +25,6 @@ Setting up a Truetype font for usage with UFPDF:
     	[basic-font-name]bi.rb for bold oblique variation
   	
   5) Rename the name of the font in the first line of each .rb file:
-      TCPDFFontDescriptor.define('dtlargotitalic') do |font|
+      RBPDFFontDescriptor.define('dtlargotitalic') do |font|
      becomes:
-      TCPDFFontDescriptor.define('dtlargoti') do |font|
+      RBPDFFontDescriptor.define('dtlargoti') do |font|

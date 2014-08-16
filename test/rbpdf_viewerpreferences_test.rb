@@ -1,7 +1,7 @@
 require 'test_helper'
 
-class TcpdfPageTest < ActiveSupport::TestCase
-  class MYPDF < TCPDF
+class RbpdfPageTest < ActiveSupport::TestCase
+  class MYPDF < RBPDF
     def putviewerpreferences
       super
     end
