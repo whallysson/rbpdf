@@ -72,7 +72,7 @@
  
   # output some UTF-8 test content
   pdf.add_page()
-  pdf.set_font("FreeSans", "", 12)
+  pdf.set_font("FreeSerif", "", 12)
   utf8text = open(File.join(Rails.root.to_s, 'public',"utf8test.txt"), "rb").read # get utf-8 text form file
   pdf.set_fill_color(230, 240, 255, true)
   pdf.write(5, utf8text, '', 1)
