@@ -5064,9 +5064,13 @@ class RBPDF
     h=freadint(f);
     bpc=f.read(1).unpack('C')[0]
     if (bpc>8)
-      # Error('16-bit depth not supported: ' + file)
-      return false
+      if Object.const_defined?(:Magick)
+        return false
+      else
+        Error('No RMagick: 16-bit depth not supported: ' + file)
+      end
     end
+
     ct=f.read(1).unpack('C')[0]
     if (ct==0)
       colspace='DeviceGray';
@@ -5075,8 +5079,12 @@ class RBPDF
     elsif (ct==3)
       colspace='Indexed';
     else
-      # alpha channel
-      return 'pngalpha'
+      if Object.const_defined?(:Magick)
+        # alpha channel
+        return 'pngalpha'
+      else
+        Error('No RMagick: Alpha channel not supported: ' + file);
+      end
     end
     if (f.read(1).unpack('C')[0] != 0)
       # Error('Unknown compression method: ' + file)
