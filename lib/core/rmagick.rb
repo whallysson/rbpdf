@@ -38,6 +38,9 @@ module Rbpdf
         return false if (f.read(4)!='IHDR')
         out[0] = freadint(f)
         out[1] = freadint(f)
+        out[2] = 'PNG'
+        out[3] = "height=\"#{out[1]}\" width=\"#{out[0]}\""
+        out['mime'] = 'image/png'
       end
 
       return out
@@ -69,12 +72,17 @@ module Rbpdf
     
     # This needs work to cover more situations
     # I can't see how to just list the number of channels with ImageMagick / rmagick
-    if image.colorspace.to_s == "CMYKColorspace"
-        out['channels'] = 4
-    elsif (image.colorspace.to_s == "RGBColorspace") and (image.image_type.to_s != "GrayscaleType")
-      out['channels'] = 3
-    else
-      out['channels'] = 0
+    case image.colorspace.to_s.downcase
+    when 'cmykcolorspace'
+      out['channels'] = 4
+    when 'rgbcolorspace', 'srgbcolorspace' # Mac OS X : sRGBColorspace
+      if image.image_type.to_s == 'GrayscaleType' and image.class_type.to_s == 'PseudoClass'
+        out['channels'] = 0
+      else
+        out['channels'] = 3
+      end
+    when 'graycolorspace'
+        out['channels'] = 0
     end
 
     out['bits'] = image.channel_depth

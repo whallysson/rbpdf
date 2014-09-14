@@ -4857,8 +4857,10 @@ class RBPDF
           info=parsepng(file);
         elsif (type == 'gif')
           tmpFile = imageToPNG(file)
-          info=parsepng(tmpFile.path)
-          tmpFile.delete
+          if tmpFile != false
+            info=parsepng(tmpFile.path)
+            tmpFile.delete
+          end
         else
           #Allow for additional formats
           mtd='parse' + type;
@@ -4867,8 +4869,11 @@ class RBPDF
           end
           info=send(mtd, file);
         end
-        if info == 'pngalpha' and Object.const_defined?(:Magick)
-          return ImagePngAlpha(file, x, y, w, h, 'PNG', link, align, resize, dpi, palign)
+        if info == 'pngalpha' and ismask == false and Object.const_defined?(:Magick)
+          info = ImagePngAlpha(file, x, y, w, h, 'PNG', link, align, resize, dpi, palign)
+          if false != info
+            return
+          end
         end
       end
       if !info
@@ -5017,7 +5022,12 @@ class RBPDF
   def imageToPNG(file)
     img = Magick::ImageList.new(file)
     img.format = 'PNG'       # convert to PNG from gif 
-    img.opacity = 0          # PNG alpha channel delete
+    if img.alpha? 
+      img.opacity = 0          # PNG alpha channel delete
+      if img.alpha? 
+        return false
+      end
+    end
 
     #use a temporary file....
     tmpFile = Tempfile.new(['', '_' + File::basename(file) + '.png'], @@k_path_cache);
@@ -5063,13 +5073,6 @@ class RBPDF
     w=freadint(f);
     h=freadint(f);
     bpc=f.read(1).unpack('C')[0]
-    if (bpc>8)
-      if Object.const_defined?(:Magick)
-        return false
-      else
-        Error('No RMagick: 16-bit depth not supported: ' + file)
-      end
-    end
 
     ct=f.read(1).unpack('C')[0]
     if (ct==0)
@@ -5094,6 +5097,15 @@ class RBPDF
       # Error('Unknown filter method: ' + file)
       return false
     end
+
+    if (bpc>8)
+      if Object.const_defined?(:Magick)
+        return false
+      else
+        Error('No RMagick: 16-bit depth not supported: ' + file)
+      end
+    end
+
     if (f.read(1).unpack('C')[0]!=0)
       # Error('Interlacing not supported: ' + file)
       return false
@@ -5121,7 +5133,7 @@ class RBPDF
         else
           pos=t.include?(0.chr);
           if (pos!=false)
-            trns = [pos]
+            trns = ['1']
           end
         end
         f.read(4);
@@ -5189,8 +5201,12 @@ class RBPDF
   # [@see] Image()
   #
   def ImagePngAlpha(file, x='', y='', w=0, h=0, type='', link='', align='', resize=false, dpi=300, palign='')
-    tempfile_alpha = image_alpha_mask(file)
     tempfile_plain = imageToPNG(file)
+    if tempfile_plain == false
+      return false
+    end
+
+    tempfile_alpha = image_alpha_mask(file)
 
     # embed mask image
     imgmask = Image(tempfile_alpha.path, x, y, w, h, 'PNG', '', '', resize, dpi, '', true, false)
@@ -6855,7 +6871,7 @@ protected
       if (!info['trns'].nil? and info['trns'].kind_of?(Array))
         trns='';
         count_info = info['trns'].length
-        0.upto(count_info) do |i|
+        count_info.times do |i|
           trns << info['trns'][i] + ' ' + info['trns'][i] + ' ';
         end
         out << ' /Mask [' + trns + ']'

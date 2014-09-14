@@ -1,3 +1,9 @@
+1.18.1 2014-09-15 
+       - ImagePngAlpha function fixed for the error case where an alpha channel cannot be deleted.
+       - getimagesize function fixed for MAC OS rmagick.
+       - getimagesize function fixed for grayscale JPEG Image.
+       - 16-bit PNG with alpha channel image support improved. (use RMagick liblary)
+
 1.18.0 2014-08-16 
        - rfpdf product name and TCPDF class name changed to RBPDF.
        - ImagePngAlpha function added.
