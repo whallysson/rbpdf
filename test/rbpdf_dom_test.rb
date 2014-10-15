@@ -5,6 +5,9 @@ class RbpdfTest < ActiveSupport::TestCase
     def getHtmlDomArray(html)
       super
     end
+    def openHTMLTagHandler(dom, key, cell)
+      super
+    end
   end
 
   test "Dom Basic" do
@@ -109,5 +112,31 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_equal dom[3]['opening'], true
     assert_equal dom[3]['value'], 'td'
     assert_equal dom[3]['width'], '10'
+  end
+
+  test "Dom HTMLTagHandler Basic test" do
+    pdf = MYPDF.new
+    pdf.add_page
+
+    # Simple HTML
+    htmlcontent = '<h1>HTML Example</h1>'
+    dom1 = pdf.getHtmlDomArray(htmlcontent)
+    dom2 = pdf.openHTMLTagHandler(dom1, 1, false)
+    assert_equal dom1, dom2
+  end
+
+  test "Dom HTMLTagHandler img test" do
+    pdf = MYPDF.new
+    pdf.add_page
+
+    # Image Error HTML
+    htmlcontent = '<img src="' + Rails.root.to_s + '/public/ng.png" alt="test alt attribute" width="30" height="30" border="0"/>'
+    dom1 = pdf.getHtmlDomArray(htmlcontent)
+    y1 = pdf.get_y
+
+    dom2 = pdf.openHTMLTagHandler(dom1, 1, false)
+    y2 = pdf.get_y
+    assert_equal dom1, dom2
+    assert_equal pdf.get_image_rby - (12 / pdf.get_scale_factor) , y2
   end
 end

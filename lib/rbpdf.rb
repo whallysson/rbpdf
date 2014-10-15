@@ -3918,14 +3918,15 @@ class RBPDF
           @transfmrk[@page] += (ccode + "\n").length
         elsif @in_footer
           pagemark = @footerpos[@page]
+          @footerpos[@page] += (ccode + "\n").length
         else
           pagemark = @intmrk[@page]
+          @intmrk[@page] += (ccode + "\n").length
         end
         pagebuff = getPageBuffer(@page)
         pstart = pagebuff[0, pagemark]
         pend = pagebuff[pagemark..-1].to_s
         setPageBuffer(@page, pstart + ccode + "\n" + pend)
-        pagemark += (ccode + "\n").length
       end
     end
     
@@ -12141,12 +12142,12 @@ public
                 opentagpos = @footerpos[@page]
               end
             end
-            openHTMLTagHandler(dom, key, cell)
+            dom = openHTMLTagHandler(dom, key, cell)
           end
         else
           # closing tag
           prev_numpages = @numpages
-          closeHTMLTagHandler(dom, key, cell, maxbottomliney)
+          dom = closeHTMLTagHandler(dom, key, cell, maxbottomliney)
           if prev_numpages > @numpages
             startlinepage = @page
           end
@@ -12705,6 +12706,7 @@ public
         checkPageBreak(@page_break_trigger + 1)
       end
     end
+    dom
   end
   protected :openHTMLTagHandler
   
@@ -12931,14 +12933,15 @@ public
                   @transfmrk[@page] += (ccode + "\n").length
                 elsif @in_footer
                   pagemark = @footerpos[@page]
+                  @footerpos[@page] += (ccode + "\n").length
                 else
                   pagemark = @intmrk[@page]
+                  @intmrk[@page] += (ccode + "\n").length
                 end
                 pagebuff = getPageBuffer(@page)
                 pstart = pagebuff[0, pagemark]
                 pend = pagebuff[pagemark..-1]
                 setPageBuffer(@page, pstart + ccode + "\n" + pend)
-                pagemark += (ccode + "\n").length
               end
             end
           }                                       
@@ -13054,6 +13057,7 @@ public
       end
     end
     @tmprtl = false
+    dom
   end
   protected :closeHTMLTagHandler
   
