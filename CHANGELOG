@@ -1,3 +1,7 @@
+1.18.2 2014-10-25 
+       - getNumLines and a getStringHeight function fixed the problem which is wrong by the case of two or more lines.
+       - fix case of missing image file.
+
 1.18.1 2014-09-15 
        - ImagePngAlpha function fixed for the error case where an alpha channel cannot be deleted.
        - getimagesize function fixed for MAC OS rmagick.
