@@ -123,6 +123,27 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_equal line, 7
   end
 
+  test "getStringHeight Multi Line test" do
+    pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf.add_page
+
+    txt = "abc\ndif\nhij"
+
+    w = 100
+    y1 = pdf.get_y
+    pdf.multi_cell(w, 0, txt)
+    pno = pdf.get_page
+    assert_equal pno, 1
+    y2 = pdf.get_y
+    h1 = y2 - y1
+
+    h2 = pdf.getStringHeight(w, txt)
+    assert_in_delta h1, h2, 0.01
+
+    line = pdf.get_num_lines(txt, w)
+    assert_equal line, 3
+  end
+
   test "getStringHeight Minimum Width test 1" do
     pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.add_page

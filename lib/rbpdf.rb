@@ -4091,7 +4091,7 @@ class RBPDF
       if unichr(chars[i]) =~ /\s/
         lastSeparator = i
       end
-      if sum + charWidth >= wmax 
+      if (sum + charWidth >= wmax) or (chars[i] == 10) # 10 = "\n" = new line
         lines += 1
         if lastSeparator != -1
           i = lastSeparator
