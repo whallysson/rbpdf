@@ -10642,7 +10642,6 @@ protected
     html = "%s" % sanitize(html, :tags=> %w(a b blockquote body br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr stroke strokecolor fill nested))
 
     # replace some blank characters
-    html.gsub!(/<br>/, '<br/>')
     html.gsub!(/<pre/, '<xre') # preserve pre tag
     html.gsub!(/<(table|tr|td|th|blockquote|dd|div|dt|h1|h2|h3|h4|h5|h6|br|hr|li|ol|ul|p)([^\>]*)>[\n\r\t]+/, '<\\1\\2>')
     html.gsub!(/@(\r\n|\r)@/, "\n")
@@ -10797,12 +10796,12 @@ protected
           # *** opening html tag
           dom[key]['opening'] = true
           dom[key]['parent'] = level[-1]
-          if element[-1, 1] != '/'
-            # not self-closing tag
+          if element[-1, 1] == '/' or (dom[key]['value'] =~ /(br|img|hr)/)
+            # self-closing tag
+            dom[key]['self'] = true
+          else
             level.push(key)
             dom[key]['self'] = false
-          else
-            dom[key]['self'] = true
           end
           # copy some values from parent
           parentkey = 0

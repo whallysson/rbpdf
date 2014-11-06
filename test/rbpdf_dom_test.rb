@@ -114,6 +114,60 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_equal dom[3]['width'], '10'
   end
 
+  test "Dom self close tag test" do
+    pdf = MYPDF.new
+
+    # Simple Tag
+    dom = pdf.getHtmlDomArray('<b>ab<br>c</b>')
+    assert_equal dom.length, 6
+
+    assert_equal 0, dom[0]['parent']  # Root
+    assert_equal false, dom[0]['tag']
+    assert_equal({}, dom[0]['attribute'])
+
+    # <b>
+    assert_equal dom[1]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[1]['elkey'], 0
+    assert_equal dom[1]['tag'], true
+    assert_equal dom[1]['opening'], true
+    assert_equal dom[1]['value'], 'b'
+    assert_equal dom[1]['attribute'], {}
+
+    # ab
+    assert_equal({'tag' => false, 'value'=>'ab', 'elkey'=>1, 'parent'=>1, 'block'=>false}, dom[2])  # parent -> open tag key
+
+    # <br>
+    assert_equal dom[3]['parent'], 1   # parent -> open tag key
+    assert_equal dom[3]['elkey'], 2
+    assert_equal dom[3]['tag'], true
+    assert_equal dom[3]['opening'], true
+    assert_equal dom[3]['value'], 'br'
+    assert_equal dom[3]['attribute'], {}
+
+    # c
+    assert_equal({'tag' => false, 'value'=>'c', 'elkey'=>3, 'parent'=>1, 'block'=>false}, dom[4])  # parent -> open tag key
+
+    # </b>
+    assert_equal dom[5]['parent'], 1   # parent -> open tag key
+    assert_equal dom[5]['elkey'], 4
+    assert_equal dom[5]['tag'], true
+    assert_equal dom[5]['opening'], false
+    assert_equal dom[5]['value'], 'b'
+
+    dom2 = pdf.getHtmlDomArray('<b>ab<br/>c</b>')
+    assert_equal dom, dom2
+
+    htmlcontent = '<b><img src="' + Rails.root.to_s + '/public/ng.png" alt="test alt attribute" width="30" height="30" border="0"/></b>'
+    dom1 = pdf.getHtmlDomArray(htmlcontent)
+    htmlcontent = '<b><img src="' + Rails.root.to_s + '/public/ng.png" alt="test alt attribute" width="30" height="30" border="0"></b>'
+    dom2 = pdf.getHtmlDomArray(htmlcontent)
+    assert_equal dom1, dom2
+
+    dom1 = pdf.getHtmlDomArray('<b>ab<hr/>c</b>')
+    dom2 = pdf.getHtmlDomArray('<b>ab<hr>c</b>')
+    assert_equal dom1, dom2
+  end
+
   test "Dom HTMLTagHandler Basic test" do
     pdf = MYPDF.new
     pdf.add_page
