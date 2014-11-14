@@ -14,15 +14,15 @@ A template plugin allowing the inclusion of ERB-enabled RBPDF template files.
 * HTML tag support.
 * CSS minimum support.
 * Image
- - 8bit PNG image support without RMagick liblary.
- - PNG(with alpha channel)/JPEG/GIF image support. (use RMagick liblary)
+ - 8bit PNG image support without RMagick library.
+ - PNG(with alpha channel)/JPEG/GIF image support. (use RMagick library)
 
 
 ##
 ## Installing RBPDF
 ##
 
-RBPDF is distrifuted via RubyGems, and can be installed the usual way that you install gems: by simply typing `gem install rbpdf` on the command line. 
+RBPDF is distributed via RubyGems, and can be installed the usual way that you install gems: by simply typing `gem install rbpdf` on the command line. 
 
 ==
 
