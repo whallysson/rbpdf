@@ -12964,7 +12964,7 @@ public
         }
         if !in_table_head
           # we are not inside a thead section
-          if !parent['cellpadding'].nil?
+          if dom[(parent['parent'])]['attribute']['cellpadding'] ### fix ###
             @c_margin = @old_c_margin
           end
           @lasth = @font_size * @cell_height_ratio
@@ -12982,6 +12982,9 @@ public
             @thead = ''
             @thead_margins = {}
           end
+        end
+        if tag['block'] ### fix ###
+          addHTMLVertSpace(hbz / 2, 0, cell, (dom[key+1].nil? or (dom[key+1]['value'] != 'table')))
         end
       when 'a'
         @href = {}
