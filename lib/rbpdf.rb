@@ -363,6 +363,7 @@ class RBPDF
     @radiobutton_groups ||= []
     @radio_groups ||= []
     @textindent ||= 0
+    @nested_table = false
 
     @start_transaction_y ||= 0
     @in_thead ||= false
@@ -11227,7 +11228,10 @@ public
   # [@see] Multicell(), writeHTML(), Cell()
   #
   def writeHTMLCell(w, h, x, y, html='', border=0, ln=0, fill=0, reseth=true, align='', autopadding=true)
-    return MultiCell(w, h, html, border, align, fill, ln, x, y, reseth, 0, true, autopadding, 0)
+    @nested_table = true
+    rtn = MultiCell(w, h, html, border, align, fill, ln, x, y, reseth, 0, true, autopadding, 0)
+    @nested_table = false
+    return rtn
   end
   alias_method :write_html_cell, :writeHTMLCell
 
@@ -11956,7 +11960,7 @@ public
             else
               wtmp = @w - @r_margin - @x
             end
-            if dom[key]['attribute']['nested'] and (dom[key]['attribute']['nested'] == 'true')
+            if (@nested_table == true) or (dom[key]['attribute']['nested'] and (dom[key]['attribute']['nested'] == 'true'))
               # add margin for nested tables
               wtmp -= @c_margin
             end
