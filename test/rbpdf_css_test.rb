@@ -181,10 +181,53 @@ class RbpdfCssTest < ActiveSupport::TestCase
     assert_equal dom[1]['value'], 'h2'
 
     # <table>
+    assert_equal dom[4]['elkey'], 3
     assert_equal dom[4]['value'], 'table'
     assert_equal dom[4]['attribute'], {'border'=>'2px #ff0000 solid', 'style'=>';border:2px #ff0000 solid;'}
     assert_equal dom[4]['style']['border'], '2px #ff0000 solid'
     assert_equal dom[4]['attribute']['border'], '2px #ff0000 solid'
+  end
+
+  test "CSS Dom table thead test" do
+    pdf = MYPDF.new
+
+    html = '<style> table, td { border: 2px #ff0000 solid; } </style>
+            <h2>HTML TABLE THEAD:</h2>
+            <table><thead>
+            <tr> <th>abc</th> </tr>
+            </thead>
+            <tbody>
+            <tr> <td>def</td> </tr>
+            <tr> <td>ghi</td> </tr>
+            </tbody></table>'
+
+    dom = pdf.getHtmlDomArray(html)
+    ## remove style tag block (by getHtmlDomArray())       ##
+    ## remove thead/tbody tag block (by getHtmlDomArray()) ##
+    ## added marker tag (by getHtmlDomArray())             ##
+    # '<h2>HTML TABLE:</h2>
+    #  <table><tr><th>abc<marker style="font-size:0"/></th></tr>
+    #         <tr><td>def<marker style="font-size:0"/></td></tr></table>'
+    assert_equal dom.length, 24
+
+    assert_equal dom[0]['parent'], 0  # Root
+    assert_equal dom[0]['tag'], false
+    assert_equal dom[0]['attribute'], {}
+
+    # <h2>
+    assert_equal dom[1]['elkey'], 0
+    assert_equal dom[1]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[1]['tag'], true
+    assert_equal dom[1]['opening'], true
+    assert_equal dom[1]['value'], 'h2'
+
+    # <table>
+    assert_equal dom[4]['elkey'], 3
+    assert_equal dom[4]['value'], 'table'
+    assert_equal dom[4]['attribute'], {'border'=>'2px #ff0000 solid', 'style'=>';border:2px #ff0000 solid;'}
+    assert_equal dom[4]['style']['border'], '2px #ff0000 solid'
+    assert_equal dom[4]['attribute']['border'], '2px #ff0000 solid'
+    assert_equal dom[4]['thead'], '<style>table {;border:2px #ff0000 solid;}</style><table><tr><th>abc<marker style="font-size:0"/></th></tr></tablehead>'
   end
 
   test "CSS Dom line-height test normal" do

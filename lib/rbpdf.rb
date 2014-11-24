@@ -10777,7 +10777,11 @@ protected
           # store header rows on a new table
           if (dom[key]['value'] == 'tr') and (dom[(dom[key]['parent'])]['thead'] == true)
             if empty_string(dom[grandparent]['thead'])
-              dom[grandparent]['thead'] = a[dom[grandparent]['elkey']].dup
+              if dom[grandparent]['attribute'].nil? or dom[grandparent]['attribute']['style'].nil? 
+                dom[grandparent]['thead'] = a[dom[grandparent]['elkey']].dup
+              else
+                dom[grandparent]['thead'] = '<style>' + dom[grandparent]['value'] + ' {' + dom[grandparent]['attribute']['style'] + '}</style>' + a[dom[grandparent]['elkey']].dup
+              end
             end
             dom[key]['parent'].upto(key) do |i|
               dom[grandparent]['thead'] << a[dom[i]['elkey']]
