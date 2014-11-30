@@ -12548,6 +12548,12 @@ public
             xpos += 2 * GetStringWidth(32.chr)
           end
         end
+        if @rtl
+            xpos -= @line_width * 1.5
+        else
+            xpos += @line_width * 1.5
+        end
+
         imglink = ''
         if !@href['url'].nil? and !empty_string(@href['url'])
           imglink = @href['url']
@@ -12580,13 +12586,20 @@ public
           ih = getHTMLUnitToUnits(tag['attribute']['height'], 1, 'px', false)
         end
 
+        # store original margin values
+        l_margin = @l_margin
+        r_margin = @r_margin
+
+        SetLeftMargin(@l_margin + @line_width * 1.5)
+        SetRightMargin(@r_margin + @line_width * 1.5)
+
         begin
 #        if (type == 'eps') or (type == 'ai')
 #          ImageEps(tag['attribute']['src'], xpos, @y, iw, ih, imglink, true, align, '', border, true)
 #        elsif type == 'svg'
 #          ImageSVG(tag['attribute']['src'], xpos, @y, iw, ih, imglink, align, '', border, true)
 #        else
-          result_img = Image(tag['attribute']['src'], xpos, @y, iw, ih, '', imglink, align, false, 300, '', false, false, border, false, false, true)
+          result_img = Image(tag['attribute']['src'], xpos, @y + @line_width * 1.5, iw, ih, '', imglink, align, false, 300, '', false, false, border, false, false, true)
 #        end
         rescue => err
           logger.error "pdf: Image: error: #{err.message}"
@@ -12600,6 +12613,11 @@ public
         when 'B'
           @y = @img_rb_y - (tag['fontsize'] / @k)
         end
+
+        # restore original margin values
+        SetLeftMargin(l_margin)
+        SetRightMargin(r_margin)
+
         if result_img == false
           Write(@lasth, File::basename(img_name) + ' ', '', false, '', false, 0, false) unless img_name.nil?
         end
