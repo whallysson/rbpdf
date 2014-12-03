@@ -62,4 +62,57 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_equal [0x61, 0x62, 0x63, 0x5ea, 0x5d9, 0x5e8, 0x5d1, 0x5e2], ary_str
   end
 
+  test "Bidi arabic test" do
+    pdf = MYPDF.new
+
+    # Bidirectional Algorithm
+    ascii_str   = "role"
+    utf8_arabic_str_1  = "\xd8\xaf\xd9\x88\xd8\xb1"
+    utf8_arabic_char_1  = "\xd8\xaf"
+
+    # UCS4 charactor -> UTF-8 charactor
+    utf8_chr = pdf.unichr(0x62f)
+    assert_equal "\xd8\xaf", utf8_chr
+
+    # UTF-8 string -> array of UCS4 charactor
+    ary_ucs4 = pdf.UTF8StringToArray(ascii_str)
+    assert_equal [0x72, 0x6f, 0x6c, 0x65], ary_ucs4
+    ary_ucs4 = pdf.UTF8StringToArray(utf8_arabic_str_1)
+    assert_equal [0x62f, 0x648, 0x631], ary_ucs4
+    ary_ucs4 = pdf.UTF8StringToArray(utf8_arabic_char_1)
+    assert_equal [0x62f], ary_ucs4
+
+
+    ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
+    assert_equal [0x72, 0x6f, 0x6c, 0x65], ary_ucs4
+
+    ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), ascii_str, 'R')
+    assert_equal [0x72, 0x6f, 0x6c, 0x65], ary_ucs4
+
+    ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_arabic_char_1))
+    assert_equal [0xfea9], ary_ucs4
+    ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_arabic_char_1), utf8_arabic_char_1, 'R')
+    assert_equal [0xfea9], ary_ucs4
+
+    ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_arabic_str_1))
+    assert_equal [0xfeae, 0xfeee, 0xfea9], ary_ucs4
+  end
+
+  test "Bidi date test" do
+    pdf = MYPDF.new
+
+    utf8_date_str_1  = '12/01/2014'
+
+    pdf.set_rtl(true)
+    pdf.set_temp_rtl('rtl')
+    # UTF-8 string -> array of UCS4 charactor
+    ary_ucs4 = pdf.UTF8StringToArray(utf8_date_str_1)
+    assert_equal [0x31, 0x32, 0x2f, 0x30, 0x31, 0x2f, 0x32, 0x30, 0x31, 0x34], ary_ucs4  # 12/01/2014
+
+    ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_date_str_1))
+    assert_equal [0x31, 0x32, 0x2f, 0x30, 0x31, 0x2f, 0x32, 0x30, 0x31, 0x34], ary_ucs4  # 12/01/2014
+
+    ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_date_str_1), utf8_date_str_1, 'R')
+    assert_equal [0x31, 0x32, 0x2f, 0x30, 0x31, 0x2f, 0x32, 0x30, 0x31, 0x34], ary_ucs4  # 12/01/2014
+  end
 end

@@ -170,4 +170,48 @@ class RbpdfTest < ActiveSupport::TestCase
     endlinex = pdf.endlinex()
     assert_not_equal endlinex, x
   end
+
+  test "write Bidi arabic test" do
+    pdf = RBPDF.new
+    pdf.set_font('dejavusans', '', 18)
+    pdf.add_page
+
+    ascii_str   = "role"
+    utf8_arabic_str_1  = "\xd8\xaf\xd9\x88\xd8\xb1"
+
+    line = pdf.write(0, ascii_str)
+    assert_equal line,  1
+    line = pdf.write(0, utf8_arabic_str_1)
+    assert_equal line,  1
+  end
+
+  test "write Bidi arabic set_rtl test" do
+    pdf = RBPDF.new
+    pdf.set_font('dejavusans', '', 18)
+    pdf.set_rtl(true)
+    pdf.add_page
+
+    ascii_str   = "role"
+    utf8_arabic_str_1  = "\xd8\xaf\xd9\x88\xd8\xb1"
+
+    line = pdf.write(0, ascii_str)
+    assert_equal line,  1
+    line = pdf.write(0, utf8_arabic_str_1)
+    assert_equal line,  1
+  end
+
+  test "write Bidi arabic set_temp_rtl test" do
+    pdf = RBPDF.new
+    pdf.set_font('dejavusans', '', 18)
+    pdf.set_temp_rtl('rtl')
+    pdf.add_page
+
+    ascii_str   = "role"
+    utf8_arabic_str_1  = "\xd8\xaf\xd9\x88\xd8\xb1"
+
+    line = pdf.write(0, ascii_str)
+    assert_equal line,  1
+    line = pdf.write(0, utf8_arabic_str_1)
+    assert_equal line,  1
+  end
 end

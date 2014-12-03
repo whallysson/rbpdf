@@ -4360,7 +4360,7 @@ class RBPDF
         if ((@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')) and arabic
           # with bidirectional algorithm some chars may be changed affecting the line length
           # *** very slow ***
-          l = GetArrStringWidth(utf8Bidi(chars[j..i-1], '', @tmprtl))
+          l = GetArrStringWidth(utf8Bidi(chars[j,i-j], '', @tmprtl))
         else
           l += GetCharWidth(c)
         end
@@ -9568,7 +9568,6 @@ public
     
     ordarray = []
     0.upto(numchars-1) do |i|
-      chardata[i][:char]
       ordarray.push chardata[i][:char]
     end
     
