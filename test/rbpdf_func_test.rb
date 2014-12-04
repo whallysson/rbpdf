@@ -123,4 +123,13 @@ class RbpdfTest < ActiveSupport::TestCase
     pdf.set_line_style({'width' => 0.1, 'cap' => 'butt', 'join' => 'miter', 'dash' => '1,2,3,4', 'phase' => 0, 'color' => [255, 0, 0]})
     pdf.set_line_style({'width' => 0.1, 'cap' => 'butt', 'join' => 'miter', 'dash' => 'a', 'phase' => 0, 'color' => [255, 0, 0]}) # Invalid
   end
+
+  test "get_string_width encoding test" do
+    return unless 'test'.respond_to?(:force_encoding)
+
+    pdf = RBPDF.new
+    str = 'test'.force_encoding('UTF-8')
+    width = pdf.get_string_width(str)
+    assert_equal str.encoding.to_s, 'UTF-8'
+  end
 end

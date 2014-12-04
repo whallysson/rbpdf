@@ -9,6 +9,9 @@ class RbpdfTest < ActiveSupport::TestCase
     def utf8Bidi(ta, str='', forcertl=false)
       super
     end
+    def cache_utf8_string_to_array(str)
+      @cache_utf8_string_to_array[str]
+    end
   end
 
   test "Bidi" do
@@ -114,5 +117,15 @@ class RbpdfTest < ActiveSupport::TestCase
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_date_str_1), utf8_date_str_1, 'R')
     assert_equal [0x31, 0x32, 0x2f, 0x30, 0x31, 0x2f, 0x32, 0x30, 0x31, 0x34], ary_ucs4  # 12/01/2014
+  end
+
+  test "UTF8StringToArray cache_utf8_string_to_array test" do
+    pdf = MYPDF.new
+
+    chars = pdf.UTF8StringToArray('1234')
+    chars.reverse!
+
+    rtn = pdf.cache_utf8_string_to_array('1234')
+    assert_equal rtn, [0x31, 0x32, 0x33, 0x34]
   end
 end

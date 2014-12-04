@@ -171,6 +171,15 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_not_equal endlinex, x
   end
 
+  test "write encoding test" do
+    return unless 'test'.respond_to?(:force_encoding)
+
+    pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    str = 'test'.force_encoding('UTF-8')
+    width = pdf.write(0, str)
+    assert_equal str.encoding.to_s, 'UTF-8'
+  end
+
   test "write Bidi arabic test" do
     pdf = RBPDF.new
     pdf.set_font('dejavusans', '', 18)

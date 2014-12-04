@@ -3288,6 +3288,7 @@ class RBPDF
   # [@since (4.5.019) 2009-02-28]
   #
   def removeSHY(txt='')
+    txt = txt.dup
     # Unicode Data
     # Name : SOFT HYPHEN, commonly abbreviated as SHY
     # HTML Entity (decimal): &#173;
@@ -4210,6 +4211,7 @@ class RBPDF
   # [@since 1.5]
   #
   def Write(h, txt, link=nil, fill=0, align='', ln=false, stretch=0, firstline=false, firstblock=false, maxh=0)
+    txt = txt.dup
     txt.force_encoding('ASCII-8BIT') if txt.respond_to?(:force_encoding)
     if txt.length == 0
       txt = ' '
@@ -4847,7 +4849,7 @@ class RBPDF
       if (type == '')
         type = getImageFileType(file, imsize)
       else
-        type.downcase!
+        type = type.downcase
         type = 'jpeg' if type == 'jpg'
       end
 
@@ -7587,7 +7589,7 @@ protected
   def UTF8StringToArray(str)
     if @cache_utf8_string_to_array[str]
       # return cached value
-      return @cache_utf8_string_to_array[str]
+      return @cache_utf8_string_to_array[str].dup
     end
     # check cache size
     if @cache_size_utf8_string_to_array >= @cache_maxsize_utf8_string_to_array
@@ -7603,7 +7605,7 @@ protected
         strarr[pos] = char.unpack('C')[0]
       end
       # insert new value on cache
-      @cache_utf8_string_to_array[str] = strarr
+      @cache_utf8_string_to_array[str] = strarr.dup
       return strarr
     end
 
@@ -7662,7 +7664,7 @@ protected
       end
     end
     # insert new value on cache
-    @cache_utf8_string_to_array[str] = unicode
+    @cache_utf8_string_to_array[str] = unicode.dup
     return unicode;
   end
   
@@ -9012,6 +9014,7 @@ public
   # [@since 2.4.000 (2008-03-06)]
   #
   def utf8Bidi(ta, str='', forcertl=false)
+    str = str.dup
     # paragraph embedding level
     pel = 0
     # max level
@@ -10324,7 +10327,7 @@ protected
       return {}
     end
     # remove comments
-    cssdata.gsub!(/\/\*[^\*]*\*\//, '')
+    cssdata = cssdata.gsub(/\/\*[^\*]*\*\//, '')
     # remove newlines and multiple spaces
     cssdata.gsub!(/[\s]+/, ' ')
     # remove some spaces
@@ -10573,6 +10576,7 @@ protected
   # [@since 3.2.000 (2008-06-20)]
   #
   def getHtmlDomArray(html)
+    html = html.dup
     html.force_encoding('UTF-8') if @is_unicode and html.respond_to?(:force_encoding)
     # array of CSS styles ( selector => properties).
     css = {}

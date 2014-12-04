@@ -193,4 +193,13 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_equal dom1, dom2
     assert_equal pdf.get_image_rby - (12 / pdf.get_scale_factor) , y2
   end
+
+  test "getHtmlDomArray encoding test" do
+    return unless 'test'.respond_to?(:force_encoding)
+
+    pdf = MYPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    htmlcontent = 'test'.force_encoding('ASCII-8BIT')
+    dom = pdf.getHtmlDomArray(htmlcontent)
+    assert_equal htmlcontent.encoding.to_s, 'ASCII-8BIT'
+  end
 end

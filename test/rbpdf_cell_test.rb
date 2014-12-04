@@ -250,4 +250,18 @@ class RbpdfTest < ActiveSupport::TestCase
     line = pdf.get_num_lines(txt, w)
     assert_equal line, 3
   end
+
+  test "removeSHY encoding test" do
+    return unless 'test'.respond_to?(:force_encoding)
+
+    pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+
+    str = 'test'.force_encoding('UTF-8')
+    txt = pdf.removeSHY(str)
+    assert_equal str.encoding.to_s, 'UTF-8'
+
+    str = 'test'.force_encoding('ASCII-8BIT')
+    txt = pdf.removeSHY(str)
+    assert_equal str.encoding.to_s, 'ASCII-8BIT'
+  end
 end
