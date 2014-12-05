@@ -242,4 +242,41 @@ class RbpdfTest < ActiveSupport::TestCase
     contents4 = pdf.getPageBuffer(2)
     assert_equal contents4, false
   end
+
+  test "start_page_group test" do
+    pdf = RBPDF.new
+    pdf.add_page
+    pdf.start_page_group
+    pdf.start_page_group(1)
+    pdf.start_page_group(nil)
+    pdf.start_page_group('')
+  end
+
+  test "get_page_dimensions test" do
+    pdf = RBPDF.new
+    pdf.add_page
+
+    pagedim = pdf.get_page_dimensions
+    assert_equal pagedim['CropBox']['llx'], 0.0
+    pagedim = pdf.get_page_dimensions(1)
+    assert_equal pagedim['CropBox']['llx'], 0.0
+    pagedim = pdf.get_page_dimensions(nil)
+    assert_equal pagedim['CropBox']['llx'], 0.0
+    pagedim = pdf.get_page_dimensions('')
+    assert_equal pagedim['CropBox']['llx'], 0.0
+  end
+
+  test "get_break_margin test" do
+    pdf = RBPDF.new
+    pdf.add_page
+
+    b_margin = pdf.get_break_margin
+    assert_in_delta b_margin, 20.0, 0.1
+    b_margin = pdf.get_break_margin(1)
+    assert_in_delta b_margin, 20.0, 0.1
+    b_margin = pdf.get_break_margin(nil)
+    assert_in_delta b_margin, 20.0, 0.1
+    b_margin = pdf.get_break_margin('')
+    assert_in_delta b_margin, 20.0, 0.1
+  end
 end

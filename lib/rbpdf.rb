@@ -1111,8 +1111,8 @@ class RBPDF
   # [@access public]
   # [@since 4.5.027 (2009-03-16)]
   #
-  def getPageDimensions(pagenum='')
-    if pagenum.empty?
+  def getPageDimensions(pagenum=0)
+    if !pagenum.is_a? Integer or pagenum.zero?
       pagenum = @page
     end
     return @pagedim[pagenum]
@@ -1162,15 +1162,15 @@ class RBPDF
   # [@since 1.5.2]
   # [@see] getPageDimensions()
   #
-  def getBreakMargin(pagenum='')
-    if pagenum.empty?
+  def getBreakMargin(pagenum=0)
+    if !pagenum.is_a? Integer or pagenum.zero?
       return @b_margin
     end
     return @pagedim[pagenum]['bm']
   end
   alias_method :get_break_margin, :getBreakMargin
 
-  def GetBreakMargin(pagenum='')
+  def GetBreakMargin(pagenum=0)
     warn "[DEPRECATION] 'GetBreakMargin' is deprecated. Please use 'get_break_margin' instead."
     getBreakMargin(pagenum)
   end
@@ -6369,7 +6369,7 @@ protected
     stream = stream.strip
     @apxo_obj_id += 1
     @offsets[@apxo_obj_id] = @bufferlen
-    out = @apxo_obj_id + ' 0 obj'
+    out = @apxo_obj_id.to_s + ' 0 obj'
     out << ' <<'
     out << ' /Type /XObject'
     out << ' /Subtype /Form'
@@ -9688,8 +9688,8 @@ public
   # [@access public]
   # [@since 3.0.000 (2008-03-27)]
   #
-  def startPageGroup(page='')
-    if page.empty?
+  def startPageGroup(page=0)
+    if !page.is_a? Integer or page.zero?
       page = @page + 1
     end
     @newpagegroup[page] = true
