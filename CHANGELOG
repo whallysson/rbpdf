@@ -1,3 +1,14 @@
+1.18.3 2014-12-06
+       - fixed img and hr self html tag DOM problem.
+       - fixed HTML table problem in writeHTMLCell function.
+       - fixed the problem which is not separated when table tag continues.
+       - fixed the problem that CSS classes don't work in thead table section.
+       - HTML image margin was fixed so that a picture in the HTML table didn't overwrite a boundary line.
+       - Method Write() was fixed to handle arabic strings.
+       - Parameter of the method was changed fixed.
+       - getPageDimensions, getBreakMargin, GetBreakMargin, startPageGroup methods fixed.
+       - LICENSE.TXT file added.
+
 1.18.2 2014-10-25 
        - getNumLines and a getStringHeight function fixed the problem which is wrong by the case of two or more lines.
        - fix case of missing image file.
