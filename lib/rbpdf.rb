@@ -9403,8 +9403,8 @@ public
       charAL = []
       x = 0
       0.upto(numchars-1) do |i|
-        if (@@unicode[chardata[i][:char]] == 'AL') or (chardata[i][:char] == 32) or (chardata[i]['char'] == 8204) # 4.0.008 - Arabic shaping for "Zero-Width Non-Joiner" character (U+200C) was fixed.
-          charAL[x] = chardata[i]
+        if (@@unicode[chardata[i][:char]] == 'AL') or (chardata[i][:char] == 32) or (chardata[i][:char] == 8204)
+          charAL[x] = chardata[i].dup
           charAL[x][:i] = i
           chardata[i][:x] = x
           x += 1
