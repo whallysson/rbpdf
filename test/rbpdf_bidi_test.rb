@@ -110,7 +110,7 @@ class RbpdfTest < ActiveSupport::TestCase
     utf8_persian_str_4  = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4"
     utf8_persian_str_5  = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86"
     utf8_persian_str_6  = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8"
-    utf8_persian_str_7  = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87"
+    utf8_persian_str_7  = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87" # Sunday
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_1))
     assert_equal ary_ucs4, [0xfbfc]
@@ -128,6 +128,16 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_equal ary_ucs4, [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe]
   end
 
+  test "Bidi Persian Sunday forcertl test" do
+    pdf = MYPDF.new
+    utf8_persian_str_sunday = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87"
+
+    ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_sunday), '', 'R')
+    assert_equal ary_ucs4_1, [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe]
+    ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_sunday), '', 'L')
+    assert_equal ary_ucs4_2, ary_ucs4_1
+  end
+
   test "Bidi Persian Monday test" do
     pdf = MYPDF.new
 
@@ -136,7 +146,7 @@ class RbpdfTest < ActiveSupport::TestCase
     utf8_persian_str_3  = "\xd8\xaf\xd9\x88\xd8\xb4"
     utf8_persian_str_4  = "\xd8\xaf\xd9\x88\xd8\xb4\xd9\x86"
     utf8_persian_str_5  = "\xd8\xaf\xd9\x88\xd8\xb4\xd9\x86\xd8\xa8"
-    utf8_persian_str_6  = "\xd8\xaf\xd9\x88\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87"
+    utf8_persian_str_6  = "\xd8\xaf\xd9\x88\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87" # Monday
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_1))
     assert_equal ary_ucs4, [0xfea9]
@@ -150,6 +160,46 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_equal ary_ucs4, [0xfe90, 0xfee8, 0xfeb7, 0xfeed, 0xfea9]
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_6))
     assert_equal ary_ucs4, [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0xfeed, 0xfea9]
+  end
+
+  test "Bidi Persian Monday forcertl test" do
+    pdf = MYPDF.new
+    utf8_persian_str_monday = "\xd8\xaf\xd9\x88\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87"
+
+    ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_monday), '', 'R')
+    assert_equal ary_ucs4_1, [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0xfeed, 0xfea9]
+    ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_monday), '', 'L')
+    assert_equal ary_ucs4_2, ary_ucs4_1
+  end
+
+  test "Bidi Persian and English test" do
+    pdf = MYPDF.new
+
+    utf8_persian_str_sunday = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87"
+    ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_sunday + ' abc'))
+    assert_equal ary_ucs4, [0x61, 0x62, 0x63, 0x20, # 'abc '
+                            0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe] # Sunday
+    ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_sunday + ' abc'), '', 'R')
+    assert_equal ary_ucs4, [0x61, 0x62, 0x63, 0x20, # 'abc '
+                            0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe] # Sunday
+    ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_sunday + ' abc'), '', 'L')
+    assert_equal ary_ucs4, [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe, # Sunday
+                            0x20, 0x61, 0x62, 0x63] # 'abc '
+  end
+
+  test "Bidi English and Persian test" do
+    pdf = MYPDF.new
+
+    utf8_persian_str_sunday = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87"
+    ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray('abc ' + utf8_persian_str_sunday))
+    assert_equal ary_ucs4, [0x61, 0x62, 0x63, 0x20, # 'abc '
+                            0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe] # Sunday
+    ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray('abc ' + utf8_persian_str_sunday), '', 'L')
+    assert_equal ary_ucs4, [0x61, 0x62, 0x63, 0x20, # 'abc '
+                            0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe] # Sunday
+    ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray('abc ' + utf8_persian_str_sunday), '', 'R')
+    assert_equal ary_ucs4, [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe, # Sunday
+                            0x20, 0x61, 0x62, 0x63] # 'abc '
   end
 
   test "Bidi date test" do

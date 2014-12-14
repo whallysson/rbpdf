@@ -9354,19 +9354,23 @@ public
     
     # I1. For all characters with an even (left-to-right) embedding direction, those of type R go up one level and those of type AN or EN go up two levels.
     # I2. For all characters with an odd (right-to-left) embedding direction, those of type L, EN or AN go up one level.
+    prevlevel = -1
     0.upto(numchars-1) do |i|
       odd = chardata[i][:level] % 2
-      if odd == 1
+      if odd == 1 # I2.
         if (chardata[i][:type] == 'L') or (chardata[i][:type] == 'AN') or (chardata[i][:type] == 'EN')
           chardata[i][:level] += 1
         end
-      else
+      else # I1.
         if chardata[i][:type] == 'R'
           chardata[i][:level] += 1
+        elsif chardata[i][:type] == 'BN' and prevlevel != -1
+          chardata[i][:level] = prevlevel
         elsif (chardata[i][:type] == 'AN') or (chardata[i][:type] == 'EN')
           chardata[i][:level] += 2
         end
       end
+      prevlevel = chardata[i][:level]
       maxlevel = [chardata[i][:level],maxlevel].max
     end
     
@@ -9403,7 +9407,7 @@ public
       charAL = []
       x = 0
       0.upto(numchars-1) do |i|
-        if (@@unicode[chardata[i][:char]] == 'AL') or (chardata[i][:char] == 32) or (chardata[i][:char] == 8204)
+        if (@@unicode[chardata[i][:char]] == 'AL') or (chardata[i][:char] == 32) or (chardata[i][:char] == 8204) # Unicode Character 'ZERO WIDTH NON-JOINER' (U+200C)
           charAL[x] = chardata[i].dup
           charAL[x][:i] = i
           chardata[i][:x] = x
