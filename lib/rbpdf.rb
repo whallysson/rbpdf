@@ -9306,41 +9306,41 @@ public
     levcount = 0
     0.upto(numchars-1) do |i|
       if (levcount > 0) and (i+1 < numchars) and (chardata[i+1][:level] == prevlevel)
-        if (chardata[i][:type] == 'N') and (chardata[i-1][:type] == 'L') and (chardata[i+1][:type] == 'L')
+        if (chardata[i][:type] =~ /^(B|S|WS|ON)$/) and (chardata[i-1][:type] == 'L') and (chardata[i+1][:type] == 'L')
           chardata[i][:type] = 'L'
-        elsif (chardata[i][:type] == 'N') and
+        elsif (chardata[i][:type] =~ /^(B|S|WS|ON)$/) and
          ((chardata[i-1][:type] == 'R') or (chardata[i-1][:type] == 'EN') or (chardata[i-1][:type] == 'AN')) and
          ((chardata[i+1][:type] == 'R') or (chardata[i+1][:type] == 'EN') or (chardata[i+1][:type] == 'AN'))
           chardata[i][:type] = 'R'
-        elsif chardata[i][:type] == 'N'
+        elsif chardata[i][:type] =~ /^(B|S|WS|ON)$/
           # N2. Any remaining neutrals take the embedding direction
           chardata[i][:type] = chardata[i][:sor]
         end
       elsif (levcount == 0) and (i+1 < numchars) and (chardata[i+1][:level] == prevlevel)
         # first char
-        if (chardata[i][:type] == 'N') and (chardata[i][:sor] == 'L') and (chardata[i+1][:type] == 'L')
+        if (chardata[i][:type] =~ /^(B|S|WS|ON)$/) and (chardata[i][:sor] == 'L') and (chardata[i+1][:type] == 'L')
           chardata[i][:type] = 'L'
-        elsif (chardata[i][:type] == 'N') and
+        elsif (chardata[i][:type] =~ /^(B|S|WS|ON)$/) and
          ((chardata[i][:sor] == 'R') or (chardata[i][:sor] == 'EN') or (chardata[i][:sor] == 'AN')) and
          ((chardata[i+1][:type] == 'R') or (chardata[i+1][:type] == 'EN') or (chardata[i+1][:type] == 'AN'))
           chardata[i][:type] = 'R'
-        elsif chardata[i][:type] == 'N'
+        elsif chardata[i][:type] =~ /^(B|S|WS|ON)$/
           # N2. Any remaining neutrals take the embedding direction
           chardata[i][:type] = chardata[i][:sor]
         end
       elsif (levcount > 0) and ((i+1 == numchars) or ((i+1 < numchars) and (chardata[i+1][:level] != prevlevel)))
         # last char
-        if (chardata[i][:type] == 'N') and (chardata[i-1][:type] == 'L') and (chardata[i][:eor] == 'L')
+        if (chardata[i][:type] =~ /^(B|S|WS|ON)$/) and (chardata[i-1][:type] == 'L') and (chardata[i][:eor] == 'L')
           chardata[i][:type] = 'L'
-        elsif (chardata[i][:type] == 'N') and
+        elsif (chardata[i][:type] =~ /^(B|S|WS|ON)$/) and
          ((chardata[i-1][:type] == 'R') or (chardata[i-1][:type] == 'EN') or (chardata[i-1][:type] == 'AN')) and
          ((chardata[i][:eor] == 'R') or (chardata[i][:eor] == 'EN') or (chardata[i][:eor] == 'AN'))
           chardata[i][:type] = 'R'
-        elsif chardata[i][:type] == 'N'
+        elsif chardata[i][:type] =~ /^(B|S|WS|ON)$/
           # N2. Any remaining neutrals take the embedding direction
           chardata[i][:type] = chardata[i][:sor]
         end
-      elsif chardata[i][:type] == 'N'
+      elsif chardata[i][:type] =~ /^(B|S|WS|ON)$/
         # N2. Any remaining neutrals take the embedding direction
         chardata[i][:type] = chardata[i][:sor]
       end
