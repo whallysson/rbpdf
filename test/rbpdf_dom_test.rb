@@ -8,6 +8,9 @@ class RbpdfTest < ActiveSupport::TestCase
     def openHTMLTagHandler(dom, key, cell)
       super
     end
+    def get_temp_rtl
+      @tmprtl
+    end
   end
 
   test "Dom Basic" do
@@ -177,6 +180,89 @@ class RbpdfTest < ActiveSupport::TestCase
     dom1 = pdf.getHtmlDomArray(htmlcontent)
     dom2 = pdf.openHTMLTagHandler(dom1, 1, false)
     assert_equal dom1, dom2
+  end
+
+  test "Dom HTMLTagHandler DIR RTL test" do
+    pdf = MYPDF.new
+    pdf.add_page
+    temprtl = pdf.get_temp_rtl
+    assert_equal temprtl, false
+
+    # LTR, ltr
+    htmlcontent = '<p dir="ltr">HTML Example</p>'
+    dom = pdf.getHtmlDomArray(htmlcontent)
+    dom = pdf.openHTMLTagHandler(dom, 1, false)
+
+    assert_equal dom[1]['tag'], true
+    assert_equal dom[1]['opening'], true
+    assert_equal dom[1]['value'], 'p'
+    assert_equal dom[1]['attribute']['dir'], 'ltr'
+
+    temprtl = pdf.get_temp_rtl
+    assert_equal temprtl, false
+
+    # LTR, rtl
+    htmlcontent = '<p dir="rtl">HTML Example</p>'
+    dom = pdf.getHtmlDomArray(htmlcontent)
+    dom = pdf.openHTMLTagHandler(dom, 1, false)
+    assert_equal dom.length, 4
+
+    assert_equal dom[1]['tag'], true
+    assert_equal dom[1]['opening'], true
+    assert_equal dom[1]['value'], 'p'
+    assert_equal dom[1]['attribute']['dir'], 'rtl'
+
+    temprtl = pdf.get_temp_rtl
+    assert_equal temprtl, 'R'
+
+    # LTR, ltr
+    htmlcontent = '<p dir="ltr">HTML Example</p>'
+    dom = pdf.getHtmlDomArray(htmlcontent)
+    dom = pdf.openHTMLTagHandler(dom, 1, false)
+
+    assert_equal dom[1]['tag'], true
+    assert_equal dom[1]['opening'], true
+    assert_equal dom[1]['value'], 'p'
+    assert_equal dom[1]['attribute']['dir'], 'ltr'
+
+    temprtl = pdf.get_temp_rtl
+    assert_equal temprtl, false
+  end
+
+  test "Dom HTMLTagHandler DIR LTR test" do
+    pdf = MYPDF.new
+    pdf.add_page
+    temprtl = pdf.get_temp_rtl
+    assert_equal temprtl, false
+    pdf.set_rtl(true)
+
+    # RTL, ltr
+    htmlcontent = '<p dir="ltr">HTML Example</p>'
+    dom = pdf.getHtmlDomArray(htmlcontent)
+    dom = pdf.openHTMLTagHandler(dom, 1, false)
+    assert_equal dom.length, 4
+
+    assert_equal dom[1]['tag'], true
+    assert_equal dom[1]['opening'], true
+    assert_equal dom[1]['value'], 'p'
+    assert_equal dom[1]['attribute']['dir'], 'ltr'
+
+    temprtl = pdf.get_temp_rtl
+    assert_equal temprtl, 'L'
+
+    # RTL, rtl
+    htmlcontent = '<p dir="rtl">HTML Example</p>'
+    dom = pdf.getHtmlDomArray(htmlcontent)
+    dom = pdf.openHTMLTagHandler(dom, 1, false)
+    assert_equal dom.length, 4
+
+    assert_equal dom[1]['tag'], true
+    assert_equal dom[1]['opening'], true
+    assert_equal dom[1]['value'], 'p'
+    assert_equal dom[1]['attribute']['dir'], 'rtl'
+
+    temprtl = pdf.get_temp_rtl
+    assert_equal temprtl, false
   end
 
   test "Dom HTMLTagHandler img test" do

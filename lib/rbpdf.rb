@@ -989,14 +989,32 @@ class RBPDF
 
   #
   # Return the current temporary RTL status
-  # [@return boolean]
+  # [@return boolean] true: RTL, false: LTR
   # [@access public]
   # [@since 4.8.014 (2009-11-04)]
   #
   def isRTLTextDir()
-    return (@rtl or (@tmprtl == 'R'))
+    if @tmprtl != false
+      return @tmprtl == 'R'
+    else
+      return @rtl
+    end
   end
   alias_method :is_rtl_text_dir, :isRTLTextDir
+
+  #
+  # Return the current text RTL status
+  # [@return direction] 'R' : RTL, 'L' LTR
+  # [@access protected]
+  #
+  def rtl_text_dir()
+    if @tmprtl != false
+      return @tmprtl # 'R' or 'L'
+    else
+      return @rtl ? 'R' : 'L'
+    end
+  end
+  protected :rtl_text_dir
 
   #
   # Set the last cell height.
@@ -2432,7 +2450,7 @@ class RBPDF
   # [@since 1.2]
   #
   def GetStringWidth(s, fontname='', fontstyle='', fontsize=0, getarray=false)
-    return GetArrStringWidth(utf8Bidi(UTF8StringToArray(s), s, @tmprtl), fontname, fontstyle, fontsize, getarray)
+    return GetArrStringWidth(utf8Bidi(UTF8StringToArray(s), s, rtl_text_dir), fontname, fontstyle, fontsize, getarray)
   end
   alias_method :get_string_width, :GetStringWidth
 
@@ -3509,7 +3527,7 @@ class RBPDF
           txt2 = UTF8ToLatin1(txt2)
         else
           unicode = UTF8StringToArray(txt) # array of UTF-8 unicode values
-          unicode = utf8Bidi(unicode, '', @tmprtl)
+          unicode = utf8Bidi(unicode, '', rtl_text_dir)
           if @@k_thai_topchars and @@k_thai_topchars == true
             # ---- Fix for bug #2977340 "Incorrect Thai characters position arrangement" ----
             # NOTE: this doesn't work with HTML justification
@@ -4078,7 +4096,7 @@ class RBPDF
     lines = 1
     sum = 0
     chars = UTF8StringToArray(txt)
-    chars = utf8Bidi(chars, txt, @tmprtl)
+    chars = utf8Bidi(chars, txt, rtl_text_dir)
     charsWidth = GetArrStringWidth(chars, '', '', 0, true)
     if @rtl
       charsWidth.reverse!
@@ -4228,7 +4246,7 @@ class RBPDF
     end
 
     # check if string contains RTL text
-    if arabic or (@tmprtl == 'R') or (txt =~ @@k_re_pattern_rtl)
+    if arabic or isRTLTextDir or (txt =~ @@k_re_pattern_rtl)
       rtlmode = true
     else
       rtlmode = false
@@ -4303,7 +4321,7 @@ class RBPDF
           startx = @x
           tmparr = chars[j, i - j]
           if rtlmode
-            tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
+            tmparr = utf8Bidi(tmparr, tmpstr, rtl_text_dir)
           end
           linew = GetArrStringWidth(tmparr)
           tmparr = ''
@@ -4362,7 +4380,7 @@ class RBPDF
         if ((@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')) and arabic
           # with bidirectional algorithm some chars may be changed affecting the line length
           # *** very slow ***
-          l = GetArrStringWidth(utf8Bidi(chars[j,i-j], '', @tmprtl))
+          l = GetArrStringWidth(utf8Bidi(chars[j,i-j], '', rtl_text_dir))
         else
           l += GetCharWidth(c)
         end
@@ -4385,7 +4403,7 @@ class RBPDF
                 startx = @x
                 tmparr = chars[j, i - j]
                 if rtlmode
-                  tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
+                  tmparr = utf8Bidi(tmparr, tmpstr, rtl_text_dir)
                 end
                 linew = GetArrStringWidth(tmparr)
                 tmparr = ''
@@ -4439,7 +4457,7 @@ class RBPDF
               startx = @x
               tmparr = chars[j, sep + endspace - j]
               if rtlmode
-                tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
+                tmparr = utf8Bidi(tmparr, tmpstr, rtl_text_dir)
               end
               linew = GetArrStringWidth(tmparr)
               tmparr = ''
@@ -4514,7 +4532,7 @@ class RBPDF
         startx = @x
         tmparr = chars[j, nb - j]
         if rtlmode
-          tmparr = utf8Bidi(tmparr, tmpstr, @tmprtl)
+          tmparr = utf8Bidi(tmparr, tmpstr, rtl_text_dir)
         end
         linew = GetArrStringWidth(tmparr)
         tmparr = ''
@@ -5592,8 +5610,8 @@ protected
       if @is_unicode
         alias_b = escape(UTF8ToLatin1(@alias_nb_pages))
         alias_bu = escape(UTF8ToLatin1('{' + @alias_nb_pages + '}'))
-        alias_c = escape(utf8StrRev(@alias_nb_pages, false, @tmprtl))
-        alias_cu = escape(utf8StrRev('{' + @alias_nb_pages + '}', false, @tmprtl))
+        alias_c = escape(utf8StrRev(@alias_nb_pages, false, rtl_text_dir))
+        alias_cu = escape(utf8StrRev('{' + @alias_nb_pages + '}', false, rtl_text_dir))
       end
     end
     if @alias_num_page
@@ -5602,8 +5620,8 @@ protected
       if @is_unicode
         alias_pb = escape(UTF8ToLatin1(@alias_num_page))
         alias_pbu = escape(UTF8ToLatin1('{' + @alias_num_page + '}'))
-        alias_pc = escape(utf8StrRev(@alias_num_page, false, @tmprtl))
-        alias_pcu = escape(utf8StrRev('{' + @alias_num_page + '}', false, @tmprtl))
+        alias_pc = escape(utf8StrRev(@alias_num_page, false, rtl_text_dir))
+        alias_pcu = escape(utf8StrRev('{' + @alias_num_page + '}', false, rtl_text_dir))
       end
     end
     pagegroupnum = 0
@@ -5624,8 +5642,8 @@ protected
           if @is_unicode
             alias_gb = escape(UTF8ToLatin1(k))
             alias_gbu = escape(UTF8ToLatin1('{' + k + '}'))
-            alias_gc = escape(utf8StrRev(k.dup, false, @tmprtl))
-            alias_gcu = escape(utf8StrRev('{' + k + '}', false, @tmprtl))
+            alias_gc = escape(utf8StrRev(k.dup, false, rtl_text_dir))
+            alias_gcu = escape(utf8StrRev('{' + k + '}', false, rtl_text_dir))
           end
           temppage = temppage.gsub(alias_gau, vu)
           if @is_unicode
@@ -5644,8 +5662,8 @@ protected
           if @is_unicode
             alias_pgb = escape(UTF8ToLatin1(pk))
             alias_pgbu = escape(UTF8ToLatin1('{' + pk + '}'))
-            alias_pgc = escape(utf8StrRev(pk, false, @tmprtl))
-            alias_pgcu = escape(utf8StrRev('{' + pk + '}', false, @tmprtl))
+            alias_pgc = escape(utf8StrRev(pk, false, rtl_text_dir))
+            alias_pgcu = escape(utf8StrRev('{' + pk + '}', false, rtl_text_dir))
           end
           temppage = temppage.gsub(alias_pgau, pvu)
           if @is_unicode
@@ -7497,7 +7515,7 @@ protected
         s = UTF8ToLatin1(s)
       else
         # Convert string to UTF-16BE and reverse RTL language
-        s = utf8StrRev(s, false, @tmprtl)
+        s = utf8StrRev(s, false, rtl_text_dir)
       end
     end
     return escape(s);
@@ -14145,8 +14163,8 @@ public
           if @is_unicode
             alias_b = escape(UTF8ToLatin1(k))
             alias_bu = escape(UTF8ToLatin1(ku))
-            alias_c = escape(utf8StrRev(k, false, @tmprtl))
-            alias_cu = escape(utf8StrRev(ku, false, @tmprtl))
+            alias_c = escape(utf8StrRev(k, false, rtl_text_dir))
+            alias_cu = escape(utf8StrRev(ku, false, rtl_text_dir))
           end
           if n >= page
             np = n + numpages
@@ -14247,8 +14265,8 @@ public
           if @is_unicode
             alias_b = escape(UTF8ToLatin1(k))
             alias_bu = escape(UTF8ToLatin1(ku))
-            alias_c = escape(utf8StrRev(k, false, @tmprtl))
-            alias_cu = escape(utf8StrRev(ku, false, @tmprtl))
+            alias_c = escape(utf8StrRev(k, false, rtl_text_dir))
+            alias_cu = escape(utf8StrRev(ku, false, rtl_text_dir))
           end
           if n >= page
             np = n + numpages

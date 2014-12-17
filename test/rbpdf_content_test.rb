@@ -1,3 +1,4 @@
+# coding: ASCII-8BIT
 require 'test_helper'
 
 class RbpdfPageTest < ActiveSupport::TestCase
@@ -112,6 +113,84 @@ class RbpdfPageTest < ActiveSupport::TestCase
     assert_equal content[12], '340.88 141.17 370.62 158.34 392.04 183.86 c'  # 8/9 circle
     assert_equal content[13], '413.45 209.38 425.20 241.65 425.20 274.96 c'  # 9/9 circle
     assert_equal content[14], 'S'
+  end
 
+  test "write content test" do
+    pdf = MYPDF.new
+    pdf.add_page()
+    page = pdf.get_page
+    assert_equal 1, page
+
+    content = []
+    line = pdf.write(0, "abc def")
+    contents = pdf.getPageBuffer(page)
+    contents.each_line {|line| content.push line.chomp }
+    assert_equal content.length, 22
+    assert_equal content[21], "BT 31.19 801.84 Td 0 Tr 0.00 w [(abc def)] TJ ET"
+  end
+
+  test "write content RTL test" do
+    pdf = MYPDF.new
+    pdf.set_rtl(true)
+    pdf.add_page()
+    page = pdf.get_page
+    assert_equal 1, page
+
+    content = []
+    line = pdf.write(0, "abc def")
+    contents = pdf.getPageBuffer(page)
+    contents.each_line {|line| content.push line.chomp }
+    assert_equal content.length,  22
+    assert_equal content[21], "BT 524.73 801.84 Td 0 Tr 0.00 w [(abc def)] TJ ET"
+  end
+
+  test "write Persian Sunday content test" do
+    pdf = MYPDF.new
+    pdf.set_font('dejavusans', '', 18)
+    pdf.add_page()
+    page = pdf.get_page
+    assert_equal 1, page
+
+    utf8_persian_str_sunday = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87"
+    content = []
+    line = pdf.write(0, utf8_persian_str_sunday)
+    contents = pdf.getPageBuffer(page)
+
+    contents.each_line {|line| content.push line.chomp }
+    assert_equal content.length, 22
+    assert_equal content[21], "BT 31.19 796.06 Td 0 Tr 0.00 w [(\xFE\xEA\xFE\x92\xFE\xE8\xFE\xB7 \f\xFB\x8F\xFB\xFE)] TJ ET"
+
+    pdf.set_rtl(true)
+    line = pdf.write(0, utf8_persian_str_sunday)
+    contents = pdf.getPageBuffer(page)
+
+    contents.each_line {|line| content.push line.chomp }
+    assert_equal content.length, 46
+    assert_equal content[45], "BT 507.38 796.06 Td 0 Tr 0.00 w [(\xFE\xEA\xFE\x92\xFE\xE8\xFE\xB7 \f\xFB\x8F\xFB\xFE)] TJ ET"
+  end
+
+  test "write English and Persian Sunday content test" do
+    pdf = MYPDF.new
+    pdf.set_font('dejavusans', '', 18)
+    pdf.add_page()
+    page = pdf.get_page
+    assert_equal 1, page
+
+    utf8_persian_str_sunday = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87"
+    content = []
+    line = pdf.write(0, 'abc def ' + utf8_persian_str_sunday)
+    contents = pdf.getPageBuffer(page)
+
+    contents.each_line {|line| content.push line.chomp }
+    assert_equal content.length, 22
+    assert_equal content[21], "BT 31.19 796.06 Td 0 Tr 0.00 w [(\x00a\x00b\x00c\x00 \x00d\x00e\x00f\x00 \xFE\xEA\xFE\x92\xFE\xE8\xFE\xB7 \f\xFB\x8F\xFB\xFE)] TJ ET"
+
+    pdf.set_rtl(true)
+    line = pdf.write(0, 'abc def ' + utf8_persian_str_sunday)
+    contents = pdf.getPageBuffer(page)
+
+    contents.each_line {|line| content.push line.chomp }
+    assert_equal content.length, 46
+    assert_equal content[45], "BT 434.73 796.06 Td 0 Tr 0.00 w [(\xFE\xEA\xFE\x92\xFE\xE8\xFE\xB7 \f\xFB\x8F\xFB\xFE\x00 \x00a\x00b\x00c\x00 \x00d\x00e\x00f)] TJ ET"
   end
 end

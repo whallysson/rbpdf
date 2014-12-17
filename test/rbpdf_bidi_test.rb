@@ -12,6 +12,42 @@ class RbpdfTest < ActiveSupport::TestCase
     def cache_utf8_string_to_array(str)
       @cache_utf8_string_to_array[str]
     end
+    def rtl_text_dir
+      super
+    end
+  end
+
+  test "RTL test" do
+    pdf = MYPDF.new
+
+    # LTR
+    rtl = pdf.get_rtl
+    assert_equal rtl, false
+    rtl = pdf.is_rtl_text_dir
+    assert_equal rtl, false
+    rtl = pdf.rtl_text_dir
+    assert_equal rtl, 'L'
+
+    pdf.set_temp_rtl('rtl')
+    rtl = pdf.is_rtl_text_dir
+    assert_equal rtl, true
+    rtl = pdf.rtl_text_dir
+    assert_equal rtl, 'R'
+
+    # RTL
+    pdf.set_rtl(true)
+    rtl = pdf.get_rtl
+    assert_equal rtl, true
+    rtl = pdf.is_rtl_text_dir
+    assert_equal rtl, true
+    rtl = pdf.rtl_text_dir
+    assert_equal rtl, 'R'
+
+    pdf.set_temp_rtl('ltr')
+    rtl = pdf.is_rtl_text_dir
+    assert_equal rtl, false
+    rtl = pdf.rtl_text_dir
+    assert_equal rtl, 'L'
   end
 
   test "Bidi" do
@@ -321,5 +357,11 @@ class RbpdfTest < ActiveSupport::TestCase
 
     rtn = pdf.cache_utf8_string_to_array('1234')
     assert_equal rtn, [0x31, 0x32, 0x33, 0x34]
+  end
+
+  test "UniArrSubString test" do
+    pdf = RBPDF.new
+    str = pdf.uni_arr_sub_string(['a', 'b', 'c', ' ', 'd', 'e', 'f'])
+    assert_equal str, 'abc def'
   end
 end
