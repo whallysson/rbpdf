@@ -9192,7 +9192,7 @@ public
     prevlevel = -1
     levcount = 0
     0.upto(numchars-1) do |i|
-      if chardata[i][:char] == 'EN'
+      if chardata[i][:type] == 'EN'
         levcount.downto(0) do |j|
           if chardata[j][:type] == 'AL'
             chardata[i][:type] = 'AN'
@@ -9284,7 +9284,7 @@ public
     prevlevel = -1
     levcount = 0
     0.upto(numchars-1) do |i|
-      if chardata[i][:char] == 'EN'
+      if chardata[i][:type] == 'EN'
         levcount.downto(0) do |j|
           if chardata[j][:type] == 'L'
             chardata[i][:type] = 'L'
