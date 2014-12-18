@@ -76,6 +76,22 @@ class RbpdfTest < ActiveSupport::TestCase
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
     assert_equal ary_ucs4_2, ary_ucs4_1
 
+    ascii_str   = "abc  def"
+    ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
+    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x20, 0x20, 0x64, 0x65, 0x66]
+    ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
+    assert_equal ary_ucs4_2, ary_ucs4_1
+    ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
+    assert_equal ary_ucs4_2, ary_ucs4_1
+
+    ascii_str   = "abc  "
+    ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
+    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x20, 0x20]
+    ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
+    assert_equal ary_ucs4_2, ary_ucs4_1
+    ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
+    assert_equal ary_ucs4_2, [0x20, 0x20, 0x61, 0x62, 0x63]
+
     ascii_str   = "abc_def"
     ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
     assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x5f, 0x64, 0x65, 0x66]
@@ -104,6 +120,43 @@ class RbpdfTest < ActiveSupport::TestCase
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
     assert_equal ary_ucs4_2, ary_ucs4_1
   end
+
+  test "Bidi ascii colon test" do
+    pdf = MYPDF.new
+
+    ascii_str   = "abc:def"
+    ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
+    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x3a, 0x64, 0x65, 0x66]
+    ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
+    assert_equal ary_ucs4_2, ary_ucs4_1
+    ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
+    assert_equal ary_ucs4_2, ary_ucs4_1
+
+    ascii_str   = "abc: def"
+    ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
+    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x3a, 0x20, 0x64, 0x65, 0x66]
+    ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
+    assert_equal ary_ucs4_2, ary_ucs4_1
+    ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
+    assert_equal ary_ucs4_2, ary_ucs4_1
+
+    ascii_str   = "abc : def"
+    ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
+    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x20, 0x3a, 0x20, 0x64, 0x65, 0x66]
+    ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
+    assert_equal ary_ucs4_2, ary_ucs4_1
+    ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
+    assert_equal ary_ucs4_2, ary_ucs4_1
+
+    ascii_str   = "abc  ::  def"
+    ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
+    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x20, 0x20, 0x3a, 0x3a, 0x20, 0x20, 0x64, 0x65, 0x66]
+    ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
+    assert_equal ary_ucs4_2, ary_ucs4_1
+    ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
+    assert_equal ary_ucs4_2, ary_ucs4_1
+  end
+
 
   test "Bidi arabic test" do
     pdf = MYPDF.new

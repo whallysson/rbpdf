@@ -9304,45 +9304,62 @@ public
     # N1. A sequence of neutrals takes the direction of the surrounding strong text if the text on both sides has the same direction. European and Arabic numbers act as if they were R in terms of their influence on neutrals. Start-of-level-run (sor) and end-of-level-run (eor) are used at level run boundaries.
     prevlevel = -1
     levcount = 0
+    reg_NI = /^(B|S|WS|ON)$/
+    reg_R_EN_AN = /^(R|EN|AN)$/
+    reg_EN_AN = /^(EN|AN)$/
+    ni = nil
     0.upto(numchars-1) do |i|
-      if (levcount > 0) and (i+1 < numchars) and (chardata[i+1][:level] == prevlevel)
-        if (chardata[i][:type] =~ /^(B|S|WS|ON)$/) and (chardata[i-1][:type] == 'L') and (chardata[i+1][:type] == 'L')
-          chardata[i][:type] = 'L'
-        elsif (chardata[i][:type] =~ /^(B|S|WS|ON)$/) and
-         ((chardata[i-1][:type] == 'R') or (chardata[i-1][:type] == 'EN') or (chardata[i-1][:type] == 'AN')) and
-         ((chardata[i+1][:type] == 'R') or (chardata[i+1][:type] == 'EN') or (chardata[i+1][:type] == 'AN'))
-          chardata[i][:type] = 'R'
-        elsif chardata[i][:type] =~ /^(B|S|WS|ON)$/
+      if (chardata[i][:type] =~ reg_NI)
+        if (levcount > 0) and (i+1 < numchars) and (chardata[i+1][:level] == prevlevel)
+          if !ni.nil? and ni > i
+            next_non_space_char = chardata[ni][:type]
+          else
+            ni = chardata[i+1..-1].index {|item| item[:type] !~ reg_NI}
+            unless ni.nil?
+              ni += i+1
+              next_non_space_char = chardata[ni][:type]
+            end
+          end
+          if (chardata[i-1][:type] == 'L') and (next_non_space_char == 'L')
+            chardata[i][:type] = 'L'
+          elsif ((chardata[i-1][:type] == 'R') and (next_non_space_char =~ reg_R_EN_AN) or
+                 (chardata[i-1][:type] =~ reg_EN_AN) and (next_non_space_char == 'R'))
+            chardata[i][:type] = 'R'
+          else
+            # N2. Any remaining neutrals take the embedding direction
+            chardata[i][:type] = chardata[i][:sor]
+          end
+        elsif (levcount == 0) and (i+1 < numchars) and (chardata[i+1][:level] == prevlevel)
+          ni = chardata[i+1..-1].index {|item| item[:type] !~ reg_NI}
+          unless ni.nil?
+            ni += i+1
+            next_non_space_char = chardata[ni][:type]
+          end
+          # first char
+          if (chardata[i][:sor] == 'L') and (next_non_space_char == 'L')
+            chardata[i][:type] = 'L'
+          elsif ((chardata[i][:sor] == 'R') and (next_non_space_char =~ reg_R_EN_AN) or
+                 (chardata[i][:sor] =~ reg_EN_AN) and (next_non_space_char == 'R'))
+            chardata[i][:type] = 'R'
+          else
+            # N2. Any remaining neutrals take the embedding direction
+            chardata[i][:type] = chardata[i][:sor]
+          end
+        elsif (levcount > 0) and ((i+1 == numchars) or ((i+1 < numchars) and (chardata[i+1][:level] != prevlevel)))
+          # last char
+          if (chardata[i-1][:type] == 'L') and (chardata[i][:eor] == 'L')
+            chardata[i][:type] = 'L'
+          elsif ((chardata[i-1][:type] == 'R') and (chardata[i][:eor] =~ reg_R_EN_AN) or
+                 (chardata[i-1][:type] =~ reg_EN_AN) and (chardata[i][:eor] == 'R'))
+            chardata[i][:type] = 'R'
+          else
+            # N2. Any remaining neutrals take the embedding direction
+            chardata[i][:type] = chardata[i][:sor]
+          end
+        else
           # N2. Any remaining neutrals take the embedding direction
           chardata[i][:type] = chardata[i][:sor]
         end
-      elsif (levcount == 0) and (i+1 < numchars) and (chardata[i+1][:level] == prevlevel)
-        # first char
-        if (chardata[i][:type] =~ /^(B|S|WS|ON)$/) and (chardata[i][:sor] == 'L') and (chardata[i+1][:type] == 'L')
-          chardata[i][:type] = 'L'
-        elsif (chardata[i][:type] =~ /^(B|S|WS|ON)$/) and
-         ((chardata[i][:sor] == 'R') or (chardata[i][:sor] == 'EN') or (chardata[i][:sor] == 'AN')) and
-         ((chardata[i+1][:type] == 'R') or (chardata[i+1][:type] == 'EN') or (chardata[i+1][:type] == 'AN'))
-          chardata[i][:type] = 'R'
-        elsif chardata[i][:type] =~ /^(B|S|WS|ON)$/
-          # N2. Any remaining neutrals take the embedding direction
-          chardata[i][:type] = chardata[i][:sor]
-        end
-      elsif (levcount > 0) and ((i+1 == numchars) or ((i+1 < numchars) and (chardata[i+1][:level] != prevlevel)))
-        # last char
-        if (chardata[i][:type] =~ /^(B|S|WS|ON)$/) and (chardata[i-1][:type] == 'L') and (chardata[i][:eor] == 'L')
-          chardata[i][:type] = 'L'
-        elsif (chardata[i][:type] =~ /^(B|S|WS|ON)$/) and
-         ((chardata[i-1][:type] == 'R') or (chardata[i-1][:type] == 'EN') or (chardata[i-1][:type] == 'AN')) and
-         ((chardata[i][:eor] == 'R') or (chardata[i][:eor] == 'EN') or (chardata[i][:eor] == 'AN'))
-          chardata[i][:type] = 'R'
-        elsif chardata[i][:type] =~ /^(B|S|WS|ON)$/
-          # N2. Any remaining neutrals take the embedding direction
-          chardata[i][:type] = chardata[i][:sor]
-        end
-      elsif chardata[i][:type] =~ /^(B|S|WS|ON)$/
-        # N2. Any remaining neutrals take the embedding direction
-        chardata[i][:type] = chardata[i][:sor]
       end
       if chardata[i][:level] != prevlevel
         levcount = 0
