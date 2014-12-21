@@ -1,3 +1,12 @@
+1.18.4 2014-12-21
+       - utf8Bidi() Persion 0x200C(8204) and endedletter bug fixed.
+       - utf8Bidi() Bidirectional Algorithm X9/I1 rule BN(ZERO WIDTH NON-JOINER) bug fixed.
+       - utf8Bidi() Bidirectional Algorithm N1/N2 rule B/S/WS/ON bug fixed.
+       - utf8Bidi() Bidirectional Algorithm W2/W7 rule bug fixed.
+       - utf8Bidi() Bidirectional Algorithm N1/N2 rule multiple NIs bug fixed.
+       - RTL direction problem fixed. isRTLTextDir direction bug fixed.
+       - utf8Bidi() speed was improved.
+
 1.18.3 2014-12-06
        - fixed img and hr self html tag DOM problem.
        - fixed HTML table problem in writeHTMLCell function.
