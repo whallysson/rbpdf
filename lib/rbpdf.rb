@@ -9066,7 +9066,7 @@ public
     else
       # P2. In each paragraph, find the first character of type L, AL, or R.
       # P3. If a character is found in P2 and it is of type AL or R, then set the paragraph embedding level to one; otherwise, set it to zero.
-      0.upto(numchars -1) do |i|
+      numchars.times do |i|
         type = @@unicode[ta[i]]
         if type == 'L'
           pel = 0
@@ -9092,63 +9092,78 @@ public
       
     # X1. Begin by setting the current embedding level to the paragraph embedding level. Set the directional override status to neutral. Process each character iteratively, applying rules X2 through X9. Only embedding levels from 0 to 61 are valid in this phase.
     #   In the resolution of levels in rules I1 and I2, the maximum embedding level of 62 can be reached.
-    0.upto(numchars-1) do |i|
-      if ta[i] == @@k_rle
+    reg_KRP = /^(@@k_rle|@@k_lre|@@k_rlo|@@k_lro|@@k_pdf)$/
+    reg_KR = /^(@@k_rle|@@k_lre|@@k_rlo|@@k_lro)$/
+    numchars.times do |i|
+      if ta[i] !~ reg_KRP
+        # X6. For all types besides RLE, LRE, RLO, LRO, and PDF:
+        #  a. Set the level of the current character to the current embedding level.
+        #  b. Whenever the directional override status is not neutral, reset the current character type to the directional override status.
+        if dos != 'N'
+          chardir = dos
+        else
+          chardir = @@unicode[ta[i]]
+          chardir = 'L' if chardir.nil?
+        end
+        # stores string characters and other information
+        chardata << {:char => ta[i], :level => cel, :type => chardir, :sor => sor, :eor => eor}
+        next
+      end
+
+      case ta[i]
+      when @@k_rle
         # X2. With each RLE, compute the least greater odd embedding level.
         #  a. If this new level would be valid, then this embedding code is valid. Remember (push) the current embedding level and override status. Reset the current level to this new level, and reset the override status to neutral.
         #  b. If the new level would not be valid, then this code is invalid. Do not change the current level or override status.
         next_level = cel + (cel % 2) + 1
         if next_level < 62
-          remember.push :num => @@k_rle, :cel => cel, :dos => dos
+          remember << {:num => @@k_rle, :cel => cel, :dos => dos}
           cel = next_level
           dos = 'N'
           sor = eor
           eor = (cel % 2 == 1) ? 'R' : 'L'
         end
-      elsif ta[i] == @@k_lre
+      when @@k_lre
         # X3. With each LRE, compute the least greater even embedding level.
         #  a. If this new level would be valid, then this embedding code is valid. Remember (push) the current embedding level and override status. Reset the current level to this new level, and reset the override status to neutral.
         #  b. If the new level would not be valid, then this code is invalid. Do not change the current level or override status.
         next_level = cel + 2 - (cel % 2)
         if next_level < 62
-          remember.push :num => @@k_lre, :cel => cel, :dos => dos
+          remember << {:num => @@k_lre, :cel => cel, :dos => dos}
           cel = next_level
           dos = 'N'
           sor = eor
           eor = (cel % 2 == 1) ? 'R' : 'L'
         end
-      elsif ta[i] == @@k_rlo
+      when @@k_rlo
         # X4. With each RLO, compute the least greater odd embedding level.
         #  a. If this new level would be valid, then this embedding code is valid. Remember (push) the current embedding level and override status. Reset the current level to this new level, and reset the override status to right-to-left.
         #  b. If the new level would not be valid, then this code is invalid. Do not change the current level or override status.
         next_level = cel + (cel % 2) + 1
         if next_level < 62
-          remember.push :num => @@k_rlo, :cel => cel, :dos => dos
+          remember << {:num => @@k_rlo, :cel => cel, :dos => dos}
           cel = next_level
           dos = 'R'
           sor = eor
           eor = (cel % 2 == 1) ? 'R' : 'L'
         end
-      elsif ta[i] == @@k_lro
+      when @@k_lro
         # X5. With each LRO, compute the least greater even embedding level.
         #  a. If this new level would be valid, then this embedding code is valid. Remember (push) the current embedding level and override status. Reset the current level to this new level, and reset the override status to left-to-right.
         #  b. If the new level would not be valid, then this code is invalid. Do not change the current level or override status.
         next_level = cel + 2 - (cel % 2)
         if next_level < 62
-          remember.push :num => @@k_lro, :cel => cel, :dos => dos
+          remember << {:num => @@k_lro, :cel => cel, :dos => dos}
           cel = next_level
           dos = 'L'
           sor = eor
           eor = (cel % 2 == 1) ? 'R' : 'L'
         end
-      elsif ta[i] == @@k_pdf
+      when @@k_pdf
         # X7. With each PDF, determine the matching embedding or override code. If there was a valid matching code, restore (pop) the last remembered (pushed) embedding level and directional override.
         if remember.length
           last = remember.length - 1
-          if (remember[last][:num] == @@k_rle) or 
-              (remember[last][:num] == @@k_lre) or 
-              (remember[last][:num] == @@k_rlo) or 
-              (remember[last][:num] == @@k_lro)
+          if remember[last][:num] =~ reg_KR
             match = remember.pop
             cel = match[:cel]
             dos = match[:dos]
@@ -9156,25 +9171,6 @@ public
             eor = ((cel > match[:cel] ? cel : match[:cel]) % 2 == 1) ? 'R' : 'L'
           end
         end
-      elsif (ta[i] != @@k_rle) and
-           (ta[i] != @@k_lre) and
-           (ta[i] != @@k_rlo) and
-           (ta[i] != @@k_lro) and
-           (ta[i] != @@k_pdf)
-        # X6. For all types besides RLE, LRE, RLO, LRO, and PDF:
-        #  a. Set the level of the current character to the current embedding level.
-        #  b. Whenever the directional override status is not neutral, reset the current character type to the directional override status.
-        if dos != 'N'
-          chardir = dos
-        else
-          if !@@unicode[ta[i]].nil?
-            chardir = @@unicode[ta[i]]
-          else
-            chardir = 'L'
-          end
-        end
-        # stores string characters and other information
-        chardata.push :char => ta[i], :level => cel, :type => chardir, :sor => sor, :eor => eor
       end
     end # end for each char
       
@@ -9190,7 +9186,7 @@ public
     # W1. Examine each nonspacing mark (NSM) in the level run, and change the type of the NSM to the type of the previous character. If the NSM is at the start of the level run, it will get the type of sor.
     prevlevel = -1 # track level changes
     levcount = 0 # counts consecutive chars at the same level
-    0.upto(numchars-1) do |i|
+    numchars.times do |i|
       if chardata[i][:type] == 'NSM'
         if levcount
           chardata[i][:type] = chardata[i][:sor]
@@ -9209,7 +9205,7 @@ public
     # W2. Search backward from each instance of a European number until the first strong type (R, L, AL, or sor) is found. If an AL is found, change the type of the European number to Arabic number.
     prevlevel = -1
     levcount = 0
-    0.upto(numchars-1) do |i|
+    numchars.times do |i|
       if chardata[i][:type] == 'EN'
         levcount.downto(0) do |j|
           if chardata[j][:type] == 'AL'
@@ -9228,7 +9224,7 @@ public
     end
     
     # W3. Change all ALs to R.
-    0.upto(numchars-1) do |i|
+    numchars.times do |i|
       if chardata[i][:type] == 'AL'
         chardata[i][:type] = 'R'
       end
@@ -9237,7 +9233,7 @@ public
     # W4. A single European separator between two European numbers changes to a European number. A single common separator between two numbers of the same type changes to that type.
     prevlevel = -1
     levcount = 0
-    0.upto(numchars-1) do |i|
+    numchars.times do |i|
       if (levcount > 0) and (i+1 < numchars) and (chardata[i+1][:level] == prevlevel)
         if (chardata[i][:type] == 'ES') and (chardata[i-1][:type] == 'EN') and (chardata[i+1][:type] == 'EN')
           chardata[i][:type] = 'EN'
@@ -9258,7 +9254,7 @@ public
     # W5. A sequence of European terminators adjacent to European numbers changes to all European numbers.
     prevlevel = -1
     levcount = 0
-    0.upto(numchars-1) do |i|
+    numchars.times do |i|
       if chardata[i][:type] == 'ET'
         if (levcount > 0) and (chardata[i-1][:type] == 'EN')
           chardata[i][:type] = 'EN'
@@ -9286,8 +9282,9 @@ public
     # W6. Otherwise, separators and terminators change to Other Neutral.
     prevlevel = -1
     levcount = 0
-    0.upto(numchars-1) do |i|
-      if (chardata[i][:type] == 'ET') or (chardata[i][:type] == 'ES') or (chardata[i][:type] == 'CS')
+    reg_ET_ES_CS = /^(ET|ES|CS)$/
+    numchars.times do |i|
+      if chardata[i][:type] =~ reg_ET_ES_CS
         chardata[i][:type] = 'ON'
       end
       if chardata[i][:level] != prevlevel
@@ -9301,7 +9298,7 @@ public
     # W7. Search backward from each instance of a European number until the first strong type (R, L, or sor) is found. If an L is found, then change the type of the European number to L.
     prevlevel = -1
     levcount = 0
-    0.upto(numchars-1) do |i|
+    numchars.times do |i|
       if chardata[i][:type] == 'EN'
         levcount.downto(0) do |j|
           if chardata[j][:type] == 'L'
@@ -9326,7 +9323,7 @@ public
     reg_R_EN_AN = /^(R|EN|AN)$/
     reg_EN_AN = /^(EN|AN)$/
     ni = nil
-    0.upto(numchars-1) do |i|
+    numchars.times do |i|
       if (chardata[i][:type] =~ reg_NI)
         if (levcount > 0) and (i+1 < numchars) and (chardata[i+1][:level] == prevlevel)
           if !ni.nil? and ni > i
@@ -9390,10 +9387,13 @@ public
     # I1. For all characters with an even (left-to-right) embedding direction, those of type R go up one level and those of type AN or EN go up two levels.
     # I2. For all characters with an odd (right-to-left) embedding direction, those of type L, EN or AN go up one level.
     prevlevel = -1
-    0.upto(numchars-1) do |i|
+    reg_L_AN_EN = /^(L|AN|EN)$/
+    reg_AN_EN = /^(AN|EN)$/
+
+    numchars.times do |i|
       odd = chardata[i][:level] % 2
       if odd == 1 # I2.
-        if (chardata[i][:type] == 'L') or (chardata[i][:type] == 'AN') or (chardata[i][:type] == 'EN')
+        if chardata[i][:type] =~ reg_L_AN_EN
           chardata[i][:level] += 1
         end
       else # I1.
@@ -9401,7 +9401,7 @@ public
           chardata[i][:level] += 1
         elsif chardata[i][:type] == 'BN' and prevlevel != -1
           chardata[i][:level] = prevlevel
-        elsif (chardata[i][:type] == 'AN') or (chardata[i][:type] == 'EN')
+        elsif chardata[i][:type] =~ reg_AN_EN
           chardata[i][:level] += 2
         end
       end
@@ -9414,13 +9414,14 @@ public
     #  2. Paragraph separators,
     #  3. Any sequence of whitespace characters preceding a segment separator or paragraph separator, and
     #  4. Any sequence of white space characters at the end of the line.
-    0.upto(numchars-1) do |i|
-      if (chardata[i][:type] == 'B') or (chardata[i][:type] == 'S')
+    reg_B_S = /^(B|S)$/
+    numchars.times do |i|
+      if chardata[i][:type] =~ reg_B_S
         chardata[i][:level] = pel
       elsif chardata[i][:type] == 'WS'
         j = i+1
         while j < numchars
-          if ((chardata[j][:type] == 'B') or (chardata[j][:type] == 'S')) or
+          if (chardata[j][:type] =~ reg_B_S) or
             ((j == numchars-1) and (chardata[j][:type] == 'WS'))
             chardata[i][:level] = pel
             break
@@ -9441,8 +9442,9 @@ public
       laaletter = false
       charAL = []
       x = 0
-      0.upto(numchars-1) do |i|
-        if (@@unicode[chardata[i][:char]] == 'AL') or (chardata[i][:char] == 32) or (chardata[i][:char] == 8204) # Unicode Character 'ZERO WIDTH NON-JOINER' (U+200C)
+      numchars.times do |i|
+        c = chardata[i][:char]
+        if (@@unicode[c] == 'AL') or (c == 32) or (c == 8204) # Unicode Character 'ZERO WIDTH NON-JOINER' (U+200C)
           charAL[x] = chardata[i].dup
           charAL[x][:i] = i
           chardata[i][:x] = x
@@ -9450,7 +9452,8 @@ public
         end
       end
       numAL = x
-      0.upto(numchars-1) do |i|
+      reg_AL_NSM = /^(AL|NSM)$/
+      numchars.times do |i|
         thischar = chardata[i]
         if i > 0
           prevchar = chardata[i-1]
@@ -9488,8 +9491,8 @@ public
             laaletter = false
           end
           if (prevchar != false) and (nextchar != false) and
-            ((@@unicode[prevchar[:char]] == 'AL') or (@@unicode[prevchar[:char]] == 'NSM')) and
-            ((@@unicode[nextchar[:char]] == 'AL') or (@@unicode[nextchar[:char]] == 'NSM')) and
+            (@@unicode[prevchar[:char]] =~ reg_AL_NSM) and
+            (@@unicode[nextchar[:char]] =~ reg_AL_NSM) and
             (nextchar[:type] == thischar[:type]) and
             (nextchar[:char] != 1567)
             # medial
@@ -9505,7 +9508,7 @@ public
               end
             end
           elsif (nextchar != false) and
-            ((@@unicode[nextchar[:char]] == 'AL') or (@@unicode[nextchar[:char]] == 'NSM')) and
+            (@@unicode[nextchar[:char]] =~ reg_AL_NSM) and
             (nextchar[:type] == thischar[:type]) and
             (nextchar[:char] != 1567)
             if !arabicarr[thischar[:char]].nil? and !arabicarr[thischar[:char]][2].nil?
@@ -9513,7 +9516,7 @@ public
               chardata2[i][:char] = arabicarr[thischar[:char]][2]
             end
           elsif ((prevchar != false) and
-            ((@@unicode[prevchar[:char]] == 'AL') or (@@unicode[prevchar[:char]] == 'NSM')) and
+            (@@unicode[prevchar[:char]] =~ reg_AL_NSM) and
             (prevchar[:type] == thischar[:type])) or
             ((nextchar != false) and (nextchar[:char] == 1567))
             # final
@@ -9555,7 +9558,7 @@ public
       # Putting the combining mark and shadda in the same glyph allows us to avoid the two marks overlapping each other in an illegible manner.
       #
       cw = @current_font['cw']
-                        0.upto(numchars-2) do |i|
+      (numchars-1).times do |i|
         if (chardata2[i][:char] == 1617) and !@@diacritics[chardata2[i+1][:char]].nil?
           # check if the subtitution font is defined on current font
           unless cw[@@diacritics[chardata2[i+1][:char]]].nil?
@@ -9583,14 +9586,15 @@ public
       ordarray = []
       revarr = []
       onlevel = false
-      0.upto(numchars-1) do |i|
+      numchars.times do |i|
         if chardata[i][:level] >= j
           onlevel = true
-          unless @@unicode_mirror[chardata[i][:char]].nil?
+          um = @@unicode_mirror[chardata[i][:char]]
+          if um
             # L4. A character is depicted by a mirrored glyph if and only if (a) the resolved directionality of that character is R, and (b) the Bidi_Mirrored property value of that character is true.
-            chardata[i][:char] = @@unicode_mirror[chardata[i][:char]]
+            chardata[i][:char] = um
           end
-          revarr.push chardata[i]
+          revarr << chardata[i]
         else
           if onlevel
             revarr.reverse!
@@ -9598,7 +9602,7 @@ public
             revarr = []
             onlevel = false
           end
-          ordarray.push chardata[i]
+          ordarray << chardata[i]
         end
       end
       if onlevel
@@ -9609,7 +9613,7 @@ public
     end
     
     ordarray = []
-    0.upto(numchars-1) do |i|
+    numchars.times do |i|
       ordarray.push chardata[i][:char]
     end
     
