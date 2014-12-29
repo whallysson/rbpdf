@@ -10686,7 +10686,7 @@ protected
 
     # remove all unsupported tags (the line below lists all supported tags)
     ::ActionView::Base.sanitized_allowed_css_properties = ["page-break-before", "page-break-after", "page-break-inside"]
-    html = "%s" % sanitize(html, :tags=> %w(a b blockquote body br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table tablehead td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr stroke strokecolor fill nested))
+    html = sanitize_html(html)
 
     # replace some blank characters
     html.gsub!(/<pre/, '<xre') # preserve pre tag
@@ -10840,8 +10840,8 @@ protected
           end
           if (dom[key]['value'] == 'table') and !empty_string(dom[(dom[key]['parent'])]['thead'])
             # remove the nobr attributes from the table header
-            dom[(dom[key]['parent'])]['thead'] = dom[(dom[key]['parent'])]['thead'].gsub(' nobr="true"', '')
-            dom[(dom[key]['parent'])]['thead'] << '</tablehead>'
+            dom[(dom[key]['parent'])]['thead'] = dom[(dom[key]['parent'])]['thead'].gsub(' nobr="true"', '').sub(/<table([ >])/, '<table tablehead="1"\1')
+            dom[(dom[key]['parent'])]['thead'] << '</table>'
           end
         else
           # *** opening html tag
@@ -11284,6 +11284,11 @@ public
     return rtn
   end
   alias_method :write_html_cell, :writeHTMLCell
+
+  def sanitize_html(html)
+    html = "%s" % sanitize(html, :tags=> %w(a b blockquote body br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr stroke strokecolor fill nested tablehead))
+  end
+  protected :sanitize_html
 
   #
   # Allows to preserve some HTML formatting (limited support).
@@ -12879,8 +12884,8 @@ public
             end
           end
         end
-      when 'table', 'tablehead'
-        if tag['value'] == 'tablehead'
+      when 'table'
+        if dom[(dom[key]['parent'])]['attribute']['tablehead'] and dom[(dom[key]['parent'])]['attribute']['tablehead'] == "1"
           # closing tag used for the thead part
           in_table_head = true
           @in_thead = false
@@ -13051,8 +13056,10 @@ public
             @thead_margins = {}
           end
         end
-        if tag['block'] ### fix ###
-          addHTMLVertSpace(hbz / 2, 0, cell, (dom[key+1].nil? or (dom[key+1]['value'] != 'table')))
+        if tag['block']
+          unless dom[(dom[key]['parent'])]['attribute']['tablehead'] and dom[(dom[key]['parent'])]['attribute']['tablehead'] == "1" ### fix ###
+            addHTMLVertSpace(hbz / 2, 0, cell, (dom[key+1].nil? or (dom[key+1]['value'] != 'table'))) ### fix ###
+          end
         end
       when 'a'
         @href = {}

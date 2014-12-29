@@ -47,23 +47,24 @@ class RbpdfTest < ActiveSupport::TestCase
 
     # Error Tag (doble colse tag)
     dom = pdf.getHtmlDomArray('</ul></div>')
-    assert_equal dom.length, 3
 
     assert_equal 0, dom[0]['parent']  # Root
     assert_equal false, dom[0]['tag']
     assert_equal({}, dom[0]['attribute'])
 
-    assert_equal dom[1]['parent'], 0   # parent -> Root key
-    assert_equal dom[1]['elkey'], 0
-    assert_equal dom[1]['tag'], true
-    assert_equal dom[1]['opening'], false
-    assert_equal dom[1]['value'], 'ul'
+    if dom.length == 3 # for Rails 3.x/4.0/4.1 (no use Rails 4.2 later)
+      assert_equal dom[1]['parent'], 0   # parent -> Root key
+      assert_equal dom[1]['elkey'], 0
+      assert_equal dom[1]['tag'], true
+      assert_equal dom[1]['opening'], false
+      assert_equal dom[1]['value'], 'ul'
 
-    assert_equal dom[2]['parent'], 0   # parent -> Root key
-    assert_equal dom[2]['elkey'], 1
-    assert_equal dom[2]['tag'], true
-    assert_equal dom[2]['opening'], false
-    assert_equal dom[2]['value'], 'div'
+      assert_equal dom[2]['parent'], 0   # parent -> Root key
+      assert_equal dom[2]['elkey'], 1
+      assert_equal dom[2]['tag'], true
+      assert_equal dom[2]['opening'], false
+      assert_equal dom[2]['value'], 'div'
+    end
 
     # Attribute
     dom = pdf.getHtmlDomArray('<p style="text-align:justify">abc</p>')
@@ -78,8 +79,8 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_equal dom[1]['tag'], true
     assert_equal dom[1]['opening'], true
     assert_equal dom[1]['value'], 'p'
-    assert_equal dom[1]['attribute'], {'style'=>'text-align: justify;'}
-    assert_equal dom[1]['attribute']['style'], 'text-align: justify;'
+    assert_not_nil dom[1]['attribute']
+    assert_equal dom[1]['attribute']['style'].gsub(' ', ''), 'text-align:justify;'
     assert_equal dom[1]['align'], 'J'
 
     # Table border

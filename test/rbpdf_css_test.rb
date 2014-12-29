@@ -227,7 +227,7 @@ class RbpdfCssTest < ActiveSupport::TestCase
     assert_equal dom[4]['attribute'], {'border'=>'2px #ff0000 solid', 'style'=>';border:2px #ff0000 solid;'}
     assert_equal dom[4]['style']['border'], '2px #ff0000 solid'
     assert_equal dom[4]['attribute']['border'], '2px #ff0000 solid'
-    assert_equal dom[4]['thead'], '<style>table {;border:2px #ff0000 solid;}</style><table><tr><th>abc<marker style="font-size:0"/></th></tr></tablehead>'
+    assert_equal dom[4]['thead'], '<style>table {;border:2px #ff0000 solid;}</style><table tablehead="1"><tr><th>abc<marker style="font-size:0"/></th></tr></table>'
   end
 
   test "CSS Dom line-height test normal" do

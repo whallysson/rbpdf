@@ -84,10 +84,13 @@ class RbpdfTest < ActiveSupport::TestCase
     contents.each_line {|line| content.push line.chomp }
     count_head = 0
     count = 0
+    count_text = 0
     content.each do |line|
+      count_text += 1 if line =~ /TJ ET Q$/
       count_head += 1 if line =~ /ABCD/
       count += 1 if line =~ /abcd/
     end
+    assert_equal count_text, 13
     assert_equal count_head, 1
     assert_equal count, 1
 
@@ -96,10 +99,13 @@ class RbpdfTest < ActiveSupport::TestCase
     contents.each_line {|line| content.push line.chomp }
     count_head = 0
     count = 0
+    count_text = 0
     content.each do |line|
+      count_text += 1 if line =~ /TJ ET Q$/
       count_head += 1 if line =~ /ABCD/
       count += 1 if line =~ /abcd/
     end
+    assert_equal count_text, 10
     assert_equal count_head, 1
     assert_equal count, 0
 
@@ -108,12 +114,65 @@ class RbpdfTest < ActiveSupport::TestCase
     contents.each_line {|line| content.push line.chomp }
     count_head = 0
     count = 0
+
+    count_text = 0
     content.each do |line|
+      count_text += 1 if line =~ /TJ ET Q$/
       count_head += 1 if line =~ /ABCD/
       count += 1 if line =~ /abcd/
     end
+    assert_equal count_text, 5
+
     assert_equal count_head, 1
     assert_equal count, 0
+  end
+
+  test "write_html_cell Table thead tag test" do
+    pdf = MYPDF.new
+    pdf.add_page()
+
+    htmlcontent ='<table><thead><tr>
+    <th style="text-align: left">Left align</th>
+    <th style="text-align: right">Right align</th>
+    <th style="text-align: center">Center align</th>
+    </tr> </thead><tbody> <tr>
+    <td style="text-align: left">left</td>
+    <td style="text-align: right">right</td>
+    <td style="text-align: center">center</td>
+    </tr> </tbody></table>'
+
+    pdf.write_html_cell(0, 0, '', '', htmlcontent)
+
+    page = pdf.get_page
+    assert_equal 1, page
+
+    content = []
+    contents = pdf.getPageBuffer(1)
+    contents.each_line {|line| content.push line.chomp }
+    count_head = 0
+    count = 0
+    count_text = 0
+    pos1 = ''
+    pos2 = ''
+    content.each do |line|
+      count_text += 1 if line =~ /TJ ET Q$/
+      if line =~ /Left align/
+        count_head += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos1 = $1            # x position
+        assert_not_nil pos1
+      end
+      if line =~ /left/
+        count += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1            # x position
+        assert_not_nil pos1
+      end
+    end
+    assert_equal count_text, 7
+    assert_equal count_head, 1
+    assert_equal count, 1
+    assert_equal pos1, pos2
   end
 
   test "write_html ASCII text test" do

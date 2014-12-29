@@ -71,7 +71,11 @@ class Example055Controller < ApplicationController
         if (i > 0) and (i % 16 == 0)
           html << '</tr><tr>'
         end
-        chr = pdf.unichr(i)
+        if i != 0
+          chr = pdf.unichr(i)
+        else
+          chr = ''
+        end
         # replace special characters
         chr.gsub!('<', '&lt;')
         chr.gsub!('>', '&gt;')
