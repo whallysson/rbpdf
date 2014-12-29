@@ -1340,7 +1340,7 @@ class RBPDF
   #
   def SetDisplayMode(zoom, layout='SinglePage', mode='UseNone')
     #Set display mode in viewer
-    if (zoom == 'fullpage' or zoom == 'fullwidth' or zoom == 'real' or zoom == 'default' or !zoom.is_a?(String))
+    if (zoom == 'fullpage' or zoom == 'fullwidth' or zoom == 'real' or zoom == 'default' or zoom.is_a?(Numeric))
       @zoom_mode = zoom
     else
       Error('Incorrect zoom display mode: ' + zoom)
@@ -2001,8 +2001,8 @@ class RBPDF
     #barcode = getBarcode()
     #if !barcode.empty?
     #  Ln(line_width)
-    #  barcode_width = ((getPageWidth() - ormargins['left'] - ormargins['right']) / 3).round
-    #  write1DBarcode(barcode, 'C128B', GetX(), cur_y + line_width, barcode_width, ((getFooterMargin() / 3) - line_width), 0.3, '', '')
+    #  barcode_width = ((getPageWidth() - ormargins['left'] - ormargins['right']) / 3.0).round
+    #  write1DBarcode(barcode, 'C128B', GetX(), cur_y + line_width, barcode_width, ((getFooterMargin() / 3.0) - line_width), 0.3, '', '')
     #end
     w_page = (@l.nil? or @l['w_page'].nil?) ? '' : @l['w_page']
     if @pagegroups.empty?
@@ -2840,12 +2840,12 @@ class RBPDF
     @font_size_pt = size;
     @font_size = size.to_f / @k;
     if !@current_font['desc'].nil? and !@current_font['desc']['Ascent'].nil? and (@current_font['desc']['Ascent'] > 0)
-      @font_ascent = @current_font['desc']['Ascent'] * @font_size / 1000
+      @font_ascent = @current_font['desc']['Ascent'] * @font_size / 1000.0
     else
       @font_ascent = 0.85 * @font_size
     end
     if !@current_font['desc'].nil? and !@current_font['desc']['Descent'].nil? and (@current_font['desc']['Descent'] <= 0)
-      @font_descent = - @current_font['desc']['Descent'] * @font_size / 1000
+      @font_descent = - @current_font['desc']['Descent'] * @font_size / 1000.0
     else
       @font_descent = 0.15 * @font_size
     end
@@ -2870,7 +2870,7 @@ class RBPDF
     fontdata = AddFont(font, style)
     font = getFontBuffer(fontdata['fontkey'])
     if font['desc'] and font['desc']['Descent'] and (font['desc']['Descent'] <= 0)
-      descent = - font['desc']['Descent'] * sizek / 1000
+      descent = - font['desc']['Descent'] * sizek / 1000.0
     else
       descent = 0.15 * sizek
     end
@@ -2893,7 +2893,7 @@ class RBPDF
     fontdata = AddFont(font, style)
     font = getFontBuffer(fontdata['fontkey'])
     if font['desc'] and font['desc']['Ascent'] and (font['desc']['Ascent'] > 0)
-      ascent = font['desc']['Ascent'] * sizek / 1000
+      ascent = font['desc']['Ascent'] * sizek / 1000.0
     else
       ascent = 0.85 * sizek
     end
@@ -3401,46 +3401,46 @@ class RBPDF
       case valign
       when 'T'
         # top
-        y -= @line_width / 2
+        y -= @line_width / 2.0
       when 'B'
         # bottom
-        y -= (h - @font_ascent - @font_descent - @line_width / 2)
+        y -= (h - @font_ascent - @font_descent - @line_width / 2.0)
       else # 'M'
         # center
-        y -= (h - @font_ascent - @font_descent) / 2
+        y -= (h - @font_ascent - @font_descent) / 2.0
       end
     when 'L'
       # font baseline
       case valign
       when 'T'
         # top
-        y -= (@font_ascent + @line_width / 2)
+        y -= (@font_ascent + @line_width / 2.0)
       when 'B'
         # bottom
-        y -= (h - @font_descent - @line_width / 2)
+        y -= (h - @font_descent - @line_width / 2.0)
       else # 'M'
         # center
-        y -= (h + @font_ascent - @font_descent) / 2
+        y -= (h + @font_ascent - @font_descent) / 2.0
       end
     when 'D'
       # font bottom
       case valign
       when 'T'
         # top
-        y -= (@font_ascent + @font_descent + @line_width / 2)
+        y -= (@font_ascent + @font_descent + @line_width / 2.0)
       when 'B'
         # bottom
-        y -= (h - @line_width / 2)
+        y -= (h - @line_width / 2.0)
       else # 'M'
         # center
-        y -= (h + @font_ascent + @font_descent) / 2
+        y -= (h + @font_ascent + @font_descent) / 2.0
       end
     when 'B'
       # cell bottom
       y -= h
     when 'C'
       # cell center
-      y -= h / 2
+      y -= h / 2.0
     else # 'T'
       # cell top
     end
@@ -3449,13 +3449,13 @@ class RBPDF
     case valign
     when 'T'
       # top
-      basefonty = y + @font_ascent + @line_width / 2
+      basefonty = y + @font_ascent + @line_width / 2.0
     when 'B'
       # bottom
-      basefonty = y + h - @font_descent - @line_width / 2
+      basefonty = y + h - @font_descent - @line_width / 2.0
     else # 'M'
       # center
-      basefonty = y + (h + @font_ascent - @font_descent) / 2
+      basefonty = y + (h + @font_ascent - @font_descent) / 2.0
     end
 
     if empty_string(w) or (w <= 0)
@@ -3482,7 +3482,7 @@ class RBPDF
       s << sprintf('%.2f %.2f %.2f %.2f re %s ', xk, (@h - y) * k, w * k, -h * k, op)
     end
     if (border.is_a?(String))
-      lm = @line_width / 2
+      lm = @line_width / 2.0
       if (border.include?('L'))
         if @rtl
           xk = (x - w) * k
@@ -3622,7 +3622,7 @@ class RBPDF
       txt2 = txt2.gsub("\r", ' ')
       case align
       when 'C'
-        dx = (w - width) / 2
+        dx = (w - width) / 2.0
       when 'R'
         if @rtl
           dx = @c_margin
@@ -3684,7 +3684,7 @@ class RBPDF
         s<<' Q';
       end
       if link && ((link.is_a?(String) and !link.empty?) or (link.is_a?(Fixnum) and link != 0)) # Fixnum is PDF file Page No.
-        Link(xdx, y + ((h - @font_size) / 2), width, @font_size, link, ns)
+        Link(xdx, y + ((h - @font_size) / 2.0), width, @font_size, link, ns)
       end
     end
 
@@ -3834,12 +3834,12 @@ class RBPDF
     starty = @y
     if autopadding
       # Adjust internal padding
-      if @c_margin < (@line_width / 2)
-        @c_margin = @line_width / 2
+      if @c_margin < (@line_width / 2.0)
+        @c_margin = @line_width / 2.0
       end
       # Add top space if needed
       if (@lasth - @font_size) < @line_width
-        @y += @line_width / 2
+        @y += @line_width / 2.0
       end
       # add top padding
       @y += @c_margin
@@ -3859,7 +3859,7 @@ class RBPDF
       @y += @c_margin
       # Add bottom space if needed
       if (@lasth - @font_size) < @line_width
-        @y += @line_width / 2
+        @y += @line_width / 2.0
       end
     end
 
@@ -4085,8 +4085,8 @@ class RBPDF
     end
     if autopadding
       # adjust internal padding
-      if cellMargin < (lineWidth / 2)
-        cellMargin = lineWidth / 2
+      if cellMargin < (lineWidth / 2.0)
+        cellMargin = lineWidth / 2.0
       end
     end
     wmax = w - (2 * cellMargin)
@@ -4187,8 +4187,8 @@ class RBPDF
         lineWidth = @line_width
       end
       # adjust internal padding
-      if cellMargin < (lineWidth / 2)
-        cellMargin = lineWidth / 2
+      if cellMargin < (lineWidth / 2.0)
+        cellMargin = lineWidth / 2.0
       end
       # add top and bottom space if needed
       if (@lasth - @font_size) < lineWidth
@@ -4950,7 +4950,7 @@ class RBPDF
       if palign == 'L'
         ximg = @l_margin
       elsif palign == 'C'
-        ximg = (@w + @l_margin - @r_margin - w) / 2
+        ximg = (@w + @l_margin - @r_margin - w) / 2.0
       elsif palign == 'R'
         ximg = @w - @r_margin - w
       else
@@ -4961,7 +4961,7 @@ class RBPDF
       if palign == 'L'
         ximg = @l_margin
       elsif palign == 'C'
-        ximg = (@w + @l_margin - @r_margin - w) / 2
+        ximg = (@w + @l_margin - @r_margin - w) / 2.0
       elsif palign == 'R'
         ximg = @w - @r_margin - w
       else
@@ -4999,7 +4999,7 @@ class RBPDF
       @y = y
       @x = @img_rb_x
     when 'M'
-      @y = y + (h/2).round
+      @y = y + (h/2.0).round
       @x = @img_rb_x
     when 'B'
       @y = @img_rb_y
@@ -5721,7 +5721,7 @@ protected
             if @pagedim[n]['BoxColorInfo'][box]['C']
               color = @pagedim[n]['BoxColorInfo'][box]['C']
               out <<= ' /C ['
-              out << sprintf(' %.3f %.3f %.3f', color[0]/255, color[1]/255, color[2]/255)
+              out << sprintf(' %.3f %.3f %.3f', color[0]/255.0, color[1]/255.0, color[2]/255.0)
               out << ' ]'
             end
             if @pagedim[n]['BoxColorInfo'][box]['W']
@@ -6028,7 +6028,7 @@ protected
             annots << ' /C ['
             pl['opt']['c'].each {|col|
               col = col.to_i
-              color = col <= 0 ? 0 : (col >= 255 ? 1 : col / 255)
+              color = col <= 0 ? 0 : (col >= 255 ? 1 : col / 255.0)
               annots << sprintf(" %.4f", color)
             }
             annots << ']'
@@ -6188,7 +6188,7 @@ protected
                 annots << ' /BC ['
                 pl['opt']['mk']['bc'].each {|col|
                   col = col.to_i
-                  color = col <= 0 ? 0 : (col >= 255 ? 1 : col / 255)
+                  color = col <= 0 ? 0 : (col >= 255 ? 1 : col / 255.0)
                   annots << sprintf(' %.2f', color)
                 }
                 annots << ']'
@@ -6197,7 +6197,7 @@ protected
                 annots << ' /BG ['
                 pl['opt']['mk']['bg'].each {|col|
                   col = col.to_i
-                  color = col <= 0 ? 0 : (col >= 255 ? 1 : col / 255)
+                  color = col <= 0 ? 0 : (col >= 255 ? 1 : col / 255.0)
                   annots << sprintf(' %.2f', color)
                 }
                 annots << ']'
@@ -6923,7 +6923,7 @@ protected
       out = '[/Separation /' + name.gsub(' ', '#20')
       out << ' /DeviceCMYK <<'
       out << ' /Range [0 1 0 1 0 1 0 1] /C0 [0 0 0 0]'
-      out << ' ' + sprintf('/C1 [%.4f %.4f %.4f %.4f] ', color['c']/100, color['m']/100, color['y']/100, color['k']/100)
+      out << ' ' + sprintf('/C1 [%.4f %.4f %.4f %.4f] ', color['c']/100.0, color['m']/100.0, color['y']/100.0, color['k']/100.0)
       out << ' /FunctionType 2 /Domain [0 1] /N 1>>]'
       out << ' endobj'
       out(out)
@@ -7074,8 +7074,8 @@ protected
       out << ' /OpenAction [3 0 R /FitH null]'
     elsif (@zoom_mode=='real')
       out << ' /OpenAction [3 0 R /XYZ null null 1]'
-    elsif (!@zoom_mode.is_a?(String))
-      out << ' /OpenAction [3 0 R /XYZ null null ' + (@zoom_mode/100) + ']'
+    elsif @zoom_mode.is_a?(Numeric)
+      out << ' /OpenAction [3 0 R /XYZ null null ' + (@zoom_mode/100.0).to_s + ']'
     end
     if @layout_mode and !empty_string(@layout_mode)
       out << ' /PageLayout /' + @layout_mode
@@ -7393,7 +7393,7 @@ protected
   #
   def dolinethroughw(x, y, w)
     linew = - @current_font['ut'] / 1000.0 * @font_size_pt
-    return sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - y) * @k + linew + (@font_size_pt / 3), w * @k, linew)
+    return sprintf('%.2f %.2f %.2f %.2f re f', x * @k, (@h - y) * @k + linew + (@font_size_pt / 3.0), w * @k, linew)
   end
 
   #
@@ -8890,7 +8890,7 @@ public
     if border_style
       SetLineStyle(border_style)
     end
-    myArc = 4 / 3 * (::Math.sqrt(2) - 1)
+    myArc = 4 / 3.0 * (::Math.sqrt(2) - 1)
     outPoint(x + rx, y)
     xc = x + w - rx
     yc = y + ry
@@ -11560,7 +11560,7 @@ public
               startlinepage = @page
               startliney = @y
             end
-            @y += ((curfontsize * @cell_height_ratio / @k) + curfontascent - curfontdescent) / 2  - imgh
+            @y += ((curfontsize * @cell_height_ratio / @k) + curfontascent - curfontdescent) / 2.0  - imgh
             minstartliney = [@y, minstartliney].min
             maxbottomliney = startliney + @font_size * @cell_height_ratio
           end
@@ -11617,7 +11617,7 @@ public
                 startliney = @y
               end
               if !dom[key]['block']
-                @y += (((curfontsize - fontsize) * @cell_height_ratio / @k) + curfontascent - fontascent - curfontdescent + fontdescent) / 2
+                @y += (((curfontsize - fontsize) * @cell_height_ratio / @k) + curfontascent - fontascent - curfontdescent + fontdescent) / 2.0
                 if (dom[key]['value'] != 'sup') and (dom[key]['value'] != 'sub')
                   minstartliney = [@y, minstartliney].min
                   maxbottomliney = [@y + ((fontsize * @cell_height_ratio) / @k), maxbottomliney].max
@@ -11711,9 +11711,9 @@ public
             mdiff = (tw - linew).abs
             if plalign == 'C'
               if @rtl
-                t_x = -(mdiff / 2)
+                t_x = -(mdiff / 2.0)
               else
-                t_x = (mdiff / 2)
+                t_x = (mdiff / 2.0)
               end
             elsif (plalign == 'R') and !@rtl
               # right alignment on LTR document
@@ -12087,7 +12087,7 @@ public
             if dom[trid]['startx'].nil?
               dom[trid]['startx'] = @x
             else
-              @x += (cellspacingx / 2)
+              @x += (cellspacingx / 2.0)
             end
             if !dom[parentid]['attribute']['rowspan'].nil?
               rowspan = dom[parentid]['attribute']['rowspan'].to_i
@@ -12187,7 +12187,7 @@ public
                 end
               }
             end
-            @x += (cellspacingx / 2)
+            @x += (cellspacingx / 2.0)
           else
             # opening tag (or self-closing tag)
             if opentagpos.nil?
@@ -12223,7 +12223,7 @@ public
           if pfontsize.is_a?(Numeric) and (pfontsize > 0) and curfontsize.is_a?(Numeric) and (curfontsize > 0) and (pfontsize != curfontsize)
             pfontascent = getFontAscent(pfontname, pfontstyle, pfontsize)
             pfontdescent = getFontDescent(pfontname, pfontstyle, pfontsize)
-            @y += ((pfontsize - curfontsize) * @cell_height_ratio / @k + pfontascent - curfontascent - pfontdescent + curfontdescent) / 2
+            @y += ((pfontsize - curfontsize) * @cell_height_ratio / @k + pfontascent - curfontascent - pfontdescent + curfontdescent) / 2.0
             minstartliney = [@y, minstartliney].min
             maxbottomliney = [@y + pfontsize * @cell_height_ratio / @k, maxbottomliney].max
           end
@@ -12379,9 +12379,9 @@ public
         mdiff = (tw - linew).abs
         if plalign == 'C'
           if @rtl
-            t_x = -(mdiff / 2)
+            t_x = -(mdiff / 2.0)
           else
-            t_x = (mdiff / 2)
+            t_x = (mdiff / 2.0)
           end
         elsif (plalign == 'R') and !@rtl
           # right alignment on LTR document
@@ -12531,7 +12531,7 @@ public
       else
         hrHeight = GetLineWidth()
       end
-      addHTMLVertSpace(hbz, (hrHeight / 2), cell, firstorlast)
+      addHTMLVertSpace(hbz, (hrHeight / 2.0), cell, firstorlast)
       x = GetX()
       y = GetY()
       wtmp = @w - @l_margin - @r_margin
@@ -12548,7 +12548,7 @@ public
       Line(x, y, x + hrWidth, y)
       SetLineWidth(prevlinewidth)
       Ln('', cell)
-      addHTMLVertSpace(hrHeight / 2, 0, cell, dom[key + 1].nil?)
+      addHTMLVertSpace(hrHeight / 2.0, 0, cell, dom[key + 1].nil?)
     when 'a'
       if tag['attribute'].key?('href')
         @href['url'] = get_sever_url(tag['attribute']['href'])
@@ -13260,11 +13260,11 @@ public
     end
     case unit
     when '%' # percentage
-      retval = (value * refsize) / 100
+      retval = (value * refsize) / 100.0
     when 'em' # relative-size
       retval = value * refsize
     when 'ex' # height of lower case 'x' (about half the font-size)
-      retval = value * (refsize / 2)
+      retval = value * (refsize / 2.0)
     when 'in' # absolute-size
       retval = (value * @dpi) / k
     when 'cm' # centimeters
@@ -13379,23 +13379,23 @@ protected
     when 'disc', 'circle'
       fill = 'F' if listtype == 'disc'
       fill << 'D'
-      r = size / 6
+      r = size / 6.0
       lspace += 2 * r
       if @rtl
         @x += lspace
       else
         @x -= lspace
       end
-      Circle(@x + r, @y + @lasth / 2, r, 0, 360, fill, {'color'=>color}, color, 8)
+      Circle(@x + r, @y + @lasth / 2.0, r, 0, 360, fill, {'color'=>color}, color, 8)
     when 'square'
-      l = size / 3
+      l = size / 3.0
       lspace += l
       if @rtl
         @x += lspace
       else
         @x -= lspace
       end
-      Rect(@x, @y + (@lasth - l)/ 2, l, l, 'F', {}, color)
+      Rect(@x, @y + (@lasth - l)/ 2.0, l, l, 'F', {}, color)
 
     # ordered types
     # listcount[@listnum]
