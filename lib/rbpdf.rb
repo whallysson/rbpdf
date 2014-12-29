@@ -10685,7 +10685,6 @@ protected
     blocktags = ['blockquote','br','dd','dl','div','dt','h1','h2','h3','h4','h5','h6','hr','li','ol','p','pre','ul','table','tr','td']
 
     # remove all unsupported tags (the line below lists all supported tags)
-    ::ActionView::Base.sanitized_allowed_css_properties = ["page-break-before", "page-break-after", "page-break-inside"]
     html = sanitize_html(html)
 
     # replace some blank characters

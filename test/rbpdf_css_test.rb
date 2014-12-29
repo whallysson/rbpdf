@@ -323,7 +323,67 @@ class RbpdfCssTest < ActiveSupport::TestCase
     assert_equal dom[3]['value'], 'span'
     assert_equal dom[3]['style']['color'], '#006600'
     assert_equal dom[3]['style']['font-style'], 'italic'
+  end
 
+  test "CSS Dom height width test" do 
+    pdf = MYPDF.new
+
+    html = '<style> p.first { height: 60%; }
+                    p.second { width: 70%; }</style>
+            <p class="first">ABC</p><p class="second">DEF</p>'
+    dom = pdf.getHtmlDomArray(html)
+    assert_equal dom.length, 7
+
+    # <p class="first">
+    assert_equal dom[1]['elkey'], 0
+    assert_equal dom[1]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[1]['tag'], true
+    assert_equal dom[1]['opening'], true
+    assert_equal dom[1]['value'], 'p'
+    assert_not_nil dom[1]['style']
+    assert_equal dom[1]['style']['height'], '60%'
+    assert_equal dom[1]['height'], '60%'
+
+    # ABC
+    assert_equal dom[2]['elkey'], 1
+    assert_equal dom[2]['parent'], 1
+    assert_equal dom[2]['tag'], false
+    assert_equal dom[2]['value'], 'ABC'
+
+    # <p class="second">
+    assert_equal dom[4]['elkey'], 3
+    assert_equal dom[4]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[4]['tag'], true
+    assert_equal dom[4]['opening'], true
+    assert_equal dom[4]['value'], 'p'
+    assert_not_nil dom[4]['style']
+    assert_equal dom[4]['style']['width'], '70%'
+    assert_equal dom[4]['width'], '70%'
+  end
+
+  test "CSS Dom font-weight test" do
+    pdf = MYPDF.new
+
+    html = '<style> p.first { font-weight: bold; }</style>
+            <p class="first">ABC</p><p class="second">DEF</p>'
+    dom = pdf.getHtmlDomArray(html)
+    assert_equal dom.length, 7
+
+    # <p class="first">
+    assert_equal dom[1]['elkey'], 0
+    assert_equal dom[1]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[1]['tag'], true
+    assert_equal dom[1]['opening'], true
+    assert_equal dom[1]['value'], 'p'
+    assert_not_nil dom[1]['style']
+    assert_equal dom[1]['style']['font-weight'], 'bold'
+    assert_equal dom[1]['fontstyle'], 'B'
+
+    # ABC
+    assert_equal dom[2]['elkey'], 1
+    assert_equal dom[2]['parent'], 1
+    assert_equal dom[2]['tag'], false
+    assert_equal dom[2]['value'], 'ABC'
   end
 
   test "CSS Dom id test" do
@@ -357,5 +417,220 @@ class RbpdfCssTest < ActiveSupport::TestCase
     assert_equal dom[3]['opening'], true
     assert_equal dom[3]['value'], 'span'
     assert_equal dom[3]['style']['background-color'], '#FFFFAA'
+  end
+
+  test "CSS Dom text-decoration test" do
+    pdf = MYPDF.new
+
+    html = '<style> p.first { text-decoration: none;}
+                    p.second {text-decoration: underline;}
+                    p.third {text-decoration: overline;}
+                    p.fourth {text-decoration: line-through;}
+                    p.fifth {text-decoration: underline overline line-through;}</style>
+            <p class="first">ABC</p><p class="second">DEF</p><p class="third">GHI</p><p class="fourth">JKL</p><p class="fifth">MNO</p>'
+    dom = pdf.getHtmlDomArray(html)
+    assert_equal dom.length, 16
+
+    # <p class="first">
+    assert_equal dom[1]['elkey'], 0
+    assert_equal dom[1]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[1]['tag'], true
+    assert_equal dom[1]['opening'], true
+    assert_equal dom[1]['value'], 'p'
+    assert_not_nil dom[1]['style']
+    assert_equal dom[1]['style']['text-decoration'], 'none'
+    assert_equal dom[1]['fontstyle'], ''
+
+    # ABC
+    assert_equal dom[2]['elkey'], 1
+    assert_equal dom[2]['parent'], 1
+    assert_equal dom[2]['tag'], false
+    assert_equal dom[2]['value'], 'ABC'
+
+    # <p class="second">
+    assert_equal dom[4]['elkey'], 3
+    assert_equal dom[4]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[4]['tag'], true
+    assert_equal dom[4]['opening'], true
+    assert_equal dom[4]['value'], 'p'
+    assert_not_nil dom[1]['style']
+    assert_equal dom[4]['style']['text-decoration'], 'underline'
+    assert_equal dom[4]['fontstyle'], 'U'
+
+    # <p class="third">
+    assert_equal dom[7]['elkey'], 6
+    assert_equal dom[7]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[7]['tag'], true
+    assert_equal dom[7]['opening'], true
+    assert_equal dom[7]['value'], 'p'
+    assert_not_nil dom[7]['style']
+    assert_equal dom[7]['style']['text-decoration'], 'overline'
+    assert_equal dom[7]['fontstyle'], 'O'
+
+    # <p class="fourth">
+    assert_equal dom[10]['elkey'], 9
+    assert_equal dom[10]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[10]['tag'], true
+    assert_equal dom[10]['opening'], true
+    assert_equal dom[10]['value'], 'p'
+    assert_not_nil dom[10]['style']
+    assert_equal dom[10]['style']['text-decoration'], 'line-through'
+    assert_equal dom[10]['fontstyle'], 'D'
+
+    # <p class="fifth">
+    assert_equal dom[13]['elkey'], 12
+    assert_equal dom[13]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[13]['tag'], true
+    assert_equal dom[13]['opening'], true
+    assert_equal dom[13]['value'], 'p'
+    assert_not_nil dom[13]['style']
+    assert_equal dom[13]['style']['text-decoration'], 'underline overline line-through'
+    assert_equal dom[13]['fontstyle'], 'UOD'
+  end
+
+  test "CSS Dom text-indent test" do
+    pdf = MYPDF.new
+
+    html = '<style> p.first { text-indent: 10px; }
+                    p.second { text-indent: 5em; }
+                    p.third { text-indent: 5ex; }
+                    p.fourth { text-indent: 50%; }</style>
+            <p class="first">ABC</p><p class="second">DEF</p><p class="third">GHI</p><p class="fourth">JKL</p>'
+    dom = pdf.getHtmlDomArray(html)
+    assert_equal dom.length, 13
+
+    # <p class="first">
+    assert_equal dom[1]['elkey'], 0
+    assert_equal dom[1]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[1]['tag'], true
+    assert_equal dom[1]['opening'], true
+    assert_equal dom[1]['value'], 'p'
+    assert_not_nil dom[1]['style']
+    assert_equal dom[1]['style']['text-indent'], '10px'
+    assert_in_delta dom[1]['text-indent'], 3.53, 0.01
+
+    # ABC
+    assert_equal dom[2]['elkey'], 1
+    assert_equal dom[2]['parent'], 1
+    assert_equal dom[2]['tag'], false
+    assert_equal dom[2]['value'], 'ABC'
+
+    # <p class="second">
+    assert_equal dom[4]['elkey'], 3
+    assert_equal dom[4]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[4]['tag'], true
+    assert_equal dom[4]['opening'], true
+    assert_equal dom[4]['value'], 'p'
+    assert_not_nil dom[4]['style']
+    assert_equal dom[4]['style']['text-indent'], '5em'
+    assert_equal dom[4]['text-indent'], 5.0
+
+    # <p class="third">
+    assert_equal dom[7]['elkey'], 6
+    assert_equal dom[7]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[7]['tag'], true
+    assert_equal dom[7]['opening'], true
+    assert_equal dom[7]['value'], 'p'
+    assert_not_nil dom[7]['style']
+    assert_equal dom[7]['style']['text-indent'], '5ex'
+    assert_equal dom[7]['text-indent'], 2.5
+
+    # <p class="fourth">
+    assert_equal dom[10]['elkey'], 9
+    assert_equal dom[10]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[10]['tag'], true
+    assert_equal dom[10]['opening'], true
+    assert_equal dom[10]['value'], 'p'
+    assert_not_nil dom[10]['style']
+    assert_equal dom[10]['style']['text-indent'], '50%'
+    assert_equal dom[10]['text-indent'], 0.5
+  end
+
+  test "CSS Dom list-style-type test" do
+    pdf = MYPDF.new
+
+    html = '<style> p.first { list-style-type: none; }
+                    p.second { list-style-type: disc; }
+                    p.third { list-style-type: circle; }
+                    p.fourth { list-style-type: square; }</style>
+            <p class="first">ABC</p><p class="second">DEF</p><p class="third">GHI</p><p class="fourth">JKL</p>'
+    dom = pdf.getHtmlDomArray(html)
+    assert_equal dom.length, 13
+
+    # <p class="first">
+    assert_equal dom[1]['elkey'], 0
+    assert_equal dom[1]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[1]['tag'], true
+    assert_equal dom[1]['opening'], true
+    assert_equal dom[1]['value'], 'p'
+    assert_not_nil dom[1]['style']
+    assert_equal dom[1]['style']['list-style-type'], 'none'
+    assert_equal dom[1]['listtype'], 'none'
+
+    # ABC
+    assert_equal dom[2]['elkey'], 1
+    assert_equal dom[2]['parent'], 1
+    assert_equal dom[2]['tag'], false
+    assert_equal dom[2]['value'], 'ABC'
+
+    # <p class="second">
+    assert_equal dom[4]['elkey'], 3
+    assert_equal dom[4]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[4]['tag'], true
+    assert_equal dom[4]['opening'], true
+    assert_equal dom[4]['value'], 'p'
+    assert_not_nil dom[4]['style']
+    assert_equal dom[4]['style']['list-style-type'], 'disc'
+    assert_equal dom[4]['listtype'], 'disc'
+
+    # <p class="third">
+    assert_equal dom[7]['elkey'], 6
+    assert_equal dom[7]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[7]['tag'], true
+    assert_equal dom[7]['opening'], true
+    assert_equal dom[7]['value'], 'p'
+    assert_not_nil dom[7]['style']
+    assert_equal dom[7]['style']['list-style-type'], 'circle'
+    assert_equal dom[7]['listtype'], 'circle'
+  end
+
+  test "CSS Dom page-break test" do
+    pdf = MYPDF.new
+
+    html = '<style> p.first { page-break-before: left; page-break-after: always; }
+                    p.second { page-break-inside:avoid; }</style>
+            <p class="first">ABC</p><p class="second">DEF</p>'
+    dom = pdf.getHtmlDomArray(html)
+    assert_equal dom.length, 7
+
+    # <p class="first">
+    assert_equal dom[1]['elkey'], 0
+    assert_equal dom[1]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[1]['tag'], true
+    assert_equal dom[1]['opening'], true
+    assert_equal dom[1]['value'], 'p'
+    assert_not_nil dom[1]['style']
+    assert_equal dom[1]['style']['page-break-before'], 'left'
+    assert_equal dom[1]['style']['page-break-after'], 'always'
+    assert_not_nil dom[1]['attribute']
+    assert_equal dom[1]['attribute']['pagebreak'], 'left'
+    assert_equal dom[1]['attribute']['pagebreakafter'], 'true'
+
+    # ABC
+    assert_equal dom[2]['elkey'], 1
+    assert_equal dom[2]['parent'], 1
+    assert_equal dom[2]['tag'], false
+    assert_equal dom[2]['value'], 'ABC'
+
+    # <p class="second">
+    assert_equal dom[4]['elkey'], 3
+    assert_equal dom[4]['parent'], 0   # parent -> parent tag key
+    assert_equal dom[4]['tag'], true
+    assert_equal dom[4]['opening'], true
+    assert_equal dom[4]['value'], 'p'
+    assert_not_nil dom[1]['style']
+    assert_equal dom[4]['style']['page-break-inside'], 'avoid'
+    assert_not_nil dom[4]['attribute']
+    assert_equal dom[4]['attribute']['nobr'], 'true'
   end
 end
