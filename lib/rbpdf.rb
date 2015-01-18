@@ -363,7 +363,6 @@ class RBPDF
     @radiobutton_groups ||= []
     @radio_groups ||= []
     @textindent ||= 0
-    @nested_table = false
 
     @start_transaction_y ||= 0
     @in_thead ||= false
@@ -2126,8 +2125,9 @@ class RBPDF
       # set margins
       prev_lMargin = @l_margin
       prev_rMargin = @r_margin
-      @l_margin = @pagedim[@page]['olm']
-      @r_margin = @pagedim[@page]['orm']
+      prev_cMargin = @c_margin
+      @l_margin = @thead_margins['lmargin']
+      @r_margin = @thead_margins['rmargin']
       @c_margin = @thead_margins['cmargin']
       if @rtl
         @x = @w - @r_margin
@@ -2145,6 +2145,7 @@ class RBPDF
       @lasth = 0
       @l_margin = prev_lMargin
       @r_margin = prev_rMargin
+      @c_margin = prev_cMargin
     end
   end
   protected :setTableHeader
@@ -11277,9 +11278,7 @@ public
   # [@see] Multicell(), writeHTML(), Cell()
   #
   def writeHTMLCell(w, h, x, y, html='', border=0, ln=0, fill=0, reseth=true, align='', autopadding=true)
-    @nested_table = true
     rtn = MultiCell(w, h, html, border, align, fill, ln, x, y, reseth, 0, true, autopadding, 0)
-    @nested_table = false
     return rtn
   end
   alias_method :write_html_cell, :writeHTMLCell
@@ -11458,8 +11457,18 @@ public
       if (dom[key]['value'] == 'tr') and dom[key]['thead'] and dom[key]['thead']
         if dom[key]['parent'] and dom[(dom[key]['parent'])]['thead'] and !empty_string(dom[(dom[key]['parent'])]['thead'])
           @in_thead = true
+
+          prev_lMargin = @l_margin
+          prev_rMargin = @r_margin
+          @l_margin = @thead_margins['lmargin']
+          @r_margin = @thead_margins['rmargin']
+
           # print table header (thead)
           writeHTML(@thead, false, false, false, false, '')
+
+          @l_margin = prev_lMargin
+          @r_margin = prev_rMargin
+
           if (@start_transaction_page == (@numpages - 1)) or (@y < @start_transaction_y) or checkPageBreak(@lasth, '', false)
             # restore previous object
             rollbackTransaction(true)
@@ -12014,7 +12023,7 @@ public
             else
               wtmp = @w - @r_margin - @x
             end
-            if (@nested_table == true) or (dom[key]['attribute']['nested'] and (dom[key]['attribute']['nested'] == 'true'))
+            if cell or (dom[key]['attribute']['nested'] and (dom[key]['attribute']['nested'] == 'true'))
               # add margin for nested tables
               wtmp -= @c_margin
             end
@@ -12032,10 +12041,12 @@ public
               dom[table_el]['cols'] = dom[trid]['cols']
             end
             oldmargin = @c_margin
+            currentcmargin = @c_margin
             if !dom[(dom[trid]['parent'])]['attribute']['cellpadding'].nil?
               currentcmargin = getHTMLUnitToUnits(dom[(dom[trid]['parent'])]['attribute']['cellpadding'], 1, 'px')
-            else
-              currentcmargin = 0
+            end
+            if currentcmargin < (@line_width / 2.0)
+              currentcmargin = @line_width / 2.0
             end
             @c_margin = currentcmargin
             if !dom[(dom[trid]['parent'])]['attribute']['cellspacing'].nil?
@@ -12504,12 +12515,30 @@ public
           @thead = dom[key]['thead']
           if @thead_margins.nil? or @thead_margins.empty?
             @thead_margins ||= {}
-            @thead_margins['cmargin'] = @c_margin
+
+            if dom[key]['attribute']['cellpadding']
+              @thead_margins['cmargin'] = getHTMLUnitToUnits(dom[key]['attribute']['cellpadding'], 1, 'px')
+            else
+              @thead_margins['cmargin'] = @c_margin
+            end
+            if @thead_margins['cmargin'] < (@line_width / 2.0)
+              @thead_margins['cmargin'] = @line_width / 2.0
+            end
+            if cell
+              @thead_margins['lmargin'] = @l_margin + @c_margin
+              @thead_margins['rmargin'] = @r_margin + @c_margin
+            else
+              @thead_margins['lmargin'] = @l_margin
+              @thead_margins['rmargin'] = @r_margin
+            end
           end
         end
       end
       if !tag['attribute']['cellpadding'].nil?
         cp = getHTMLUnitToUnits(tag['attribute']['cellpadding'], 1, 'px')
+        if cp < (@line_width / 2.0)
+          cp = @line_width / 2.0
+        end
         @old_c_margin = @c_margin
         @c_margin = cp
       end
@@ -12598,11 +12627,6 @@ public
             xpos += 2 * GetStringWidth(32.chr)
           end
         end
-        if @rtl
-            xpos -= @line_width * 1.5
-        else
-            xpos += @line_width * 1.5
-        end
 
         imglink = ''
         if !@href['url'].nil? and !empty_string(@href['url'])
@@ -12640,8 +12664,8 @@ public
         l_margin = @l_margin
         r_margin = @r_margin
 
-        SetLeftMargin(@l_margin + @line_width * 1.5)
-        SetRightMargin(@r_margin + @line_width * 1.5)
+        SetLeftMargin(@l_margin + @c_margin)
+        SetRightMargin(@r_margin + @c_margin)
 
         begin
 #        if (type == 'eps') or (type == 'ai')
@@ -12649,7 +12673,7 @@ public
 #        elsif type == 'svg'
 #          ImageSVG(tag['attribute']['src'], xpos, @y, iw, ih, imglink, align, '', border, true)
 #        else
-          result_img = Image(tag['attribute']['src'], xpos, @y + @line_width * 1.5, iw, ih, '', imglink, align, false, 300, '', false, false, border, false, false, true)
+          result_img = Image(tag['attribute']['src'], xpos, @y, iw, ih, '', imglink, align, false, 300, '', false, false, border, false, false, true)
 #        end
         rescue => err
           logger.error "pdf: Image: error: #{err.message}"

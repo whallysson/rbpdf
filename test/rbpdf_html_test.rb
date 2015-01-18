@@ -11,7 +11,6 @@ class RbpdfTest < ActiveSupport::TestCase
     pdf = RBPDF.new
     pdf.add_page()
 
-
     htmlcontent = '<h1>HTML Example</h1>'
     pdf.write_html(htmlcontent, true, 0, true, 0)
 
@@ -25,7 +24,7 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_equal pno, 3
   end
 
-  test "write_html Table test" do
+  test "write_html Table test 1" do
     pdf = RBPDF.new
     pdf.add_page()
 
@@ -39,6 +38,63 @@ class RbpdfTest < ActiveSupport::TestCase
 
     pno = pdf.get_page
     assert_equal pno, 3
+  end
+
+  test "write_html Table test 2" do
+    pdf = MYPDF.new
+    pdf.add_page()
+
+    htmlcontent = '1<br><br><br><br><br><br><br><br><br><br> 2<br><br><br><br><br><br><br><br><br><br> 3<br><br><br><br><br><br><br><br><br><br> 4<br><br><br><br><br><br><br><br><br><br> 5<br><br><br><br><br><br><br><br><br><br> 6<br><br><br><br><br><br><br><br><br><br> 7<br><br><br><br><br><br><br><br><br><br> 8<br><br><br><br><br><br><br><br><br><br> 9<br><br><br><br><br><br><br><br><br><br> 10<br><br><br><br><br><br><br><br><br><br> 11<br><br><br><br><br><br><br><br><br><br>'
+
+    tablehtml = '<table border="1"><tr><td>ABCD</td><td>EFGH</td><td>IJKL</td></tr>
+                 <tr><td>abcd</td><td>efgh</td><td>ijkl</td></tr>
+                 <tr><td>' + htmlcontent + '</td></tr></table>'
+    pdf.write_html(tablehtml, true, 0, true, 0)
+
+    pno = pdf.get_page
+    assert_equal pno, 3
+
+    content = []
+    contents = pdf.getPageBuffer(1)
+    contents.each_line {|line| content.push line.chomp }
+    count = 0
+    count_text = 0
+    pos1 = -1
+    pos2 = -2
+    content.each do |line|
+      count_text += 1 if line =~ /TJ ET Q$/
+      if line =~ /ABCD/
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos1 = $1
+        assert_not_nil pos1
+      end
+      if line =~ /abcd/
+        count += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1
+        assert_not_nil pos2
+      end
+    end
+    assert_equal count_text, 13
+    assert_equal count, 1
+    assert_equal pos1, pos2
+
+    content = []
+    contents = pdf.getPageBuffer(2)
+    contents.each_line {|line| content.push line.chomp }
+    count_head = 0
+    count = 0
+    count_text = 0
+    content.each do |line|
+      count_text += 1 if line =~ /TJ ET Q$/
+      if line =~ /\([6-9]\)/
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1
+        assert_not_nil pos2
+        assert_equal pos1, pos2
+      end
+    end
+    assert_equal count_text, 7
   end
 
   test "write_html Table thead tag test 1" do
@@ -71,7 +127,7 @@ class RbpdfTest < ActiveSupport::TestCase
 
     htmlcontent = '1<br><br><br><br><br><br><br><br><br><br> 2<br><br><br><br><br><br><br><br><br><br> 3<br><br><br><br><br><br><br><br><br><br> 4<br><br><br><br><br><br><br><br><br><br> 5<br><br><br><br><br><br><br><br><br><br> 6<br><br><br><br><br><br><br><br><br><br> 7<br><br><br><br><br><br><br><br><br><br> 8<br><br><br><br><br><br><br><br><br><br> 9<br><br><br><br><br><br><br><br><br><br> 10<br><br><br><br><br><br><br><br><br><br> 11<br><br><br><br><br><br><br><br><br><br>'
 
-    tablehtml = '<table border="1" cellpadding="1" cellspacing="1"><thead><tr><td>ABCD</td><td>EFGH</td><td>IJKL</td></tr></thead>
+    tablehtml = '<table><thead><tr><td>ABCD</td><td>EFGH</td><td>IJKL</td></tr></thead>
                  <tr><td>abcd</td><td>efgh</td><td>ijkl</td></tr>
                  <tr><td>' + htmlcontent + '</td></tr></table>'
 
@@ -79,50 +135,82 @@ class RbpdfTest < ActiveSupport::TestCase
     page = pdf.get_page
     assert_equal 3, page
 
+    # Page 1
     content = []
     contents = pdf.getPageBuffer(1)
     contents.each_line {|line| content.push line.chomp }
-    count_head = 0
-    count = 0
-    count_text = 0
+    count_text = count_head = count = 0
+    pos1 = -1
+    pos2 = -2
     content.each do |line|
       count_text += 1 if line =~ /TJ ET Q$/
-      count_head += 1 if line =~ /ABCD/
-      count += 1 if line =~ /abcd/
+      if line =~ /ABCD/
+        count_head += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos1 = $1
+        assert_not_nil pos1
+      end
+      if line =~ /abcd/
+        count += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1
+        assert_not_nil pos2
+      end
     end
     assert_equal count_text, 13
     assert_equal count_head, 1
     assert_equal count, 1
+    assert_equal pos1, pos2
 
+    # Page 2
     content = []
     contents = pdf.getPageBuffer(2)
     contents.each_line {|line| content.push line.chomp }
-    count_head = 0
-    count = 0
-    count_text = 0
+    count_text = count_head = count = 0
     content.each do |line|
       count_text += 1 if line =~ /TJ ET Q$/
-      count_head += 1 if line =~ /ABCD/
+      if line =~ /ABCD/
+        count_head += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1
+        assert_not_nil pos2
+        assert_equal pos1, pos2
+      end
       count += 1 if line =~ /abcd/
+      if line =~ /\([6-9]\)/
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1
+        assert_not_nil pos2
+        assert_equal pos1, pos2
+      end
     end
     assert_equal count_text, 10
     assert_equal count_head, 1
     assert_equal count, 0
 
+    # Page 3
     content = []
     contents = pdf.getPageBuffer(3)
     contents.each_line {|line| content.push line.chomp }
-    count_head = 0
-    count = 0
-
-    count_text = 0
+    count_text = count_head = count = 0
     content.each do |line|
       count_text += 1 if line =~ /TJ ET Q$/
-      count_head += 1 if line =~ /ABCD/
+      if line =~ /ABCD/
+        count_head += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1
+        assert_not_nil pos2
+        assert_equal pos1, pos2
+      end
       count += 1 if line =~ /abcd/
+      if line =~ /\(11\)/
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1
+        assert_not_nil pos2
+        assert_equal pos1, pos2
+      end
     end
     assert_equal count_text, 5
-
     assert_equal count_head, 1
     assert_equal count, 0
   end
@@ -131,48 +219,182 @@ class RbpdfTest < ActiveSupport::TestCase
     pdf = MYPDF.new
     pdf.add_page()
 
-    htmlcontent ='<table><thead><tr>
+    htmlcontent = '<br>1<br><br><br><br><br><br><br><br><br><br> 2<br><br><br><br><br><br><br><br><br><br> 3<br><br><br><br><br><br><br><br><br><br> 4<br>
+<br><br><br><br><br><br><br><br><br> 5<br><br><br><br><br><br><br><br><br><br> 6<br><br><br><br><br><br><br><br><br><br> 7<br><br><br><br><br><br><br>
+<br><br><br> 8<br><br><br><br><br><br><br><br><br><br> 9<br><br><br><br><br><br><br><br><br><br> 10<br><br><br><br><br><br><br><br><br><br> 11<br><br>
+<br><br><br><br><br><br><br><br>'
+
+    tablehtml ='<table><thead><tr>
     <th style="text-align: left">Left align</th>
     <th style="text-align: right">Right align</th>
     <th style="text-align: center">Center align</th>
     </tr> </thead><tbody> <tr>
-    <td style="text-align: left">left</td>
+    <td style="text-align: left">left' + htmlcontent + '</td>
     <td style="text-align: right">right</td>
     <td style="text-align: center">center</td>
     </tr> </tbody></table>'
 
-    pdf.write_html_cell(0, 0, '', '', htmlcontent)
+    pdf.write_html_cell(0, 0, '', '',tablehtml)
 
     page = pdf.get_page
     assert_equal 1, page
 
+    # Page 1
     content = []
     contents = pdf.getPageBuffer(1)
     contents.each_line {|line| content.push line.chomp }
-    count_head = 0
-    count = 0
-    count_text = 0
-    pos1 = ''
-    pos2 = ''
+    count_text = count_head = count = 0
+    pos1 = -1
+    pos2 = -2
     content.each do |line|
       count_text += 1 if line =~ /TJ ET Q$/
       if line =~ /Left align/
         count_head += 1
         line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos1 = $1            # x position
+        pos1 = $1
         assert_not_nil pos1
       end
       if line =~ /left/
         count += 1
         line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1            # x position
-        assert_not_nil pos1
+        pos2 = $1
+        assert_not_nil pos2
       end
     end
-    assert_equal count_text, 7
+    assert_equal count_text, 13
     assert_equal count_head, 1
     assert_equal count, 1
     assert_equal pos1, pos2
+
+    # Page 2
+    content = []
+    contents = pdf.getPageBuffer(2)
+    contents.each_line {|line| content.push line.chomp }
+    count_text = count_head = count = 0
+    content.each do |line|
+      count_text += 1 if line =~ /TJ ET Q$/
+      if line =~ /Left align/
+        count_head += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1
+        assert_not_nil pos2
+        assert_equal pos1, pos2
+      end
+      if line =~ /\(6\)/
+        count += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1
+        assert_not_nil pos2
+        assert_equal pos1, pos2
+      end
+    end
+    assert_equal count_text, 10
+    assert_equal count_head, 1
+    assert_equal count, 1
+
+    # Page 3
+    content = []
+    contents = pdf.getPageBuffer(3)
+    contents.each_line {|line| content.push line.chomp }
+    count_text = count_head = count = 0
+    content.each do |line|
+      count_text += 1 if line =~ /TJ ET Q$/
+      if line =~ /Left align/
+        count_head += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1
+        assert_not_nil pos2
+        assert_equal pos1, pos2
+      end
+      if line =~ /\(11\)/
+        count += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1
+        assert_not_nil pos2
+        assert_equal pos1, pos2
+      end
+    end
+    assert_equal count_text, 5
+    assert_equal count_head, 1
+    assert_equal count, 1
+  end
+
+  test "write_html_cell Table thead tag  cellpadding test" do
+    pdf = MYPDF.new
+    pdf.add_page()
+
+    htmlcontent = '<br>1<br><br><br><br><br><br><br><br><br><br> 2<br><br><br><br><br><br><br><br><br><br> 3<br><br><br><br><br><br><br><br><br><br> 4<br>
+<br><br><br><br><br><br><br><br><br> 5<br><br><br><br><br><br><br><br><br><br> 6<br><br><br><br><br><br><br><br><br><br> 7<br><br><br><br><br><br><br>
+<br><br><br> 8<br><br><br><br><br><br><br><br><br><br> 9<br><br><br><br><br><br><br><br><br><br> 10<br><br><br><br><br><br><br><br><br><br> 11<br><br>
+<br><br><br><br><br><br><br><br>'
+
+    tablehtml ='<table cellpadding="10"><thead><tr>
+    <th style="text-align: left">Left align</th>
+    <th style="text-align: right">Center align</th>
+    <th style="text-align: left">Right align</th>
+    </tr> </thead><tbody> <tr>
+    <td style="text-align: left">left</td>
+    <td style="text-align: right">center</td>
+    <td style="text-align: left">right' + htmlcontent + '</td>
+    </tr> </tbody></table>'
+
+    pdf.write_html_cell(0, 0, '', '',tablehtml)
+
+    page = pdf.get_page
+    assert_equal 1, page
+
+    # Page 1
+    content = []
+    contents = pdf.getPageBuffer(1)
+    contents.each_line {|line| content.push line.chomp }
+    count_text = count_head = count = 0
+    pos1 = -1
+    pos2 = -2
+    content.each do |line|
+      count_text += 1 if line =~ /TJ ET Q$/
+      if line =~ /Right align/
+        count_head += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos1 = $1
+        assert_not_nil pos1
+      end
+      if line =~ /right/
+        count += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1
+        assert_not_nil pos2
+      end
+    end
+    assert_equal count_text, 13
+    assert_equal count_head, 1
+    assert_equal count, 1
+    assert_equal pos1, pos2
+
+    # Page 2
+    content = []
+    contents = pdf.getPageBuffer(2)
+    contents.each_line {|line| content.push line.chomp }
+    count_text = count_head = count = 0
+    content.each do |line|
+      count_text += 1 if line =~ /TJ ET Q$/
+      if line =~ /Right align/
+        count_head += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1
+        assert_not_nil pos2
+        assert_equal pos1, pos2
+      end
+      if line =~ /\(6\)/
+        count += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $1
+        assert_not_nil pos2
+        assert_equal pos1, pos2
+      end
+    end
+    assert_equal count_text, 10
+    assert_equal count_head, 1
+    assert_equal count, 1
   end
 
   test "write_html ASCII text test" do
