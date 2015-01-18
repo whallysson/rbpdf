@@ -4818,6 +4818,7 @@ class RBPDF
     prev_x = @x
     if checkPageBreak(h, y)
       y = @y
+      y += @c_margin if !empty_string(@thead) and !@in_thead  ### fix ###
       if @rtl
         x += prev_x - @x
       else
@@ -11968,6 +11969,7 @@ public
           end
         end
         pbrk = checkPageBreak(@lasth)
+        @y += @c_margin if pbrk and !dom[key]['tag'] and !empty_string(@thead) and !@in_thead ### fix ###
         @newline = false
         startlinex = @x
         startliney = @y

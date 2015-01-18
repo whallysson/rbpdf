@@ -319,7 +319,7 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_equal count, 1
   end
 
-  test "write_html_cell Table thead tag  cellpadding test" do
+  test "write_html_cell Table thead tag  cellpadding x position test" do
     pdf = MYPDF.new
     pdf.add_page()
 
@@ -395,6 +395,140 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_equal count_text, 10
     assert_equal count_head, 1
     assert_equal count, 1
+  end
+
+  test "write_html_cell Table thead tag cellpadding y position test 1" do
+    pdf = MYPDF.new
+    pdf.add_page()
+
+    table_start='<table cellpadding="10"><thead><tr>
+<th style="text-align: left">Left align</th><th style="text-align: center">Center align</th><th style="text-align: right">Right align</th>
+</tr></thead><tbody>'
+    table_col='<tr><td style="text-align: left">AAA</td><td style="text-align: center">BBB</td><td style="text-align: right">CCC</td></tr>'
+    table_end='</tbody></table>'
+    tablehtml= table_start + table_col * 30 + table_end
+
+    pdf.write_html_cell(0, 0, '', '',tablehtml)
+
+    # Page 1
+    content = []
+    contents = pdf.getPageBuffer(1)
+    contents.each_line {|line| content.push line.chomp }
+    count_text = count_head = count = 0
+    pos1 = pos2 = -1
+    content.each do |line|
+      count_text += 1 if line =~ /TJ ET Q$/
+      if line =~ /Left align/
+        count_head += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos1 = $2
+        assert_not_nil pos1
+      end
+      if line =~ /AAA/
+        count += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $2 if pos2 == -1
+        assert_not_nil pos2
+      end
+    end
+
+    assert_equal count_text, 65
+    assert_equal count_head, 1
+    assert_equal count, 20
+    base_pos = pos1.to_i - pos2.to_i
+
+    # Page 2
+    content = []
+    contents = pdf.getPageBuffer(2)
+    contents.each_line {|line| content.push line.chomp }
+    count_text = count_head = count = 0
+    pos1 = pos2 = -1
+    content.each do |line|
+      count_text += 1 if line =~ /TJ ET Q$/
+      if line =~ /Left align/
+        count_head += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos1 = $2
+        assert_not_nil pos1
+      end
+      if line =~ /AAA/
+        count += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $2 if pos2 == -1
+        assert_not_nil pos2
+      end
+    end
+    assert_equal count_text, 34
+    assert_equal count_head, 1
+    assert_equal count, 10
+    assert_equal base_pos, pos1.to_i - pos2.to_i
+  end
+
+  test "write_html_cell Table thead tag cellpadding y position test 2" do
+    pdf = MYPDF.new
+    pdf.add_page()
+
+    table_start='abc<br><table cellpadding="10"><thead><tr>
+<th style="text-align: left">Left align</th><th style="text-align: center">Center align</th><th style="text-align: right">Right align</th>
+</tr></thead><tbody>'
+    table_col='<tr><td style="text-align: left">AAA</td><td style="text-align: center">BBB</td><td style="text-align: right">CCC</td></tr>'
+    table_end='</tbody></table>'
+    tablehtml= table_start + table_col * 30 + table_end
+
+    pdf.write_html_cell(0, 0, '', '',tablehtml)
+
+    # Page 1
+    content = []
+    contents = pdf.getPageBuffer(1)
+    contents.each_line {|line| content.push line.chomp }
+    count_text = count_head = count = 0
+    pos1 = pos2 = -1
+    content.each do |line|
+      count_text += 1 if line =~ /TJ ET Q$/
+      if line =~ /Left align/
+        count_head += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos1 = $2
+        assert_not_nil pos1
+      end
+      if line =~ /AAA/
+        count += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $2 if pos2 == -1
+        assert_not_nil pos2
+      end
+    end
+
+    assert_equal count_text, 66
+    assert_equal count_head, 1
+    assert_equal count, 20
+    base_pos = pos1.to_i - pos2.to_i
+
+    # Page 2
+    content = []
+    contents = pdf.getPageBuffer(2)
+    contents.each_line {|line| content.push line.chomp }
+    count_text = count_head = count = 0
+    pos1 = pos2 = -1
+    content.each do |line|
+      count_text += 1 if line =~ /TJ ET Q$/
+      if line =~ /Left align/
+        count_head += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos1 = $2
+        assert_not_nil pos1
+      end
+      if line =~ /AAA/
+        count += 1
+        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+        pos2 = $2 if pos2 == -1
+        assert_not_nil pos2
+      end
+    end
+    assert_equal count_text, 34
+    assert_equal count_head, 1
+    assert_equal count, 10
+    assert_equal base_pos, pos1.to_i - pos2.to_i
   end
 
   test "write_html ASCII text test" do
