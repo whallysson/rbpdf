@@ -266,7 +266,7 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_equal temprtl, false
   end
 
-  test "Dom HTMLTagHandler img test" do
+  test "Dom HTMLTagHandler img y position with height attribute test" do
     pdf = MYPDF.new
     pdf.add_page
 
@@ -279,6 +279,21 @@ class RbpdfTest < ActiveSupport::TestCase
     y2 = pdf.get_y
     assert_equal dom1, dom2
     assert_equal pdf.get_image_rby - (12 / pdf.get_scale_factor) , y2
+  end
+
+  test "Dom HTMLTagHandler img y position without height attribute test" do
+    pdf = MYPDF.new
+    pdf.add_page
+
+    # Image Error HTML
+    htmlcontent = '<img src="' + Rails.root.to_s + '/public/ng.png" alt="test alt attribute" border="0"/>'
+    dom1 = pdf.getHtmlDomArray(htmlcontent)
+    y1 = pdf.get_y
+
+    dom2 = pdf.openHTMLTagHandler(dom1, 1, false)
+    y2 = pdf.get_y
+    assert_equal dom1, dom2
+    assert_equal y1, y2
   end
 
   test "getHtmlDomArray encoding test" do

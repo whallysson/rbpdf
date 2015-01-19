@@ -12681,13 +12681,18 @@ public
           logger.error "pdf: Image: error: #{err.message}"
           result_img = false
         end
-        case align
-        when 'T'
+
+        if result_img or ih != 0
+          case align
+          when 'T'
+            @y = prevy
+          when 'M'
+            @y = (@img_rb_y + prevy - (tag['fontsize'] / @k)) / 2
+          when 'B'
+            @y = @img_rb_y - (tag['fontsize'] / @k)
+          end
+        else
           @y = prevy
-        when 'M'
-          @y = (@img_rb_y + prevy - (tag['fontsize'] / @k)) / 2
-        when 'B'
-          @y = @img_rb_y - (tag['fontsize'] / @k)
         end
 
         # restore original margin values
