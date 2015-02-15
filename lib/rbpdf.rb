@@ -704,9 +704,9 @@ class RBPDF
           end
           pf = getPageSizeFromFormat(format['format'])
         end
-        setPageBoxes(@page, 'MediaBox', 0, 0, pf[0], pf[1])
-        @fw_pt = pf[0] * @k
-        @fh_pt = pf[1] * @k
+        @fw_pt = pf[0]
+        @fh_pt = pf[1]
+        setPageBoxes(@page, 'MediaBox', 0, 0, @fw_pt, @fh_pt, true)
       end
       # the visible region of default user space
       if format['CropBox']
@@ -798,23 +798,26 @@ class RBPDF
   # [@param float :lly] lower-left y coordinate in user units
   # [@param float :urx] upper-right x coordinate in user units
   # [@param float :ury] upper-right y coordinate in user units
+  # [@param boolean :points] if true uses user units as unit of measure, if false uses PDF points
   # [@access public]
   # [@since 5.0.010 (2010-05-17)]
   #
-  def setPageBoxes(page, type, llx, lly, urx, ury)
-    if @pagedim[@page].nil?
-      # initialize array
-      @pagedim[@page] = {}
-    end
+  def setPageBoxes(page, type, llx, lly, urx, ury, points=false)
     pageboxes = ['MediaBox', 'CropBox', 'BleedBox', 'TrimBox', 'ArtBox']
     unless pageboxes.include?(type)
       return
     end
+    if @pagedim[page].nil?
+      # initialize array
+      @pagedim[page] = {}
+    end
+
+    points ? k = 1 : k = @k
     @pagedim[page][type] = {}
-    @pagedim[page][type]['llx'] = llx * @k
-    @pagedim[page][type]['lly'] = lly * @k
-    @pagedim[page][type]['urx'] = urx * @k
-    @pagedim[page][type]['ury'] = ury * @k
+    @pagedim[page][type]['llx'] = llx * k
+    @pagedim[page][type]['lly'] = lly * k
+    @pagedim[page][type]['urx'] = urx * k
+    @pagedim[page][type]['ury'] = ury * k
   end
   alias_method :set_page_boxes, :setPageBoxes
 
@@ -854,23 +857,23 @@ class RBPDF
   def setPageOrientation(orientation, autopagebreak='', bottommargin='')
     if @pagedim[@page].nil? or @pagedim[@page]['MediaBox'].nil?
       # the boundaries of the physical medium on which the page shall be displayed or printed
-      setPageBoxes(@page, 'MediaBox', 0, 0, (@fw_pt / @k), (@fh_pt / @k))
+      setPageBoxes(@page, 'MediaBox', 0, 0, @fw_pt, @fh_pt, true)
     end
     if @pagedim[@page]['CropBox'].nil?
       # the visible region of default user space
-      setPageBoxes(@page, 'CropBox', @pagedim[@page]['MediaBox']['llx'], @pagedim[@page]['MediaBox']['lly'], @pagedim[@page]['MediaBox']['urx'], @pagedim[@page]['MediaBox']['ury'])
+      setPageBoxes(@page, 'CropBox', @pagedim[@page]['MediaBox']['llx'], @pagedim[@page]['MediaBox']['lly'], @pagedim[@page]['MediaBox']['urx'], @pagedim[@page]['MediaBox']['ury'], true)
     end
     if @pagedim[@page]['BleedBox'].nil?
       # the region to which the contents of the page shall be clipped when output in a production environment
-      setPageBoxes(@page, 'BleedBox', @pagedim[@page]['CropBox']['llx'], @pagedim[@page]['CropBox']['lly'], @pagedim[@page]['CropBox']['urx'], @pagedim[@page]['CropBox']['ury'])
+      setPageBoxes(@page, 'BleedBox', @pagedim[@page]['CropBox']['llx'], @pagedim[@page]['CropBox']['lly'], @pagedim[@page]['CropBox']['urx'], @pagedim[@page]['CropBox']['ury'], true)
     end
     if @pagedim[@page]['TrimBox'].nil?
       # the intended dimensions of the finished page after trimming
-      setPageBoxes(@page, 'TrimBox', @pagedim[@page]['CropBox']['llx'], @pagedim[@page]['CropBox']['lly'], @pagedim[@page]['CropBox']['urx'], @pagedim[@page]['CropBox']['ury'])
+      setPageBoxes(@page, 'TrimBox', @pagedim[@page]['CropBox']['llx'], @pagedim[@page]['CropBox']['lly'], @pagedim[@page]['CropBox']['urx'], @pagedim[@page]['CropBox']['ury'], true)
     end
     if @pagedim[@page]['ArtBox'].nil?
       # the page's meaningful content (including potential white space)
-      setPageBoxes(@page, 'ArtBox', @pagedim[@page]['CropBox']['llx'], @pagedim[@page]['CropBox']['lly'], @pagedim[@page]['CropBox']['urx'], @pagedim[@page]['CropBox']['ury'])
+      setPageBoxes(@page, 'ArtBox', @pagedim[@page]['CropBox']['llx'], @pagedim[@page]['CropBox']['lly'], @pagedim[@page]['CropBox']['urx'], @pagedim[@page]['CropBox']['ury'], true)
     end
     if @pagedim[@page]['Rotate'].nil?
       # The number of degrees by which the page shall be rotated clockwise when displayed or printed. The value shall be a multiple of 90.

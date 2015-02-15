@@ -266,6 +266,101 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_equal pagedim['CropBox']['llx'], 0.0
   end
 
+  test "Page Box A4 test 1" do
+    pdf = RBPDF.new
+    pagedim = pdf.get_page_dimensions
+    assert_equal pagedim['MediaBox']['llx'], 0.0
+    assert_equal pagedim['MediaBox']['lly'], 0.0
+    assert_equal pagedim['MediaBox']['urx'], 595.28
+    assert_equal pagedim['MediaBox']['ury'], 841.89
+    assert_equal pagedim['CropBox']['llx'], 0.0
+    assert_equal pagedim['CropBox']['lly'], 0.0
+    assert_equal pagedim['CropBox']['urx'], 595.28
+    assert_equal pagedim['CropBox']['ury'], 841.89
+    assert_equal pagedim['BleedBox']['llx'], 0.0
+    assert_equal pagedim['BleedBox']['lly'], 0.0
+    assert_equal pagedim['BleedBox']['urx'], 595.28
+    assert_equal pagedim['BleedBox']['ury'], 841.89
+    assert_equal pagedim['TrimBox']['llx'], 0.0
+    assert_equal pagedim['TrimBox']['lly'], 0.0
+    assert_equal pagedim['TrimBox']['urx'], 595.28
+    assert_equal pagedim['TrimBox']['ury'], 841.89
+    assert_equal pagedim['ArtBox']['llx'], 0.0
+    assert_equal pagedim['ArtBox']['lly'], 0.0
+    assert_equal pagedim['ArtBox']['urx'], 595.28
+    assert_equal pagedim['ArtBox']['ury'], 841.89
+  end
+
+  test "Page Box A4 test 2" do
+    format = {}
+    type = ['CropBox', 'BleedBox', 'TrimBox', 'ArtBox']
+    type.each do |type|
+      format[type] = {}
+      format[type]['llx'] = 0
+      format[type]['lly'] = 0
+      format[type]['urx'] = 210
+      format[type]['ury'] = 297
+    end
+
+    pdf = RBPDF.new('P', 'mm', format)
+    pagedim = pdf.get_page_dimensions
+    assert_equal pagedim['MediaBox']['llx'], 0.0
+    assert_equal pagedim['MediaBox']['lly'], 0.0
+    assert_in_delta pagedim['MediaBox']['urx'], 595.28, 0.1
+    assert_in_delta pagedim['MediaBox']['ury'], 841.89, 0.1
+    assert_equal pagedim['CropBox']['llx'], 0.0
+    assert_equal pagedim['CropBox']['lly'], 0.0
+    assert_in_delta pagedim['CropBox']['urx'], 595.28, 0.1
+    assert_in_delta pagedim['CropBox']['ury'], 841.89, 0.1
+    assert_equal pagedim['BleedBox']['llx'], 0.0
+    assert_equal pagedim['BleedBox']['lly'], 0.0
+    assert_in_delta pagedim['BleedBox']['urx'], 595.28, 0.1
+    assert_in_delta pagedim['BleedBox']['ury'], 841.89, 0.1
+    assert_equal pagedim['TrimBox']['llx'], 0.0
+    assert_equal pagedim['TrimBox']['lly'], 0.0
+    assert_in_delta pagedim['TrimBox']['urx'], 595.28, 0.1
+    assert_in_delta pagedim['TrimBox']['ury'], 841.89, 0.1
+    assert_equal pagedim['ArtBox']['llx'], 0.0
+    assert_equal pagedim['ArtBox']['lly'], 0.0
+    assert_in_delta pagedim['ArtBox']['urx'], 595.28, 0.1
+    assert_in_delta pagedim['ArtBox']['ury'], 841.89, 0.1
+  end
+
+  test "Page Box A4 test 3" do
+    format = {}
+    type = ['MediaBox', 'CropBox', 'BleedBox', 'TrimBox', 'ArtBox']
+    type.each do |type|
+      format[type] = {}
+      format[type]['llx'] = 0
+      format[type]['lly'] = 0
+      format[type]['urx'] = 210
+      format[type]['ury'] = 297
+    end
+
+    pdf = RBPDF.new('P', 'mm', format)
+    pagedim = pdf.get_page_dimensions
+    assert_equal pagedim['MediaBox']['llx'], 0.0
+    assert_equal pagedim['MediaBox']['lly'], 0.0
+    assert_in_delta pagedim['MediaBox']['urx'], 595.28, 0.1
+    assert_in_delta pagedim['MediaBox']['ury'], 841.89, 0.1
+    assert_equal pagedim['CropBox']['llx'], 0.0
+    assert_equal pagedim['CropBox']['lly'], 0.0
+    assert_in_delta pagedim['CropBox']['urx'], 595.28, 0.1
+    assert_in_delta pagedim['CropBox']['ury'], 841.89, 0.1
+    assert_equal pagedim['BleedBox']['llx'], 0.0
+    assert_equal pagedim['BleedBox']['lly'], 0.0
+    assert_in_delta pagedim['BleedBox']['urx'], 595.28, 0.1
+    assert_in_delta pagedim['BleedBox']['ury'], 841.89, 0.1
+    assert_equal pagedim['TrimBox']['llx'], 0.0
+    assert_equal pagedim['TrimBox']['lly'], 0.0
+    assert_in_delta pagedim['TrimBox']['urx'], 595.28, 0.1
+    assert_in_delta pagedim['TrimBox']['ury'], 841.89, 0.1
+    assert_equal pagedim['ArtBox']['llx'], 0.0
+    assert_equal pagedim['ArtBox']['lly'], 0.0
+    assert_in_delta pagedim['ArtBox']['urx'], 595.28, 0.1
+    assert_in_delta pagedim['ArtBox']['ury'], 841.89, 0.1
+  end
+
   test "get_break_margin test" do
     pdf = RBPDF.new
     pdf.add_page
