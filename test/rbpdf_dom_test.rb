@@ -161,9 +161,9 @@ class RbpdfTest < ActiveSupport::TestCase
     dom2 = pdf.getHtmlDomArray('<b>ab<br/>c</b>')
     assert_equal dom, dom2
 
-    htmlcontent = '<b><img src="' + Rails.root.to_s + '/public/ng.png" alt="test alt attribute" width="30" height="30" border="0"/></b>'
+    htmlcontent = '<b><img src="/public/ng.png" alt="test alt attribute" width="30" height="30" border="0"/></b>'
     dom1 = pdf.getHtmlDomArray(htmlcontent)
-    htmlcontent = '<b><img src="' + Rails.root.to_s + '/public/ng.png" alt="test alt attribute" width="30" height="30" border="0"></b>'
+    htmlcontent = '<b><img src="/public/ng.png" alt="test alt attribute" width="30" height="30" border="0"></b>'
     dom2 = pdf.getHtmlDomArray(htmlcontent)
     assert_equal dom1, dom2
 
@@ -271,7 +271,7 @@ class RbpdfTest < ActiveSupport::TestCase
     pdf.add_page
 
     # Image Error HTML
-    htmlcontent = '<img src="' + Rails.root.to_s + '/public/ng.png" alt="test alt attribute" width="30" height="30" border="0"/>'
+    htmlcontent = '<img src="/public/ng.png" alt="test alt attribute" width="30" height="30" border="0"/>'
     dom1 = pdf.getHtmlDomArray(htmlcontent)
     y1 = pdf.get_y
 
@@ -286,7 +286,7 @@ class RbpdfTest < ActiveSupport::TestCase
     pdf.add_page
 
     # Image Error HTML
-    htmlcontent = '<img src="' + Rails.root.to_s + '/public/ng.png" alt="test alt attribute" border="0"/>'
+    htmlcontent = '<img src="/public/ng.png" alt="test alt attribute" border="0"/>'
     dom1 = pdf.getHtmlDomArray(htmlcontent)
     y1 = pdf.get_y
 

@@ -71,6 +71,11 @@ end
 
 require 'core/rmagick'
 
+# Needed to run the test suite outside of a Rails environment.
+require 'action_view'
+require 'tempfile'
+require 'uri'
+
 #
 # RBPDF Class.
 #
@@ -113,7 +118,14 @@ class RBPDF
   include Html_colors
 
   def logger
-    Rails.logger
+    if defined? Rails.logger
+      Rails.logger
+    else
+      # This particular error will occur when the test suite is run from outside a Rails environment.
+      # We use the standard Ruby stdout logger in that case.
+      require 'logger'
+      return Logger.new(STDOUT)
+    end
   end
 
   @@version = "5.1.002"
@@ -260,9 +272,18 @@ class RBPDF
     #   mb_internal_encoding("ASCII");
     # }
 
-    @@k_path_cache = Rails.root.join('tmp').to_s
-    @@k_path_main = Rails.root.join('tmp').to_s
-    @@k_path_url = Rails.root.join('tmp').to_s
+   if defined? Rails.root
+      @@k_path_cache = Rails.root.join('tmp').to_s
+      @@k_path_main = Rails.root.join('tmp').to_s
+      @@k_path_url = Rails.root.join('tmp').to_s
+    else
+      # This particular error will occur when the test suite is run from outside a Rails environment.
+      # We want to use the system's temp directory in that case.
+      require 'tmpdir'
+      @@k_path_cache = Dir.tmpdir
+      @@k_path_main = Dir.tmpdir
+      @@k_path_url = Dir.tmpdir
+    end
 
     # set disk caching
     @diskcache = diskcache ? true : false
