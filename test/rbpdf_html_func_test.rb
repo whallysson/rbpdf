@@ -140,12 +140,10 @@ class RbpdfTest < ActiveSupport::TestCase
   test "html func sanitize test 1" do
     pdf = MYPDF.new
     pdf.add_page()
-    html = '<table border="1"><thead><tr><td>ABCD</td><td>EFGH</td><td>IJKL</td></tr></thead>
-                 <tr><td>abcd</td><td>efgh</td><td>ijkl</td></tr>
-                 <tr><td>' + 'ABC' + '</td></tr></table>'
+    html = '<table border="1"><thead><tr><td>ABCD</td><td>EFGH</td><td>IJKL</td></tr></thead><tr><td>abcd</td><td>efgh</td><td>ijkl</td></tr><tr><td>' + 'ABC' + '</td></tr></table>'
     html = pdf.sanitize_html(html).gsub(/[\r\n]/,'')
 
-    assert_equal html, %{<table border="1"><thead><tr><td>ABCD</td><td>EFGH</td><td>IJKL</td></tr></thead>                 <tr><td>abcd</td><td>efgh</td><td>ijkl</td></tr>                 <tr><td>ABC</td></tr></table>}
+    assert_equal html, %{<table border="1"><thead><tr><td>ABCD</td><td>EFGH</td><td>IJKL</td></tr></thead><tr><td>abcd</td><td>efgh</td><td>ijkl</td></tr><tr><td>ABC</td></tr></table>}
   end
 
   test "html func sanitize test 2" do
@@ -153,10 +151,8 @@ class RbpdfTest < ActiveSupport::TestCase
     pdf.add_page()
 
     htmlcontent = '1<br><br><br><br><br><br><br><br><br><br> 2<br><br><br><br><br><br><br><br><br><br> 3<br><br><br><br><br><br><br><br><br><br> 4<br><br><br><br><br><br><br><br><br><br> 5<br><br><br><br><br><br><br><br><br><br> 6<br><br><br><br><br><br><br><br><br><br> 7<br><br><br><br><br><br><br><br><br><br> 8<br><br><br><br><br><br><br><br><br><br> 9<br><br><br><br><br><br><br><br><br><br> 10<br><br><br><br><br><br><br><br><br><br> 11<br><br><br><br><br><br><br><br><br><br>'
-    html = '<table cellpadding="1"><thead><tr><td>ABCD</td><td>EFGH</td><td>IJKL</td></tr></thead>
-                 <tr><td>abcd</td><td>efgh</td><td>ijkl</td></tr>
-                 <tr><td>' + htmlcontent + '</td></tr></table>'
+    html = '<table cellpadding="1"><thead><tr><td>ABCD</td><td>EFGH</td><td>IJKL</td></tr></thead><tr><td>abcd</td><td>efgh</td><td>ijkl</td></tr><tr><td>' + htmlcontent + '</td></tr></table>'
     html = pdf.sanitize_html(html).gsub(/[\r\n]/,'')
-    assert_equal html, %{<table cellpadding="1"><thead><tr><td>ABCD</td><td>EFGH</td><td>IJKL</td></tr></thead>                 <tr><td>abcd</td><td>efgh</td><td>ijkl</td></tr>                 <tr><td>1<br><br><br><br><br><br><br><br><br><br> 2<br><br><br><br><br><br><br><br><br><br> 3<br><br><br><br><br><br><br><br><br><br> 4<br><br><br><br><br><br><br><br><br><br> 5<br><br><br><br><br><br><br><br><br><br> 6<br><br><br><br><br><br><br><br><br><br> 7<br><br><br><br><br><br><br><br><br><br> 8<br><br><br><br><br><br><br><br><br><br> 9<br><br><br><br><br><br><br><br><br><br> 10<br><br><br><br><br><br><br><br><br><br> 11<br><br><br><br><br><br><br><br><br><br></td></tr></table>}
+    assert_equal html, %{<table cellpadding="1"><thead><tr><td>ABCD</td><td>EFGH</td><td>IJKL</td></tr></thead><tr><td>abcd</td><td>efgh</td><td>ijkl</td></tr><tr><td>1<br><br><br><br><br><br><br><br><br><br> 2<br><br><br><br><br><br><br><br><br><br> 3<br><br><br><br><br><br><br><br><br><br> 4<br><br><br><br><br><br><br><br><br><br> 5<br><br><br><br><br><br><br><br><br><br> 6<br><br><br><br><br><br><br><br><br><br> 7<br><br><br><br><br><br><br><br><br><br> 8<br><br><br><br><br><br><br><br><br><br> 9<br><br><br><br><br><br><br><br><br><br> 10<br><br><br><br><br><br><br><br><br><br> 11<br><br><br><br><br><br><br><br><br><br></td></tr></table>}
   end
 end
