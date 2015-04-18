@@ -11,22 +11,22 @@
 #      it under the terms of the GNU Lesser General Public License as published by
 #      the Free Software Foundation, either version 2.1 of the License, or
 #      (at your option) any later version.
-#      
+#
 #      This program is distributed in the hope that it will be useful,
 #      but WITHOUT ANY WARRANTY; without even the implied warranty of
 #      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #      GNU Lesser General Public License for more details.
-#      
+#
 #      You should have received a copy of the GNU Lesser General Public License
 #      along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #  ----------------------------------------------------------------------------
 #
-# Description : This is a Ruby class for generating PDF files 
-#               on-the-fly without requiring external 
+# Description : This is a Ruby class for generating PDF files
+#               on-the-fly without requiring external
 #               extensions.
 #
 # IMPORTANT:
-# This class is an extension and improvement of the Public Domain 
+# This class is an extension and improvement of the Public Domain
 # FPDF class by Olivier Plathey (http://www.fpdf.org).
 #
 # Main changes by Nicola Asuni:
@@ -49,7 +49,7 @@
 require "rbpdf/version"
 
 begin
-  require('htmlentities') 
+  require('htmlentities')
 rescue LoadError
   # This gem is not required - just nice to have.
 end
@@ -65,7 +65,7 @@ require 'core/rmagick'
 # RBPDF Class.
 #
 
- 
+
 PDF_PRODUCER = 'RBPDF 5.1.002'
 
 module RBPDFFontDescriptor
@@ -115,13 +115,13 @@ class RBPDF
   cattr_accessor :k_blank_image
   @@k_blank_image = ""
 
-  cattr_accessor :k_small_ratio  
+  cattr_accessor :k_small_ratio
   @@k_small_ratio = 2/3.0
 
   cattr_accessor :k_path_cache
 
   cattr_accessor :k_path_main
-  
+
   cattr_accessor :k_path_url
 
   @@k_path_images = ""
@@ -130,90 +130,90 @@ class RBPDF
   cattr_accessor :decoder
 
   attr_accessor :barcode
-  
+
   attr_accessor :buffer
-  
+
   attr_accessor :diffs
-  
+
   attr_accessor :color_flag
-  
+
   attr_accessor :default_font
 
   attr_accessor :draw_color
-  
+
   attr_accessor :encoding
-  
+
   attr_accessor :fill_color
-  
+
   attr_accessor :fonts
-  
+
   attr_accessor :font_family
-  
+
   attr_accessor :font_files
-  
+
   cattr_accessor :k_path_fonts
-  
+
   attr_accessor :font_style
-  
+
   attr_accessor :font_size_pt
-  
+
   attr_accessor :header_width
-  
+
   attr_accessor :header_logo
-  
+
   attr_accessor :header_logo_width
-  
+
   attr_accessor :header_title
-  
+
   attr_accessor :header_string
-  
+
   attr_accessor :images
-  
+
   attr_accessor :img_scale
-  
+
   attr_accessor :in_footer
-  
+
   attr_accessor :is_unicode
 
   attr_accessor :lasth
-  
+
   attr_accessor :links
-  
+
   attr_accessor :listordered
-  
+
   attr_accessor :listcount
-  
+
   attr_accessor :lispacer
-  
+
   attr_accessor :n
-  
+
   attr_accessor :offsets
-  
+
   attr_accessor :page
-  
+
   attr_accessor :pages
-  
+
   attr_accessor :pdf_version
-  
+
   attr_accessor :print_header
-  
+
   attr_accessor :print_footer
-  
+
   attr_accessor :state
-  
+
   attr_accessor :text_color
-  
+
   attr_accessor :underline
-  
+
   attr_accessor :diskcache
 
   attr_accessor :cache_file_length
 
   attr_accessor :prev_pages
-  
+
   #
-  # This is the class constructor. 
-  # It allows to set up the page format, the orientation and 
+  # This is the class constructor.
+  # It allows to set up the page format, the orientation and
   # the measure unit used in all the methods (except for the font sizes).
   # @since 1.0
   # [@param string :orientation]
@@ -242,9 +242,9 @@ class RBPDF
   # [@access public]
   #
   def initialize(orientation = 'P',  unit = 'mm', format = 'A4', unicode = true, encoding = "UTF-8", diskcache = false)
-    
+
     # Set internal character encoding to ASCII#
-    #FIXME 2007-05-25 (EJM) Level=0 - 
+    #FIXME 2007-05-25 (EJM) Level=0 -
     # if (respond_to?("mb_internal_encoding") and mb_internal_encoding())
     #   @internal_encoding = mb_internal_encoding();
     #   mb_internal_encoding("ASCII");
@@ -256,13 +256,13 @@ class RBPDF
 
     # set disk caching
     @diskcache = diskcache ? true : false
- 
+
     # set language direction
     @rtl = false
     @tmprtl = false
 
-    @x ||= 0 
-    @y ||= 0 
+    @x ||= 0
+    @y ||= 0
 
     #######################
     @offsets ||= []
@@ -351,7 +351,7 @@ class RBPDF
     @cache_utf8_string_to_array = {}
     @cache_maxsize_utf8_string_to_array = 8
     @cache_size_utf8_string_to_array = 0
-    
+
     @signature_data ||= {}
     @sig_annot_ref ||= '***SIGANNREF*** 0 R'
     @page_obj_id ||= []
@@ -371,7 +371,7 @@ class RBPDF
     @current_column ||= 0
     @column_start_page ||= 0
 
-    # Text rendering mode: 
+    # Text rendering mode:
     # 0 = Fill text;
     # 1 =            Stroke text;
     # 2 = Fill, then stroke text;
@@ -390,13 +390,13 @@ class RBPDF
 
     #Some checks
     dochecks();
-    
+
     begin
-      @@decoder = HTMLEntities.new 
+      @@decoder = HTMLEntities.new
     rescue
       @@decoder = nil
     end
-    
+
     #Initialization of properties
     @is_unicode = unicode
     @page ||= 0
@@ -433,7 +433,7 @@ class RBPDF
     # encryption values
     @encrypted ||= false
     @last_enc_key ||= ''
-     
+
     # Standard Unicode fonts
     @core_fonts = {
     'courier'=>'Courier',
@@ -513,7 +513,7 @@ class RBPDF
     @curr_annot_obj_id ||= @annots_start_obj_id
     @apxo_obj_id ||= @apxo_start_obj_id
   end
-  
+
   #
   # Set the units of measure for the document.
   # [@param string :unit]
@@ -788,7 +788,7 @@ class RBPDF
   # Set page boundaries.
   # [@param int :page] page number
   # [@param string :type]
-  #   valid values are: 
+  #   valid values are:
   #   * 'MediaBox' : the boundaries of the physical medium on which the page shall be displayed or printed
   #   * 'CropBox' : the visible region of default user space
   #   * 'BleedBox' : the region to which the contents of the page shall be clipped when output in a production environment
@@ -1057,7 +1057,7 @@ class RBPDF
     warn "[DEPRECATION] 'SetImageScale' is deprecated. Please use 'set_image_scale' instead."
     setImageScale(scale)
   end
-  
+
   #
   # Returns the adjusting factor to convert pixels to user units.
   # [@return float] adjusting factor to convert pixels to user units.
@@ -1069,7 +1069,7 @@ class RBPDF
     return @img_scale;
   end
   alias_method :get_image_scale, :getImageScale
-  
+
   def GetImageScale()
     warn "[DEPRECATION] 'GetImageScale' is deprecated. Please use 'get_image_scale' instead."
     getImageScale()
@@ -1098,7 +1098,7 @@ class RBPDF
   #     @pagedim[@page]['trans']['Dm'] = (Split and Blinds transition styles only) The dimension in which the specified transition effect shall occur: H = Horizontal, V = Vertical. Default value: H.
   #     @pagedim[@page]['trans']['M'] = (Split, Box and Fly transition styles only) The direction of motion for the specified transition effect: I = Inward from the edges of the page, O = Outward from the center of the pageDefault value: I.
   #     @pagedim[@page]['trans']['Di'] = (Wipe, Glitter, Fly, Cover, Uncover and Push transition styles only) The direction in which the specified transition effect shall moves, expressed in degrees counterclockwise starting from a left-to-right direction. If the value is a number, it shall be one of: 0 = Left to right, 90 = Bottom to top (Wipe only), 180 = Right to left (Wipe only), 270 = Top to bottom, 315 = Top-left to bottom-right (Glitter only). If the value is a name, it shall be None, which is relevant only for the Fly transition when the value of SS is not 1.0. Default value: 0.
-  #     @pagedim[@page]['trans']['SS'] = (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0. 
+  #     @pagedim[@page]['trans']['SS'] = (Fly transition style only) The starting or ending scale at which the changes shall be drawn. If M specifies an inward transition, the scale of the changes drawn shall progress from SS to 1.0 over the course of the transition. If M specifies an outward transition, the scale of the changes drawn shall progress from 1.0 to SS over the course of the transition. Default: 1.0.
   #     @pagedim[@page]['trans']['B'] = (Fly transition style only) If true, the area that shall be flown in is rectangular and opaque. Default: false.
   #   @pagedim[@page]['MediaBox'] : the boundaries of the physical medium on which the page shall be displayed or printed
   #     @pagedim[@page]['MediaBox']['llx'] = lower-left x coordinate in points
@@ -1155,7 +1155,7 @@ class RBPDF
     warn "[DEPRECATION] 'GetPageWidth' is deprecated. Please use 'get_page_width' instead."
     getPageWidth()
   end
-  
+
   #
   # Returns the page height in units.
   # [@return int] page height.
@@ -1167,7 +1167,7 @@ class RBPDF
     return @h;
   end
   alias_method :get_page_height, :getPageHeight
-  
+
   def GetPageHeight()
     warn "[DEPRECATION] 'GetPageHeight' is deprecated. Please use 'get_page_height' instead."
     getPageHeight()
@@ -1699,7 +1699,7 @@ class RBPDF
     end
   end
   alias_method :end_page, :endPage
-  
+
   #
   # Starts a new page to the document. The page must be closed using the endPage() function.
   # The origin of the coordinate system is at the top-left corner and increasing ordinates go downwards.
@@ -1806,7 +1806,7 @@ class RBPDF
     @header_string = hs || ""
   end
   alias_method :set_header_data, :setHeaderData
-  
+
   def SetHeaderData(ln="", lw=0, ht="", hs="")
     warn "[DEPRECATION] 'SetHeaderData' is deprecated. Please use 'set_header_data' instead."
     setHeaderData(ln, lw, ht, hs)
@@ -1842,7 +1842,7 @@ class RBPDF
     @header_margin = hm;
   end
   alias_method :set_header_margin, :setHeaderMargin
-  
+
   def SetHeaderMargin(hm=10)
     warn "[DEPRECATION] 'SetHeaderMargin' is deprecated. Please use 'set_header_margin' instead."
     setHeaderMargin(hm)
@@ -1869,7 +1869,7 @@ class RBPDF
     @footer_margin = fm;
   end
   alias_method :set_footer_margin, :setFooterMargin
-  
+
   def SetFooterMargin(fm=10)
     warn "[DEPRECATION] 'SetFooterMargin' is deprecated. Please use 'set_footer_margin' instead."
     setFooterMargin(fm)
@@ -1888,14 +1888,14 @@ class RBPDF
 
   #
   # Set a flag to print page header.
-  # [@param boolean :val] set to true to print the page header (default), false otherwise. 
+  # [@param boolean :val] set to true to print the page header (default), false otherwise.
   # [@access public]
   #
   def setPrintHeader(val=true)
     @print_header = val;
   end
   alias_method :set_print_header, :setPrintHeader
-  
+
   def SetPrintHeader(val=true)
     warn "[DEPRECATION] 'SetPrintHeader' is deprecated. Please use 'set_print_header' instead."
     setPrintHeader(val)
@@ -1903,14 +1903,14 @@ class RBPDF
 
   #
   # Set a flag to print page footer.
-  # [@param boolean :value] set to true to print the page footer (default), false otherwise. 
+  # [@param boolean :value] set to true to print the page footer (default), false otherwise.
   # [@access public]
   #
   def setPrintFooter(val=true)
     @print_footer = val;
   end
   alias_method :set_print_footer, :setPrintFooter
-  
+
   def SetPrintFooter(val=true)
     warn "[DEPRECATION] 'SetPrintFooter' is deprecated. Please use 'set_print_footer' instead."
     setPrintFooter(val)
@@ -1986,9 +1986,9 @@ class RBPDF
     Cell(0, 0, '', 'T', 0, 'C')
   end
   alias_method :header, :Header
-  
+
   #
-  # This method is used to render the page footer. 
+  # This method is used to render the page footer.
   # It is automatically called by AddPage() and could be overwritten in your own inherited class.
   # [@access public]
   #
@@ -2023,9 +2023,9 @@ class RBPDF
     end
   end
   alias_method :footer, :Footer
-  
+
   #
-  # This method is used to render the page header. 
+  # This method is used to render the page header.
   # [@access protected]
   # [@since 4.0.012 (2008-07-24)]
   #
@@ -2062,7 +2062,7 @@ class RBPDF
   protected :setHeader
 
   #
-  # This method is used to render the page footer. 
+  # This method is used to render the page footer.
   # [@access protected]
   # [@since 4.0.012 (2008-07-24)]
   #
@@ -2109,7 +2109,7 @@ class RBPDF
   protected :setFooter
 
   #
-  # This method is used to render the table header on new page (if any). 
+  # This method is used to render the table header on new page (if any).
   # [@access protected]
   # [@since 4.5.030 (2009-03-25)]
   #
@@ -2187,8 +2187,8 @@ class RBPDF
   alias_method :add_spot_color, :AddSpotColor
 
   #
-  # Defines the color used for all drawing operations (lines, rectangles and cell borders). 
-  # It can be expressed in RGB components or gray scale. 
+  # Defines the color used for all drawing operations (lines, rectangles and cell borders).
+  # It can be expressed in RGB components or gray scale.
   # The method can be called before the first page is created and the value is retained from page to page.
   # [@param array or ordered hash :color] array(or ordered hash) of colors
   # [@access public]
@@ -2259,8 +2259,8 @@ class RBPDF
   alias_method :set_draw_color, :SetDrawColor
 
   #
-  # Defines the color used for all filling operations (filled rectangles and cell backgrounds). 
-  # It can be expressed in RGB components or gray scale. 
+  # Defines the color used for all filling operations (filled rectangles and cell backgrounds).
+  # It can be expressed in RGB components or gray scale.
   # The method can be called before the first page is created and the value is retained from page to page.
   # [@param array or ordered hash :color] array(or ordered hash) of colors
   # [@access public]
@@ -2350,7 +2350,7 @@ class RBPDF
   alias_method :set_cmyk_fill_color, :SetCmykFillColor
 =end
   #
-  # Defines the color used for text. It can be expressed in RGB components or gray scale. 
+  # Defines the color used for text. It can be expressed in RGB components or gray scale.
   # The method can be called before the first page is created and the value is retained from page to page.
   # [@param array or ordered hash :color] array(or ordered hash) of colors
   # [@access public]
@@ -2432,7 +2432,7 @@ class RBPDF
   end
   alias_method :set_cmyk_text_color, :SetCmykTextColor
 =end
-  
+
   #
   # Returns the length of a string in user unit. A font must be selected.
   # [@param string :s] The string whose length is to be computed
@@ -2546,7 +2546,7 @@ class RBPDF
   def GetNumChars(s)
     if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
       return UTF8StringToArray(s).length
-    end 
+    end
     return s.length
   end
   alias_method :get_num_chars, :GetNumChars
@@ -2565,9 +2565,9 @@ class RBPDF
   # Imports a TrueType, Type1, core, or CID0 font and makes it available.
   # It is necessary to generate a font definition file first with the makefont.rb utility.
   # The definition file (and the font file itself when embedding) must be present either in the current directory or in the one indicated by FPDF_FONTPATH if the constant is defined. If it could not be found, the error "Could not include font definition file" is generated.
-  # 
+  #
   # === Example
-  # 
+  #
   #   :pdf.add_font('Comic','I')
   #   # is equivalent to:
   #   :pdf.add_font('Comic','I','comici.rb')
@@ -2735,7 +2735,7 @@ class RBPDF
         if desc['ItalicAngle']
           desc['ItalicAngle'] -= 11
         else
-          desc['ItalicAngle'] = -11 
+          desc['ItalicAngle'] = -11
         end
       end
       setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => sname, 'desc' => desc, 'cidinfo' => font_desc[:cidinfo], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc]})
@@ -3114,7 +3114,7 @@ class RBPDF
   # [@param int :fill] Indicates if the cell background must be painted (1) or transparent (0). Default value: 0.
   # [@param mixed :link] URL or identifier returned by AddLink().
   # [@param int :stretch]
-  #   stretch carachter mode: 
+  #   stretch carachter mode:
   #   * 0 = disabled
   #   * 1 = horizontal scaling only if necessary
   #   * 2 = forced horizontal scaling
@@ -3770,7 +3770,7 @@ class RBPDF
   # [@param float :y] y position in user units
   # [@param boolean :reseth] if true reset the last cell height (default true).
   # [@param int :stretch]
-  #   stretch carachter mode: 
+  #   stretch carachter mode:
   #   * 0 = disabled
   #   * 1 = horizontal scaling only if necessary
   #   * 2 = forced horizontal scaling
@@ -3793,7 +3793,7 @@ class RBPDF
       # set row height
       @lasth = @font_size * @cell_height_ratio
     end
-     
+
     if !empty_string(y)
       SetY(y)
     else
@@ -3953,7 +3953,7 @@ class RBPDF
         setPageBuffer(@page, pstart + ccode + "\n" + pend)
       end
     end
-    
+
     # Get end-of-cell Y position
     currentY = GetY()
 
@@ -4136,7 +4136,7 @@ class RBPDF
   #
   # This method return the estimated needed height for print a simple text string in Multicell() method.
   # Generally, if you want to know the exact height for a block of content you can use the following technique:
-  # 
+  #
   #   # store current object
   #   pdf.start_transaction()
   #   # store starting values
@@ -4169,7 +4169,7 @@ class RBPDF
   #   end
   #   # restore previous object
   #   pdf = pdf.rollbackTransaction()
-  # 
+  #
   # [@param float :w] Width of cells. If 0, they extend up to the right margin of the page.
   # [@param string :txt] String for calculating his height
   # [@param boolean :reseth] if true reset the last cell height (default false).
@@ -4285,7 +4285,7 @@ class RBPDF
     else
       w = @w - @r_margin - @x
     end
-    
+
     # max column width
     wmax = w - (2 * @c_margin)
     if !firstline and (chrwidth > wmax or (GetCharWidth(chars[0]) > wmax))
@@ -4360,7 +4360,7 @@ class RBPDF
         end
         w = getRemainingWidth()
         wmax = w - (2 * @c_margin)
-      else 
+      else
         # 160 is the non-breaking space, 173 is SHY (Soft Hypen)
         if (c != 160) and ((unichr(c) =~ /\s/) or (c == 173))
           # update last blank space position
@@ -4375,7 +4375,7 @@ class RBPDF
               tmp_shy_replacement_width = shy_replacement_width
               tmp_shy_replacement_char = shy_replacement_char
             end
-          else 
+          else
             shy = false
           end
         end
@@ -4691,8 +4691,8 @@ class RBPDF
   alias_method :get_image_file_type, :getImageFileType
 
   #
-  # Puts an image in the page. 
-  # The upper-left corner must be given. 
+  # Puts an image in the page.
+  # The upper-left corner must be given.
   # The dimensions can be specified in different ways:
   # * explicit width and height (expressed in user unit)
   # * one explicit dimension, the other being calculated automatically in order to keep the original proportions
@@ -5048,10 +5048,10 @@ class RBPDF
 
   def imageToPNG(file)
     img = Magick::ImageList.new(file)
-    img.format = 'PNG'       # convert to PNG from gif 
-    if img.alpha? 
+    img.format = 'PNG'       # convert to PNG from gif
+    if img.alpha?
       img.opacity = 0          # PNG alpha channel delete
-      if img.alpha? 
+      if img.alpha?
         return false
       end
     end
@@ -5247,7 +5247,7 @@ class RBPDF
   protected :ImagePngAlpha
 
   #
-  # Performs a line break. 
+  # Performs a line break.
   # The current abscissa goes back to the left margin and the ordinate increases by the amount passed in parameter.
   # [@param float :h] The height of the break. By default, the value equals the height of the last printed cell.
   # [@param boolean :cell] if true add a c_margin to the x coordinate
@@ -6241,7 +6241,7 @@ protected
                   annots << ' /SW /' + pl['opt']['mk']['if']['sw']
                 end
                 if_s = ['A', 'P']
-                if pl['opt']['mk']['if']['s'] and if_s.include?(pl['opt']['mk']['if']['s']) 
+                if pl['opt']['mk']['if']['s'] and if_s.include?(pl['opt']['mk']['if']['s'])
                   annots << ' /S /' + pl['opt']['mk']['if']['s']
                 end
                 if pl['opt']['mk']['if']['a'] and pl['opt']['mk']['if']['a'].is_a?(Array) and !pl['opt']['mk']['if']['a'].empty?
@@ -6710,14 +6710,14 @@ protected
     out << ' >>'
     out << ' endobj'
     out(out)
-    
+
     # CIDFontType2
     # A CIDFont whose glyph descriptions are based on TrueType font technology
     newobj();
     out = '<</Type /Font'
     out << ' /Subtype /CIDFontType2'
     out << ' /BaseFont /' + font['name']
-    
+
     # A dictionary containing entries that define the character collection of the CIDFont.
 
     cidinfo = '/Registry ' + datastring(font['cidinfo']['Registry'])
@@ -6730,7 +6730,7 @@ protected
     out << "\n" + putfontwidths(font, 0)
     out << ' /CIDToGIDMap ' + (@n + 2).to_s + ' 0 R >> endobj'
     out(out)
-    
+
     # Font descriptor
     # A font descriptor describing the CIDFont default metrics other than its glyph widths
     newobj();
@@ -6774,8 +6774,8 @@ protected
       size = File.size(fontfile)
       out = '<</Length ' + size.to_s + ''
       if (fontfile[-2,2] == '.z') # check file extension
-        # Decompresses data encoded using the public-domain 
-        # zlib/deflate compression method, reproducing the 
+        # Decompresses data encoded using the public-domain
+        # zlib/deflate compression method, reproducing the
         # original text or binary data
         out << ' /Filter /FlateDecode'
       end
@@ -6958,7 +6958,7 @@ protected
     out << ' /Properties <</OC1 ' + @n_ocg_print.to_s + ' 0 R /OC2 ' + @n_ocg_view.to_s + ' 0 R>>'
     # transparency
     out << ' /ExtGState <<'
-    @extgstates.each_with_index { |extgstate, k| 
+    @extgstates.each_with_index { |extgstate, k|
       if extgstate
       if extgstate['name']
         out << ' /' + extgstate['name']
@@ -7019,7 +7019,7 @@ protected
 
     ### T.B.D ### TCPDF 5.0.000 ###
   end
-  
+
   #
   # Adds some Metadata information (Document Information Dictionary)
   # * (see Chapter 14.3.3 Document Information Dictionary of PDF32000_2008.pdf Reference)
@@ -7121,7 +7121,7 @@ protected
   # [@since 3.1.000 (2008-06-09)]
   # [@access protected]
   #
-  def putviewerpreferences() 
+  def putviewerpreferences()
     out = '/ViewerPreferences <<'
     if @rtl
       out << ' /Direction /R2L'
@@ -7579,7 +7579,7 @@ protected
   # Converts UTF-8 strings to codepoints array.
   # Invalid byte sequences will be replaced with 0xFFFD (replacement character)
   # * Based on: http://www.faqs.org/rfcs/rfc3629.html
-  # 
+  #
   #   Char. number range  |        UTF-8 octet sequence
   #      (hexadecimal)    |              (binary)
   #   --------------------+------------------------------------------------
@@ -7637,17 +7637,17 @@ protected
     numbytes  = 1; # number of octetc needed to represent the UTF-8 character
 
     str = str.to_s; # force :str to be a string
-    
+
     str.each_byte do |char|
       if (bytes.length == 0) # get starting octect
         if (char <= 0x7F)
           unicode << char # use the character "as is" because is ASCII
           numbytes = 1
         elsif ((char >> 0x05) == 0x06) # 2 bytes character (0x06 = 110 BIN)
-          bytes << ((char - 0xC0) << 0x06) 
+          bytes << ((char - 0xC0) << 0x06)
           numbytes = 2
         elsif ((char >> 0x04) == 0x0E) # 3 bytes character (0x0E = 1110 BIN)
-          bytes << ((char - 0xE0) << 0x0C) 
+          bytes << ((char - 0xE0) << 0x0C)
           numbytes = 3
         elsif ((char >> 0x03) == 0x1E) # 4 bytes character (0x1E = 11110 BIN)
           bytes << ((char - 0xF0) << 0x12)
@@ -7690,7 +7690,7 @@ protected
     @cache_utf8_string_to_array[str] = unicode.dup
     return unicode;
   end
-  
+
   #
   # Converts UTF-8 strings to UTF16-BE.
   # [@param string :str] string to process.
@@ -7771,26 +7771,26 @@ protected
   # * Based on: http://www.faqs.org/rfcs/rfc2781.html
   #
   #   Encoding UTF-16:
-  # 
+  #
   #   Encoding of a single character from an ISO 10646 character value to
   #    UTF-16 proceeds as follows. Let U be the character number, no greater
   #    than 0x10FFFF.
-  # 
+  #
   #    1) If U < 0x10000, encode U as a 16-bit unsigned integer and
   #       terminate.
-  # 
+  #
   #    2) Let U' = U - 0x10000. Because U is less than or equal to 0x10FFFF,
   #       U' must be less than or equal to 0xFFFFF. That is, U' can be
   #       represented in 20 bits.
-  # 
+  #
   #    3) Initialize two 16-bit unsigned integers, W1 and W2, to 0xD800 and
   #       0xDC00, respectively. These integers each have 10 bits free to
   #       encode the character value, for a total of 20 bits.
-  # 
+  #
   #    4) Assign the 10 high-order bits of the 20-bit U' to the 10 low-order
   #       bits of W1 and the 10 low-order bits of U' to the 10 low-order
   #       bits of W2. Terminate.
-  # 
+  #
   #    Graphically, steps 2 through 4 look like:
   #    U' = yyyyyyyyyyxxxxxxxxxx
   #    W1 = 110110yyyyyyyyyy
@@ -7827,10 +7827,10 @@ protected
     end
     return outstr;
   end
-  
+
   # ====================================================
 public
-  
+
   #
   # Set header font.
   # [@param array :font] font
@@ -7841,7 +7841,7 @@ public
     @header_font = font;
   end
   alias_method :set_header_font, :setHeaderFont
-  
+
   def SetHeaderFont(font)
     warn "[DEPRECATION] 'SetHeaderFont' is deprecated. Please use 'set_header_font' instead."
     setHeaderFont(font)
@@ -7868,7 +7868,7 @@ public
     @footer_font = font;
   end
   alias_method :set_footer_font, :setFooterFont
-  
+
   def SetFooterFont(font)
     warn "[DEPRECATION] 'SetFooterFont' is deprecated. Please use 'set_footer_font' instead."
     setFooterFont(font)
@@ -7916,7 +7916,7 @@ public
     return @buffer;
   end
   alias_method :get_pdf_data, :getPDFData
-  
+
   def GetPDFData()
     warn "[DEPRECATION] 'GetPDFData' is deprecated. Please use 'get_pdf_data' instead."
     getPDFData()
@@ -7961,10 +7961,10 @@ public
     return ret
   end
   alias_method :add_html_link, :addHtmlLink
-  
+
   #
   # Returns an associative array (keys: R,G,B) from an html color name or a six-digit or three-digit hexadecimal color representation (i.e. #3FE5AA or #7FF).
-  # [@param string :color] html color 
+  # [@param string :color] html color
   # [@return array] RGB color or empty array in case of error.
   # [@access public]
   #
@@ -7980,7 +7980,7 @@ public
     end
     returncolor = ActiveSupport::OrderedHash.new
     #  RGB ARRAY
-    if color[0,3] == 'rgb' 
+    if color[0,3] == 'rgb'
       codes = color.sub(/^rgb\(/, '')
       codes = codes.gsub(')', '')
       returncolor = codes.split(',', 3)
@@ -7990,7 +7990,7 @@ public
       return returncolor
     end
     # CMYK ARRAY
-    if color[0,4] == 'cmyk' 
+    if color[0,4] == 'cmyk'
       codes = color.sub(/^cmyk\(/, '')
       codes = codes.gsub(')', '')
       returncolor[0] = returncolor[0].to_i
@@ -8031,7 +8031,7 @@ public
     return returncolor
   end
   alias_method :convert_html_color_to_dec, :convertHTMLColorToDec
-  
+
   #
   # Converts pixels to Units.
   # [@param int] :px pixels
@@ -8043,7 +8043,7 @@ public
     return (px.to_f / (@img_scale * @k))
   end
   alias_method :pixels_to_units, :pixelsToUnits
-    
+
   #
   # Reverse function for htmlentities.
   # Convert entities in UTF-8.
@@ -8076,7 +8076,7 @@ public
       return s
     #end
     #case @encryptdata['mode']
-    #when 0, 1:   # 0: RC4 40 bit, 1: RC4 128 bit 
+    #when 0, 1:   # 0: RC4 40 bit, 1: RC4 128 bit
     #  s = _RC4(objectkey(n), s)
     #when 2:      # AES 128 bit
     #  s = _AES(objectkey(n), s)
@@ -8104,7 +8104,7 @@ public
     @transfmatrix[@transfmatrix_key] = []
   end
   alias_method :start_transform, :StartTransform
-  
+
   #
   # Stops a 2D tranformation restoring previous graphic state.
   # This function must be called after scaling, mirroring, translation, rotation and skewing.
@@ -8122,7 +8122,7 @@ public
     @transfmrk[@page] = nil
   end
   alias_method :stop_transform, :StopTransform
-  
+
   #
   # Rotate object.
   # [@param float :angle] angle in degrees for counter-clockwise rotation
@@ -8136,11 +8136,11 @@ public
     if (x == '')
       x = @x
     end
-    
+
     if (y == '')
       y = @y
     end
-    
+
     y = (@h - y) * @k
     x *= @k
 
@@ -8157,7 +8157,7 @@ public
     Transform(tm)
   end
   alias_method :rotate, :Rotate
-  
+
   #
   # Apply graphic transformations.
   # [@param array :tm] transformation matrix
@@ -8384,7 +8384,7 @@ public
     out('S')
   end
   alias_method :line, :Line
-                
+
   #
   # Draws a rectangle.
   # [@param float :x] Abscissa of upper-left corner (or upper-right corner for RTL language).
@@ -9047,7 +9047,7 @@ public
       # create string from array
       str = UTF8ArrSubString(ta)
     end
-      
+
     # check if string contains arabic text
     str.force_encoding('ASCII-8BIT') if str.respond_to?(:force_encoding)
     if str =~ @@k_re_pattern_arabic
@@ -9060,10 +9060,10 @@ public
     unless forcertl or arabic or (str =~ @@k_re_pattern_rtl)
       return ta
     end
-      
+
     # get number of chars
     numchars = ta.length
-      
+
     if forcertl == 'R'
       pel = 1
     elsif forcertl == 'L'
@@ -9082,7 +9082,7 @@ public
         end
       end
     end
-      
+
     # Current Embedding Level
     cel = pel
     # directional override status
@@ -9091,10 +9091,10 @@ public
     # start-of-level-run
     sor = (pel % 2 == 1) ? 'R' : 'L'
     eor = sor
-      
+
     # Array of characters data
     chardata = []
-      
+
     # X1. Begin by setting the current embedding level to the paragraph embedding level. Set the directional override status to neutral. Process each character iteratively, applying rules X2 through X9. Only embedding levels from 0 to 61 are valid in this phase.
     #   In the resolution of levels in rules I1 and I2, the maximum embedding level of 62 can be reached.
     reg_KRP = /^(@@k_rle|@@k_lre|@@k_rlo|@@k_lro|@@k_pdf)$/
@@ -9178,16 +9178,16 @@ public
         end
       end
     end # end for each char
-      
+
     # X8. All explicit directional embeddings and overrides are completely terminated at the end of each paragraph. Paragraph separators are not included in the embedding.
     # X9. Remove all RLE, LRE, RLO, LRO, PDF, and BN codes.
     # X10. The remaining rules are applied to each run of characters at the same level. For each run, determine the start-of-level-run (sor) and end-of-level-run (eor) type, either L or R. This depends on the higher of the two levels on either side of the boundary (at the start or end of the paragraph, the level of the 'other' run is the base embedding level). If the higher level is odd, the type is R; otherwise, it is L.
-    
+
     # 3.3.3 Resolving Weak Types
     # Weak types are now resolved one level run at a time. At level run boundaries where the type of the character on the other side of the boundary is required, the type assigned to sor or eor is used.
     # Nonspacing marks are now resolved based on the previous characters.
     numchars = chardata.length
-      
+
     # W1. Examine each nonspacing mark (NSM) in the level run, and change the type of the NSM to the type of the previous character. If the NSM is at the start of the level run, it will get the type of sor.
     prevlevel = -1 # track level changes
     levcount = 0 # counts consecutive chars at the same level
@@ -9206,7 +9206,7 @@ public
       end
       prevlevel = chardata[i][:level]
     end
-      
+
     # W2. Search backward from each instance of a European number until the first strong type (R, L, AL, or sor) is found. If an AL is found, change the type of the European number to Arabic number.
     prevlevel = -1
     levcount = 0
@@ -9227,14 +9227,14 @@ public
       end
       prevlevel = chardata[i][:level]
     end
-    
+
     # W3. Change all ALs to R.
     numchars.times do |i|
       if chardata[i][:type] == 'AL'
         chardata[i][:type] = 'R'
       end
     end
-    
+
     # W4. A single European separator between two European numbers changes to a European number. A single common separator between two numbers of the same type changes to that type.
     prevlevel = -1
     levcount = 0
@@ -9255,7 +9255,7 @@ public
       end
       prevlevel = chardata[i][:level]
     end
-    
+
     # W5. A sequence of European terminators adjacent to European numbers changes to all European numbers.
     prevlevel = -1
     levcount = 0
@@ -9283,7 +9283,7 @@ public
       end
       prevlevel = chardata[i][:level]
     end
-    
+
     # W6. Otherwise, separators and terminators change to Other Neutral.
     prevlevel = -1
     levcount = 0
@@ -9299,7 +9299,7 @@ public
       end
       prevlevel = chardata[i][:level]
     end
-    
+
     # W7. Search backward from each instance of a European number until the first strong type (R, L, or sor) is found. If an L is found, then change the type of the European number to L.
     prevlevel = -1
     levcount = 0
@@ -9320,7 +9320,7 @@ public
       end
       prevlevel = chardata[i][:level]
     end
-    
+
     # N1. A sequence of neutrals takes the direction of the surrounding strong text if the text on both sides has the same direction. European and Arabic numbers act as if they were R in terms of their influence on neutrals. Start-of-level-run (sor) and end-of-level-run (eor) are used at level run boundaries.
     prevlevel = -1
     levcount = 0
@@ -9388,7 +9388,7 @@ public
       end
       prevlevel = chardata[i][:level]
     end
-    
+
     # I1. For all characters with an even (left-to-right) embedding direction, those of type R go up one level and those of type AN or EN go up two levels.
     # I2. For all characters with an odd (right-to-left) embedding direction, those of type L, EN or AN go up one level.
     prevlevel = -1
@@ -9413,7 +9413,7 @@ public
       prevlevel = chardata[i][:level]
       maxlevel = [chardata[i][:level],maxlevel].max
     end
-    
+
     # L1. On each line, reset the embedding level of the following characters to the paragraph embedding level:
     #  1. Segment separators,
     #  2. Paragraph separators,
@@ -9437,9 +9437,9 @@ public
         end
       end
     end
-    
+
     # Arabic Shaping
-    # Cursively connected scripts, such as Arabic or Syriac, require the selection of positional character shapes that depend on adjacent characters. Shaping is logically applied after the Bidirectional Algorithm is used and is limited to characters within the same directional run. 
+    # Cursively connected scripts, such as Arabic or Syriac, require the selection of positional character shapes that depend on adjacent characters. Shaping is logically applied after the Bidirectional Algorithm is used and is limited to characters within the same directional run.
     if arabic
       endedletter = [1569,1570,1571,1572,1573,1575,1577,1583,1584,1585,1586,1608,1688]
       alfletter = [1570,1571,1573,1575]
@@ -9531,7 +9531,7 @@ public
               # Allah Word
               # mark characters to delete with false
               chardata2[i-2][:char] = false
-              chardata2[i-1][:char] = false 
+              chardata2[i-1][:char] = false
               chardata2[i][:char] = 65010
             else
               if (prevchar != false) and endedletter.include?(prevchar[:char])
@@ -9558,7 +9558,7 @@ public
         end # end if AL (Arabic Letter)
       end # end for each char
 
-      # 
+      #
       # Combining characters that can occur with Arabic Shadda (0651 HEX, 1617 DEC) are replaced.
       # Putting the combining mark and shadda in the same glyph allows us to avoid the two marks overlapping each other in an illegible manner.
       #
@@ -9585,7 +9585,7 @@ public
       laaletter = nil
       charAL = nil
     end
-    
+
     # L2. From the highest level found in the text to the lowest odd level on each line, including intermediate levels not actually present in the text, reverse any contiguous sequence of characters that are at that level or higher.
     maxlevel.downto(1) do |j|
       ordarray = []
@@ -9616,16 +9616,16 @@ public
       end
       chardata = ordarray
     end
-    
+
     ordarray = []
     numchars.times do |i|
       ordarray.push chardata[i][:char]
     end
-    
+
     return ordarray
   end
   protected :utf8Bidi
-    
+
   # END OF BIDIRECTIONAL TEXT SECTION -------------------
 
   #
@@ -9786,7 +9786,7 @@ public
     @alias_num_page = alias_num
   end
   alias_method :alias_num_page, :AliasNumPage
-                
+
   #
   # Returns the string alias used for the page number.
   # If the current font is unicode type, the returned string is surrounded by additional curly braces.
@@ -10031,8 +10031,8 @@ public
   # [@access public]
   # [@since 3.0.014 (2008-06-04)]
   #
-  def setCellHeightRatio(h) 
-    @cell_height_ratio = h 
+  def setCellHeightRatio(h)
+    @cell_height_ratio = h
   end
   alias_method :set_cell_height_ratio, :setCellHeightRatio
 
@@ -10096,7 +10096,7 @@ public
   #   * BleedBox
   #   * TrimBox
   #   * ArtBox
-  # * PrintScaling name (Optional; PDF 1.6) The page scaling option to be selected when a print dialog is displayed for this document. Valid values are: 
+  # * PrintScaling name (Optional; PDF 1.6) The page scaling option to be selected when a print dialog is displayed for this document. Valid values are:
   #   * None, which indicates that the print dialog should reflect no page scaling
   #   * AppDefault (default), which indicates that applications should use the current print scaling
   # * Duplex name (Optional; PDF 1.7) The paper handling option to use when printing the file from the print dialog. The following values are valid:
@@ -10186,7 +10186,7 @@ public
     @barcode = bc;
   end
   alias_method :set_barcode, :setBarcode
-  
+
   def SetBarcode(bc="")
      warn "[DEPRECATION] 'SetBarcode' is deprecated. Please use 'set_barcode' instead."
      setBarcode(bc)
@@ -10202,7 +10202,7 @@ public
     return @barcode
   end
   alias_method :get_barcode, :getBarcode
-  
+
   #
   # Print Barcode.
   # [@param int :x] x position in user units
@@ -10223,11 +10223,11 @@ public
     require(File.dirname(__FILE__) + "/barcode/c128aobject.rb");
     require(File.dirname(__FILE__) + "/barcode/c128bobject.rb");
     require(File.dirname(__FILE__) + "/barcode/c128cobject.rb");
-    
+
     if (code.empty?)
       return;
     end
-    
+
     if (style.empty?)
       style  = BCS_ALIGN_LEFT;
       style |= BCS_IMAGE_PNG;
@@ -10239,11 +10239,11 @@ public
     end
     if (font.empty?) then font = BCD_DEFAULT_FONT; end
     if (xres.empty?) then xres = BCD_DEFAULT_XRES; end
-    
+
     scale_factor = 1.5 * xres * @k;
     bc_w = (w * scale_factor).round #width in points
     bc_h = (h * scale_factor).round #height in points
-    
+
     case (type.upcase)
       when "I25"
         obj = I25Object.new(bc_w, bc_h, style, code);
@@ -10256,10 +10256,10 @@ public
       when "C39"
         obj = C39Object.new(bc_w, bc_h, style, code);
     end
-    
-    obj.SetFont(font);   
+
+    obj.SetFont(font);
     obj.DrawObject(xres);
-    
+
     #use a temporary file....
     tmpName = tempnam(@@k_path_cache,'img');
     imagepng(obj.getImage(), tmpName);
@@ -10270,7 +10270,7 @@ public
   end
   alias_method :write_barcode, :writeBarcode
 =end
-  
+
   #
   # Returns an array containing current margins:
   #
@@ -10304,7 +10304,7 @@ public
   # Returns an array containing original margins:
   #   ret['left'] = left  margin
   #   ret['right'] = right margin
-  # [@return array] containing all margins measures 
+  # [@return array] containing all margins measures
   # [@access public]
   # [@since 4.0.012 (2008-07-24)]
   #
@@ -10827,7 +10827,7 @@ protected
           # store header rows on a new table
           if (dom[key]['value'] == 'tr') and (dom[(dom[key]['parent'])]['thead'] == true)
             if empty_string(dom[grandparent]['thead'])
-              if dom[grandparent]['attribute'].nil? or dom[grandparent]['attribute']['style'].nil? 
+              if dom[grandparent]['attribute'].nil? or dom[grandparent]['attribute']['style'].nil?
                 dom[grandparent]['thead'] = a[dom[grandparent]['elkey']].dup
               else
                 dom[grandparent]['thead'] = '<style>' + dom[grandparent]['value'] + ' {' + dom[grandparent]['attribute']['style'] + '}</style>' + a[dom[grandparent]['elkey']].dup
@@ -11222,7 +11222,7 @@ protected
   #
   def get_sever_url(url)
     if !empty_string(url) and (url[0, 1] == '/')
-      '' 
+      ''
     else
       url
     end
@@ -11315,9 +11315,9 @@ public
     cell = false if cell == 0
     case fill
     when true
-      fill = 1 
+      fill = 1
     when false
-      fill = 0 
+      fill = 0
     end
 
     gvars = getGraphicVars()
@@ -11401,7 +11401,7 @@ public
     key = 0
     while key < maxel
       if dom[key]['tag'] and dom[key]['attribute'] and dom[key]['attribute']['pagebreak']
-        # check for pagebreak 
+        # check for pagebreak
         if (dom[key]['attribute']['pagebreak'] == 'true') or (dom[key]['attribute']['pagebreak'] == 'left') or (dom[key]['attribute']['pagebreak'] == 'right')
           # add a page (or trig AcceptPageBreak() for multicolumn mode)
           checkPageBreak(@page_break_trigger + 1)
@@ -11478,7 +11478,7 @@ public
             rollbackTransaction(true)
             # restore previous values
             this_method_vars.each {|vkey , vval|
-              eval("#{vkey} = vval") 
+              eval("#{vkey} = vval")
             }
             # add a page (or trig AcceptPageBreak() for multicolumn mode)
             pre_y = @y
@@ -11648,7 +11648,7 @@ public
         end
         # set text rendering mode
         textstroke = !dom[key]['stroke'].nil? ? dom[key]['stroke'] : @textstrokewidth
-        textfill = !dom[key]['fill'].nil? ? dom[key]['fill'] : ((@textrendermode % 2) == 0) 
+        textfill = !dom[key]['fill'].nil? ? dom[key]['fill'] : ((@textrendermode % 2) == 0)
         textclip = !dom[key]['clip'].nil? ? dom[key]['clip'] : (@textrendermode > 3)
         setTextRenderingMode(textstroke, textfill, textclip)
         if (plalign == 'J') and dom[key]['block']
@@ -11812,7 +11812,7 @@ public
                   # check if we are inside a string section '[( ... )]'
                   stroffset = pmid.index('[(', offset)
                   if (stroffset != nil) and (stroffset <= pmid_offset)
-                    # set offset to the end of string section 
+                    # set offset to the end of string section
                     offset = pmid.index(')]', stroffset)
                     while (offset != nil) and (pmid[offset - 1, 1] == '\\')
                       offset = pmid.index(')]', offset + 1)
@@ -12015,7 +12015,7 @@ public
         opentagpos = nil
       end
       if dom[key]['tag']
-        if dom[key]['opening']    
+        if dom[key]['opening']
           # get text indentation (if any)
           if dom[key]['text-indent'] and dom[key]['block']
             @textindent = dom[key]['text-indent']
@@ -12183,7 +12183,7 @@ public
               # account for row-spanned cells
               dom[table_el]['rowspans'][trsid - 1]['endx'] = @x
               dom[table_el]['rowspans'][trsid - 1]['endy'] = @y
-              dom[table_el]['rowspans'][trsid - 1]['endpage'] = @page                             
+              dom[table_el]['rowspans'][trsid - 1]['endpage'] = @page
             end
             if !dom[table_el]['rowspans'].nil?
               # update endy and endpage on rowspanned cells
@@ -12340,7 +12340,7 @@ public
           rollbackTransaction(true)
           # restore previous values
           this_method_vars.each {|vkey , vval|
-            eval("#{vkey} = vval") 
+            eval("#{vkey} = vval")
           }
           # add a page (or trig AcceptPageBreak() for multicolumn mode)
           pre_y = @y
@@ -12465,7 +12465,7 @@ public
 
   #
   # Process opening tags.
-  # [@param array :dom] html dom array 
+  # [@param array :dom] html dom array
   # [@param int :key] current element id
   # [@param boolean :cell] if true add the default c_margin space to each new line (default false).
   # [@access protected]
@@ -12733,7 +12733,7 @@ public
       end
       if !tag['attribute']['start'].nil?
         @listcount[@listnum] = tag['attribute']['start'].to_i - 1
-      else 
+      else
         @listcount[@listnum] = 0
       end
       if @rtl
@@ -12805,7 +12805,7 @@ public
 
     if dom[key]['self'] and dom[key]['attribute']['pagebreakafter']
       pba = dom[key]['attribute']['pagebreakafter']
-      # check for pagebreak 
+      # check for pagebreak
       if (pba == 'true') or (pba == 'left') or (pba == 'right')
         # add a page (or trig AcceptPageBreak() for multicolumn mode)
         checkPageBreak(@page_break_trigger + 1)
@@ -12818,10 +12818,10 @@ public
     dom
   end
   protected :openHTMLTagHandler
-  
+
   #
   # Process closing tags.
-  # [@param array :dom] html dom array 
+  # [@param array :dom] html dom array
   # [@param int :key] current element id
   # [@param boolean :cell] if true add the default c_margin space to each new line (default false).
   # [@param int :maxbottomliney] maximum y value of current line
@@ -13053,7 +13053,7 @@ public
                 setPageBuffer(@page, pstart + ccode + "\n" + pend)
               end
             end
-          }                                       
+          }
           if !table_el['attribute']['cellspacing'].nil?
             cellspacing = getHTMLUnitToUnits(table_el['attribute']['cellspacing'], 1, 'px')
             @y += cellspacing
@@ -13160,7 +13160,7 @@ public
     end
     if dom[(dom[key]['parent'])]['attribute']['pagebreakafter']
       pba = dom[(dom[key]['parent'])]['attribute']['pagebreakafter']
-      # check for pagebreak 
+      # check for pagebreak
       if (pba == 'true') or (pba == 'left') or (pba == 'right')
         # add a page (or trig AcceptPageBreak() for multicolumn mode)
         checkPageBreak(@page_break_trigger + 1)
@@ -13174,7 +13174,7 @@ public
     dom
   end
   protected :closeHTMLTagHandler
-  
+
   #
   # Add vertical spaces if needed.
   # [@param string :hbz] Distance between current y and line bottom.
@@ -13396,7 +13396,7 @@ protected
     color = @fgcolor
     width = 0
     textitem = ''
-    tmpx = @x           
+    tmpx = @x
     lspace = GetStringWidth('  ')
     if listtype == '!'
       # set default list type for unordered list
@@ -13737,7 +13737,7 @@ protected
       @images[image][key] = data
     end
   end
-                
+
   #
   # Get image buffer content.
   # [@param string :image] image key
@@ -14273,7 +14273,7 @@ public
     @outlines.each_with_index do |outline, key|
       if empty_string(page)
         pagenum = outline[:p].to_s
-      else 
+      else
         # placemark to be replaced with the correct number
         pagenum = '{#' + outline[:p].to_s + '}'
         if (@current_font['type'] == 'TrueTypeUnicode') or (@current_font['type'] == 'cidfont0')
@@ -14324,7 +14324,7 @@ public
             sdiffu = ku.length - ns.length
             sfill = ' ' * sdiff
             sfillu = ' ' * sdiffu
-            if @rtl 
+            if @rtl
               ns = ns + sfill
               nu = nu + sfillu
             else
@@ -14463,7 +14463,7 @@ public
   # [@param string :haystack] The string to search in.
   # [@param string :needle] substring to search.
   # [@param int :offset] May be specified to begin searching an arbitrary number of characters into the string.
-  # [@return] Returns the position where the needle exists. Returns FALSE if the needle was not found. 
+  # [@return] Returns the position where the needle exists. Returns FALSE if the needle was not found.
   # [@access public]
   # [@since 4.8.038 (2010-03-13)]
   #
@@ -14597,7 +14597,7 @@ public
   # -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-
 end # END OF RBPDF CLASS
 
-#TODO 2007-05-25 (EJM) Level=0 - 
+#TODO 2007-05-25 (EJM) Level=0 -
 #Handle special IE contype request
 # if (!_SERVER['HTTP_USER_AGENT'].nil? and (_SERVER['HTTP_USER_AGENT']=='contype'))
 #   header('Content-Type: application/pdf');
