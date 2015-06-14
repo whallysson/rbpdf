@@ -5050,7 +5050,7 @@ class RBPDF
     #Read whole file
     data='';
     open(file,'rb') do |f|
-      data<<f.read();
+      data << f.read()
     end
     return {'w' => a[0],'h' => a[1],'cs' => colspace,'bpc' => bpc,'f'=>'DCTDecode','data' => data}
   end
