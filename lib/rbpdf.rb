@@ -53,6 +53,16 @@ begin
 rescue LoadError
   # This gem is not required - just nice to have.
 end
+
+begin
+  # RMagick 2.14.0
+  # [DEPRECATION] requiring "RMagick" is deprecated. Use "rmagick" instead
+  # https://github.com/gemhome/rmagick/pull/141
+  require 'rmagick' unless Object.const_defined?(:Magick)
+rescue LoadError
+  # RMagick is not available
+end
+
 begin
   require 'RMagick' unless Object.const_defined?(:Magick)
 rescue LoadError
