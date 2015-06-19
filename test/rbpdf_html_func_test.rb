@@ -155,4 +155,12 @@ class RbpdfTest < ActiveSupport::TestCase
     html = pdf.sanitize_html(html).gsub(/[\r\n]/,'')
     assert_equal html, %{<table cellpadding="1"><thead><tr><td>ABCD</td><td>EFGH</td><td>IJKL</td></tr></thead><tr><td>abcd</td><td>efgh</td><td>ijkl</td></tr><tr><td>1<br><br><br><br><br><br><br><br><br><br> 2<br><br><br><br><br><br><br><br><br><br> 3<br><br><br><br><br><br><br><br><br><br> 4<br><br><br><br><br><br><br><br><br><br> 5<br><br><br><br><br><br><br><br><br><br> 6<br><br><br><br><br><br><br><br><br><br> 7<br><br><br><br><br><br><br><br><br><br> 8<br><br><br><br><br><br><br><br><br><br> 9<br><br><br><br><br><br><br><br><br><br> 10<br><br><br><br><br><br><br><br><br><br> 11<br><br><br><br><br><br><br><br><br><br></td></tr></table>}
   end
+
+  test "html func sanitize open angled bracket '<' test" do
+    pdf = MYPDF.new
+    pdf.add_page()
+    html = "<p>AAA '<'-BBB << <<< '</' '<//' '<///' <</ <<// CCC.</p>"
+    html = pdf.sanitize_html(html).gsub(/[\r\n]/,'')
+    assert_equal %{<p>AAA '&lt;'-BBB &lt;&lt; &lt;&lt;&lt; '&lt;/' '&lt;//' '&lt;///' &lt;&lt;/ &lt;&lt;// CCC.</p>}, html
+  end
 end

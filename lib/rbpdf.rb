@@ -11319,6 +11319,9 @@ public
   alias_method :write_html_cell, :writeHTMLCell
 
   def sanitize_html(html)
+    # Escape '<' character for not tag case.
+    html = html.gsub(%r{(<+)([^/a-zA-Z])}){CGI.escapeHTML($1) + $2}.gsub(%r{</([^a-zA-Z])}){'&lt;/' +  $1}
+
     html = "%s" % sanitize(html, :tags=> %w(a b blockquote body br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr stroke strokecolor fill nested tablehead))
   end
   protected :sanitize_html

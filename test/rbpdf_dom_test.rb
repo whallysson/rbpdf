@@ -296,6 +296,37 @@ class RbpdfTest < ActiveSupport::TestCase
     assert_equal y1, y2
   end
 
+  test "Dom open angled bracket '<' test" do
+    pdf = MYPDF.new
+    pdf.add_page
+
+    htmlcontent = "<p>AAA '<'-BBB << <<< '</' '<//' '<///' CCC.</p>"
+    dom = pdf.getHtmlDomArray(htmlcontent)
+    assert_equal dom.length, 4
+
+    assert_equal 0,     dom[0]['parent']  # Root
+    assert_equal false, dom[0]['tag']
+    assert_equal({},    dom[0]['attribute'])
+
+    assert_equal 0,     dom[1]['parent']   # parent -> parent tag key
+    assert_equal 0,     dom[1]['elkey']
+    assert_equal true,  dom[1]['tag']
+    assert_equal true,  dom[1]['opening']
+    assert_equal 'p',   dom[1]['value']
+    assert_equal({},    dom[1]['attribute'])
+
+    assert_equal 1,     dom[2]['parent']   # parent -> open tag key
+    assert_equal 1,     dom[2]['elkey']
+    assert_equal false, dom[2]['tag']
+    assert_equal "AAA '<'-BBB << <<< '</' '<//' '<///' CCC.", dom[2]['value']
+
+    assert_equal 1,     dom[3]['parent']   # parent -> open tag key
+    assert_equal 2,     dom[3]['elkey']
+    assert_equal true,  dom[3]['tag']
+    assert_equal false, dom[3]['opening']
+    assert_equal 'p',   dom[3]['value']
+  end
+
   test "getHtmlDomArray encoding test" do
     return unless 'test'.respond_to?(:force_encoding)
 
