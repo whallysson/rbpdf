@@ -11536,13 +11536,13 @@ public
           dom[key]['align'] = @rtl ? 'R' : 'L'
         end
         # vertically align image in line
-        if !@newline and (dom[key]['value'] == 'img') and !dom[key]['attribute']['height'].nil? and (dom[key]['attribute']['height'].to_i > 0)
+        if !@newline and (dom[key]['value'] == 'img') and dom[key]['height'] and (dom[key]['height'].to_i > 0)
           # get image height
-          imgh = getHTMLUnitToUnits(dom[key]['attribute']['height'], @lasth, 'px')
+          imgh = getHTMLUnitToUnits(dom[key]['height'], @lasth, 'px')
           # check for automatic line break
           autolinebreak = false
-          if dom[key]['attribute']['width'] and (dom[key]['attribute']['width'].to_i > 0)
-            imgw = getHTMLUnitToUnits(dom[key]['attribute']['width'], 1, 'px', false)
+          if dom[key]['width'] and (dom[key]['width'].to_i > 0)
+            imgw = getHTMLUnitToUnits(dom[key]['width'], 1, 'px', false)
             if (@rtl and (@x - imgw < @l_margin + @c_margin)) or (!@rtl and (@x + imgw > @w - @r_margin - @c_margin))
               # add automatic line break
               autolinebreak = true
@@ -12602,8 +12602,8 @@ public
       if cell
         wtmp -= 2 * @c_margin
       end
-      if !tag['attribute']['width'].nil? and (tag['attribute']['width'] != '')
-        hrWidth = getHTMLUnitToUnits(tag['attribute']['width'], wtmp, 'px')
+      if tag['width'] and (tag['width'] != '')
+        hrWidth = getHTMLUnitToUnits(tag['width'], wtmp, 'px')
       else
         hrWidth = wtmp
       end
@@ -12632,11 +12632,11 @@ public
         # tag['attribute']['src'] = CGI.escape(tag['attribute']['src'])
         type = getImageFileType(tag['attribute']['src'])
         tag['attribute']['src'] = get_image_filename(tag['attribute']['src'])
-        if tag['attribute']['width'].nil?
-          tag['attribute']['width'] = 0
+        if tag['width'].nil?
+          tag['width'] = 0
         end
-        if tag['attribute']['height'].nil?
-          tag['attribute']['height'] = 0
+        if tag['height'].nil?
+          tag['height'] = 0
         end
         #if tag['attribute']['align'].nil?
           # the only alignment supported is "bottom"
@@ -12688,12 +12688,12 @@ public
           end
         end
         iw = 0
-        if !tag['attribute']['width'].nil?
-          iw = getHTMLUnitToUnits(tag['attribute']['width'], 1, 'px', false)
+        if tag['width']
+          iw = getHTMLUnitToUnits(tag['width'], 1, 'px', false)
         end
         ih = 0
-        if !tag['attribute']['height'].nil?
-          ih = getHTMLUnitToUnits(tag['attribute']['height'], 1, 'px', false)
+        if tag['height']
+          ih = getHTMLUnitToUnits(tag['height'], 1, 'px', false)
         end
 
         # store original margin values
