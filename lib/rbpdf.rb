@@ -72,6 +72,7 @@ end
 require 'core/rmagick'
 
 # Needed to run the test suite outside of a Rails environment.
+require 'rubygems' if RUBY_VERSION < '1.9' # Ruby 1.8.7
 require 'action_view'
 require 'tempfile'
 require 'uri'
