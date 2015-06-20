@@ -1,3 +1,3 @@
 module Rbpdf
-  VERSION = "1.18.5"
+  VERSION = "1.18.6"
 end
