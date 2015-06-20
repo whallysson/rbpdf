@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class RbpdfTest < ActiveSupport::TestCase
+class RbpdfTest < Test::Unit::TestCase
   test "write_html_cell Basic test" do
     pdf = RBPDF.new
     pdf.add_page()

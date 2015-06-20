@@ -1,7 +1,6 @@
 require 'test_helper'
 
-class RbpdfTest < ActiveSupport::TestCase
-
+class RbpdfTest < Test::Unit::TestCase
   class MYPDF < RBPDF
     def getCellCode(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false, calign='T', valign='M')
       super

@@ -1,7 +1,6 @@
 require 'test_helper'
 
-class RbpdfTest < ActiveSupport::TestCase
-
+class RbpdfTest < Test::Unit::TestCase
   test "bookmark test" do
     pdf = RBPDF.new
     pdf.add_page()

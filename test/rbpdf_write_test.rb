@@ -1,7 +1,6 @@
 require 'test_helper'
 
-class RbpdfTest < ActiveSupport::TestCase
-
+class RbpdfTest < Test::Unit::TestCase
   test "write Basic test" do
     pdf = RBPDF.new
 

@@ -1,7 +1,6 @@
 require 'test_helper'
 
-class RbpdfFormatTest < ActiveSupport::TestCase
-
+class RbpdfFormatTest < Test::Unit::TestCase
   test "set_page_orientation" do
     pdf = RBPDF.new
 
