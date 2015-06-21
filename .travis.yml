@@ -16,6 +16,8 @@ matrix:
       env: BUNDLE_GEMFILE=Gemfile.rails4
     - rvm: 1.9.2
       env: BUNDLE_GEMFILE=Gemfile.rails4
+    - rvm: jruby
+      env: BUNDLE_GEMFILE=Gemfile.rails4
 install:
   - bundle install
 script:
