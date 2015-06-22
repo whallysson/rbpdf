@@ -4,3 +4,8 @@ source 'https://rubygems.org'
 gemspec
 
 gem "actionpack", "~> 4.2.2"
+
+platforms :jruby do
+  # rails-html-sanitizer isn't compatible to jruby.
+  gem "rails-deprecated_sanitizer"
+end
