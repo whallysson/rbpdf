@@ -7,20 +7,20 @@ rvm:
   - 2.1
   - 2.2
   - jruby
-env:
-  - BUNDLE_GEMFILE=Gemfile.rails3
-  - BUNDLE_GEMFILE=Gemfile.rails4
 matrix:
   allow_failures:
     - rvm: 1.8.7
-      env: BUNDLE_GEMFILE=Gemfile.rails4
+      gemfile: Gemfile.rails4
     - rvm: 1.9.2
-      env: BUNDLE_GEMFILE=Gemfile.rails4
+      gemfile: Gemfile.rails4
     - rvm: jruby
-      env: BUNDLE_GEMFILE=Gemfile.rails4
+      gemfile: Gemfile.rails4
 install:
   - bundle install
 script:
   - bundle exec rake test
+gemfile:
+  - Gemfile.rails3
+  - Gemfile.rails4
 notifications:
   email: false
