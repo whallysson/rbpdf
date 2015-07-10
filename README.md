@@ -1,4 +1,4 @@
-[<img src="https://travis-ci.org/naitoh/rbpdf.svg?branch=master" alt="Build Status" />](https://travis-ci.org/naitoh/rbpdf)
+[![Build Status](https://travis-ci.org/naitoh/rbpdf.svg?branch=master)](https://travis-ci.org/naitoh/rbpdf)
 
 # RBPDF Template Plugin
 
