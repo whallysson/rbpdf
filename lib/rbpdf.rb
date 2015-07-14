@@ -2,9 +2,9 @@
 #============================================================+
 # File name   : rbpdf.rb
 # Begin       : 2002-08-03
-# Last Update : 2010-05-27
+# Last Update : 2010-06-02
 # Author      : Nicola Asuni
-# Version     : 5.1.002
+# Version     : 5.2.000
 # License     : GNU LGPL (http://www.gnu.org/copyleft/lesser.html)
 #  ----------------------------------------------------------------------------
 #      This program is free software: you can redistribute it and/or modify
@@ -82,7 +82,7 @@ require 'uri'
 #
 
 
-PDF_PRODUCER = 'RBPDF 5.1.002'
+PDF_PRODUCER = 'RBPDF 5.2.000'
 
 module RBPDFFontDescriptor
   @@descriptors = { 'freesans' => {} }
@@ -456,6 +456,7 @@ class RBPDF
     @font_family ||= 'helvetica'
     @font_style ||= ''
     @font_size_pt ||= 12
+    @font_subsetting ||= true
     @underline ||= false
     @overline ||= false
     @linethrough ||= false
@@ -2617,11 +2618,12 @@ class RBPDF
   #   * BI or IB: bold italic
   # [@param string :fontfile] The font definition file. By default, the name is built from the family and style, in lower case with no space.
   # [@return array] containing the font data, or false in case of error.
+  # [@param boolean :subset] if true embedd only a subset of the font (stores only the information related to the used characters); this option is valid only for TrueTypeUnicode fonts. If you want to enable users to change the document, set this parameter to false. If you subset the font, the person who receives your PDF would need to have your same font in order to make changes to your PDF. The file size of the PDF would also be smaller because you are embedding only part of a font.
   # [@access public]
   # [@since 1.5]
   # [@see] SetFont()
   #
-  def AddFont(family, style='', fontfile='')
+  def AddFont(family, style='', fontfile='', subset=nil)
     if empty_string(family)
       if !empty_string(@font_family)
         family = @font_family
@@ -2629,6 +2631,7 @@ class RBPDF
         Error('Empty font family')
       end
     end
+    subset = @font_subsetting if subset.nil?
 
     family = family.downcase
     if ((!@is_unicode) and (family == 'arial'))
@@ -2774,17 +2777,21 @@ class RBPDF
           desc['ItalicAngle'] = -11
         end
       end
-      setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => sname, 'desc' => desc, 'cidinfo' => font_desc[:cidinfo], 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc]})
     elsif font_desc[:type] == 'core'
       font_desc[:name] = @core_fonts[fontkey]
+      subset = false
     elsif (font_desc[:type] == 'TrueType') or (font_desc[:type] == 'Type1')
       # ...
+      subset = false
     elsif font_desc[:type] == 'TrueTypeUnicode'
       font_desc[:enc] = 'Identity-H'
     else
       Error('Unknow font type: ' + type + '')
     end
-    setFontBuffer(fontkey, {'i' => @numfonts, 'type' => font_desc[:type], 'name' => font_desc[:name], 'desc' => desc, 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc], 'cidinfo' => font_desc[:cidinfo], 'file' => font_desc[:file], 'ctg' => font_desc[:ctg]})
+    # initialize subsetchars to contain default ASCII values (0-255)
+    subsetchars = Array.new(256, true)
+
+    setFontBuffer(fontkey, {'fontkey' => fontkey, 'i' => @numfonts, 'type' => font_desc[:type], 'name' => font_desc[:name], 'desc' => desc, 'up' => font_desc[:up], 'ut' => font_desc[:ut], 'cw' => font_desc[:cw], 'dw' => font_desc[:dw], 'enc' => font_desc[:enc], 'cidinfo' => font_desc[:cidinfo], 'file' => font_desc[:file], 'ctg' => font_desc[:ctg], 'subset' => subset, 'subsetchars' => subsetchars})
 
     if (!font_desc[:diff].nil? and (!font_desc[:diff].empty?))
       #Search existing encodings
@@ -2803,10 +2810,19 @@ class RBPDF
       setFontSubBuffer(fontkey, 'diff', d)
     end
     if !empty_string(font_desc[:file])
-      if (font_desc[:type] == 'TrueType') or (font_desc[:type] == 'TrueTypeUnicode')
-        @font_files[font_desc[:file]] = {'length1' => font_desc[:originalsize], 'fontdir' => fontdir}
-      elsif font_desc[:type] != 'core'
-        @font_files[font_desc[:file]] = {'length1' => font_desc[:size1], 'length2' => font_desc[:size2], 'fontdir' => fontdir}
+      if @font_files[font_desc[:file]].nil?
+        if (font_desc[:type] == 'TrueType') or (font_desc[:type] == 'TrueTypeUnicode')
+          @font_files[font_desc[:file]] = {'length1' => font_desc[:originalsize], 'fontdir' => fontdir, 'subset' => subset, 'fontkeys' => [fontkey]}
+        elsif font_desc[:type] != 'core'
+          @font_files[font_desc[:file]] = {'length1' => font_desc[:size1], 'length2' => font_desc[:size2], 'fontdir' => fontdir, 'subset' => subset, 'fontkeys' => [fontkey]}
+        end
+      else
+        # update fontkeys that are sharing this font file
+        @font_files[font_desc[:file]]['subset'] = (@font_files[font_desc[:file]]['subset'] and subset)
+        unless @font_files[font_desc[:file]]['fontkeys'].include? fontkey
+          @font_files[font_desc[:file]]['fontkeys'] ||= []
+          @font_files[font_desc[:file]]['fontkeys'].push fontkey
+        end
       end
     end
     return fontdata
@@ -2850,17 +2866,19 @@ class RBPDF
   #   or any combination. The default value is regular. Bold and italic styles do not apply to Symbol and ZapfDingbats basic fonts or other fonts when not defined.
   # [@param float :size] Font size in points. The default value is the current size. If no size has been specified since the beginning of the document, the value taken is 12
   # [@param string :fontfile] The font definition file. By default, the name is built from the family and style, in lower case with no spaces.
+  # [@param boolean :subset] if true embedd only a subset of the font (stores only the information related to the used characters); this option is valid only for TrueTypeUnicode fonts. If you want to enable users to change the document, set this parameter to false. If you subset the font, the person who receives your PDF would need to have your same font in order to make changes to your PDF. The file size of the PDF would also be smaller because you are embedding only part of a font.
+  # [@author Nicola Asuni]
   # [@access public]
   # [@since 1.0]
   # [@see] AddFont(), SetFontSize()
   #
-  def SetFont(family, style='', size=0, fontfile='')
+  def SetFont(family, style='', size=0, fontfile='', subset=nil)
     # Select a font; size given in points
     if size == 0
       size = @font_size_pt
     end
     # try to add font (if not already added)
-    fontdata =  AddFont(family, style, fontfile)
+    fontdata =  AddFont(family, style, fontfile, subset)
     @font_family = fontdata['family']
     @font_style = fontdata['style']
     @current_font = getFontBuffer(fontdata['fontkey'])
@@ -3274,6 +3292,34 @@ class RBPDF
   alias_method :break_the_page?, :BreakThePage?
 
   #
+  # Removes SHY characters from text.
+  # Unicode Data:
+  #   * Name : SOFT HYPHEN, commonly abbreviated as SHY
+  #   * HTML Entity (decimal): &#173;
+  #   * HTML Entity (hex): &#xad;
+  #   * HTML Entity (named): &shy;
+  #   * How to type in Microsoft Windows: [Alt +00AD] or [Alt 0173]
+  #   * UTF-8 (hex): 0xC2 0xAD (c2ad)
+  #   * UTF-8 character: chr(194).chr(173)
+  # [@param string :txt] input string
+  # [@return string] without SHY characters.
+  # [@access public]
+  # [@since (4.5.019) 2009-02-28]
+  #
+  def removeSHY(txt='')
+    txt = txt.dup
+    txt.force_encoding('ASCII-8BIT') if txt.respond_to?(:force_encoding)
+    txt.gsub!(/([\xc2]{1}[\xad]{1})/, '')
+    if !@is_unicode
+      txt.gsub!(/([\xad]{1})/, '')
+      return txt
+    end
+    txt.force_encoding('UTF-8') if txt.respond_to?(:force_encoding)
+    return txt
+  end
+  alias_method :remove_shy, :removeSHY
+
+  #
   # Prints a cell (rectangular area) with optional borders, background color and character string. The upper-left corner of the cell corresponds to the current position. The text can be aligned or centered. After the call, the current position moves to the right or to the next line. It is possible to put a link on the text.
   # If automatic page breaking is enabled and the cell goes beyond the limit, a page break is done before outputting.
   # [@param float :w] Cell width. If 0, the cell extends up to the right margin.
@@ -3337,35 +3383,6 @@ class RBPDF
     out(getCellCode(w, h, txt, border, ln, align, fill, link, stretch, ignore_min_height, calign, valign))
   end
   alias_method :cell, :Cell
-
-  #
-  # Removes SHY characters from text.
-  # [@param string :txt] input string
-  # [@return string] without SHY characters.
-  # [@access public]
-  # [@since (4.5.019) 2009-02-28]
-  #
-  def removeSHY(txt='')
-    txt = txt.dup
-    # Unicode Data
-    # Name : SOFT HYPHEN, commonly abbreviated as SHY
-    # HTML Entity (decimal): &#173;
-    # HTML Entity (hex): &#xad;
-    # HTML Entity (named): &shy;
-    # How to type in Microsoft Windows: [Alt +00AD] or [Alt 0173]
-    # UTF-8 (hex): 0xC2 0xAD (c2ad)
-    # UTF-8 character: chr(194).chr(173)
-
-    txt.force_encoding('ASCII-8BIT') if txt.respond_to?(:force_encoding)
-    txt.gsub!(/([\xc2]{1}[\xad]{1})/, '')
-    if !@is_unicode
-      txt.gsub!(/([\xad]{1})/, '')
-      return txt
-    end
-    txt.force_encoding('UTF-8') if txt.respond_to?(:force_encoding)
-    return txt
-  end
-  alias_method :remove_shy, :removeSHY
 
   #
   # Returns the PDF string code to print a cell (rectangular area) with optional borders, background color and character string. The upper-left corner of the cell corresponds to the current position. The text can be aligned or centered. After the call, the current position moves to the right or to the next line. It is possible to put a link on the text.
@@ -6452,138 +6469,410 @@ protected
   end
 
   #
-  # Output fonts.
+  # Get ULONG from string (Big Endian 32-bit unsigned integer).
+  # [@parameter string :str] string from where to extract value
+  # [@parameter int :offset] point from where to read the data
+  # [@return int] 32 bit value
+  # [@author Nicola Asuni]
   # [@access protected]
+  # [@since 5.2.000 (2010-06-02)]
   #
-  def putfonts()
-    nf=@n;
-    @diffs.each do |diff|
-      #Encodings
-      newobj();
-      out('<</Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [' + diff + ']>> endobj')
-    end
-    @font_files.each do |file, info|
-      # search and get font file to embedd
-      fontdir = info['fontdir']
+  def getULONG(str, offset)
+    v = str[offset, 4].unpack('N')
+    return v[0].to_i
+  end
 
-      file = file.downcase
-      fontfile = ''
-      # search files on various directories
-      if (fontdir != false) and File.exist?(fontdir + file)
-        fontfile = fontdir + file
-      elsif fontfile = getfontpath(file)
-      elsif File.exist?(file)
-        fontfile = file
-      end
+  #
+  # Get USHORT from string (Big Endian 16-bit unsigned integer).
+  # [@parameter string :str] string from where to extract value
+  # [@parameter int :offset] point from where to read the data
+  # [@return int] 16 bit value
+  # [@author Nicola Asuni]
+  # [@access protected]
+  # [@since 5.2.000 (2010-06-02)]
+  #
+  def getUSHORT(str, offset)
+    v = str[offset, 2].unpack('n')
+    return v[0].to_i
+  end
 
-      if !empty_string(fontfile)
-        font = ''
-        open(fontfile,'rb') do |f|
-          font = f.read()
-        end
-        compressed = (file[-2,2] == '.z')
-        if !compressed && !info['length2'].nil?
-          header = (font[0][0] == 128)
-          if header
-            # Strip first binary header
-            font = font[6]
-          end
-          if header && (font[info['length1']][0] == 128)
-            # Strip second binary header
-            font = font[0..info['length1']] + font[info['length1'] + 6]
-          end
-        end
-        newobj()
-        @font_files[file]['n'] = @n
-        out = '<</Length '+ font.length.to_s
-        if compressed
-          out << ' /Filter /FlateDecode'
-        end
-        out << ' /Length1 ' + info['length1'].to_s
-        if !info['length2'].nil?
-          out << ' /Length2 ' + info['length2'].to_s + ' /Length3 0'
-        end
-        out << ' >>'
-        out << ' '+ getstream(font)
-        out << ' endobj'
-        out(out)
-      end
+  #
+  # Get SHORT from string (Big Endian 16-bit signed integer).
+  # [@parameter string :str] string from where to extract value
+  # [@parameter int :offset] point from where to read the data
+  # [@return int] 16 bit value
+  # [@author Nicola Asuni]
+  # [@access protected]
+  # [@since 5.2.000 (2010-06-02)]
+  #
+  def getSHORT(str, offset)
+    v = str[offset, 2].unpack('s')
+    return v[0].to_i
+  end
+
+  #
+  # Get BYTE from string (8-bit unsigned integer).
+  # [@parameter string :str] string from where to extract value
+  # [@parameter int :offset] point from where to read the data
+  # [@return int] 8 bit value
+  # [@author Nicola Asuni]
+  # [@access protected]
+  # [@since 5.2.000 (2010-06-02)]
+  #
+  def getBYTE(str, offset)
+    v = str[offset, 1].unpack('C')
+    return v[0].to_i
+  end
+
+  #
+  # Returns a subset of the TrueType font data without the unused glyphs.
+  # [@parameter string :font] TrueType font data
+  # [@parameter array :subsetchars] array of used characters (the glyphs to keep)
+  # [@return string] a subset of TrueType font data without the unused glyphs
+  # [@author Nicola Asuni]
+  # [@access protected]
+  # [@since 5.2.000 (2010-06-02)]
+  #
+  def getTrueTypeFontSubset(font, subsetchars)
+    #ksort(subsetchars)
+    offset = 0 # offset position of the font data
+    if getULONG(font, offset) != 0x10000
+      # sfnt version must be 0x00010000 for TrueType version 1.0.
+      return font
     end
-    @fontkeys.each do |k|
-      #Font objects
-      setFontSubBuffer(k, 'n', @n + 1)
-      font = getFontBuffer(k)
-      type = font['type'];
-      name = font['name'];
-      if (type=='core')
-        #Standard font
-        obj_id = newobj()
-        out = '<</Type /Font'
-        out << ' /Subtype /Type1'
-        out << ' /BaseFont /' + name
-        out << ' /Name /F' + font['i'].to_s
-        if (name.downcase != 'symbol' && name.downcase != 'zapfdingbats')
-          out << ' /Encoding /WinAnsiEncoding'
-        end
-        if name.downcase == 'helvetica'
-          # add default font for annotations
-          @annotation_fonts['helvetica'] = k
-        end
-        out << ' >> endobj'
-        out(out)
-      elsif type == 'Type0'
-        putType0(font)
-      elsif (type=='Type1' || type=='TrueType')
-        #Additional Type1 or TrueType font
-        obj_id = newobj()
-        out = '<</Type /Font'
-        out << ' /Subtype /' + type
-        out << ' /BaseFont /' + name
-        out << ' /Name /F' + font['i'].to_s
-        out << ' /FirstChar 32 /LastChar 255'
-        out << ' /Widths ' + (@n+1).to_s + ' 0 R'
-        out << ' /FontDescriptor ' + (@n+2).to_s + ' 0 R'
-        if (font['enc'])
-          if (!font['diff'].nil?)
-            out << ' /Encoding ' + (nf+font['diff']).to_s + ' 0 R'
-          else
-            out << ' /Encoding /WinAnsiEncoding'
-          end
-        end
-        out << ' >> endobj'
-        out(out)
-        #Widths
-        newobj();
-        cw=font['cw']; # &
-        s='[';
-        32.upto(255) do |i|
-          s << cw[i.chr] + ' ';
-        end
-        out(s + '] endobj')
-        #Descriptor
-        newobj();
-        s='<</Type /FontDescriptor /FontName /' + name;
-        font['desc'].each do |fdk, fdv|
-          if fdv.is_a? Float
-            fdv = sprintf('%.3f', fdv)
-          end
-          s << ' /' + fdk + ' ' + fdv + ''
-        end
-        if !empty_string(font['file'])
-          s << ' /FontFile' + (type=='Type1' ? '' : '2') + ' ' + @font_files[font['file']]['n'] + ' 0 R'
-        end
-        out(s + '>> endobj')
+    offset += 4
+
+    # get number of tables
+    numTables = getUSHORT(font, offset); offset += 2
+    # skip searchRange, entrySelector and rangeShift
+    offset += 6
+    # tables array(Hash)
+    table = {}
+    # for each table
+    numTables.times {
+      # get table info
+      tag = font[offset, 4]
+      offset += 4
+
+      table[tag] = {}
+      table[tag]['checkSum'] = getULONG(font, offset); offset += 4
+      table[tag]['offset'] = getULONG(font, offset); offset += 4
+      table[tag]['length'] = getULONG(font, offset); offset += 4
+    }
+    # check magicNumber
+    offset = table['head']['offset'] + 12
+    if getULONG(font, offset) != 0x5F0F3CF5
+      # magicNumber must be 0x5F0F3CF5
+      return font
+    end
+    offset += 4
+
+    # get offset mode (indexToLocFormat : 0 = short, 1 = long)
+    offset = table['head']['offset'] + 50
+    short_offset = (getSHORT(font, offset) == 0); offset += 2
+    # get the offsets to the locations of the glyphs in the font, relative to the beginning of the glyphData table
+    indexToLoc = []
+    offset = table['loca']['offset']
+    if short_offset
+      # short version
+      n = table['loca']['length'] / 2 # numGlyphs + 1
+      n.times {|i|
+        indexToLoc[i] = getUSHORT(font, offset) * 2; offset += 2
+      }
+    else
+      # long version
+      n = table['loca']['length'] / 4 # numGlyphs + 1
+      n.times {|i|
+        indexToLoc[i] = getULONG(font, offset); offset += 4
+      }
+    end
+    # get glyphs indexes of chars from cmap table
+    subsetglyphs = [] # glyph IDs on key
+    subsetglyphs[0] = true # character codes that do not correspond to any glyph in the font should be mapped to glyph index 0
+    offset = table['cmap']['offset'] + 2
+    numEncodingTables = getUSHORT(font, offset); offset += 2
+    encodingTables = []
+    numEncodingTables.times {|i|
+      encodingTables[i] ||= {}
+      encodingTables[i]['platformID'] = getUSHORT(font, offset); offset += 2
+      encodingTables[i]['encodingID'] = getUSHORT(font, offset); offset += 2
+      encodingTables[i]['offset'] = getULONG(font, offset); offset += 4
+    }
+    encodingTables.each {|enctable|
+      if (enctable['platformID'] == 3) and (enctable['encodingID'] == 0)
+        modesymbol = true
       else
-        #Allow for additional types
-        mtd='put' + type.downcase;
-        unless self.respond_to?(mtd, true)
-          Error('Unsupported font type: ' + type)
-        end
-        obj_id = self.send(mtd,font)
-        # store object ID for current font
-        @font_obj_ids[k] = obj_id
+        modesymbol = false
       end
+      offset = table['cmap']['offset'] + enctable['offset']
+      format = getUSHORT(font, offset); offset += 2
+      case format
+      when 0 # Format 0: Byte encoding table
+        offset += 4 # skip length and version/language
+        256.times {|k|
+          if subsetchars[k]
+            g = getBYTE(font, offset); offset += 1
+            subsetglyphs[g] = k
+          else
+            offset += 1
+          end
+        }
+      when 2 # Format 2: High-byte mapping through table
+        offset += 4 # skip length and version
+        # to be implemented ...
+      when 4 # Format 4: Segment mapping to delta values
+        length = getUSHORT(font, offset); offset += 2
+        offset += 2 # skip version/language
+        segCount = getUSHORT(font, offset) / 2; offset += 2
+        offset += 6 # skip searchRange, entrySelector, rangeShift
+        endCount = [] # array of end character codes for each segment
+        segCount.times {|k|
+          endCount[k] = getUSHORT(font, offset); offset += 2
+        }
+        offset += 2 # skip reservedPad
+        startCount = [] # array of start character codes for each segment
+        segCount.times {|k|
+          startCount[k] = getUSHORT(font, offset); offset += 2
+        }
+        idDelta = [] # delta for all character codes in segment
+        segCount.times {|k|
+          idDelta[k] = getUSHORT(font, offset); offset += 2
+        }
+        idRangeOffset = [] # Offsets into glyphIdArray or 0
+        segCount.times {|k|
+            idRangeOffset[k] = getUSHORT(font, offset); offset += 2
+        }
+        gidlen = (length / 2) - 8 - (4 * segCount)
+        glyphIdArray = [] # glyph index array
+        gidlen.times {|k|
+          glyphIdArray[k] = getUSHORT(font, offset); offset += 2
+        }
+        segCount.times {|k|
+          startCount[k].upto(endCount[k]) {|c|
+            if subsetchars[c]
+              if idRangeOffset[k] == 0
+                g = c
+              else
+                gid = (idRangeOffset[k] / 2) + (c - startCount[k]) - (segCount - k)
+                g = glyphIdArray[gid]
+              end
+              g += (idDelta[k] - 65536)
+              if g < 0
+                g = 0
+              end
+              subsetglyphs[g] = c
+            end
+          }
+        }
+      when 6 # Format 6: Trimmed table mapping
+        offset += 4 # skip length and version/language
+        firstCode = getUSHORT(font, offset); offset += 2
+        entryCount = getUSHORT(font, offset); offset += 2
+        entryCount.times {|k|
+          c = k + firstCode
+          if subsetchars[c]
+            g = getUSHORT(font, offset); offset += 2
+            subsetglyphs[g] = c
+          else
+            offset += 2
+          end
+        }
+      when 8 # Format 8: Mixed 16-bit and 32-bit coverage
+        offset += 10 # skip length and version
+        # to be implemented ...
+      when 10 # Format 10: Trimmed array
+        offset += 10 # skip length and version/language
+        startCharCode = getULONG(font, offset); offset += 4
+        numChars = getULONG(font, offset); offset += 4
+        numChars.times {|k|
+          c = k + startCharCode
+          if subsetchars[c]
+            g = getUSHORT(font, offset); offset += 2
+            subsetglyphs[g] = c
+          else
+            offset += 2
+          end
+        }
+      when 12 # Format 12: Segmented coverage
+        offset += 10 # skip length and version/language
+        nGroups = getULONG(font, offset); offset += 4
+        nGroups.times {|k|
+          startCharCode = getULONG(font, offset); offset += 4
+          endCharCode = getULONG(font, offset); offset += 4
+          startGlyphCode = getULONG(font, offset); offset += 4
+          startCharCode.upto(endCharCode) {|c|
+            if subsetchars[c]
+              subsetglyphs[startGlyphCode] = c
+            end
+            startGlyphCode += 1
+          }
+        }
+      end
+    }
+    # sort glyphs by key
+    #ksort(subsetglyphs)
+    # add composite glyps to subsetglyphs and remove missing glyphs
+    subsetglyphs.each_with_index {|val, key|
+      next if val.nil?
+      if indexToLoc[key]
+        offset = table['glyf']['offset'] + indexToLoc[key]
+        numberOfContours = getSHORT(font, offset); offset += 2
+        if numberOfContours < 0  # composite glyph
+          offset += 8 # skip xMin, yMin, xMax, yMax
+          loop {
+            flags = getUSHORT(font, offset); offset += 2
+            glyphIndex = getUSHORT(font, offset); offset += 2
+            if subsetglyphs[glyphIndex].nil? and indexToLoc[glyphIndex]
+              # add missing glyphs
+              subsetglyphs[glyphIndex] = true
+            end
+            # skip some bytes by case
+            if (flags & 1) != 0
+              offset += 4
+            else
+              offset += 2
+            end
+            if (flags & 8) != 0
+              offset += 2
+            elsif (flags & 64) != 0
+              offset += 4
+            elsif (flags & 128) != 0
+              offset += 8
+            end
+
+            break if (flags & 32) == 0
+          }
+        end
+      else
+        subsetglyphs.delete_at(key)
+      end
+    }
+    # build new glyf table with only used glyphs
+    glyf = ''
+    glyfSize = 0
+    # create new empty indexToLoc table
+    newIndexToLoc = Array.new(indexToLoc.length, 0)
+    goffset = 0
+    subsetglyphs.each_with_index {|char, glyphID|
+      next if char.nil?
+      if indexToLoc[glyphID] and indexToLoc[glyphID + 1]
+        start = indexToLoc[glyphID]
+        length = indexToLoc[glyphID + 1] - start
+        glyf << font[table['glyf']['offset'] + start, length]
+        newIndexToLoc[glyphID] = goffset
+        goffset += length
+      end
+    }
+    # build new loca table
+    loca = ''
+    if short_offset
+      newIndexToLoc.each {|offset|
+        loca << [offset / 2].pack('n')
+      }
+    else
+      newIndexToLoc.each {|offset|
+        loca << [offset].pack('N')
+      }
     end
+    # array of table names to preserve (loca and glyf tables will be added later)
+    # table_names = ['cmap', 'head', 'hhea', 'hmtx', 'maxp', 'name', 'OS/2', 'post', 'cvt ', 'fpgm', 'prep']
+    table_names = ['head', 'hhea', 'hmtx', 'maxp', 'OS/2', 'cvt ', 'fpgm', 'prep']
+    # get the tables to preserve
+    offset = 12
+    table.each {|tag, val|
+      if table_names.include?(tag)
+        table[tag]['data'] = font[table[tag]['offset'], table[tag]['length']]
+        if tag == 'head'
+          # set the checkSumAdjustment to 0
+          table[tag]['data'] = table[tag]['data'][0, 8] + "\x0\x0\x0\x0" + table[tag]['data'][12..-1]
+        end
+        pad = 4 - (table[tag]['length'] % 4)
+        if pad != 4
+          # the length of a table must be a multiple of four bytes
+          table[tag]['length'] += pad
+          table[tag]['data'] << "\x0" * pad
+        end
+        table[tag]['offset'] = offset
+        offset += table[tag]['length']
+        # table[tag]['checkSum'] = getTTFtableChecksum(table[tag]['data'], table[tag]['length'])
+      else
+        table.delete(tag)
+      end
+    }
+    # add loca
+
+    table['loca'] = {}
+    table['loca']['data'] = loca
+    table['loca']['length'] = loca.length
+    pad = 4 - (table['loca']['length'] % 4)
+    if pad != 4
+      # the length of a table must be a multiple of four bytes
+      table['loca']['length'] += pad
+      table['loca']['data'] << "\x0" * pad
+    end
+    table['loca']['offset'] = offset
+    table['loca']['checkSum'] = getTTFtableChecksum(table['loca']['data'], table['loca']['length'])
+    offset += table['loca']['length']
+    # add glyf
+    table['glyf'] = {}
+    table['glyf']['data'] = glyf
+    table['glyf']['length'] = glyf.length
+    pad = 4 - (table['glyf']['length'] % 4)
+    if pad != 4
+      # the length of a table must be a multiple of four bytes
+      table['glyf']['length'] += pad
+      table['glyf']['data'] << "\x0" * pad
+    end
+    table['glyf']['offset'] = offset
+    table['glyf']['checkSum'] = getTTFtableChecksum(table['glyf']['data'], table['glyf']['length'])
+    # rebuild font
+    font = ''
+    font << [0x10000].pack('N') # sfnt version
+    numTables = table.length
+    font << [numTables].pack('n') # numTables
+    entrySelector = (Math.log(numTables) / Math.log(2.0)).floor
+
+    searchRange = 2 **entrySelector * 16
+    rangeShift = numTables * 16 - searchRange
+    font << [searchRange].pack('n') # searchRange
+    font << [entrySelector].pack('n') # entrySelector
+    font << [rangeShift].pack('n') # rangeShift
+    offset = numTables * 16
+    table.each{|tag, data|
+      font << tag # tag
+      font << [data['checkSum']].pack('N') # checkSum
+      font << [data['offset'] + offset].pack('N') # offset
+      font << [data['length']].pack('N') # length
+    }
+    table.each{|tag, data|
+      font << data['data']
+    }
+    # set checkSumAdjustment on head table
+    checkSumAdjustment = 0xB1B0AFBA - getTTFtableChecksum(font, font.length)
+    font = font[0, table['head']['offset'] + 8] + [checkSumAdjustment].pack('N') + font[(table['head']['offset'] + 12)..-1]
+    return font
+  end
+
+  #
+  # Returs the checksum of a TTF table.
+  # [@parameter string :table] table to check
+  # [@parameter int :length] lenght of table in bytes
+  # [@return int] checksum
+  # [@author Nicola Asuni]
+  # [@access protected]
+  # [@since 5.2.000 (2010-06-02)]
+  #
+  def getTTFtableChecksum(table, length)
+    sum = 0
+    tlen = length / 4
+    offset = 0
+    tlen.times {
+      v = table[offset, 4].unpack('N')
+      sum += v[0]
+      offset += 4
+    }
+    sum = [sum].pack('N').unpack('N')
+    return sum[0]
   end
 
   #
@@ -6606,6 +6895,10 @@ protected
     # for each character
     font_cw.each {|cid, width|
       cid -= cidoffset
+      if font['subset'] and (cid > 255) and font['subsetchars'][cid].nil?
+        # ignore the unused characters (font subsetting)
+        next
+      end
       if width != font['dw']
         if cid == prevcid + 1
           # consecutive CID
@@ -6686,6 +6979,160 @@ protected
     return ('/W [' + w + ' ]')
   end
 
+  #
+  # Output fonts.
+  # [@author Nicola Asuni]
+  # [@access protected]
+  #
+  def putfonts()
+    nf=@n;
+    @diffs.each do |diff|
+      #Encodings
+      newobj();
+      out('<< /Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [' + diff + '] >> endobj')
+    end
+    @font_files.each do |file, info|
+      # search and get font file to embedd
+      fontdir = info['fontdir']
+
+      file = file.downcase
+      fontfile = ''
+      # search files on various directories
+      if (fontdir != false) and File.exist?(fontdir + file)
+        fontfile = fontdir + file
+      elsif fontfile = getfontpath(file)
+      elsif File.exist?(file)
+        fontfile = file
+      end
+
+      if !empty_string(fontfile)
+        font = ''
+        open(fontfile,'rb') do |f|
+          font = f.read()
+        end
+        compressed = (file[-2,2] == '.z')
+        if !compressed && !info['length2'].nil?
+          header = (font[0][0] == 128)
+          if header
+            # Strip first binary header
+            font = font[6]
+          end
+          if header && (font[info['length1']][0] == 128)
+            # Strip second binary header
+            font = font[0..info['length1']] + font[info['length1'] + 6]
+          end
+        elsif info['subset'] and (!compressed or (compressed and Object.const_defined?(:Zlib)))
+
+          if compressed
+            # uncompress font
+            font = Zlib::Inflate.inflate(font)
+          end
+          # merge subset characters
+          subsetchars = [] # used chars
+          info['fontkeys'].each {|fontkey|
+            fontinfo = getFontBuffer(fontkey)
+            subsetchars += fontinfo['subsetchars']
+          }
+          font = getTrueTypeFontSubset(font, subsetchars)
+          if compressed
+            # recompress font
+            font = Zlib::Deflate.deflate(font)
+          end
+        end
+        newobj()
+        @font_files[file]['n'] = @n
+        out = '<</Length '+ font.length.to_s
+        if compressed
+          out << ' /Filter /FlateDecode'
+        end
+        out << ' /Length1 ' + info['length1'].to_s
+        if !info['length2'].nil?
+          out << ' /Length2 ' + info['length2'].to_s + ' /Length3 0'
+        end
+        out << ' >>'
+        out << ' '+ getstream(font)
+        out << ' endobj'
+        out(out)
+      end
+    end
+    @fontkeys.each do |k|
+      #Font objects
+      setFontSubBuffer(k, 'n', @n + 1)
+      font = getFontBuffer(k)
+      type = font['type'];
+      name = font['name'];
+      if (type=='core')
+        # standard core font
+        obj_id = newobj()
+        out = '<</Type /Font'
+        out << ' /Subtype /Type1'
+        out << ' /BaseFont /' + name
+        out << ' /Name /F' + font['i'].to_s
+        if (name.downcase != 'symbol' && name.downcase != 'zapfdingbats')
+          out << ' /Encoding /WinAnsiEncoding'
+        end
+        if name.downcase == 'helvetica'
+          # add default font for annotations
+          @annotation_fonts['helvetica'] = k
+        end
+        out << ' >> endobj'
+        out(out)
+      elsif type == 'Type0'
+        putType0(font)
+      elsif (type=='Type1' || type=='TrueType')
+        # additional Type1 or TrueType font
+        obj_id = newobj()
+        out = '<</Type /Font'
+        out << ' /Subtype /' + type
+        out << ' /BaseFont /' + name
+        out << ' /Name /F' + font['i'].to_s
+        out << ' /FirstChar 32 /LastChar 255'
+        out << ' /Widths ' + (@n+1).to_s + ' 0 R'
+        out << ' /FontDescriptor ' + (@n+2).to_s + ' 0 R'
+        if (font['enc'])
+          if (!font['diff'].nil?)
+            out << ' /Encoding ' + (nf+font['diff']).to_s + ' 0 R'
+          else
+            out << ' /Encoding /WinAnsiEncoding'
+          end
+        end
+        out << ' >> endobj'
+        out(out)
+        #Widths
+        newobj();
+        cw=font['cw']; # &
+        s='[';
+        32.upto(255) do |i|
+          s << cw[i.chr] + ' ';
+        end
+        out(s + '] endobj')
+        #Descriptor
+        newobj();
+        s='<</Type /FontDescriptor /FontName /' + name;
+        font['desc'].each do |fdk, fdv|
+          if fdv.is_a? Float
+            fdv = sprintf('%.3f', fdv)
+          end
+          s << ' /' + fdk + ' ' + fdv + ''
+        end
+        if !empty_string(font['file'])
+          s << ' /FontFile' + (type=='Type1' ? '' : '2') + ' ' + @font_files[font['file']]['n'] + ' 0 R'
+        end
+        out(s + '>> endobj')
+      else
+        # additional types
+        mtd='put' + type.downcase;
+        unless self.respond_to?(mtd, true)
+          Error('Unsupported font type: ' + type)
+        end
+        obj_id = self.send(mtd,font)
+        # store object ID for current font
+        @font_obj_ids[k] = obj_id
+      end
+    end
+  end
+
+
   def putType0(font)
     # Type0
     newobj()
@@ -6735,12 +7182,20 @@ protected
   # [@since 1.52.0.TC005 (2005-01-05)]
   #
   def puttruetypeunicode(font)
+    fontname = ''
+    if font['subset']
+      # change name for font subsetting
+      subtag = sprintf('%06u', font['i'])
+      subtag = subtag.gsub('0123456789', 'ABCDEFGHIJ')
+      fontname << subtag + '+'
+    end
+    fontname << font['name']
     # Type0 Font
     # A composite font composed of other fonts, organized hierarchically
     obj_id = newobj()
     out = '<</Type /Font'
     out << ' /Subtype /Type0'
-    out << ' /BaseFont /' + font['name'] + ''
+    out << ' /BaseFont /' + fontname + ''
     out << ' /Name /F' + font['i'].to_s
     out << ' /Encoding /' + font['enc']
     out << ' /ToUnicode /Identity-H'
@@ -6754,7 +7209,7 @@ protected
     newobj();
     out = '<</Type /Font'
     out << ' /Subtype /CIDFontType2'
-    out << ' /BaseFont /' + font['name']
+    out << ' /BaseFont /' + fontname
 
     # A dictionary containing entries that define the character collection of the CIDFont.
 
@@ -6766,14 +7221,15 @@ protected
     out << ' /FontDescriptor ' + (@n + 1).to_s + ' 0 R'
     out << ' /DW ' + font['dw'].to_s + '' # default width
     out << "\n" + putfontwidths(font, 0)
-    out << ' /CIDToGIDMap ' + (@n + 2).to_s + ' 0 R >> endobj'
+    out << ' /CIDToGIDMap ' + (@n + 2).to_s + ' 0 R'
+    out << ' >> endobj'
     out(out)
 
     # Font descriptor
     # A font descriptor describing the CIDFont default metrics other than its glyph widths
     newobj();
     out = '<</Type /FontDescriptor'
-    out << ' /FontName /' + font['name']
+    out << ' /FontName /' + fontname
     font['desc'].each do |key, value|
       if value.is_a? Float
         value = sprintf('%.3f', value)
@@ -7479,7 +7935,7 @@ protected
   end
 
   #
-  # Read a 4-byte integer from file
+  # Read a 4-byte (32 bit) integer from file
   # [@param string :f] file name.
   # [@return] 4-byte integer
   # [@access protected]
@@ -7683,6 +8139,7 @@ protected
       return strarr
     end
 
+    unichar = -1 # last unicode char
     unicode = [] # array containing unicode values
     bytes  = [] # array containing single character byte sequences
     numbytes  = 1; # number of octetc needed to represent the UTF-8 character
@@ -7692,7 +8149,7 @@ protected
     str.each_byte do |char|
       if (bytes.length == 0) # get starting octect
         if (char <= 0x7F)
-          unicode << char # use the character "as is" because is ASCII
+          unichar = char # use the character "as is" because is ASCII
           numbytes = 1
         elsif ((char >> 0x05) == 0x06) # 2 bytes character (0x06 = 110 BIN)
           bytes << ((char - 0xC0) << 0x06)
@@ -7705,7 +8162,7 @@ protected
           numbytes = 4
         else
           # use replacement character for other invalid sequences
-          unicode << 0xFFFD
+          unichar = 0xFFFD
           bytes = []
           numbytes = 1
         end
@@ -7722,9 +8179,9 @@ protected
             # U+D800 and U+DFFF, which are reserved for use with the UTF-16
             # encoding form (as surrogate pairs) and do not directly represent
             # characters
-            unicode << 0xFFFD; # use replacement character
+            unichar = 0xFFFD # use replacement character
           else
-            unicode << char # add char to array
+            unichar = char # add char to array
           end
           # reset data for next char
           bytes = []
@@ -7732,11 +8189,20 @@ protected
         end
       else
         # use replacement character for other invalid sequences
-        unicode << 0xFFFD;
+        unichar = 0xFFFD
         bytes = []
         numbytes = 1;
       end
+      if unichar >= 0
+        # insert unicode value into array
+        unicode.push unichar
+        # store this char for font subsetting
+        @current_font['subsetchars'][unichar] = true
+        unichar = -1
+      end
     end
+    # update font subsetchars
+    setFontSubBuffer(@current_font['fontkey'], 'subsetchars', @current_font['subsetchars'])
     # insert new value on cache
     @cache_utf8_string_to_array[str] = unicode.dup
     return unicode;
@@ -7881,6 +8347,26 @@ protected
 
   # ====================================================
 public
+
+  #
+  # Set Font Subsetting.
+  # [@param boolean :subset] subset of the font default setting.
+  # [@access public]
+  #
+  def setFontSubsetting(subset)
+    @font_subsetting = (subset == true ? true : false)
+  end
+  alias_method :set_font_subsetting, :setFontSubsetting
+
+  #
+  # Get Font Subsetting.
+  # [@return boolean]
+  # [@access public]
+  #
+  def getFontSubsetting()
+    return @font_subsetting
+  end
+  alias_method :get_font_subsetting, :getFontSubsetting
 
   #
   # Set header font.
@@ -9517,7 +10003,7 @@ public
     if arabic
       endedletter = [1569,1570,1571,1572,1573,1575,1577,1583,1584,1585,1586,1608,1688]
       alfletter = [1570,1571,1573,1575]
-      chardata2 = chardata
+      chardata2 = chardata.dup
       laaletter = false
       charAL = []
       x = 0
@@ -9533,7 +10019,7 @@ public
       numAL = x
       reg_AL_NSM = /^(AL|NSM)$/
       numchars.times do |i|
-        thischar = chardata[i]
+        thischar = chardata[i].dup
         if i > 0
           prevchar = chardata[i-1]
         else
@@ -9694,8 +10180,12 @@ public
     ordarray = []
     numchars.times do |i|
       ordarray.push chardata[i][:char]
+      # store char values for subsetting
+      @current_font['subsetchars'][chardata[i][:char]] = true
     end
 
+    # update font subsetchars
+    setFontSubBuffer(@current_font['fontkey'], 'subsetchars', @current_font['subsetchars'])
     return ordarray
   end
   protected :utf8Bidi
@@ -10811,7 +11301,8 @@ protected
     # create an array of elements
     dom = []
     dom[key] = {}
-    # set first void element
+    # set inheritable properties fot the first void element
+    # possible inheritable properties are: azimuth, border-collapse, border-spacing, caption-side, color, cursor, direction, empty-cells, font, font-family, font-stretch, font-size, font-size-adjust, font-style, font-variant, font-weight, letter-spacing, line-height, list-style, list-style-image, list-style-position, list-style-type, orphans, page, page-break-inside, quotes, speak, speak-header, text-align, text-indent, text-transform, volume, white-space, widows, word-spacing
     dom[key]['tag'] = false
     dom[key]['block'] = false
     dom[key]['value'] = ''
@@ -10824,7 +11315,7 @@ protected
     dom[key]['clip'] = (@textrendermode > 3)
     dom[key]['line-height'] = @cell_height_ratio
     dom[key]['bgcolor'] = ActiveSupport::OrderedHash.new
-    dom[key]['fgcolor'] = @fgcolor.dup
+    dom[key]['fgcolor'] = @fgcolor.dup # color
     dom[key]['strokecolor'] = @strokecolor.dup
 
     dom[key]['align'] = ''

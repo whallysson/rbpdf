@@ -15,6 +15,9 @@ class RbpdfTest < Test::Unit::TestCase
     def rtl_text_dir
       super
     end
+    def get_current_font
+      return @current_font
+    end
   end
 
   test "RTL test" do
@@ -50,6 +53,19 @@ class RbpdfTest < Test::Unit::TestCase
     assert_equal rtl, 'L'
   end
 
+  test "Bidi subset font test" do
+    pdf = MYPDF.new
+    ary_ucs4 = pdf.UTF8StringToArray("abc")
+    assert_equal [0x61, 0x62, 0x63], ary_ucs4
+    current_font = pdf.get_current_font
+    assert_equal 256, current_font['subsetchars'].length
+
+    ary_ucs4 = pdf.UTF8StringToArray("\xd7\xa2\xd7\x91\xd7\xa8\xd7\x99\xd7\xaa")
+    assert_equal [0x5e2, 0x5d1, 0x5e8, 0x5d9, 0x5ea], ary_ucs4
+    current_font = pdf.get_current_font
+    assert_equal 261, current_font['subsetchars'].compact.length
+  end
+
   test "Bidi" do
     pdf = MYPDF.new
 
@@ -62,8 +78,13 @@ class RbpdfTest < Test::Unit::TestCase
     # UTF-8 string -> array of UCS4 charactor
     ary_ucs4 = pdf.UTF8StringToArray("abc")
     assert_equal [0x61, 0x62, 0x63], ary_ucs4
+    current_font = pdf.get_current_font
+    assert_equal 256, current_font['subsetchars'].compact.length
+
     ary_ucs4 = pdf.UTF8StringToArray("\xd7\xa2\xd7\x91\xd7\xa8\xd7\x99\xd7\xaa")
     assert_equal [0x5e2, 0x5d1, 0x5e8, 0x5d9, 0x5ea], ary_ucs4
+    current_font = pdf.get_current_font
+    assert_equal 256 + 5, current_font['subsetchars'].compact.length
 
     # Bidirectional Algorithm
     ascii_str   = "abc"
@@ -77,21 +98,38 @@ class RbpdfTest < Test::Unit::TestCase
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_str_1))
     assert_equal [0x5e2], ary_ucs4
+    current_font = pdf.get_current_font
+    assert_equal 256 + 5, current_font['subsetchars'].compact.length
+
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_str_1), utf8_str_1, 'R')
     assert_equal [0x5e2], ary_ucs4
+    current_font = pdf.get_current_font
+    assert_equal 256 + 5, current_font['subsetchars'].compact.length
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_str_2))
     assert_equal [0x5ea, 0x5d9, 0x5e8, 0x5d1, 0x5e2], ary_ucs4
+    current_font = pdf.get_current_font
+    assert_equal 256 + 5, current_font['subsetchars'].compact.length
+
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_str_2), utf8_str_2, 'R')
     assert_equal [0x5ea, 0x5d9, 0x5e8, 0x5d1, 0x5e2], ary_ucs4 ##
+    current_font = pdf.get_current_font
+    assert_equal 256 + 5, current_font['subsetchars'].compact.length
 
     ary_str = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str + utf8_str_2), ascii_str + utf8_str_2, 'L')
     assert_equal [0x61, 0x62, 0x63, 0x5ea, 0x5d9, 0x5e8, 0x5d1, 0x5e2], ary_str
+    current_font = pdf.get_current_font
+    assert_equal 256 + 5, current_font['subsetchars'].compact.length
+
     ary_str = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str + utf8_str_2))        # LTR
     assert_equal [0x61, 0x62, 0x63, 0x5ea, 0x5d9, 0x5e8, 0x5d1, 0x5e2], ary_str
-    ary_str = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str + utf8_str_2), ascii_str + utf8_str_2, 'R')
+    current_font = pdf.get_current_font
+    assert_equal 256 + 5, current_font['subsetchars'].compact.length
 
+    ary_str = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str + utf8_str_2), ascii_str + utf8_str_2, 'R')
     assert_equal [0x5ea, 0x5d9, 0x5e8, 0x5d1, 0x5e2, 0x61, 0x62, 0x63], ary_str
+    current_font = pdf.get_current_font
+    assert_equal 256 + 5, current_font['subsetchars'].compact.length
 
     ary_str = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_str_2 + ascii_str), utf8_str_2 + ascii_str, 'L')
     assert_equal [0x5ea, 0x5d9, 0x5e8, 0x5d1, 0x5e2, 0x61, 0x62, 0x63], ary_str
@@ -233,28 +271,48 @@ class RbpdfTest < Test::Unit::TestCase
   test "Bidi Persian Sunday test" do
     pdf = MYPDF.new
 
-    utf8_persian_str_1  = "\xdb\x8c"
-    utf8_persian_str_2  = "\xdb\x8c\xda\xa9"
-    utf8_persian_str_3  = "\xdb\x8c\xda\xa9\xe2\x80\x8c"
-    utf8_persian_str_4  = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4"
-    utf8_persian_str_5  = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86"
-    utf8_persian_str_6  = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8"
-    utf8_persian_str_7  = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87" # Sunday
+    utf8_persian_str_1  = "\xdb\x8c" # 0x06cc
+    utf8_persian_str_2  = "\xdb\x8c\xda\xa9" # 0x06cc, 0x06a9
+    utf8_persian_str_3  = "\xdb\x8c\xda\xa9\xe2\x80\x8c"  # 0x06cc, 0x06a9, 0x200c
+    utf8_persian_str_4  = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4"  # 0x06cc, 0x06a9, 0x200c, 0x0634
+    utf8_persian_str_5  = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86" # 0x06cc, 0x06a9, 0x200c, 0x0634, 0x0646
+    utf8_persian_str_6  = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8" # 0x06cc, 0x06a9, 0x200c, 0x0634, 0x0646, 0x0628
+    utf8_persian_str_7  = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87" # Sunday # 0x06cc, 0x06a9, 0x200c, 0x0634, 0x0646, 0x0628, 0x0647
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_1))
     assert_equal ary_ucs4, [0xfbfc]
+    current_font = pdf.get_current_font
+    assert_equal 256 + 2, current_font['subsetchars'].compact.length  # 0x06cc, 0xfbfc
+
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_2))
     assert_equal ary_ucs4, [0xfb8f, 0xfbfe]
+    current_font = pdf.get_current_font
+    assert_equal 256 + 5, current_font['subsetchars'].compact.length # 0xfbfc + 0x06cc, 0x06a9, 0xfb8f, 0xfbfe
+
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_3))
-    assert_equal ary_ucs4, [0x200C, 0xfb8f, 0xfbfe]
+    assert_equal ary_ucs4, [0x200c, 0xfb8f, 0xfbfe]
+    current_font = pdf.get_current_font
+    assert_equal 256 + 6, current_font['subsetchars'].compact.length # 0xfbfc + 0x06cc, 0x06a9, 0x200c, 0xfb8f, 0xfbfe
+
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_4))
-    assert_equal ary_ucs4, [0xfeb5, 0x200C, 0xfb8f, 0xfbfe]
+    assert_equal ary_ucs4, [0xfeb5, 0x200c, 0xfb8f, 0xfbfe]
+    current_font = pdf.get_current_font
+    assert_equal 256 + 8, current_font['subsetchars'].compact.length # 0xfbfc + 0x06cc, 0x06a9, 0x200c, 0x0634, 0xfeb5, 0xfb8f, 0xfbfe
+
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_5))
-    assert_equal ary_ucs4, [0xfee6, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe]
+    assert_equal ary_ucs4, [0xfee6, 0xfeb7, 0x200c, 0xfb8f, 0xfbfe]
+    current_font = pdf.get_current_font
+    assert_equal 256 + 11, current_font['subsetchars'].compact.length # 0xfbfc, 0xfeb5 + 0x06cc, 0x06a9, 0x200c, 0x0634, 0x0646, 0xfee6, 0xfeb7, 0xfb8f, 0xfbfe
+
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_6))
-    assert_equal ary_ucs4, [0xfe90, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe]
+    assert_equal ary_ucs4, [0xfe90, 0xfee8, 0xfeb7, 0x200c, 0xfb8f, 0xfbfe]
+    current_font = pdf.get_current_font
+    assert_equal 256 + 14, current_font['subsetchars'].compact.length # 0xfbfc, 0xfeb5, 0xfee6 + 0x06cc, 0x06a9, 0x200c, 0x0634, 0x0646, 0x0628, 0xfe90, 0xfee8, 0xfeb7, 0xfb8f, 0xfbfe
+
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_7))
-    assert_equal ary_ucs4, [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe]
+    assert_equal ary_ucs4, [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200c, 0xfb8f, 0xfbfe]
+    current_font = pdf.get_current_font
+    assert_equal 256 + 17, current_font['subsetchars'].compact.length # 0xfbfc, 0xfeb5, 0xfee6, 0xfe90 + 0x06cc, 0x06a9, 0x200c, 0x0634, 0x0646, 0x0628, 0x0647, 0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0xfb8f, 0xfbfe
   end
 
   test "Bidi Persian Sunday forcertl test" do
@@ -347,6 +405,19 @@ class RbpdfTest < Test::Unit::TestCase
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_date_str_1), utf8_date_str_1, 'R')
     assert_equal [0x31, 0x32, 0x2f, 0x30, 0x31, 0x2f, 0x32, 0x30, 0x31, 0x34], ary_ucs4  # 12/01/2014
+  end
+
+  test "Bidi Japanese test" do
+    pdf = MYPDF.new
+
+    utf8_japanese_aiueo_str_1  = "\xe3\x81\x82\xe3\x81\x84\xe3\x81\x86\xe3\x81\x88\xe3\x81\x8a"
+
+    # UTF-8 string -> array of UCS4 charactor
+    ary_ucs4 = pdf.UTF8StringToArray(utf8_japanese_aiueo_str_1)
+    assert_equal [0x3042, 0x3044, 0x3046, 0x3048, 0x304a], ary_ucs4  # Japanese aiueo
+
+    current_font = pdf.get_current_font
+    assert_equal 256 + 5, current_font['subsetchars'].compact.length
   end
 
   test "UTF8StringToArray cache_utf8_string_to_array test" do

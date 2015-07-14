@@ -19,6 +19,20 @@ class RbpdfFontTest < Test::Unit::TestCase
     end
   end
 
+  test "Font subsetting enable/disable test" do
+    pdf = MYPDF.new
+    subsetting = pdf.get_font_subsetting
+    assert_equal true, subsetting
+
+    pdf.set_font_subsetting(false)
+    subsetting = pdf.get_font_subsetting
+    assert_equal false, subsetting
+
+    pdf.set_font_subsetting(true)
+    subsetting = pdf.get_font_subsetting
+    assert_equal true, subsetting
+  end
+  
   test "Font getFontsList" do
     pdf = MYPDF.new
     pdf.getFontsList()
@@ -86,8 +100,36 @@ class RbpdfFontTest < Test::Unit::TestCase
     pdf.putfonts()
   end
 
+  test "TrueTypeUnicode Subset Font test" do
+    pdf = MYPDF.new
+    pdf.set_font_subsetting(true)
+
+    pdf.set_font('freesans', '', 18)
+    pdf.set_font('freesans', 'B', 18)
+    pdf.set_font('freesans', 'I', 18)
+    pdf.set_font('freesans', 'BI', 18)
+
+    pdf.set_font('freeserif', '', 18)
+    pdf.set_font('freeserif', 'B', 18)
+    pdf.set_font('freeserif', 'I', 18)
+    pdf.set_font('freeserif', 'BI', 18)
+
+    pdf.set_font('freemono', '', 18)
+    pdf.set_font('freemono', 'B', 18)
+    pdf.set_font('freemono', 'I', 18)
+    pdf.set_font('freemono', 'BI', 18)
+
+    pdf.set_font('dejavusans', '', 18)
+    pdf.set_font('dejavusans', 'B', 18)
+    pdf.set_font('dejavusans', 'I', 18)
+    pdf.set_font('dejavusans', 'BI', 18)
+
+    pdf.putfonts()
+  end
+
   test "TrueTypeUnicode Font test" do
     pdf = MYPDF.new
+    pdf.set_font_subsetting(false)
 
     pdf.set_font('freesans', '', 18)
     pdf.set_font('freesans', 'B', 18)
