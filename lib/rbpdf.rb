@@ -1543,6 +1543,8 @@ class RBPDF
     # close page
     endPage()
     lastPage()
+    resetLinksAfterCurrentPage()
+
     @state = 2
     SetAutoPageBreak(false)
     @y = @h - (1 / @k)
@@ -5452,6 +5454,7 @@ class RBPDF
     #Finish document if necessary
 
     lastPage()
+
     if (@state < 3)
       Close();
     end
@@ -13871,6 +13874,17 @@ protected
       writeDiskCache(@fonts[font], Marshal.dump(tmpfont))
     else
       @fonts[font][key] = data
+    end
+  end
+
+
+  #
+  # Reset all links that points to pages after current
+  # [@access protected]
+  #
+  def resetLinksAfterCurrentPage()
+    @links.each do |link|
+      link[0] = @page if link.present? && link[0] > @page
     end
   end
 
