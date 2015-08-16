@@ -576,4 +576,21 @@ class RbpdfTest < Test::Unit::TestCase
     end
     assert_equal count, 1
   end
+
+  test "works internal links out of page range" do
+    pdf = RBPDF.new
+    pdf.add_page()
+
+    htmlcontent = '<a href="#100400_somelink">FooLink</a>'
+    pdf.write_html(htmlcontent, true, 0, true, 0)
+
+    assert_nothing_raised do
+      pdf.Close
+    end
+
+    assert_nothing_raised do
+      pdf.Output
+    end
+  end
+
 end

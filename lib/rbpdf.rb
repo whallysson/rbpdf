@@ -448,6 +448,8 @@ class RBPDF
     @diffs ||= []
     @images ||= {}
     @links ||= []
+    @html_anchors ||= {}
+    @html_anchor_links ||= {}
     @gradients ||= []
     @in_footer ||= false
     @lasth ||= 0
@@ -1541,6 +1543,8 @@ class RBPDF
     # close page
     endPage()
     lastPage()
+    resetLinksAfterCurrentPage()
+
     @state = 2
     SetAutoPageBreak(false)
     @y = @h - (1 / @k)
@@ -5448,7 +5452,9 @@ class RBPDF
   def Output(name='', dest='')
     #Output PDF to some destination
     #Finish document if necessary
+
     lastPage()
+
     if (@state < 3)
       Close();
     end
@@ -6949,6 +6955,17 @@ protected
   end
 
   #
+  # Maps HTML anchor links to anchors.
+  # [@access protected]
+  #
+  def mapLinksToHtmlAnchors
+    @html_anchors.each do |anchor, positon|
+      links = @html_anchor_links.find_all { |url, link_anchor| link_anchor == anchor}
+      links.each {|url, link_anchor|  @links[url] = positon }
+    end
+  end
+
+  #
   # Output Spot Colors Resources.
   # [@access protected[
   # [@since 4.0.024 (2008-09-12)]
@@ -7036,11 +7053,13 @@ protected
   # [@access protected]
   #
   def putresources()
+    mapLinksToHtmlAnchors()
     putextgstates()
     putocg()
     putfonts();
     putimages();
     putspotcolors()
+
     #Resource dictionary
     @offsets[2]=@bufferlen
     putresourcedict();
@@ -7969,8 +7988,10 @@ public
   def addHtmlLink(url, name, fill=0, firstline=false, color='', style=-1, firstblock=false)
     if !empty_string(url) and (url[0, 1] == '#')
       # convert url to internal link
-      page = url.sub(/^#/, "").to_i
+      anchor = url.sub(/^#/, "")
+      page = anchor.to_i
       url = AddLink()
+      @html_anchor_links[url] = anchor
       SetLink(url, 0, page)
     end
     # store current settings
@@ -7993,6 +8014,27 @@ public
     return ret
   end
   alias_method :add_html_link, :addHtmlLink
+
+  #
+  # Adds HTML anchor and remembers it's position
+  # [@param string :anchor] html anchor id
+  # [@access public]
+  #
+  def addHtmlAnchor(anchor)
+    @html_anchors[anchor] = [@page, @y]
+  end
+  alias_method :add_html_anchor, :addHtmlAnchor
+
+  #
+  # Outputs HTML anchor position
+  # [@param string :anchor] html anchor id
+  # [@return array] [Page, Y] of anchor
+  # [@access public]
+  #
+  def getHtmlAnchorPosition(anchor)
+    @html_anchors[anchor]
+  end
+  alias_method :get_html_anchor_position, :getHtmlAnchorPosition
 
   #
   # Returns an associative array (keys: R,G,B) from an html color name or a six-digit or three-digit hexadecimal color representation (i.e. #3FE5AA or #7FF).
@@ -11323,7 +11365,7 @@ public
     # Escape '<' character for not tag case.
     html = html.gsub(%r{(<+)([^/a-zA-Z])}){CGI.escapeHTML($1) + $2}.gsub(%r{</([^a-zA-Z])}){'&lt;/' +  $1}
 
-    html = "%s" % sanitize(html, :tags=> %w(a b blockquote body br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href dir class id nobr stroke strokecolor fill nested tablehead))
+    html = "%s" % sanitize(html, :tags=> %w(a b blockquote body br dd del div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre small span strong sub sup table td th thead tr tt u ins ul), :attributes => %w(cellspacing cellpadding bgcolor color value width height src size colspan rowspan style align border face href name dir class id nobr stroke strokecolor fill nested tablehead))
   end
   protected :sanitize_html
 
@@ -12050,6 +12092,7 @@ public
         opentagpos = nil
       end
       if dom[key]['tag']
+        addHtmlAnchor(@html_anchor) if @html_anchor
         if dom[key]['opening']
           # get text indentation (if any)
           if dom[key]['text-indent'] and dom[key]['block']
@@ -12620,6 +12663,8 @@ public
     when 'a'
       if tag['attribute'].key?('href')
         @href['url'] = get_sever_url(tag['attribute']['href'])
+      elsif tag['attribute'].key?('id') || tag['attribute'].key?('name')
+        @html_anchor = tag['attribute']['id'] || tag['attribute']['name']
       end
     when 'img'
       if !tag['attribute']['src'].nil?
@@ -13131,6 +13176,7 @@ public
         end
       when 'a'
         @href = {}
+        @html_anchor = nil
       when 'sup'
         SetXY(GetX(), GetY() + (0.7 * parent['fontsize'] / @k))
       when 'sub'
@@ -13828,6 +13874,17 @@ protected
       writeDiskCache(@fonts[font], Marshal.dump(tmpfont))
     else
       @fonts[font][key] = data
+    end
+  end
+
+
+  #
+  # Reset all links that points to pages after current
+  # [@access protected]
+  #
+  def resetLinksAfterCurrentPage()
+    @links.each do |link|
+      link[0] = @page if link.present? && link[0] > @page
     end
   end
 
