@@ -124,6 +124,28 @@ class RbpdfFontTest < Test::Unit::TestCase
     pdf.set_font('dejavusans', 'I', 18)
     pdf.set_font('dejavusans', 'BI', 18)
 
+    pdf.set_font('dejavusanscondensed', '', 18)
+    pdf.set_font('dejavusanscondensed', 'B', 18)
+    pdf.set_font('dejavusanscondensed', 'I', 18)
+    pdf.set_font('dejavusanscondensed', 'BI', 18)
+
+    pdf.set_font('dejavusansmono', '', 18)
+    pdf.set_font('dejavusansmono', 'B', 18)
+    pdf.set_font('dejavusansmono', 'I', 18)
+    pdf.set_font('dejavusansmono', 'BI', 18)
+
+    pdf.set_font('dejavuserif', '', 18)
+    pdf.set_font('dejavuserif', 'B', 18)
+    pdf.set_font('dejavuserif', 'I', 18)
+    pdf.set_font('dejavuserif', 'BI', 18)
+
+    pdf.set_font('dejavuserifcondensed', '', 18)
+    pdf.set_font('dejavuserifcondensed', 'B', 18)
+    pdf.set_font('dejavuserifcondensed', 'I', 18)
+    pdf.set_font('dejavuserifcondensed', 'BI', 18)
+
+    pdf.set_font('dejavusansextralight', '', 18)
+
     pdf.putfonts()
   end
 
@@ -150,6 +172,28 @@ class RbpdfFontTest < Test::Unit::TestCase
     pdf.set_font('dejavusans', 'B', 18)
     pdf.set_font('dejavusans', 'I', 18)
     pdf.set_font('dejavusans', 'BI', 18)
+
+    pdf.set_font('dejavusanscondensed', '', 18)
+    pdf.set_font('dejavusanscondensed', 'B', 18)
+    pdf.set_font('dejavusanscondensed', 'I', 18)
+    pdf.set_font('dejavusanscondensed', 'BI', 18)
+
+    pdf.set_font('dejavusansmono', '', 18)
+    pdf.set_font('dejavusansmono', 'B', 18)
+    pdf.set_font('dejavusansmono', 'I', 18)
+    pdf.set_font('dejavusansmono', 'BI', 18)
+
+    pdf.set_font('dejavuserif', '', 18)
+    pdf.set_font('dejavuserif', 'B', 18)
+    pdf.set_font('dejavuserif', 'I', 18)
+    pdf.set_font('dejavuserif', 'BI', 18)
+
+    pdf.set_font('dejavuserifcondensed', '', 18)
+    pdf.set_font('dejavuserifcondensed', 'B', 18)
+    pdf.set_font('dejavuserifcondensed', 'I', 18)
+    pdf.set_font('dejavuserifcondensed', 'BI', 18)
+
+    pdf.set_font('dejavusansextralight', '', 18)
 
     pdf.putfonts()
   end
