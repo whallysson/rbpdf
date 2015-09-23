@@ -6871,6 +6871,7 @@ protected
       sum += v[0]
       offset += 4
     }
+    sum %= 0x100000000
     sum = [sum].pack('N').unpack('N')
     return sum[0]
   end
