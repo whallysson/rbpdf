@@ -1,10 +1,48 @@
 # coding: ASCII-8BIT
 require 'test_helper'
 
-class RbpdfTest < Test::Unit::TestCase
+class RbpdfHtmlTest < Test::Unit::TestCase
   class MYPDF < RBPDF
     def getPageBuffer(page)
       super
+    end
+
+    # get text count and x_pos from pdf page
+    def get_html_text_position_x(page, regrep_text, x_pos_exp=nil)
+      count_line, count_text, x_pos, y_pos = get_html_text_position(page, regrep_text, x_pos_exp)
+      return count_line, count_text, x_pos
+    end
+
+    # get text count and y_pos from pdf page
+    def get_html_text_position_y(page, regrep_text)
+      count_line, count_text, x_pos, y_pos = get_html_text_position(page, regrep_text)
+      return count_line, count_text, y_pos
+    end
+
+    # get text count and pos from pdf page
+    def get_html_text_position(page, regrep_text, x_pos_exp=nil)
+      content = []
+      contents = getPageBuffer(page)
+      contents.each_line {|line| content.push line.chomp }
+      count_line = count_text = 0
+      x_pos = y_pos = -1
+      content.each do |line|
+        count_line += 1 if line =~ /TJ ET Q$/ # Text Line Count
+        if line =~ regrep_text
+          count_text += 1
+          line =~ /BT ([0-9.]+) ([0-9.]+) Td/
+          x_pos = $1
+          y_pos = $2 if y_pos == -1 # y first position only
+
+          if x_pos.nil? or y_pos.nil? # Error
+            return count_line, count_text, nil, nil
+          end
+          if !x_pos_exp.nil? and x_pos != x_pos_exp # Error
+            return count_line, count_text, x_pos, y_pos
+          end
+        end
+      end
+      return count_line, count_text, x_pos, y_pos
     end
 
     # get text from pdf page
@@ -69,47 +107,22 @@ class RbpdfTest < Test::Unit::TestCase
     pno = pdf.get_page
     assert_equal pno, 3
 
-    content = []
-    contents = pdf.getPageBuffer(1)
-    contents.each_line {|line| content.push line.chomp }
-    count = 0
-    count_text = 0
-    pos1 = -1
-    pos2 = -2
-    content.each do |line|
-      count_text += 1 if line =~ /TJ ET Q$/
-      if line =~ /ABCD/
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos1 = $1
-        assert_not_nil pos1
-      end
-      if line =~ /abcd/
-        count += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-      end
-    end
-    assert_equal count_text, 13
-    assert_equal count, 1
-    assert_equal pos1, pos2
+    # Page 1
+    count_line, count_text, xpos1 = pdf.get_html_text_position_x(1, /ABCD/) # Header
+    assert_not_nil xpos1
+    assert_equal 1, count_text
+    assert_equal 13, count_line
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(1, /abcd/)
+    assert_not_nil xpos2
+    assert_equal 1, count_text
+    assert_equal xpos1, xpos2
+    assert_equal 13, count_line
 
-    content = []
-    contents = pdf.getPageBuffer(2)
-    contents.each_line {|line| content.push line.chomp }
-    count_head = 0
-    count = 0
-    count_text = 0
-    content.each do |line|
-      count_text += 1 if line =~ /TJ ET Q$/
-      if line =~ /\([6-9]\)/
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-        assert_equal pos1, pos2
-      end
-    end
-    assert_equal count_text, 7
+    # Page 2
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(2, /\([6-9]\)/, xpos1)
+    assert_not_nil xpos2
+    assert_equal xpos1, xpos2
+    assert_equal 7, count_line
   end
 
   test "write_html Table thead tag test 1" do
@@ -125,15 +138,8 @@ class RbpdfTest < Test::Unit::TestCase
     page = pdf.get_page
     assert_equal 1, page
 
-    content = []
-    contents = pdf.getPageBuffer(page)
-    contents.each_line {|line| content.push line.chomp }
-
-    count = 0
-    content.each do |line|
-      count += 1 if line =~ /ABCD/
-    end
-    assert_equal count, 1
+    count_line, count_text, xpos = pdf.get_html_text_position_x(1, /ABCD/) # Header
+    assert_equal 1, count_text
   end
 
   test "write_html Table thead tag test 2" do
@@ -151,83 +157,44 @@ class RbpdfTest < Test::Unit::TestCase
     assert_equal 3, page
 
     # Page 1
-    content = []
-    contents = pdf.getPageBuffer(1)
-    contents.each_line {|line| content.push line.chomp }
-    count_text = count_head = count = 0
-    pos1 = -1
-    pos2 = -2
-    content.each do |line|
-      count_text += 1 if line =~ /TJ ET Q$/
-      if line =~ /ABCD/
-        count_head += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos1 = $1
-        assert_not_nil pos1
-      end
-      if line =~ /abcd/
-        count += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-      end
-    end
-    assert_equal count_text, 13
-    assert_equal count_head, 1
-    assert_equal count, 1
-    assert_equal pos1, pos2
+    count_line, count_text, xpos1 = pdf.get_html_text_position_x(1, /ABCD/) # Header
+    assert_not_nil xpos1
+    assert_equal 1, count_text
+    assert_equal 13, count_line
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(1, /abcd/)
+    assert_not_nil xpos2
+    assert_equal 1, count_text
+    assert_equal xpos1, xpos2
+    assert_equal 13, count_line
 
     # Page 2
-    content = []
-    contents = pdf.getPageBuffer(2)
-    contents.each_line {|line| content.push line.chomp }
-    count_text = count_head = count = 0
-    content.each do |line|
-      count_text += 1 if line =~ /TJ ET Q$/
-      if line =~ /ABCD/
-        count_head += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-        assert_equal pos1, pos2
-      end
-      count += 1 if line =~ /abcd/
-      if line =~ /\([6-9]\)/
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-        assert_equal pos1, pos2
-      end
-    end
-    assert_equal count_text, 10
-    assert_equal count_head, 1
-    assert_equal count, 0
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(2, /ABCD/, xpos1) # Header
+    assert_not_nil xpos2
+    assert_equal 1, count_text
+    assert_equal xpos1, xpos2
+    assert_equal 10, count_line
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(2, /abcd/)
+    assert_equal 0, count_text
+    assert_equal 10, count_line
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(2, /\([6-9]\)/, xpos1)
+    assert_not_nil xpos2
+    assert_equal xpos1, xpos2
+    assert_equal 10, count_line
 
     # Page 3
-    content = []
-    contents = pdf.getPageBuffer(3)
-    contents.each_line {|line| content.push line.chomp }
-    count_text = count_head = count = 0
-    content.each do |line|
-      count_text += 1 if line =~ /TJ ET Q$/
-      if line =~ /ABCD/
-        count_head += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-        assert_equal pos1, pos2
-      end
-      count += 1 if line =~ /abcd/
-      if line =~ /\(11\)/
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-        assert_equal pos1, pos2
-      end
-    end
-    assert_equal count_text, 5
-    assert_equal count_head, 1
-    assert_equal count, 0
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(3, /ABCD/, xpos1) # Header
+    assert_not_nil xpos2
+    assert_equal 1, count_text
+    assert_equal xpos1, xpos2
+    assert_equal 5, count_line
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(3, /abcd/)
+    assert_equal 0, count_text
+    assert_equal 5, count_line
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(3, /\(11\)/, xpos1)
+    assert_not_nil xpos2
+    assert_equal 1, count_text
+    assert_equal xpos1, xpos2
+    assert_equal 5, count_line
   end
 
   test "write_html_cell Table thead tag test" do
@@ -255,83 +222,39 @@ class RbpdfTest < Test::Unit::TestCase
     assert_equal 1, page
 
     # Page 1
-    content = []
-    contents = pdf.getPageBuffer(1)
-    contents.each_line {|line| content.push line.chomp }
-    count_text = count_head = count = 0
-    pos1 = -1
-    pos2 = -2
-    content.each do |line|
-      count_text += 1 if line =~ /TJ ET Q$/
-      if line =~ /Left align/
-        count_head += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos1 = $1
-        assert_not_nil pos1
-      end
-      if line =~ /left/
-        count += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-      end
-    end
-    assert_equal count_text, 13
-    assert_equal count_head, 1
-    assert_equal count, 1
-    assert_equal pos1, pos2
+    count_line, count_text, xpos1 = pdf.get_html_text_position_x(1, /Left align/) # Header
+    assert_not_nil xpos1
+    assert_equal 1, count_text
+    assert_equal 13, count_line
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(1, /left/)
+    assert_not_nil xpos2
+    assert_equal 1, count_text
+    assert_equal 13, count_line
+    assert_equal xpos1, xpos2
 
     # Page 2
-    content = []
-    contents = pdf.getPageBuffer(2)
-    contents.each_line {|line| content.push line.chomp }
-    count_text = count_head = count = 0
-    content.each do |line|
-      count_text += 1 if line =~ /TJ ET Q$/
-      if line =~ /Left align/
-        count_head += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-        assert_equal pos1, pos2
-      end
-      if line =~ /\(6\)/
-        count += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-        assert_equal pos1, pos2
-      end
-    end
-    assert_equal count_text, 10
-    assert_equal count_head, 1
-    assert_equal count, 1
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(2, /Left align/, xpos1) # Header
+    assert_not_nil xpos2
+    assert_equal 1, count_text
+    assert_equal xpos1, xpos2
+    assert_equal 10, count_line
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(2, /\(6\)/, xpos1)
+    assert_not_nil xpos2
+    assert_equal 1, count_text
+    assert_equal xpos1, xpos2
+    assert_equal 10, count_line
 
     # Page 3
-    content = []
-    contents = pdf.getPageBuffer(3)
-    contents.each_line {|line| content.push line.chomp }
-    count_text = count_head = count = 0
-    content.each do |line|
-      count_text += 1 if line =~ /TJ ET Q$/
-      if line =~ /Left align/
-        count_head += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-        assert_equal pos1, pos2
-      end
-      if line =~ /\(11\)/
-        count += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-        assert_equal pos1, pos2
-      end
-    end
-    assert_equal count_text, 5
-    assert_equal count_head, 1
-    assert_equal count, 1
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(3, /Left align/, xpos1) # Header
+    assert_not_nil xpos2
+    assert_equal 1, count_text
+    assert_equal xpos1, xpos2
+    assert_equal 5, count_line
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(3, /\(11\)/, xpos1)
+    assert_not_nil xpos2
+    assert_equal 1, count_text
+    assert_equal xpos1, xpos2
+    assert_equal 5, count_line
   end
 
   test "write_html_cell Table thead tag  cellpadding x position test" do
@@ -359,57 +282,27 @@ class RbpdfTest < Test::Unit::TestCase
     assert_equal 1, page
 
     # Page 1
-    content = []
-    contents = pdf.getPageBuffer(1)
-    contents.each_line {|line| content.push line.chomp }
-    count_text = count_head = count = 0
-    pos1 = -1
-    pos2 = -2
-    content.each do |line|
-      count_text += 1 if line =~ /TJ ET Q$/
-      if line =~ /Right align/
-        count_head += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos1 = $1
-        assert_not_nil pos1
-      end
-      if line =~ /right/
-        count += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-      end
-    end
-    assert_equal count_text, 13
-    assert_equal count_head, 1
-    assert_equal count, 1
-    assert_equal pos1, pos2
+    count_line, count_text, xpos1 = pdf.get_html_text_position_x(1, /Right align/) # Header
+    assert_not_nil xpos1
+    assert_equal 1, count_text
+    assert_equal 13, count_line
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(1, /right/)
+    assert_not_nil xpos2
+    assert_equal 1, count_text
+    assert_equal xpos1, xpos2
+    assert_equal 13, count_line
 
     # Page 2
-    content = []
-    contents = pdf.getPageBuffer(2)
-    contents.each_line {|line| content.push line.chomp }
-    count_text = count_head = count = 0
-    content.each do |line|
-      count_text += 1 if line =~ /TJ ET Q$/
-      if line =~ /Right align/
-        count_head += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-        assert_equal pos1, pos2
-      end
-      if line =~ /\(6\)/
-        count += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $1
-        assert_not_nil pos2
-        assert_equal pos1, pos2
-      end
-    end
-    assert_equal count_text, 10
-    assert_equal count_head, 1
-    assert_equal count, 1
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(2, /Right align/, xpos1) # Header
+    assert_not_nil xpos2
+    assert_equal 1, count_text
+    assert_equal xpos1, xpos2
+    assert_equal 10, count_line
+    count_line, count_text, xpos2 = pdf.get_html_text_position_x(2, /\(6\)/, xpos1)
+    assert_not_nil xpos2
+    assert_equal 1, count_text
+    assert_equal xpos1, xpos2
+    assert_equal 10, count_line
   end
 
   test "write_html_cell Table thead tag cellpadding y position test 1" do
@@ -426,57 +319,26 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.write_html_cell(0, 0, '', '',tablehtml)
 
     # Page 1
-    content = []
-    contents = pdf.getPageBuffer(1)
-    contents.each_line {|line| content.push line.chomp }
-    count_text = count_head = count = 0
-    pos1 = pos2 = -1
-    content.each do |line|
-      count_text += 1 if line =~ /TJ ET Q$/
-      if line =~ /Left align/
-        count_head += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos1 = $2
-        assert_not_nil pos1
-      end
-      if line =~ /AAA/
-        count += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $2 if pos2 == -1
-        assert_not_nil pos2
-      end
-    end
-
-    assert_equal count_text, 65
-    assert_equal count_head, 1
-    assert_equal count, 20
-    base_pos = pos1.to_i - pos2.to_i
+    count_line, count_text, ypos1 = pdf.get_html_text_position_y(1, /Left align/) # Header
+    assert_not_nil ypos1
+    assert_equal 1, count_text
+    assert_equal 65, count_line
+    count_line, count_text, ypos2 = pdf.get_html_text_position_y(1, /AAA/)
+    assert_not_nil ypos2
+    assert_equal 20, count_text
+    assert_equal 65, count_line
+    base_pos = ypos1.to_i - ypos2.to_i
 
     # Page 2
-    content = []
-    contents = pdf.getPageBuffer(2)
-    contents.each_line {|line| content.push line.chomp }
-    count_text = count_head = count = 0
-    pos1 = pos2 = -1
-    content.each do |line|
-      count_text += 1 if line =~ /TJ ET Q$/
-      if line =~ /Left align/
-        count_head += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos1 = $2
-        assert_not_nil pos1
-      end
-      if line =~ /AAA/
-        count += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $2 if pos2 == -1
-        assert_not_nil pos2
-      end
-    end
-    assert_equal count_text, 34
-    assert_equal count_head, 1
-    assert_equal count, 10
-    assert_equal base_pos, pos1.to_i - pos2.to_i
+    count_line, count_text, ypos1 = pdf.get_html_text_position_y(2, /Left align/) # Header
+    assert_not_nil ypos2
+    assert_equal 1, count_text
+    assert_equal 34, count_line
+    count_line, count_text, ypos2 = pdf.get_html_text_position_y(2, /AAA/)
+    assert_not_nil ypos2
+    assert_equal 10, count_text
+    assert_equal 34, count_line
+    assert_equal base_pos, ypos1.to_i - ypos2.to_i
   end
 
   test "write_html_cell Table thead tag cellpadding y position test 2" do
@@ -493,57 +355,26 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.write_html_cell(0, 0, '', '',tablehtml)
 
     # Page 1
-    content = []
-    contents = pdf.getPageBuffer(1)
-    contents.each_line {|line| content.push line.chomp }
-    count_text = count_head = count = 0
-    pos1 = pos2 = -1
-    content.each do |line|
-      count_text += 1 if line =~ /TJ ET Q$/
-      if line =~ /Left align/
-        count_head += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos1 = $2
-        assert_not_nil pos1
-      end
-      if line =~ /AAA/
-        count += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $2 if pos2 == -1
-        assert_not_nil pos2
-      end
-    end
-
-    assert_equal count_text, 66
-    assert_equal count_head, 1
-    assert_equal count, 20
-    base_pos = pos1.to_i - pos2.to_i
+    count_line, count_text, ypos1 = pdf.get_html_text_position_y(1, /Left align/) # Header
+    assert_not_nil ypos1
+    assert_equal 1, count_text
+    assert_equal 66, count_line
+    count_line, count_text, ypos2 = pdf.get_html_text_position_y(1, /AAA/)
+    assert_not_nil ypos2
+    assert_equal 20, count_text
+    assert_equal 66, count_line
+    base_pos = ypos1.to_i - ypos2.to_i
 
     # Page 2
-    content = []
-    contents = pdf.getPageBuffer(2)
-    contents.each_line {|line| content.push line.chomp }
-    count_text = count_head = count = 0
-    pos1 = pos2 = -1
-    content.each do |line|
-      count_text += 1 if line =~ /TJ ET Q$/
-      if line =~ /Left align/
-        count_head += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos1 = $2
-        assert_not_nil pos1
-      end
-      if line =~ /AAA/
-        count += 1
-        line =~ /BT ([0-9.]+) ([0-9.]+) Td/
-        pos2 = $2 if pos2 == -1
-        assert_not_nil pos2
-      end
-    end
-    assert_equal count_text, 34
-    assert_equal count_head, 1
-    assert_equal count, 10
-    assert_equal base_pos, pos1.to_i - pos2.to_i
+    count_line, count_text, ypos1 = pdf.get_html_text_position_y(2, /Left align/) # Header
+    assert_not_nil ypos2
+    assert_equal 1, count_text
+    assert_equal 34, count_line
+    count_line, count_text, ypos2 = pdf.get_html_text_position_y(2, /AAA/)
+    assert_not_nil ypos2
+    assert_equal 10, count_text
+    assert_equal 34, count_line
+    assert_equal base_pos, ypos1.to_i - ypos2.to_i
   end
 
   test "write_html ASCII text test" do
@@ -560,11 +391,11 @@ class RbpdfTest < Test::Unit::TestCase
     contents = pdf.getPageBuffer(1)
     contents.each_line {|line| content.push line.chomp }
 
-    count = 0
+    count_text = 0
     content.each do |line|
-      count += 1 unless line.scan(text).empty?
+      count_text += 1 unless line.scan(text).empty?
     end
-    assert_equal count, 1
+    assert_equal count_text, 1
   end
 
   test "write_html Non ASCII text test" do
@@ -584,12 +415,12 @@ class RbpdfTest < Test::Unit::TestCase
 
     text = 'HTML Example ' + "\x83\x86"
     text.force_encoding('ASCII-8BIT') if text.respond_to?(:force_encoding)
-    count = 0
+    count_text = 0
     content.each do |line|
       line.force_encoding('ASCII-8BIT') if line.respond_to?(:force_encoding)
-      count += 1 unless line.scan(text).empty?
+      count_text += 1 unless line.scan(text).empty?
     end
-    assert_equal count, 1
+    assert_equal count_text, 1
   end
 
   test "works internal links out of page range" do
