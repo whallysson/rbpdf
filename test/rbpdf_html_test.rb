@@ -1,9 +1,24 @@
+# coding: ASCII-8BIT
 require 'test_helper'
 
 class RbpdfTest < Test::Unit::TestCase
   class MYPDF < RBPDF
     def getPageBuffer(page)
       super
+    end
+
+    # get text from pdf page
+    def get_html_text(page)
+      content = []
+      contents = getPageBuffer(page)
+      contents.each_line {|line| content.push line.chomp }
+      pdf_text = ''
+      content.each do |line|
+        if line =~ /\[\((.*)\)\] TJ ET/
+          pdf_text << $1
+        end
+      end
+      return pdf_text
     end
   end
 
@@ -593,4 +608,142 @@ class RbpdfTest < Test::Unit::TestCase
     end
   end
 
+  test "write_html <b> tag test" do
+    pdf = MYPDF.new
+    pdf.set_print_header(false)
+    pdf.add_page()
+
+    text = ' ' + 'A' * 70
+    htmlcontent = '<b>' + text + '</b>'
+
+    pdf.write_html(htmlcontent, true, 0, true, 0)
+    pdf_text = pdf.get_html_text(1)
+    assert_equal 'A' * 70, pdf_text
+  end
+
+  test "write_html <i> tag test" do
+    pdf = MYPDF.new
+    pdf.set_print_header(false)
+    pdf.add_page()
+
+    text = ' ' + 'A' * 70
+    htmlcontent = '<i>' + text + '</i>'
+
+    pdf.write_html(htmlcontent, true, 0, true, 0)
+    pdf_text = pdf.get_html_text(1)
+    assert_equal 'A' * 70, pdf_text
+  end
+
+  test "write_html <u> tag test" do
+    pdf = MYPDF.new
+    pdf.set_print_header(false)
+    pdf.add_page()
+
+    text = ' ' + 'A' * 70
+    htmlcontent = '<u>' + text + '</u>'
+
+    pdf.write_html(htmlcontent, true, 0, true, 0)
+    pdf_text = pdf.get_html_text(1)
+    assert_equal 'A' * 70, pdf_text
+  end
+
+  test "write_html <pre> tag space 1 test" do
+    pdf = MYPDF.new
+    pdf.set_print_header(false)
+    pdf.add_page()
+
+    text = ' ' + 'A' * 70
+    htmlcontent = '<pre>' + text + '</pre>'
+
+    pdf.write_html(htmlcontent, true, 0, true, 0)
+    pdf_text = pdf.get_html_text(1)
+    assert_equal "\xa0" + 'A' * 70, pdf_text
+  end
+
+  test "write_html <pre> tag space 2 test" do
+    pdf = MYPDF.new
+    pdf.set_print_header(false)
+    pdf.add_page()
+
+    text = '  ' + 'A' * 70
+    htmlcontent = '<pre>' + text + '</pre>'
+
+    pdf.write_html(htmlcontent, true, 0, true, 0)
+    pdf_text = pdf.get_html_text(1)
+    assert_equal "\xa0" * 2 + 'A' * 70, pdf_text
+  end
+
+  test "write_html Character Entities test" do
+    pdf = MYPDF.new
+    pdf.set_print_header(false)
+
+    character_entities = {
+      '&lt;'    => '<',
+      '&gt;'    => '>',
+      '&amp;'   => '&',
+      '&quot;'  => '"',
+      '&nbsp;'  => "\xa0",
+      '&cent;'  => "\xa2",
+      '&pound;' => "\xa3",
+      '&yen;'   => "\xa5",
+      '&copy;'  => "\xa9",
+      '&reg;'   => "\xae",
+      '&euro;'  => "\x80",
+    }
+    character_entities.each {|ce, c|
+      pdf.add_page()
+      page = pdf.get_page
+      pdf.write_html(ce, true, 0, true, 0)
+      pdf_text = pdf.get_html_text(page)
+      assert_equal '[' + ce + ']:' + c, '[' + ce + ']:' + pdf_text
+    }
+  end
+
+  test "write_html Character Entities test pre mode" do
+    pdf = MYPDF.new
+    pdf.set_print_header(false)
+
+    character_entities = {
+      '&lt;'    => '<',
+      '&gt;'    => '>',
+      '&amp;'   => '&',
+      '&quot;'  => '"',
+      '&nbsp;'  => "\xa0",
+      '&cent;'  => "\xa2",
+      '&pound;' => "\xa3",
+      '&yen;'   => "\xa5",
+      '&copy;'  => "\xa9",
+      '&reg;'   => "\xae",
+      '&euro;'  => "\x80",
+    }
+    character_entities.each {|ce, c|
+      pdf.add_page()
+      page = pdf.get_page
+      pdf.write_html('<pre>' + ce + '</pre>', true, 0, true, 0)
+      pdf_text = pdf.get_html_text(page)
+      assert_equal '[' + ce + ']:' + c, '[' + ce + ']:' + pdf_text
+    }
+  end
+
+  test "unhtmlentities test" do
+    pdf = RBPDF.new
+    character_entities = {
+      '&lt;'    => '<',
+      '&gt;'    => '>',
+      '&amp;'   => '&',
+      '&quot;'  => '"',
+      '&nbsp;'  => "\xc2\xa0",
+      '&cent;'  => "\xc2\xa2",
+      '&pound;' => "\xc2\xa3",
+      '&yen;'   => "\xc2\xa5",
+      '&copy;'  => "\xc2\xa9",
+      '&reg;'   => "\xc2\xae",
+      '&euro;'  => "\xe2\x82\xac",
+    }
+    character_entities.each {|ce, c|
+      text = pdf.unhtmlentities(ce)
+      text.force_encoding('ASCII-8BIT') if text.respond_to?(:force_encoding)
+      assert_equal '[' + ce + ']:' + c, '[' + ce + ']:' + text
+    }
+  end
 end
