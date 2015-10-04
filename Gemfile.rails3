@@ -5,3 +5,4 @@ gemspec
 
 gem "actionpack", "~> 3.2.22"
 gem "i18n", "~> 0.6.11"
+gem "rack-cache", "~> 1.2.0"
