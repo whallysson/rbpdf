@@ -225,7 +225,7 @@ class RbpdfTest < ActiveSupport::TestCase
     pdf.add_page
     img_file = File.join(File.dirname(__FILE__), 'png_test_alpha.png')
     info = pdf.image(img_file, 10, 10, 100, '', '', 'https://rubygems.org/gems/rbpdf', '', false, 300)
-    assert_equal info, nil
+    assert_equal info, true
   end
 
   test "Image GIF test" do
@@ -256,5 +256,40 @@ class RbpdfTest < ActiveSupport::TestCase
     img_file = File.join(File.dirname(__FILE__), 'logo_rbpdf_8bit.jpg')
     info = pdf.image(img_file, 10, 10, 100, '', '', 'https://rubygems.org/gems/rbpdf', '', false, 300)
     assert_equal info, 1
+  end
+
+  test "HTML Image test" do
+    return unless Object.const_defined?(:Magick)
+
+    images = {
+      'png_test_alpha.png'        => 40.11,
+      'png_test_msk_alpha.png'    => 40.11,
+      'png_test_non_alpha.png'    => 40.11,
+      'logo_rbpdf_8bit.png'       => 36.58,
+      'logo_rbpdf_8bit.gif'       => 36.58,
+      'logo_rbpdf_8bit_alpha.gif' => 36.58,
+      'logo_rbpdf_8bit.jpg'       => 36.58,
+      'logo_rbpdf_mono_gray.jpg'  => 36.58,
+      'logo_rbpdf_mono_gray.png'  => 36.58,
+      'logo_rbpdf_mono_rgb.jpg'   => 36.58,
+      'logo_rbpdf_mono_rgb.png'   => 36.58,
+      'ng.png'                    => 9.42
+    }
+
+    pdf = RBPDF.new
+    images.each {|image, h|
+      pdf.add_page
+      img_file = File.join(File.dirname(__FILE__), image)
+      htmlcontent = '<img src="'+ img_file + '"/>'
+
+      x_org = pdf.get_x
+      y_org = pdf.get_y
+      pdf.write_html(htmlcontent, true, 0, true, 0)
+      x = pdf.get_x
+      y = pdf.get_y
+
+      assert_equal '[' + image + ']:' + x_org.to_s, '[' + image + ']:' + x.to_s
+      assert_equal '[' + image + ']:' + (y_org + h).round(2).to_s, '[' + image + ']:' + y.round(2).to_s
+    }
   end
 end

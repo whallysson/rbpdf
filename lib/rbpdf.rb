@@ -4930,7 +4930,7 @@ class RBPDF
         if info == 'pngalpha' and ismask == false and Object.const_defined?(:Magick)
           info = ImagePngAlpha(file, x, y, w, h, 'PNG', link, align, resize, dpi, palign)
           if false != info
-            return
+            return true
           end
         end
       end
@@ -5274,6 +5274,8 @@ class RBPDF
     # remove temp files
     tempfile_alpha.delete
     tempfile_plain.delete
+
+    return true
   end
   protected :ImagePngAlpha
 
