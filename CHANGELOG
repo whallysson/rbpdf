@@ -1,3 +1,7 @@
+1.18.7 2015-10-18
+       - Fixed case of missing HTML <pre> tag texts with whitespace. (use htmlentities gem liblary.)
+       - Fixed HTML Image function y position problem with png alpha image.
+
 1.18.6 2015-06-20
        - Fixed page boxes problem for iOS.
        - The dependence to the Rails environment was reduced.

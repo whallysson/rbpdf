@@ -4931,7 +4931,7 @@ class RBPDF
         if info == 'pngalpha' and ismask == false and Object.const_defined?(:Magick)
           info = ImagePngAlpha(file, x, y, w, h, 'PNG', link, align, resize, dpi, palign)
           if false != info
-            return
+            return true
           end
         end
       end
@@ -5275,6 +5275,8 @@ class RBPDF
     # remove temp files
     tempfile_alpha.delete
     tempfile_plain.delete
+
+    return true
   end
   protected :ImagePngAlpha
 
@@ -10738,6 +10740,10 @@ protected
       while html_b =~ /<xre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi
         # preserve newlines on <pre> tag
         html_b = html_b.gsub(/<xre([^\>]*)>(.*?)\n(.*?)<\/pre>/mi, "<xre\\1>\\2<br />\\3</pre>")
+      end
+      while html_b =~ /<xre([^\>]*)>(.*?)[\s](.*?)<\/pre>/mi
+        # preserve whitespace on <pre> tag
+        html_b = html_b.gsub(/<xre([^\>]*)>(.*?)[\s](.*?)<\/pre>/mi, "<xre\\1>\\2&nbsp;\\3</pre>")
       end
       html = html_a + html_b + html[(pos + 6)..-1]
       offset = (html_a + html_b).length
