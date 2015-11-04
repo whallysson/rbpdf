@@ -27,11 +27,6 @@ RBPDF is distributed via RubyGems, and can be installed the usual way that you i
 
 ==
 
-If you are using HTML, it is recommended you install:
-```
-gem install htmlentities
-```
-
 If you are using image file, it is recommended you install:
 ```
 gem install rmagick
