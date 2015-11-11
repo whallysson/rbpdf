@@ -49,6 +49,7 @@
 require "rbpdf/version"
 
 require 'htmlentities'
+require 'rbpdf-font' 
 
 begin
   # RMagick 2.14.0
@@ -79,20 +80,6 @@ require 'uri'
 
 
 PDF_PRODUCER = 'RBPDF 5.2.000'
-
-module RBPDFFontDescriptor
-  @@descriptors = { 'freesans' => {} }
-  @@font_name = 'freesans'
-
-  def self.font(font_name)
-    @@descriptors[font_name.gsub(".rb", "")]
-  end
-
-  def self.define(font_name = 'freesans')
-    @@descriptors[font_name] ||= {}
-    yield @@descriptors[font_name]
-  end
-end
 
 # == This is a Ruby class for generating PDF files on-the-fly without requiring external extensions.
 # * This class is a Ruby port of the TCPDF class by Nicola Asuni (http://www.tcpdf.org).
@@ -281,6 +268,8 @@ class RBPDF
       @@k_path_main = Dir.tmpdir
       @@k_path_url = Dir.tmpdir
     end
+
+    @@k_path_fonts = RBPDFFontDescriptor.getfontpath
 
     # set disk caching
     @diskcache = diskcache ? true : false
