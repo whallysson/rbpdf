@@ -25,8 +25,11 @@ matrix:
       gemfile: Gemfile.rails4_rmagick
 install:
   - bundle install
+env:
+  - TEST_DIR=rbpdf-font
+  - TEST_DIR=.
 script:
-  - bundle exec rake test
+  - cd $TEST_DIR && bundle exec rake test
 gemfile:
   - Gemfile.rails3
   - Gemfile.rails3_rmagick

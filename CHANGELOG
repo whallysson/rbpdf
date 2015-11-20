@@ -1,3 +1,19 @@
+1.19.0 2015-11-20
+       - Update base version to TCPDF 5.2.000.
+       - IMPORTANT: Support for font subsetting was added by default to reduce the size of documents using large unicode font files.
+           If you embed the whole font in the PDF, the person on the other end can make changes to it even if he didn't have your font.
+           If you subset the font, file size of the PDF will be smaller but the person who receives your PDF would need to have your same font in order to make changes to your PDF.
+       - The signature of the SetFont() and AddFont() methods were changed to include the font subsetting option (subsetting is applied by default).
+       - html anchors support. (by Oleg German)
+       - Test framework is changed to test-unit.
+           This particular error will occur when the test suite is run from outside a Rails environment.
+           Support the test suite is run from outside a Rails environment.
+       - Fonts file was separated in rbpdf-font.gem.
+
+1.18.7 2015-10-18
+       - Fixed case of missing HTML <pre> tag texts with whitespace. (use htmlentities gem liblary.)
+       - Fixed HTML Image function y position problem with png alpha image.
+
 1.18.6 2015-06-20
        - Fixed page boxes problem for iOS.
        - The dependence to the Rails environment was reduced.

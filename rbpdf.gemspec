@@ -15,9 +15,6 @@ Gem::Specification.new do |spec|
   spec.files         = Dir.glob("lib/rbpdf/version.rb") +
                        Dir.glob("lib/*.rb") +
                        Dir.glob("lib/core/rmagick.rb") +
-                       Dir.glob("lib/fonts/*.{rb,z}") +
-                       Dir.glob("lib/fonts/freefont-*/*") +
-                       Dir.glob("lib/fonts/dejavu-fonts-ttf-*/{AUTHORS,BUGS,LICENSE,NEWS,README}") +
                        Dir.glob("test/*") +
                        ["Rakefile", "rbpdf.gemspec", "Gemfile",
                         "CHANGELOG", "test_unicode.rbpdf", "README.md", "LICENSE.TXT",
@@ -31,6 +28,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency "htmlentities", "= 4.3.1"
+  spec.add_runtime_dependency "rbpdf-font", "~> 1.19.0"
+  spec.required_ruby_version = '>= 1.8.7'
 
   spec.add_development_dependency "bundler", "~> 1.6"
   spec.add_development_dependency "rake"
