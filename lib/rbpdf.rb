@@ -2771,7 +2771,7 @@ class RBPDF
     elsif font_desc[:type] == 'TrueTypeUnicode'
       font_desc[:enc] = 'Identity-H'
     else
-      Error('Unknow font type: ' + type + '')
+      Error('Unknow font type: ' + font_desc[:type] + '')
     end
     # initialize subsetchars to contain default ASCII values (0-255)
     subsetchars = Array.new(256, true)
@@ -7065,8 +7065,6 @@ protected
         end
         out << ' >> endobj'
         out(out)
-      elsif type == 'Type0'
-        putType0(font)
       elsif (type=='Type1' || type=='TrueType')
         # additional Type1 or TrueType font
         obj_id = newobj()
@@ -7118,46 +7116,6 @@ protected
         @font_obj_ids[k] = obj_id
       end
     end
-  end
-
-
-  def putType0(font)
-    # Type0
-    newobj()
-    out('<</Type /Font')
-    out('/Subtype /Type0')
-    out('/BaseFont /'+font['name']+'-'+font['cMap'])
-    out('/Encoding /'+font['cMap'])
-    out('/DescendantFonts ['+(@n+1).to_s+' 0 R]')
-    out('>>')
-    out('endobj')
-    # CIDFont
-    newobj()
-    out('<</Type /Font')
-    out('/Subtype /CIDFontType0')
-    out('/BaseFont /'+font['name'])
-    out('/CIDSystemInfo <</Registry (Adobe) /Ordering ('+font['registry']['ordering']+') /Supplement '+font['registry']['supplement'].to_s+'>>')
-    out('/FontDescriptor '+(@n+1).to_s+' 0 R')
-    w='/W [1 ['
-    font['cw'].keys.sort.each {|key|
-      w+=font['cw'][key].to_s + " "
-    }
-    out(w+'] 231 325 500 631 [500] 326 389 500]')
-    out('>>')
-    out('endobj')
-    # Font descriptor
-    newobj()
-    out('<</Type /FontDescriptor')
-    out('/FontName /'+font['name'])
-    out('/Flags 6')
-    out('/FontBBox [0 -200 1000 900]')
-    out('/ItalicAngle 0')
-    out('/Ascent 800')
-    out('/Descent -200')
-    out('/CapHeight 800')
-    out('/StemV 60')
-    out('>>')
-    out('endobj')
   end
 
   #
