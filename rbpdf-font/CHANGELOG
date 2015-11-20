@@ -5,4 +5,5 @@
            makefont.rb was update.(replaced by makefontuni_ruby.php)
            makeallttffonts.rb added.
        - DejaVu fonts were updated to latest version.(2.33 -> 2.35)
+           DejaVu SansMono, DejaVu Serif fonts was added.
 
