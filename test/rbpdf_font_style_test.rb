@@ -1,7 +1,6 @@
 require 'test_helper'
 
-class RbpdfFontStyleTest < ActiveSupport::TestCase
-
+class RbpdfFontStyleTest < Test::Unit::TestCase
   class MYPDF < RBPDF
     def dounderline(x, y, txt)
       super

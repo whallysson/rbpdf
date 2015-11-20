@@ -1,0 +1,36 @@
+language: ruby
+rvm:
+  - 1.8.7
+  - 1.9.2
+  - 1.9.3
+  - 2.0
+  - 2.1
+  - 2.2
+  - jruby
+matrix:
+  allow_failures:
+    - rvm: 1.8.7
+      gemfile: Gemfile.rails4
+    - rvm: 1.8.7
+      gemfile: Gemfile.rails4_rmagick
+    - rvm: 1.9.2
+      gemfile: Gemfile.rails4
+    - rvm: 1.9.2
+      gemfile: Gemfile.rails4_rmagick
+    - rvm: jruby
+      gemfile: Gemfile.rails3_rmagick
+    - rvm: jruby
+      gemfile: Gemfile.rails4
+    - rvm: jruby
+      gemfile: Gemfile.rails4_rmagick
+install:
+  - bundle install
+script:
+  - bundle exec rake test
+gemfile:
+  - Gemfile.rails3
+  - Gemfile.rails3_rmagick
+  - Gemfile.rails4
+  - Gemfile.rails4_rmagick
+notifications:
+  email: false

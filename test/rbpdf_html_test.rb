@@ -1,7 +1,7 @@
 # coding: ASCII-8BIT
 require 'test_helper'
 
-class RbpdfTest < ActiveSupport::TestCase
+class RbpdfTest < Test::Unit::TestCase
   class MYPDF < RBPDF
     def getPageBuffer(page)
       super

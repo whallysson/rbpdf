@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class RbpdfFontFuncTest < ActiveSupport::TestCase
+class RbpdfFontFuncTest < Test::Unit::TestCase
   class MYPDF < RBPDF
     def putAPXObject(w=0, h=0, stream='')
       super
