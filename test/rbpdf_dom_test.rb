@@ -18,104 +18,104 @@ class RbpdfTest < Test::Unit::TestCase
 
     # Simple Text
     dom = pdf.getHtmlDomArray('abc')
-    assert_equal 0, dom[0]['parent']  # Root
+    assert_equal 0,     dom[0]['parent'] # Root
     assert_equal false, dom[0]['tag']
     assert_equal({'tag'=>false, 'value'=>'abc', 'elkey'=>0, 'parent'=>0, 'block'=>false}, dom[1])
 
     # Simple Tag
     dom = pdf.getHtmlDomArray('<b>abc</b>')
-    assert_equal dom.length, 4
+    assert_equal 4,     dom.length
 
-    assert_equal 0, dom[0]['parent']  # Root
+    assert_equal 0,     dom[0]['parent']  # Root
     assert_equal false, dom[0]['tag']
-    assert_equal({}, dom[0]['attribute'])
+    assert_equal({},    dom[0]['attribute'])
 
-    assert_equal dom[1]['parent'], 0   # parent -> parent tag key
-    assert_equal dom[1]['elkey'], 0
-    assert_equal dom[1]['tag'], true
-    assert_equal dom[1]['opening'], true
-    assert_equal dom[1]['value'], 'b'
-    assert_equal dom[1]['attribute'], {}
+    assert_equal 0,     dom[1]['parent'] # parent -> parent tag key
+    assert_equal 0,     dom[1]['elkey']
+    assert_equal true,  dom[1]['tag']
+    assert_equal true,  dom[1]['opening']
+    assert_equal 'b',   dom[1]['value']
+    assert_equal({},    dom[1]['attribute'])
 
     assert_equal({'tag' => false, 'value'=>'abc', 'elkey'=>1, 'parent'=>1, 'block'=>false}, dom[2])  # parent -> open tag key
 
-    assert_equal dom[3]['parent'], 1   # parent -> open tag key
-    assert_equal dom[3]['elkey'], 2
-    assert_equal dom[3]['tag'], true
-    assert_equal dom[3]['opening'], false
-    assert_equal dom[3]['value'], 'b'
+    assert_equal 1,     dom[3]['parent'] # parent -> open tag key
+    assert_equal 2,     dom[3]['elkey']
+    assert_equal true,  dom[3]['tag']
+    assert_equal false, dom[3]['opening']
+    assert_equal 'b',   dom[3]['value']
 
     # Error Tag (doble colse tag)
     dom = pdf.getHtmlDomArray('</ul></div>')
 
-    assert_equal 0, dom[0]['parent']  # Root
+    assert_equal 0,     dom[0]['parent']  # Root
     assert_equal false, dom[0]['tag']
-    assert_equal({}, dom[0]['attribute'])
+    assert_equal({},    dom[0]['attribute'])
 
     if dom.length == 3 # for Rails 3.x/4.0/4.1 (no use Rails 4.2 later)
-      assert_equal dom[1]['parent'], 0   # parent -> Root key
-      assert_equal dom[1]['elkey'], 0
-      assert_equal dom[1]['tag'], true
-      assert_equal dom[1]['opening'], false
-      assert_equal dom[1]['value'], 'ul'
+      assert_equal 0,     dom[1]['parent'] # parent -> Root key
+      assert_equal 0,     dom[1]['elkey']
+      assert_equal true,  dom[1]['tag']
+      assert_equal false, dom[1]['opening']
+      assert_equal 'ul',  dom[1]['value']
 
-      assert_equal dom[2]['parent'], 0   # parent -> Root key
-      assert_equal dom[2]['elkey'], 1
-      assert_equal dom[2]['tag'], true
-      assert_equal dom[2]['opening'], false
-      assert_equal dom[2]['value'], 'div'
+      assert_equal 0,     dom[2]['parent'] # parent -> Root key
+      assert_equal 1,     dom[2]['elkey']
+      assert_equal true,  dom[2]['tag']
+      assert_equal false, dom[2]['opening']
+      assert_equal 'div', dom[2]['value']
     end
 
     # Attribute
     dom = pdf.getHtmlDomArray('<p style="text-align:justify">abc</p>')
-    assert_equal dom.length, 4
+    assert_equal 4,     dom.length
 
-    assert_equal 0, dom[0]['parent']  # Root
+    assert_equal 0,     dom[0]['parent'] # Root
     assert_equal false, dom[0]['tag']
-    assert_equal({}, dom[0]['attribute'])
+    assert_equal({},    dom[0]['attribute'])
 
-    assert_equal dom[1]['parent'], 0   # parent -> parent tag key
-    assert_equal dom[1]['elkey'], 0
-    assert_equal dom[1]['tag'], true
-    assert_equal dom[1]['opening'], true
-    assert_equal dom[1]['value'], 'p'
+    assert_equal 0,     dom[1]['parent'] # parent -> parent tag key
+    assert_equal 0,     dom[1]['elkey']
+    assert_equal true,  dom[1]['tag']
+    assert_equal true,  dom[1]['opening']
+    assert_equal 'p',   dom[1]['value']
     assert_not_nil dom[1]['attribute']
-    assert_equal dom[1]['attribute']['style'].gsub(' ', ''), 'text-align:justify;'
-    assert_equal dom[1]['align'], 'J'
+    assert_equal 'text-align:justify;', dom[1]['attribute']['style'].gsub(' ', '')
+    assert_equal 'J',   dom[1]['align']
 
     # Table border
     dom = pdf.getHtmlDomArray('<table border="1"><tr><td>abc</td></tr></table>')
     ## added marker tag (by getHtmlDomArray()) ##
     # '<table border="1"><tr><td>abc<marker style="font-size:0"/></td></tr></table>'
-    assert_equal dom.length, 9
+    assert_equal 9,             dom.length
 
-    assert_equal dom[1]['parent'], 0   # parent -> parent tag key
-    assert_equal dom[1]['elkey'], 0
-    assert_equal dom[1]['tag'], true
-    assert_equal dom[1]['opening'], true
-    assert_equal dom[1]['value'], 'table'
-    assert_equal dom[1]['attribute']['border'], '1'
+    assert_equal 0,             dom[1]['parent'] # parent -> parent tag key
+    assert_equal 0,             dom[1]['elkey']
+    assert_equal true,          dom[1]['tag']
+    assert_equal true,          dom[1]['opening']
+    assert_equal 'table',       dom[1]['value']
+    assert_equal '1',           dom[1]['attribute']['border']
 
     ## marker tag (by getHtmlDomArray())
-    assert_equal dom[5]['parent'], 3   # parent -> parent tag key
-    assert_equal dom[5]['elkey'], 4
-    assert_equal dom[5]['tag'], true
-    assert_equal dom[5]['opening'], true
-    assert_equal dom[5]['value'], 'marker'
-    assert_equal dom[5]['attribute']['style'], 'font-size:0'
+    assert_equal 3,             dom[5]['parent'] # parent -> parent tag key
+    assert_equal 4,             dom[5]['elkey']
+    assert_equal true,          dom[5]['tag']
+    assert_equal true,          dom[5]['opening']
+    assert_equal 'marker',      dom[5]['value']
+    assert_equal 'font-size:0', dom[5]['attribute']['style']
 
     # Table td Width
     dom = pdf.getHtmlDomArray('<table><tr><td width="10">abc</td></tr></table>')
     ## added marker tag (by getHtmlDomArray()) ##
     # '<table><tr><td width="10">abc<marker style="font-size:0"/></td></tr></table>'
-    assert_equal dom.length, 9
+    assert_equal 9,    dom.length
 
-    assert_equal dom[3]['parent'], 2   # parent -> parent tag key
-    assert_equal dom[3]['elkey'], 2
-    assert_equal dom[3]['tag'], true
-    assert_equal dom[3]['opening'], true
-    assert_equal dom[3]['value'], 'td'
-    assert_equal dom[3]['width'], '10'
+    assert_equal 2,     dom[3]['parent'] # parent -> parent tag key
+    assert_equal 2,     dom[3]['elkey']
+    assert_equal true,  dom[3]['tag']
+    assert_equal true,  dom[3]['opening']
+    assert_equal 'td',  dom[3]['value']
+    assert_equal '10',  dom[3]['width']
   end
 
   test "Dom self close tag test" do
@@ -123,40 +123,40 @@ class RbpdfTest < Test::Unit::TestCase
 
     # Simple Tag
     dom = pdf.getHtmlDomArray('<b>ab<br>c</b>')
-    assert_equal dom.length, 6
+    assert_equal 6,     dom.length
 
-    assert_equal 0, dom[0]['parent']  # Root
+    assert_equal 0,     dom[0]['parent'] # Root
     assert_equal false, dom[0]['tag']
-    assert_equal({}, dom[0]['attribute'])
+    assert_equal({},    dom[0]['attribute'])
 
     # <b>
-    assert_equal dom[1]['parent'], 0   # parent -> parent tag key
-    assert_equal dom[1]['elkey'], 0
-    assert_equal dom[1]['tag'], true
-    assert_equal dom[1]['opening'], true
-    assert_equal dom[1]['value'], 'b'
-    assert_equal dom[1]['attribute'], {}
+    assert_equal 0,     dom[1]['parent'] # parent -> parent tag key
+    assert_equal 0,     dom[1]['elkey']
+    assert_equal true,  dom[1]['tag']
+    assert_equal true,  dom[1]['opening']
+    assert_equal 'b',   dom[1]['value']
+    assert_equal({},    dom[1]['attribute'])
 
     # ab
     assert_equal({'tag' => false, 'value'=>'ab', 'elkey'=>1, 'parent'=>1, 'block'=>false}, dom[2])  # parent -> open tag key
 
     # <br>
-    assert_equal dom[3]['parent'], 1   # parent -> open tag key
-    assert_equal dom[3]['elkey'], 2
-    assert_equal dom[3]['tag'], true
-    assert_equal dom[3]['opening'], true
-    assert_equal dom[3]['value'], 'br'
-    assert_equal dom[3]['attribute'], {}
+    assert_equal 1,     dom[3]['parent'] # parent -> open tag key
+    assert_equal 2,     dom[3]['elkey']
+    assert_equal true,  dom[3]['tag']
+    assert_equal true,  dom[3]['opening']
+    assert_equal 'br',  dom[3]['value']
+    assert_equal({},    dom[3]['attribute'])
 
     # c
     assert_equal({'tag' => false, 'value'=>'c', 'elkey'=>3, 'parent'=>1, 'block'=>false}, dom[4])  # parent -> open tag key
 
     # </b>
-    assert_equal dom[5]['parent'], 1   # parent -> open tag key
-    assert_equal dom[5]['elkey'], 4
-    assert_equal dom[5]['tag'], true
-    assert_equal dom[5]['opening'], false
-    assert_equal dom[5]['value'], 'b'
+    assert_equal 1,     dom[5]['parent'] # parent -> open tag key
+    assert_equal 4,     dom[5]['elkey']
+    assert_equal true,  dom[5]['tag']
+    assert_equal false, dom[5]['opening']
+    assert_equal 'b',   dom[5]['value']
 
     dom2 = pdf.getHtmlDomArray('<b>ab<br/>c</b>')
     assert_equal dom, dom2
@@ -187,83 +187,83 @@ class RbpdfTest < Test::Unit::TestCase
     pdf = MYPDF.new
     pdf.add_page
     temprtl = pdf.get_temp_rtl
-    assert_equal temprtl, false
+    assert_equal false, temprtl
 
     # LTR, ltr
     htmlcontent = '<p dir="ltr">HTML Example</p>'
     dom = pdf.getHtmlDomArray(htmlcontent)
     dom = pdf.openHTMLTagHandler(dom, 1, false)
 
-    assert_equal dom[1]['tag'], true
-    assert_equal dom[1]['opening'], true
-    assert_equal dom[1]['value'], 'p'
-    assert_equal dom[1]['attribute']['dir'], 'ltr'
+    assert_equal true,  dom[1]['tag']
+    assert_equal true,  dom[1]['opening']
+    assert_equal 'p',   dom[1]['value']
+    assert_equal 'ltr', dom[1]['attribute']['dir']
 
     temprtl = pdf.get_temp_rtl
-    assert_equal temprtl, false
+    assert_equal false, temprtl
 
     # LTR, rtl
     htmlcontent = '<p dir="rtl">HTML Example</p>'
     dom = pdf.getHtmlDomArray(htmlcontent)
     dom = pdf.openHTMLTagHandler(dom, 1, false)
-    assert_equal dom.length, 4
+    assert_equal 4,     dom.length
 
-    assert_equal dom[1]['tag'], true
-    assert_equal dom[1]['opening'], true
-    assert_equal dom[1]['value'], 'p'
-    assert_equal dom[1]['attribute']['dir'], 'rtl'
+    assert_equal true,  dom[1]['tag']
+    assert_equal true,  dom[1]['opening']
+    assert_equal 'p',   dom[1]['value']
+    assert_equal 'rtl', dom[1]['attribute']['dir']
 
     temprtl = pdf.get_temp_rtl
-    assert_equal temprtl, 'R'
+    assert_equal 'R',   temprtl
 
     # LTR, ltr
     htmlcontent = '<p dir="ltr">HTML Example</p>'
     dom = pdf.getHtmlDomArray(htmlcontent)
     dom = pdf.openHTMLTagHandler(dom, 1, false)
 
-    assert_equal dom[1]['tag'], true
-    assert_equal dom[1]['opening'], true
-    assert_equal dom[1]['value'], 'p'
-    assert_equal dom[1]['attribute']['dir'], 'ltr'
+    assert_equal true,  dom[1]['tag']
+    assert_equal true,  dom[1]['opening']
+    assert_equal 'p',   dom[1]['value']
+    assert_equal 'ltr', dom[1]['attribute']['dir']
 
     temprtl = pdf.get_temp_rtl
-    assert_equal temprtl, false
+    assert_equal false, temprtl
   end
 
   test "Dom HTMLTagHandler DIR LTR test" do
     pdf = MYPDF.new
     pdf.add_page
     temprtl = pdf.get_temp_rtl
-    assert_equal temprtl, false
+    assert_equal false, temprtl
     pdf.set_rtl(true)
 
     # RTL, ltr
     htmlcontent = '<p dir="ltr">HTML Example</p>'
     dom = pdf.getHtmlDomArray(htmlcontent)
     dom = pdf.openHTMLTagHandler(dom, 1, false)
-    assert_equal dom.length, 4
+    assert_equal 4,     dom.length
 
-    assert_equal dom[1]['tag'], true
-    assert_equal dom[1]['opening'], true
-    assert_equal dom[1]['value'], 'p'
-    assert_equal dom[1]['attribute']['dir'], 'ltr'
+    assert_equal true,  dom[1]['tag']
+    assert_equal true,  dom[1]['opening']
+    assert_equal 'p',   dom[1]['value']
+    assert_equal 'ltr', dom[1]['attribute']['dir']
 
     temprtl = pdf.get_temp_rtl
-    assert_equal temprtl, 'L'
+    assert_equal 'L',   temprtl
 
     # RTL, rtl
     htmlcontent = '<p dir="rtl">HTML Example</p>'
     dom = pdf.getHtmlDomArray(htmlcontent)
     dom = pdf.openHTMLTagHandler(dom, 1, false)
-    assert_equal dom.length, 4
+    assert_equal 4,     dom.length
 
-    assert_equal dom[1]['tag'], true
-    assert_equal dom[1]['opening'], true
-    assert_equal dom[1]['value'], 'p'
-    assert_equal dom[1]['attribute']['dir'], 'rtl'
+    assert_equal true,  dom[1]['tag']
+    assert_equal true,  dom[1]['opening']
+    assert_equal 'p',   dom[1]['value']
+    assert_equal 'rtl', dom[1]['attribute']['dir']
 
     temprtl = pdf.get_temp_rtl
-    assert_equal temprtl, false
+    assert_equal false, temprtl
   end
 
   test "Dom HTMLTagHandler img y position with height attribute test" do
@@ -302,7 +302,7 @@ class RbpdfTest < Test::Unit::TestCase
 
     htmlcontent = "<p>AAA '<'-BBB << <<< '</' '<//' '<///' CCC.</p>"
     dom = pdf.getHtmlDomArray(htmlcontent)
-    assert_equal dom.length, 4
+    assert_equal 4,     dom.length
 
     assert_equal 0,     dom[0]['parent']  # Root
     assert_equal false, dom[0]['tag']
@@ -333,6 +333,6 @@ class RbpdfTest < Test::Unit::TestCase
     pdf = MYPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     htmlcontent = 'test'.force_encoding('ASCII-8BIT')
     dom = pdf.getHtmlDomArray(htmlcontent)
-    assert_equal htmlcontent.encoding.to_s, 'ASCII-8BIT'
+    assert_equal 'ASCII-8BIT', htmlcontent.encoding.to_s
   end
 end

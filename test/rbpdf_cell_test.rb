@@ -11,7 +11,7 @@ class RbpdfTest < Test::Unit::TestCase
     pdf = MYPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.add_page()
     code = pdf.getCellCode(10)
-    assert_equal code, "0.57 w 0 J 0 j [] 0 d 0 G 0 g\n"
+    assert_equal "0.57 w 0 J 0 j [] 0 d 0 G 0 g\n", code
     # 0.57 w 0 J 0 j [] 0 d 0 G 0 rg       # getCellCode
   end
 
@@ -22,8 +22,8 @@ class RbpdfTest < Test::Unit::TestCase
     contents = pdf.getCellCode(10, 10, 'abc', 'LTRB', 0, '', 0, 'http://example.com')
     contents.each_line {|line| content.push line.chomp }
 
-    assert_equal content.length,  2
-    assert_equal content[1], "28.35 813.83 m 28.35 784.91 l S 28.07 813.54 m 56.98 813.54 l S 56.70 813.83 m 56.70 784.91 l S 28.07 785.19 m 56.98 785.19 l S BT 31.19 795.17 Td 0 Tr 0.00 w [(abc)] TJ ET"
+    assert_equal 2, content.length
+    assert_equal "28.35 813.83 m 28.35 784.91 l S 28.07 813.54 m 56.98 813.54 l S 56.70 813.83 m 56.70 784.91 l S 28.07 785.19 m 56.98 785.19 l S BT 31.19 795.17 Td 0 Tr 0.00 w [(abc)] TJ ET", content[1]
     # 28.35 813.82 m 28.35 784.91 l S
     # 28.07 813.54 m 56.98 813.54 l S
     # 56.70 813.82 m 56.70 784.91 l S
@@ -42,8 +42,8 @@ class RbpdfTest < Test::Unit::TestCase
     contents = pdf.getCellCode(10, 10, 'abc', 0, 0, '', 0, 1)
     contents.each_line {|line| content.push line.chomp }
 
-    assert_equal content.length,  2
-    assert_equal content[1], "BT 31.19 795.17 Td 0 Tr 0.00 w [(abc)] TJ ET"
+    assert_equal 2, content.length
+    assert_equal "BT 31.19 795.17 Td 0 Tr 0.00 w [(abc)] TJ ET", content[1]
     # BT
     #    31.19 795.17 Td
     #    0 Tr 0.00 w
@@ -61,7 +61,7 @@ class RbpdfTest < Test::Unit::TestCase
     y1 = pdf.get_y
     pdf.multi_cell(w, 0, txt)
     pno = pdf.get_page
-    assert_equal pno, 1
+    assert_equal 1, pno
     y2 = pdf.get_y
     h1 = y2 - y1
 
@@ -69,13 +69,13 @@ class RbpdfTest < Test::Unit::TestCase
     assert_in_delta h1, h2, 0.01
 
     line = pdf.get_num_lines(txt, w)
-    assert_equal line, 1
+    assert_equal 1, line
 
     w = 20
     y1 = pdf.get_y
     pdf.multi_cell(w, 0, txt)
     pno = pdf.get_page
-    assert_equal pno, 1
+    assert_equal 1, pno
     y2 = pdf.get_y
     h1 = y2 - y1
 
@@ -83,7 +83,7 @@ class RbpdfTest < Test::Unit::TestCase
     assert_in_delta h1, h2, 0.01
 
     line = pdf.get_num_lines(txt, w)
-    assert_equal line, 1
+    assert_equal 1, line
   end
 
   test "getStringHeight Line Break test" do
@@ -96,7 +96,7 @@ class RbpdfTest < Test::Unit::TestCase
     y1 = pdf.get_y
     pdf.multi_cell(w, 0, txt)
     pno = pdf.get_page
-    assert_equal pno, 1
+    assert_equal 1, pno
     y2 = pdf.get_y
     h1 = y2 - y1
 
@@ -104,14 +104,14 @@ class RbpdfTest < Test::Unit::TestCase
     assert_in_delta h1, h2, 0.01
 
     line = pdf.get_num_lines(txt, w)
-    assert_equal line, 3
+    assert_equal 3, line
 
 
     w = 5
     y1 = pdf.get_y
     pdf.multi_cell(w, 0, txt)
     pno = pdf.get_page
-    assert_equal pno, 1
+    assert_equal 1, pno
     y2 = pdf.get_y
     h1 = y2 - y1
 
@@ -119,7 +119,7 @@ class RbpdfTest < Test::Unit::TestCase
     assert_in_delta h1, h2, 0.01
 
     line = pdf.get_num_lines(txt, w)
-    assert_equal line, 7
+    assert_equal 7, line
   end
 
   test "getStringHeight Multi Line test" do
@@ -132,7 +132,7 @@ class RbpdfTest < Test::Unit::TestCase
     y1 = pdf.get_y
     pdf.multi_cell(w, 0, txt)
     pno = pdf.get_page
-    assert_equal pno, 1
+    assert_equal 1, pno
     y2 = pdf.get_y
     h1 = y2 - y1
 
@@ -140,7 +140,7 @@ class RbpdfTest < Test::Unit::TestCase
     assert_in_delta h1, h2, 0.01
 
     line = pdf.get_num_lines(txt, w)
-    assert_equal line, 3
+    assert_equal 3, line
   end
 
   test "getStringHeight Minimum Width test 1" do
@@ -154,7 +154,7 @@ class RbpdfTest < Test::Unit::TestCase
     y1 = pdf.get_y
     pdf.multi_cell(w, 0, txt)
     pno = pdf.get_page
-    assert_equal pno, 1
+    assert_equal 1, pno
     y2 = pdf.get_y
     h1 = y2 - y1
 
@@ -162,7 +162,7 @@ class RbpdfTest < Test::Unit::TestCase
     assert_in_delta h1, h2, 0.01
 
     line = pdf.get_num_lines(txt, w)
-    assert_equal line, 16
+    assert_equal 16, line
   end
 
  test "getStringHeight Minimum Width test 2" do
@@ -178,7 +178,7 @@ class RbpdfTest < Test::Unit::TestCase
     y1 = pdf.get_y
     pdf.multi_cell(w, 0, txt)
     pno = pdf.get_page
-    assert_equal pno, 1
+    assert_equal 1, pno
     y2 = pdf.get_y
     h1 = y2 - y1
 
@@ -186,7 +186,7 @@ class RbpdfTest < Test::Unit::TestCase
     assert_in_delta h1, h2, 0.01
 
     line = pdf.get_num_lines(txt, w)
-    assert_equal line, 2
+    assert_equal 2, line
   end
 
   test "getStringHeight Minimum Bidi test 1" do
@@ -199,21 +199,21 @@ class RbpdfTest < Test::Unit::TestCase
     y1 = pdf.get_y
     pdf.multi_cell(w, 0, txt)
     pno = pdf.get_page
-    assert_equal pno, 1
+    assert_equal 1, pno
     y2 = pdf.get_y
     h1 = y2 - y1
     h2 = pdf.getStringHeight(w, txt)
     assert_in_delta h1, h2, 0.01
 
     line = pdf.get_num_lines(txt, w)
-    assert_equal line, 5
+    assert_equal 5, line
 
     txt = "? \xd7\x93\xd7\x92 \xd7\xa1\xd7\xa7\xd7\xa8\xd7\x9f \xd7\xa9\xd7\x98 \xd7\x91\xd7\x99\xd7\x9d \xd7\x9e\xd7\x90\xd7\x95\xd7\x9b\xd7\x96\xd7\x91 \xd7\x95\xd7\x9c\xd7\xa4\xd7\xaa\xd7\xa2 \xd7\x9e\xd7\xa6\xd7\x90 \xd7\x9c\xd7\x95 \xd7\x97\xd7\x91\xd7\xa8\xd7\x94 \xd7\x90\xd7\x99\xd7\x9a \xd7\x94\xd7\xa7\xd7\x9c\xd7\x99\xd7\x98\xd7\x94"
 
     y1 = pdf.get_y
     pdf.multi_cell(w, 0, txt)
     pno = pdf.get_page
-    assert_equal pno, 1
+    assert_equal 1, pno
     y2 = pdf.get_y
     h1 = y2 - y1
 
@@ -221,7 +221,7 @@ class RbpdfTest < Test::Unit::TestCase
     assert_in_delta h1, h2, 0.01
 
     line = pdf.get_num_lines(txt, w)
-    assert_equal line, 41
+    assert_equal 41, line
   end
 
   test "getStringHeight Minimum Bidi test 2" do
@@ -239,7 +239,7 @@ class RbpdfTest < Test::Unit::TestCase
     y1 = pdf.get_y
     pdf.multi_cell(w, 0, txt)
     pno = pdf.get_page
-    assert_equal pno, 1
+    assert_equal 1, pno
     y2 = pdf.get_y
     h1 = y2 - y1
 
@@ -247,7 +247,7 @@ class RbpdfTest < Test::Unit::TestCase
     assert_in_delta h1, h2, 0.01
 
     line = pdf.get_num_lines(txt, w)
-    assert_equal line, 3
+    assert_equal 3, line
   end
 
   test "removeSHY encoding test" do
@@ -257,10 +257,10 @@ class RbpdfTest < Test::Unit::TestCase
 
     str = 'test'.force_encoding('UTF-8')
     txt = pdf.removeSHY(str)
-    assert_equal str.encoding.to_s, 'UTF-8'
+    assert_equal 'UTF-8', str.encoding.to_s
 
     str = 'test'.force_encoding('ASCII-8BIT')
     txt = pdf.removeSHY(str)
-    assert_equal str.encoding.to_s, 'ASCII-8BIT'
+    assert_equal 'ASCII-8BIT', str.encoding.to_s
   end
 end

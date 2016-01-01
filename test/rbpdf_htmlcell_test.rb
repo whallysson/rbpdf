@@ -9,13 +9,13 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.write_html_cell(0, 5, 10, '', htmlcontent, 0, 1)
 
     pno = pdf.get_page
-    assert_equal pno, 1
+    assert_equal 1, pno
 
     y = pdf.get_y
     assert_in_delta 17.3, y, 0.1
 
     no = pdf.get_num_pages
-    assert_equal no, 1
+    assert_equal 1, no
   end
 
   test "write_html_cell Page Break test 1" do
@@ -31,13 +31,13 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.write_html_cell(0, 5, 10, '', htmlcontent, 0, 1)
 
     pno = pdf.get_page
-    assert_equal pno, 2
+    assert_equal 2, pno
 
     y = pdf.get_y
     assert_in_delta 40.0, y, 0.1
 
     no = pdf.get_num_pages
-    assert_equal no, 2
+    assert_equal 2, no
   end
 
   test "write_html_cell Page Break test 2" do
@@ -53,12 +53,12 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.write_html_cell(0, 5, 10, '', htmlcontent, "LRBT", 1)
 
     pno = pdf.get_page
-    assert_equal pno, 2
+    assert_equal 2, pno
 
     y = pdf.get_y
     assert_in_delta 40.0, y, 0.1
 
     no = pdf.get_num_pages
-    assert_equal no, 2
+    assert_equal 2, no
   end
 end

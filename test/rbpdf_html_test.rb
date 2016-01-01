@@ -74,7 +74,7 @@ class RbpdfHtmlTest < Test::Unit::TestCase
     pdf.write_html(htmlcontent, true, 0, true, 0)
 
     pno = pdf.get_page
-    assert_equal pno, 3
+    assert_equal 3, pno
   end
 
   test "write_html Table test 1" do
@@ -90,7 +90,7 @@ class RbpdfHtmlTest < Test::Unit::TestCase
     pdf.write_html(tablehtml, true, 0, true, 0)
 
     pno = pdf.get_page
-    assert_equal pno, 3
+    assert_equal 3, pno
   end
 
   test "write_html Table test 2" do
@@ -105,7 +105,7 @@ class RbpdfHtmlTest < Test::Unit::TestCase
     pdf.write_html(tablehtml, true, 0, true, 0)
 
     pno = pdf.get_page
-    assert_equal pno, 3
+    assert_equal 3, pno
 
     # Page 1
     count_line, count_text, xpos1 = pdf.get_html_text_position_x(1, /ABCD/) # Header
@@ -395,7 +395,7 @@ class RbpdfHtmlTest < Test::Unit::TestCase
     content.each do |line|
       count_text += 1 unless line.scan(text).empty?
     end
-    assert_equal count_text, 1
+    assert_equal 1, count_text
   end
 
   test "write_html Non ASCII text test" do
@@ -420,7 +420,7 @@ class RbpdfHtmlTest < Test::Unit::TestCase
       line.force_encoding('ASCII-8BIT') if line.respond_to?(:force_encoding)
       count_text += 1 unless line.scan(text).empty?
     end
-    assert_equal count_text, 1
+    assert_equal 1, count_text
   end
 
   test "works internal links out of page range" do

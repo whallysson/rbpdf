@@ -5,50 +5,50 @@ class RbpdfTest < Test::Unit::TestCase
     pdf = RBPDF.new
 
     type = pdf.get_image_file_type("/tmp/rbpdf_logo.gif")
-    assert_equal type, "gif"
+    assert_equal 'gif', type
 
     type = pdf.get_image_file_type("/tmp/rbpdf_logo.PNG")
-    assert_equal type, "png"
+    assert_equal 'png', type
 
     type = pdf.get_image_file_type("/tmp/rbpdf_logo.jpg")
-    assert_equal type, "jpeg"
+    assert_equal 'jpeg', type
 
     type = pdf.get_image_file_type("/tmp/rbpdf_logo.jpeg")
-    assert_equal type, "jpeg"
+    assert_equal 'jpeg', type
 
     type = pdf.get_image_file_type("/tmp/rbpdf_logo")
-    assert_equal type, ""
+    assert_equal '', type
 
     type = pdf.get_image_file_type("")
-    assert_equal type, ""
+    assert_equal '', type
 
     type = pdf.get_image_file_type(nil)
-    assert_equal type, ""
+    assert_equal '', type
   end
 
   test "Image basic func mime type test" do
     pdf = RBPDF.new
 
     type = pdf.get_image_file_type(nil, {})
-    assert_equal type, ''
+    assert_equal '', type
 
     type = pdf.get_image_file_type(nil, {'mime' => 'image/gif'})
-    assert_equal type, 'gif'
+    assert_equal 'gif', type
 
     type = pdf.get_image_file_type(nil, {'mime' => 'image/jpeg'})
-    assert_equal type, 'jpeg'
+    assert_equal 'jpeg', type
 
     type = pdf.get_image_file_type('/tmp/rbpdf_logo.gif', {'mime' => 'image/png'})
-    assert_equal type, 'png'
+    assert_equal 'png', type
 
     type = pdf.get_image_file_type('/tmp/rbpdf_logo.gif', {})
-    assert_equal type, 'gif'
+    assert_equal 'gif', type
 
     type = pdf.get_image_file_type(nil, {'mime' => 'text/html'})
-    assert_equal type, ''
+    assert_equal '', type
 
     type = pdf.get_image_file_type(nil, [])
-    assert_equal type, ''
+    assert_equal '', type
   end
 
   test "Image basic filename test" do
@@ -56,17 +56,17 @@ class RbpdfTest < Test::Unit::TestCase
     err = assert_raises(RuntimeError) { 
       pdf.image(nil)
     }
-    assert_equal( err.message, 'RBPDF error: Image filename is empty.')
+    assert_equal 'RBPDF error: Image filename is empty.', err.message
 
     err = assert_raises(RuntimeError) { 
       pdf.image('')
     }
-    assert_equal( err.message, 'RBPDF error: Image filename is empty.')
+    assert_equal 'RBPDF error: Image filename is empty.', err.message
 
     err = assert_raises(RuntimeError) { 
       pdf.image('foo.png')
     }
-    assert_equal( err.message, 'RBPDF error: Missing image file: foo.png')
+    assert_equal 'RBPDF error: Missing image file: foo.png', err.message
   end
 
   test "Image basic test" do
@@ -77,7 +77,7 @@ class RbpdfTest < Test::Unit::TestCase
     result_img = pdf.image(img_file, 50, 0, 0, '', '', '', '', false, 300, '', true)
 
     no = pdf.get_num_pages
-    assert_equal no, 1
+    assert_equal 1, no
   end
 
   test "Image fitonpage test 1" do
@@ -88,7 +88,7 @@ class RbpdfTest < Test::Unit::TestCase
     result_img = pdf.image(img_file, 50, 140, 100, '', '', '', '', false, 300, '', true, false, 0, false, false, true)
 
     no = pdf.get_num_pages
-    assert_equal no, 1
+    assert_equal 1, no
   end
 
   test "Image fitonpage test 2" do
@@ -102,6 +102,6 @@ class RbpdfTest < Test::Unit::TestCase
     result_img = pdf.image(img_file, '', y, w, h, '', '', '', false, 300, '', true, false, 0, false, false, true)
 
     no = pdf.get_num_pages
-    assert_equal no, 1
+    assert_equal 1, no
   end
 end

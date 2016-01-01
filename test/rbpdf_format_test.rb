@@ -5,22 +5,22 @@ class RbpdfFormatTest < Test::Unit::TestCase
     pdf = RBPDF.new
 
     pagedim = pdf.set_page_orientation('')
-    assert_equal pagedim['or'], 'P'
-    assert_equal pagedim['pb'], true
-    assert_equal pagedim['olm'], nil
-    assert_equal pagedim['orm'], nil
-    assert_in_delta pagedim['bm'], 20, 0.1
+    assert_equal 'P',   pagedim['or']
+    assert_equal true,  pagedim['pb']
+    assert_equal nil,   pagedim['olm']
+    assert_equal nil,   pagedim['orm']
+    assert_in_delta 20, pagedim['bm'], 0.1
 
     pagedim = pdf.set_page_orientation('P')
-    assert_equal pagedim['or'], 'P'
+    assert_equal 'P',   pagedim['or']
 
     pagedim = pdf.set_page_orientation('L', false)
-    assert_equal pagedim['or'], 'L'
-    assert_equal pagedim['pb'], false
+    assert_equal 'L',   pagedim['or']
+    assert_equal false, pagedim['pb']
 
     pagedim = pdf.set_page_orientation('P', true, 5)
-    assert_equal pagedim['or'], 'P'
-    assert_equal pagedim['pb'], true
-    assert_equal pagedim['bm'], 5
+    assert_equal 'P',   pagedim['or']
+    assert_equal true,  pagedim['pb']
+    assert_equal 5,     pagedim['bm']
   end
 end

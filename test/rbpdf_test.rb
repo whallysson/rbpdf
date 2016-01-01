@@ -236,11 +236,11 @@ class RbpdfTest < Test::Unit::TestCase
     assert_equal 1, pages
 
     contents3 = pdf.getPageBuffer(1)
-    assert_not_equal contents3, contents1
-    assert_equal contents3, contents2
+    assert_not_equal contents1, contents3
+    assert_equal contents2, contents3
 
     contents4 = pdf.getPageBuffer(2)
-    assert_equal contents4, false
+    assert_equal false, contents4
   end
 
   test "start_page_group test" do
@@ -257,38 +257,38 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.add_page
 
     pagedim = pdf.get_page_dimensions
-    assert_equal pagedim['CropBox']['llx'], 0.0
+    assert_equal 0.0, pagedim['CropBox']['llx']
     pagedim = pdf.get_page_dimensions(1)
-    assert_equal pagedim['CropBox']['llx'], 0.0
+    assert_equal 0.0, pagedim['CropBox']['llx']
     pagedim = pdf.get_page_dimensions(nil)
-    assert_equal pagedim['CropBox']['llx'], 0.0
+    assert_equal 0.0, pagedim['CropBox']['llx']
     pagedim = pdf.get_page_dimensions('')
-    assert_equal pagedim['CropBox']['llx'], 0.0
+    assert_equal 0.0, pagedim['CropBox']['llx']
   end
 
   test "Page Box A4 test 1" do
     pdf = RBPDF.new
     pagedim = pdf.get_page_dimensions
-    assert_equal pagedim['MediaBox']['llx'], 0.0
-    assert_equal pagedim['MediaBox']['lly'], 0.0
-    assert_equal pagedim['MediaBox']['urx'], 595.28
-    assert_equal pagedim['MediaBox']['ury'], 841.89
-    assert_equal pagedim['CropBox']['llx'], 0.0
-    assert_equal pagedim['CropBox']['lly'], 0.0
-    assert_equal pagedim['CropBox']['urx'], 595.28
-    assert_equal pagedim['CropBox']['ury'], 841.89
-    assert_equal pagedim['BleedBox']['llx'], 0.0
-    assert_equal pagedim['BleedBox']['lly'], 0.0
-    assert_equal pagedim['BleedBox']['urx'], 595.28
-    assert_equal pagedim['BleedBox']['ury'], 841.89
-    assert_equal pagedim['TrimBox']['llx'], 0.0
-    assert_equal pagedim['TrimBox']['lly'], 0.0
-    assert_equal pagedim['TrimBox']['urx'], 595.28
-    assert_equal pagedim['TrimBox']['ury'], 841.89
-    assert_equal pagedim['ArtBox']['llx'], 0.0
-    assert_equal pagedim['ArtBox']['lly'], 0.0
-    assert_equal pagedim['ArtBox']['urx'], 595.28
-    assert_equal pagedim['ArtBox']['ury'], 841.89
+    assert_equal 0.0,    pagedim['MediaBox']['llx']
+    assert_equal 0.0,    pagedim['MediaBox']['lly']
+    assert_equal 595.28, pagedim['MediaBox']['urx']
+    assert_equal 841.89, pagedim['MediaBox']['ury']
+    assert_equal 0.0,    pagedim['CropBox']['llx']
+    assert_equal 0.0,    pagedim['CropBox']['lly']
+    assert_equal 595.28, pagedim['CropBox']['urx']
+    assert_equal 841.89, pagedim['CropBox']['ury']
+    assert_equal 0.0,    pagedim['BleedBox']['llx']
+    assert_equal 0.0,    pagedim['BleedBox']['lly']
+    assert_equal 595.28, pagedim['BleedBox']['urx']
+    assert_equal 841.89, pagedim['BleedBox']['ury']
+    assert_equal 0.0,    pagedim['TrimBox']['llx']
+    assert_equal 0.0,    pagedim['TrimBox']['lly']
+    assert_equal 595.28, pagedim['TrimBox']['urx']
+    assert_equal 841.89, pagedim['TrimBox']['ury']
+    assert_equal 0.0,    pagedim['ArtBox']['llx']
+    assert_equal 0.0,    pagedim['ArtBox']['lly']
+    assert_equal 595.28, pagedim['ArtBox']['urx']
+    assert_equal 841.89, pagedim['ArtBox']['ury']
   end
 
   test "Page Box A4 test 2" do
@@ -304,26 +304,26 @@ class RbpdfTest < Test::Unit::TestCase
 
     pdf = RBPDF.new('P', 'mm', format)
     pagedim = pdf.get_page_dimensions
-    assert_equal pagedim['MediaBox']['llx'], 0.0
-    assert_equal pagedim['MediaBox']['lly'], 0.0
-    assert_in_delta pagedim['MediaBox']['urx'], 595.28, 0.1
-    assert_in_delta pagedim['MediaBox']['ury'], 841.89, 0.1
-    assert_equal pagedim['CropBox']['llx'], 0.0
-    assert_equal pagedim['CropBox']['lly'], 0.0
-    assert_in_delta pagedim['CropBox']['urx'], 595.28, 0.1
-    assert_in_delta pagedim['CropBox']['ury'], 841.89, 0.1
-    assert_equal pagedim['BleedBox']['llx'], 0.0
-    assert_equal pagedim['BleedBox']['lly'], 0.0
-    assert_in_delta pagedim['BleedBox']['urx'], 595.28, 0.1
-    assert_in_delta pagedim['BleedBox']['ury'], 841.89, 0.1
-    assert_equal pagedim['TrimBox']['llx'], 0.0
-    assert_equal pagedim['TrimBox']['lly'], 0.0
-    assert_in_delta pagedim['TrimBox']['urx'], 595.28, 0.1
-    assert_in_delta pagedim['TrimBox']['ury'], 841.89, 0.1
-    assert_equal pagedim['ArtBox']['llx'], 0.0
-    assert_equal pagedim['ArtBox']['lly'], 0.0
-    assert_in_delta pagedim['ArtBox']['urx'], 595.28, 0.1
-    assert_in_delta pagedim['ArtBox']['ury'], 841.89, 0.1
+    assert_equal    0.0,    pagedim['MediaBox']['llx']
+    assert_equal    0.0,    pagedim['MediaBox']['lly']
+    assert_in_delta 595.28, pagedim['MediaBox']['urx'], 0.1
+    assert_in_delta 841.89, pagedim['MediaBox']['ury'], 0.1
+    assert_equal    0.0,    pagedim['CropBox']['llx']
+    assert_equal    0.0,    pagedim['CropBox']['lly']
+    assert_in_delta 595.28, pagedim['CropBox']['urx'], 0.1
+    assert_in_delta 841.89, pagedim['CropBox']['ury'], 0.1
+    assert_equal    0.0,    pagedim['BleedBox']['llx']
+    assert_equal    0.0,    pagedim['BleedBox']['lly']
+    assert_in_delta 595.28, pagedim['BleedBox']['urx'], 0.1
+    assert_in_delta 841.89, pagedim['BleedBox']['ury'], 0.1
+    assert_equal    0.0,    pagedim['TrimBox']['llx']
+    assert_equal    0.0,    pagedim['TrimBox']['lly']
+    assert_in_delta 595.28, pagedim['TrimBox']['urx'], 0.1
+    assert_in_delta 841.89, pagedim['TrimBox']['ury'], 0.1
+    assert_equal    0.0,    pagedim['ArtBox']['llx']
+    assert_equal    0.0,    pagedim['ArtBox']['lly']
+    assert_in_delta 595.28, pagedim['ArtBox']['urx'], 0.1
+    assert_in_delta 841.89, pagedim['ArtBox']['ury'], 0.1
   end
 
   test "Page Box A4 test 3" do
@@ -339,26 +339,26 @@ class RbpdfTest < Test::Unit::TestCase
 
     pdf = RBPDF.new('P', 'mm', format)
     pagedim = pdf.get_page_dimensions
-    assert_equal pagedim['MediaBox']['llx'], 0.0
-    assert_equal pagedim['MediaBox']['lly'], 0.0
-    assert_in_delta pagedim['MediaBox']['urx'], 595.28, 0.1
-    assert_in_delta pagedim['MediaBox']['ury'], 841.89, 0.1
-    assert_equal pagedim['CropBox']['llx'], 0.0
-    assert_equal pagedim['CropBox']['lly'], 0.0
-    assert_in_delta pagedim['CropBox']['urx'], 595.28, 0.1
-    assert_in_delta pagedim['CropBox']['ury'], 841.89, 0.1
-    assert_equal pagedim['BleedBox']['llx'], 0.0
-    assert_equal pagedim['BleedBox']['lly'], 0.0
-    assert_in_delta pagedim['BleedBox']['urx'], 595.28, 0.1
-    assert_in_delta pagedim['BleedBox']['ury'], 841.89, 0.1
-    assert_equal pagedim['TrimBox']['llx'], 0.0
-    assert_equal pagedim['TrimBox']['lly'], 0.0
-    assert_in_delta pagedim['TrimBox']['urx'], 595.28, 0.1
-    assert_in_delta pagedim['TrimBox']['ury'], 841.89, 0.1
-    assert_equal pagedim['ArtBox']['llx'], 0.0
-    assert_equal pagedim['ArtBox']['lly'], 0.0
-    assert_in_delta pagedim['ArtBox']['urx'], 595.28, 0.1
-    assert_in_delta pagedim['ArtBox']['ury'], 841.89, 0.1
+    assert_equal    0.0,    pagedim['MediaBox']['llx']
+    assert_equal    0.0,    pagedim['MediaBox']['lly']
+    assert_in_delta 595.28, pagedim['MediaBox']['urx'], 0.1
+    assert_in_delta 841.89, pagedim['MediaBox']['ury'], 0.1
+    assert_equal    0.0,    pagedim['CropBox']['llx']
+    assert_equal    0.0,    pagedim['CropBox']['lly']
+    assert_in_delta 595.28, pagedim['CropBox']['urx'], 0.1
+    assert_in_delta 841.89, pagedim['CropBox']['ury'], 0.1
+    assert_equal    0.0,    pagedim['BleedBox']['llx']
+    assert_equal    0.0,    pagedim['BleedBox']['lly']
+    assert_in_delta 595.28, pagedim['BleedBox']['urx'], 0.1
+    assert_in_delta 841.89, pagedim['BleedBox']['ury'], 0.1
+    assert_equal    0.0,    pagedim['TrimBox']['llx']
+    assert_equal    0.0,    pagedim['TrimBox']['lly']
+    assert_in_delta 595.28, pagedim['TrimBox']['urx'], 0.1
+    assert_in_delta 841.89, pagedim['TrimBox']['ury'], 0.1
+    assert_equal    0.0,    pagedim['ArtBox']['llx']
+    assert_equal    0.0,    pagedim['ArtBox']['lly']
+    assert_in_delta 595.28, pagedim['ArtBox']['urx'], 0.1
+    assert_in_delta 841.89, pagedim['ArtBox']['ury'], 0.1
   end
 
   test "get_break_margin test" do

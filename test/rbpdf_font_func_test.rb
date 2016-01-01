@@ -34,8 +34,8 @@ class RbpdfFontFuncTest < Test::Unit::TestCase
     pdf = MYPDF.new
 
     apxo_obj_id = pdf.putAPXObject
-    assert_equal apxo_obj_id, 400001
+    assert_equal 400001, apxo_obj_id
     apxo_obj_id = pdf.putAPXObject
-    assert_equal apxo_obj_id, 400002
+    assert_equal 400002, apxo_obj_id
   end
 end

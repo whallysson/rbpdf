@@ -25,32 +25,32 @@ class RbpdfTest < Test::Unit::TestCase
 
     # LTR
     rtl = pdf.get_rtl
-    assert_equal rtl, false
+    assert_equal false, rtl
     rtl = pdf.is_rtl_text_dir
-    assert_equal rtl, false
+    assert_equal false, rtl
     rtl = pdf.rtl_text_dir
-    assert_equal rtl, 'L'
+    assert_equal 'L', rtl
 
     pdf.set_temp_rtl('rtl')
     rtl = pdf.is_rtl_text_dir
-    assert_equal rtl, true
+    assert_equal true, rtl
     rtl = pdf.rtl_text_dir
-    assert_equal rtl, 'R'
+    assert_equal 'R', rtl
 
     # RTL
     pdf.set_rtl(true)
     rtl = pdf.get_rtl
-    assert_equal rtl, true
+    assert_equal true, rtl
     rtl = pdf.is_rtl_text_dir
-    assert_equal rtl, true
+    assert_equal true, rtl
     rtl = pdf.rtl_text_dir
-    assert_equal rtl, 'R'
+    assert_equal 'R', rtl
 
     pdf.set_temp_rtl('ltr')
     rtl = pdf.is_rtl_text_dir
-    assert_equal rtl, false
+    assert_equal false, rtl
     rtl = pdf.rtl_text_dir
-    assert_equal rtl, 'L'
+    assert_equal 'L', rtl
   end
 
   test "Bidi subset font test" do
@@ -144,35 +144,35 @@ class RbpdfTest < Test::Unit::TestCase
 
     ascii_str   = "abc def"
     ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
-    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x20, 0x64, 0x65, 0x66]
+    assert_equal [0x61, 0x62, 0x63, 0x20, 0x64, 0x65, 0x66], ary_ucs4_1
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
 
     ascii_str   = "abc  def"
     ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
-    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x20, 0x20, 0x64, 0x65, 0x66]
+    assert_equal [0x61, 0x62, 0x63, 0x20, 0x20, 0x64, 0x65, 0x66], ary_ucs4_1
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
 
     ascii_str   = "abc  "
     ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
-    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x20, 0x20]
+    assert_equal [0x61, 0x62, 0x63, 0x20, 0x20], ary_ucs4_1
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
-    assert_equal ary_ucs4_2, [0x20, 0x20, 0x61, 0x62, 0x63]
+    assert_equal [0x20, 0x20, 0x61, 0x62, 0x63], ary_ucs4_2
 
     ascii_str   = "abc_def"
     ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
-    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x5f, 0x64, 0x65, 0x66]
+    assert_equal [0x61, 0x62, 0x63, 0x5f, 0x64, 0x65, 0x66], ary_ucs4_1
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
   end
 
   test "Bidi ascii numeric space test" do
@@ -180,19 +180,19 @@ class RbpdfTest < Test::Unit::TestCase
 
     ascii_str   = "abc 123 def"
     ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
-    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x20, 0x31, 0x32, 0x33, 0x20, 0x64, 0x65, 0x66]
+    assert_equal [0x61, 0x62, 0x63, 0x20, 0x31, 0x32, 0x33, 0x20, 0x64, 0x65, 0x66], ary_ucs4_1
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
 
     ascii_str   = "abc_123_def"
     ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
-    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x5f, 0x31, 0x32, 0x33, 0x5f, 0x64, 0x65, 0x66]
+    assert_equal [0x61, 0x62, 0x63, 0x5f, 0x31, 0x32, 0x33, 0x5f, 0x64, 0x65, 0x66], ary_ucs4_1
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
   end
 
   test "Bidi ascii colon test" do
@@ -200,35 +200,35 @@ class RbpdfTest < Test::Unit::TestCase
 
     ascii_str   = "abc:def"
     ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
-    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x3a, 0x64, 0x65, 0x66]
+    assert_equal [0x61, 0x62, 0x63, 0x3a, 0x64, 0x65, 0x66], ary_ucs4_1
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
 
     ascii_str   = "abc: def"
     ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
-    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x3a, 0x20, 0x64, 0x65, 0x66]
+    assert_equal [0x61, 0x62, 0x63, 0x3a, 0x20, 0x64, 0x65, 0x66], ary_ucs4_1
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
 
     ascii_str   = "abc : def"
     ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
-    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x20, 0x3a, 0x20, 0x64, 0x65, 0x66]
+    assert_equal [0x61, 0x62, 0x63, 0x20, 0x3a, 0x20, 0x64, 0x65, 0x66], ary_ucs4_1
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
 
     ascii_str   = "abc  ::  def"
     ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str))
-    assert_equal ary_ucs4_1, [0x61, 0x62, 0x63, 0x20, 0x20, 0x3a, 0x3a, 0x20, 0x20, 0x64, 0x65, 0x66]
+    assert_equal [0x61, 0x62, 0x63, 0x20, 0x20, 0x3a, 0x3a, 0x20, 0x20, 0x64, 0x65, 0x66], ary_ucs4_1
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'R')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(ascii_str), '', 'L')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
   end
 
 
@@ -280,37 +280,37 @@ class RbpdfTest < Test::Unit::TestCase
     utf8_persian_str_7  = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87" # Sunday # 0x06cc, 0x06a9, 0x200c, 0x0634, 0x0646, 0x0628, 0x0647
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_1))
-    assert_equal ary_ucs4, [0xfbfc]
+    assert_equal [0xfbfc], ary_ucs4
     current_font = pdf.get_current_font
     assert_equal 256 + 2, current_font['subsetchars'].compact.length  # 0x06cc, 0xfbfc
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_2))
-    assert_equal ary_ucs4, [0xfb8f, 0xfbfe]
+    assert_equal [0xfb8f, 0xfbfe], ary_ucs4
     current_font = pdf.get_current_font
     assert_equal 256 + 5, current_font['subsetchars'].compact.length # 0xfbfc + 0x06cc, 0x06a9, 0xfb8f, 0xfbfe
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_3))
-    assert_equal ary_ucs4, [0x200c, 0xfb8f, 0xfbfe]
+    assert_equal [0x200c, 0xfb8f, 0xfbfe], ary_ucs4
     current_font = pdf.get_current_font
     assert_equal 256 + 6, current_font['subsetchars'].compact.length # 0xfbfc + 0x06cc, 0x06a9, 0x200c, 0xfb8f, 0xfbfe
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_4))
-    assert_equal ary_ucs4, [0xfeb5, 0x200c, 0xfb8f, 0xfbfe]
+    assert_equal [0xfeb5, 0x200c, 0xfb8f, 0xfbfe], ary_ucs4
     current_font = pdf.get_current_font
     assert_equal 256 + 8, current_font['subsetchars'].compact.length # 0xfbfc + 0x06cc, 0x06a9, 0x200c, 0x0634, 0xfeb5, 0xfb8f, 0xfbfe
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_5))
-    assert_equal ary_ucs4, [0xfee6, 0xfeb7, 0x200c, 0xfb8f, 0xfbfe]
+    assert_equal [0xfee6, 0xfeb7, 0x200c, 0xfb8f, 0xfbfe], ary_ucs4
     current_font = pdf.get_current_font
     assert_equal 256 + 11, current_font['subsetchars'].compact.length # 0xfbfc, 0xfeb5 + 0x06cc, 0x06a9, 0x200c, 0x0634, 0x0646, 0xfee6, 0xfeb7, 0xfb8f, 0xfbfe
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_6))
-    assert_equal ary_ucs4, [0xfe90, 0xfee8, 0xfeb7, 0x200c, 0xfb8f, 0xfbfe]
+    assert_equal [0xfe90, 0xfee8, 0xfeb7, 0x200c, 0xfb8f, 0xfbfe], ary_ucs4
     current_font = pdf.get_current_font
     assert_equal 256 + 14, current_font['subsetchars'].compact.length # 0xfbfc, 0xfeb5, 0xfee6 + 0x06cc, 0x06a9, 0x200c, 0x0634, 0x0646, 0x0628, 0xfe90, 0xfee8, 0xfeb7, 0xfb8f, 0xfbfe
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_7))
-    assert_equal ary_ucs4, [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200c, 0xfb8f, 0xfbfe]
+    assert_equal [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200c, 0xfb8f, 0xfbfe], ary_ucs4
     current_font = pdf.get_current_font
     assert_equal 256 + 17, current_font['subsetchars'].compact.length # 0xfbfc, 0xfeb5, 0xfee6, 0xfe90 + 0x06cc, 0x06a9, 0x200c, 0x0634, 0x0646, 0x0628, 0x0647, 0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0xfb8f, 0xfbfe
   end
@@ -320,9 +320,9 @@ class RbpdfTest < Test::Unit::TestCase
     utf8_persian_str_sunday = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87"
 
     ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_sunday), '', 'R')
-    assert_equal ary_ucs4_1, [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe]
+    assert_equal [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe], ary_ucs4_1
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_sunday), '', 'L')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
   end
 
   test "Bidi Persian Monday test" do
@@ -336,17 +336,17 @@ class RbpdfTest < Test::Unit::TestCase
     utf8_persian_str_6  = "\xd8\xaf\xd9\x88\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87" # Monday
 
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_1))
-    assert_equal ary_ucs4, [0xfea9]
+    assert_equal [0xfea9], ary_ucs4
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_2))
-    assert_equal ary_ucs4, [0xfeed, 0xfea9]
+    assert_equal [0xfeed, 0xfea9], ary_ucs4
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_3))
-    assert_equal ary_ucs4, [0xfeb5, 0xfeed, 0xfea9]
+    assert_equal [0xfeb5, 0xfeed, 0xfea9], ary_ucs4
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_4))
-    assert_equal ary_ucs4, [0xfee6, 0xfeb7, 0xfeed, 0xfea9]
+    assert_equal [0xfee6, 0xfeb7, 0xfeed, 0xfea9], ary_ucs4
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_5))
-    assert_equal ary_ucs4, [0xfe90, 0xfee8, 0xfeb7, 0xfeed, 0xfea9]
+    assert_equal [0xfe90, 0xfee8, 0xfeb7, 0xfeed, 0xfea9], ary_ucs4
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_6))
-    assert_equal ary_ucs4, [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0xfeed, 0xfea9]
+    assert_equal [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0xfeed, 0xfea9], ary_ucs4
   end
 
   test "Bidi Persian Monday forcertl test" do
@@ -354,9 +354,9 @@ class RbpdfTest < Test::Unit::TestCase
     utf8_persian_str_monday = "\xd8\xaf\xd9\x88\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87"
 
     ary_ucs4_1 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_monday), '', 'R')
-    assert_equal ary_ucs4_1, [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0xfeed, 0xfea9]
+    assert_equal [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0xfeed, 0xfea9], ary_ucs4_1
     ary_ucs4_2 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_monday), '', 'L')
-    assert_equal ary_ucs4_2, ary_ucs4_1
+    assert_equal ary_ucs4_1, ary_ucs4_2
   end
 
   test "Bidi Persian and English test" do
@@ -364,14 +364,14 @@ class RbpdfTest < Test::Unit::TestCase
 
     utf8_persian_str_sunday = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87"
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_sunday + ' abc'))
-    assert_equal ary_ucs4, [0x61, 0x62, 0x63, 0x20, # 'abc '
-                            0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe] # Sunday
+    assert_equal [0x61, 0x62, 0x63, 0x20, # 'abc '
+                  0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe], ary_ucs4 # Sunday
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_sunday + ' abc'), '', 'R')
-    assert_equal ary_ucs4, [0x61, 0x62, 0x63, 0x20, # 'abc '
-                            0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe] # Sunday
+    assert_equal [0x61, 0x62, 0x63, 0x20, # 'abc '
+                  0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe], ary_ucs4 # Sunday
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray(utf8_persian_str_sunday + ' abc'), '', 'L')
-    assert_equal ary_ucs4, [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe, # Sunday
-                            0x20, 0x61, 0x62, 0x63] # 'abc '
+    assert_equal [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe, # Sunday
+                  0x20, 0x61, 0x62, 0x63], ary_ucs4 # 'abc '
   end
 
   test "Bidi English and Persian test" do
@@ -379,14 +379,14 @@ class RbpdfTest < Test::Unit::TestCase
 
     utf8_persian_str_sunday = "\xdb\x8c\xda\xa9\xe2\x80\x8c\xd8\xb4\xd9\x86\xd8\xa8\xd9\x87"
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray('abc ' + utf8_persian_str_sunday))
-    assert_equal ary_ucs4, [0x61, 0x62, 0x63, 0x20, # 'abc '
-                            0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe] # Sunday
+    assert_equal [0x61, 0x62, 0x63, 0x20, # 'abc '
+                  0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe], ary_ucs4 # Sunday
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray('abc ' + utf8_persian_str_sunday), '', 'L')
-    assert_equal ary_ucs4, [0x61, 0x62, 0x63, 0x20, # 'abc '
-                            0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe] # Sunday
+    assert_equal [0x61, 0x62, 0x63, 0x20, # 'abc '
+                  0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe], ary_ucs4 # Sunday
     ary_ucs4 = pdf.utf8Bidi(pdf.UTF8StringToArray('abc ' + utf8_persian_str_sunday), '', 'R')
-    assert_equal ary_ucs4, [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe, # Sunday
-                            0x20, 0x61, 0x62, 0x63] # 'abc '
+    assert_equal [0xfeea, 0xfe92, 0xfee8, 0xfeb7, 0x200C, 0xfb8f, 0xfbfe, # Sunday
+                  0x20, 0x61, 0x62, 0x63], ary_ucs4 # 'abc '
   end
 
   test "Bidi date test" do
@@ -427,12 +427,12 @@ class RbpdfTest < Test::Unit::TestCase
     chars.reverse!
 
     rtn = pdf.cache_utf8_string_to_array('1234')
-    assert_equal rtn, [0x31, 0x32, 0x33, 0x34]
+    assert_equal [0x31, 0x32, 0x33, 0x34], rtn
   end
 
   test "UniArrSubString test" do
     pdf = RBPDF.new
     str = pdf.uni_arr_sub_string(['a', 'b', 'c', ' ', 'd', 'e', 'f'])
-    assert_equal str, 'abc def'
+    assert_equal 'abc def', str
   end
 end

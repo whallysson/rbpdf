@@ -10,71 +10,71 @@ class RbpdfTest < Test::Unit::TestCase
   test "get_html_unit_to_units test" do
     pdf = RBPDF.new
     unit = pdf.get_html_unit_to_units("100", 1)
-    assert_in_delta unit, 35.27, 0.01
+    assert_in_delta 35.27, unit, 0.01
 
     unit = pdf.get_html_unit_to_units("100px", 1, 'px', false)
-    assert_in_delta unit, 35.27, 0.01
+    assert_in_delta 35.27, unit, 0.01
 
     unit = pdf.get_html_unit_to_units(100, 1, 'pt', false)
-    assert_in_delta unit, 35.27, 0.01
+    assert_in_delta 35.27, unit, 0.01
 
     unit = pdf.get_html_unit_to_units(100.0, 1, 'pt', false)
-    assert_in_delta unit, 35.27, 0.01
+    assert_in_delta 35.27, unit, 0.01
 
     unit = pdf.get_html_unit_to_units("100.0", 1, 'pt', false)
-    assert_in_delta unit, 35.27, 0.01
+    assert_in_delta 35.27, unit, 0.01
 
     unit = pdf.get_html_unit_to_units("200", 1, '%', false)
-    assert_equal unit, 2.0
+    assert_equal 2.0, unit
 
     unit = pdf.get_html_unit_to_units("400%", 1, '%', false)
-    assert_equal unit, 4.0
+    assert_equal 4.0, unit
 
     unit = pdf.get_html_unit_to_units("10", 1, '%', false)
-    assert_equal unit, 0.1
+    assert_equal 0.1, unit
 
     unit = pdf.get_html_unit_to_units("10mm", 1, '%', false)
-    assert_in_delta unit, 10, 0.01
+    assert_in_delta 10, unit, 0.01
 
     unit = pdf.get_html_unit_to_units("10", 1, 'mm', false)
-    assert_in_delta unit, 10, 0.01
+    assert_in_delta 10, unit, 0.01
 
     unit = pdf.get_html_unit_to_units(10, 1, 'mm', false)
-    assert_in_delta unit, 10, 0.01
+    assert_in_delta 10, unit, 0.01
 
     unit = pdf.get_html_unit_to_units("1", 1, 'cm', false)
-    assert_in_delta unit, 10, 0.01
+    assert_in_delta 10, unit, 0.01
 
     unit = pdf.get_html_unit_to_units(10, 1, 'em', false)
-    assert_equal unit, 10
+    assert_equal 10, unit
 
     unit = pdf.get_html_unit_to_units(10, 2, 'em', false)
-    assert_equal unit, 20
+    assert_equal 20, unit
   end
 
   test "getSpaceString test" do
     pdf = MYPDF.new
     spacestr = pdf.getSpaceString()
-    assert_equal spacestr, 32.chr
+    assert_equal 32.chr, spacestr
 
     pdf.set_font('freesans', '', 18)
     spacestr = pdf.getSpaceString()
-    assert_equal spacestr, 0.chr + 32.chr
+    assert_equal 0.chr + 32.chr, spacestr
   end
 
   test "revstrpos test" do
     pdf = RBPDF.new
     pos = pdf.revstrpos('abcd efgh ', 'cd')
-    assert_equal pos, 2
+    assert_equal 2, pos
 
     pos = pdf.revstrpos('abcd efgh ', 'cd ')
-    assert_equal pos, 2
+    assert_equal 2, pos
 
     pos = pdf.revstrpos('abcd efgh abcd efg', 'cd')
-    assert_equal pos, 12
+    assert_equal 12, pos
 
     pos = pdf.revstrpos('abcd efgh abcd efg', 'zy')
-    assert_equal pos, nil
+    assert_equal nil, pos
   end
 
   test "revstrpos offset test 1" do
@@ -130,6 +130,6 @@ class RbpdfTest < Test::Unit::TestCase
     pdf = RBPDF.new
     str = 'test'.force_encoding('UTF-8')
     width = pdf.get_string_width(str)
-    assert_equal str.encoding.to_s, 'UTF-8'
+    assert_equal 'UTF-8', str.encoding.to_s
   end
 end

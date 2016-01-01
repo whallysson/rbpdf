@@ -25,11 +25,11 @@ class RbpdfPageTest < Test::Unit::TestCase
     contents = pdf.getPageBuffer(page)
     contents.each_line {|line| content.push line.chomp }
 
-    assert_equal content.length,  4
-    assert_equal content[0],  "0.57 w 0 J 0 j [] 0 d 0 G 0 g"
-    assert_equal content[1],  "BT /F1 12.00 Tf ET "
-    assert_equal content[2],  "0.57 w 0 J 0 j [] 0 d 0 G 0 g"
-    assert_equal content[3],  "BT /F1 12.00 Tf ET "
+    assert_equal 4, content.length
+    assert_equal "0.57 w 0 J 0 j [] 0 d 0 G 0 g", content[0]
+    assert_equal "BT /F1 12.00 Tf ET ",           content[1]
+    assert_equal "0.57 w 0 J 0 j [] 0 d 0 G 0 g", content[2]
+    assert_equal "BT /F1 12.00 Tf ET ",           content[3]
 
     ##################################
     #  0.57 w 0 J 0 j [] 0 d 0 G 0 g # add_page,start_page,setGraphicVars(set_fill_color)
@@ -54,8 +54,8 @@ class RbpdfPageTest < Test::Unit::TestCase
     contents = pdf.getPageBuffer(page)
     contents.each_line {|line| content.push line.chomp }
 
-    assert_equal content.length,  5
-    assert_equal content[4],  "BT /F2 18.00 Tf ET "
+    assert_equal 5, content.length
+    assert_equal "BT /F2 18.00 Tf ET ", content[4]
 
     ########################
     # BT                   # Begin Text.
@@ -67,18 +67,18 @@ class RbpdfPageTest < Test::Unit::TestCase
     contents = pdf.getPageBuffer(page)
     contents.each_line {|line| content.push line.chomp }
 
-    assert_equal content.length,  6
-    assert_equal content[5],  "BT /F3 20.00 Tf ET "
+    assert_equal 6, content.length
+    assert_equal "BT /F3 20.00 Tf ET ", content[5]
 
     pdf.cell(0, 10, 'Chapter', 0, 1, 'L')
     content = []
     contents = pdf.getPageBuffer(page)
     contents.each_line {|line| content.push line.chomp }
 
-    assert_equal content.length,  8
-    assert_equal content[6],  "0.57 w 0 J 0 j [] 0 d 0 G 0 g"
+    assert_equal 8, content.length
+    assert_equal "0.57 w 0 J 0 j [] 0 d 0 G 0 g", content[6]
 
-    assert_equal content[7],  "BT 31.19 792.37 Td 0 Tr 0.00 w [(\x00C\x00h\x00a\x00p\x00t\x00e\x00r)] TJ ET"
+    assert_equal "BT 31.19 792.37 Td 0 Tr 0.00 w [(\x00C\x00h\x00a\x00p\x00t\x00e\x00r)] TJ ET", content[7]
 
     #################################################
     # 0.57 w 0 J 0 j [] 0 d 0 G 0 g                 # getCellCode
@@ -100,19 +100,19 @@ class RbpdfPageTest < Test::Unit::TestCase
     contents = pdf.getPageBuffer(1)
     contents.each_line {|line| content.push line.chomp }
 
-    assert_equal content.length,  15
-    assert_equal content[4],  "425.20 274.96 m"                              # start point : x0, y0
+    assert_equal 15, content.length
+    assert_equal "425.20 274.96 m"                            , content[4]  # start point : x0, y0
 
-    assert_equal content[5],  '425.20 308.27 413.45 340.54 392.04 366.06 c'  # 1/9 circle  : x1, y1(control point 1), x2, y2(control point 2), x3, y3(end point and next start point)
-    assert_equal content[6],  '370.62 391.58 340.88 408.76 308.08 414.54 c'  # 2/9 circle
-    assert_equal content[7],  '275.27 420.32 241.45 414.36 212.60 397.70 c'  # 3/9 circle
-    assert_equal content[8],  '183.75 381.05 161.67 354.74 150.28 323.44 c'  # 4/9 circle
-    assert_equal content[9],  '138.89 292.13 138.89 257.79 150.28 226.49 c'  # 5/9 circle
-    assert_equal content[10], '161.67 195.18 183.75 168.87 212.60 152.22 c'  # 6/9 circle
-    assert_equal content[11], '241.45 135.56 275.27 129.60 308.08 135.38 c'  # 7/9 circle
-    assert_equal content[12], '340.88 141.17 370.62 158.34 392.04 183.86 c'  # 8/9 circle
-    assert_equal content[13], '413.45 209.38 425.20 241.65 425.20 274.96 c'  # 9/9 circle
-    assert_equal content[14], 'S'
+    assert_equal '425.20 308.27 413.45 340.54 392.04 366.06 c', content[5]  # 1/9 circle  : x1, y1(control point 1), x2, y2(control point 2), x3, y3(end point and next start point)
+    assert_equal '370.62 391.58 340.88 408.76 308.08 414.54 c', content[6]  # 2/9 circle
+    assert_equal '275.27 420.32 241.45 414.36 212.60 397.70 c', content[7]  # 3/9 circle
+    assert_equal '183.75 381.05 161.67 354.74 150.28 323.44 c', content[8]  # 4/9 circle
+    assert_equal '138.89 292.13 138.89 257.79 150.28 226.49 c', content[9]  # 5/9 circle
+    assert_equal '161.67 195.18 183.75 168.87 212.60 152.22 c', content[10] # 6/9 circle
+    assert_equal '241.45 135.56 275.27 129.60 308.08 135.38 c', content[11] # 7/9 circle
+    assert_equal '340.88 141.17 370.62 158.34 392.04 183.86 c', content[12] # 8/9 circle
+    assert_equal '413.45 209.38 425.20 241.65 425.20 274.96 c', content[13] # 9/9 circle
+    assert_equal 'S'                                          , content[14]
   end
 
   test "write content test" do
@@ -125,8 +125,8 @@ class RbpdfPageTest < Test::Unit::TestCase
     line = pdf.write(0, "abc def")
     contents = pdf.getPageBuffer(page)
     contents.each_line {|line| content.push line.chomp }
-    assert_equal content.length, 22
-    assert_equal content[21], "BT 31.19 801.84 Td 0 Tr 0.00 w [(abc def)] TJ ET"
+    assert_equal 22, content.length
+    assert_equal "BT 31.19 801.84 Td 0 Tr 0.00 w [(abc def)] TJ ET", content[21]
   end
 
   test "write content RTL test" do
@@ -140,8 +140,8 @@ class RbpdfPageTest < Test::Unit::TestCase
     line = pdf.write(0, "abc def")
     contents = pdf.getPageBuffer(page)
     contents.each_line {|line| content.push line.chomp }
-    assert_equal content.length,  22
-    assert_equal content[21], "BT 524.73 801.84 Td 0 Tr 0.00 w [(abc def)] TJ ET"
+    assert_equal 22, content.length
+    assert_equal "BT 524.73 801.84 Td 0 Tr 0.00 w [(abc def)] TJ ET", content[21]
   end
 
   test "write Persian Sunday content test" do
@@ -157,16 +157,16 @@ class RbpdfPageTest < Test::Unit::TestCase
     contents = pdf.getPageBuffer(page)
 
     contents.each_line {|line| content.push line.chomp }
-    assert_equal content.length, 22
-    assert_equal content[21], "BT 31.19 796.06 Td 0 Tr 0.00 w [(\xFE\xEA\xFE\x92\xFE\xE8\xFE\xB7 \f\xFB\x8F\xFB\xFE)] TJ ET"
+    assert_equal 22, content.length
+    assert_equal "BT 31.19 796.06 Td 0 Tr 0.00 w [(\xFE\xEA\xFE\x92\xFE\xE8\xFE\xB7 \f\xFB\x8F\xFB\xFE)] TJ ET", content[21]
 
     pdf.set_rtl(true)
     line = pdf.write(0, utf8_persian_str_sunday)
     contents = pdf.getPageBuffer(page)
 
     contents.each_line {|line| content.push line.chomp }
-    assert_equal content.length, 46
-    assert_equal content[45], "BT 507.38 796.06 Td 0 Tr 0.00 w [(\xFE\xEA\xFE\x92\xFE\xE8\xFE\xB7 \f\xFB\x8F\xFB\xFE)] TJ ET"
+    assert_equal 46, content.length
+    assert_equal "BT 507.38 796.06 Td 0 Tr 0.00 w [(\xFE\xEA\xFE\x92\xFE\xE8\xFE\xB7 \f\xFB\x8F\xFB\xFE)] TJ ET", content[45]
   end
 
   test "write English and Persian Sunday content test" do
@@ -182,15 +182,15 @@ class RbpdfPageTest < Test::Unit::TestCase
     contents = pdf.getPageBuffer(page)
 
     contents.each_line {|line| content.push line.chomp }
-    assert_equal content.length, 22
-    assert_equal content[21], "BT 31.19 796.06 Td 0 Tr 0.00 w [(\x00a\x00b\x00c\x00 \x00d\x00e\x00f\x00 \xFE\xEA\xFE\x92\xFE\xE8\xFE\xB7 \f\xFB\x8F\xFB\xFE)] TJ ET"
+    assert_equal 22, content.length
+    assert_equal "BT 31.19 796.06 Td 0 Tr 0.00 w [(\x00a\x00b\x00c\x00 \x00d\x00e\x00f\x00 \xFE\xEA\xFE\x92\xFE\xE8\xFE\xB7 \f\xFB\x8F\xFB\xFE)] TJ ET", content[21]
 
     pdf.set_rtl(true)
     line = pdf.write(0, 'abc def ' + utf8_persian_str_sunday)
     contents = pdf.getPageBuffer(page)
 
     contents.each_line {|line| content.push line.chomp }
-    assert_equal content.length, 46
-    assert_equal content[45], "BT 434.73 796.06 Td 0 Tr 0.00 w [(\xFE\xEA\xFE\x92\xFE\xE8\xFE\xB7 \f\xFB\x8F\xFB\xFE\x00 \x00a\x00b\x00c\x00 \x00d\x00e\x00f)] TJ ET"
+    assert_equal 46, content.length
+    assert_equal "BT 434.73 796.06 Td 0 Tr 0.00 w [(\xFE\xEA\xFE\x92\xFE\xE8\xFE\xB7 \f\xFB\x8F\xFB\xFE\x00 \x00a\x00b\x00c\x00 \x00d\x00e\x00f)] TJ ET", content[45]
   end
 end

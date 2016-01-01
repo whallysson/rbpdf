@@ -19,11 +19,11 @@ class RbpdfTest < Test::Unit::TestCase
     pixw = info[0]
     pixh = info[1]
     fileinfo = info[2]
-    assert_equal info[0], 240                       # width
-    assert_equal info[1], 89                        # height
-    assert_equal info[2], 'PNG'                     # Image Type
-    assert_equal info[3], 'height="89" width="240"'
-    assert_equal info['mime'], 'image/png'
+    assert_equal 240,                       info[0] # width
+    assert_equal 89,                        info[1] # height
+    assert_equal 'PNG',                     info[2] # Image Type
+    assert_equal 'height="89" width="240"', info[3]
+    assert_equal 'image/png',               info['mime']
   end
 
   test "image getimagesize GIF test" do
@@ -37,13 +37,13 @@ class RbpdfTest < Test::Unit::TestCase
     pixw = info[0]
     pixh = info[1]
     fileinfo = info[2]
-    assert_equal info[0], 240                       # width
-    assert_equal info[1], 89                        # height
-    assert_equal info[2], 'GIF'                     # Image Type
-    assert_equal info[3], 'height="89" width="240"'
-    assert_equal info['mime'], 'image/gif'
-    assert_equal info['channels'], 3                # RGB
-    assert_equal info['bits'], 8                    # depth
+    assert_equal 240,                       info[0] # width
+    assert_equal 89,                        info[1] # height
+    assert_equal 'GIF',                     info[2] # Image Type
+    assert_equal 'height="89" width="240"', info[3]
+    assert_equal 'image/gif',               info['mime']
+    assert_equal 3,                         info['channels'] # RGB
+    assert_equal 8,                         info['bits']     # depth
   end
 
   test "image getimagesize GIF alpha test" do
@@ -57,13 +57,13 @@ class RbpdfTest < Test::Unit::TestCase
     pixw = info[0]
     pixh = info[1]
     fileinfo = info[2]
-    assert_equal info[0], 240                       # width
-    assert_equal info[1], 89                        # height
-    assert_equal info[2], 'GIF'                     # Image Type
-    assert_equal info[3], 'height="89" width="240"'
-    assert_equal info['mime'], 'image/gif'
-    assert_equal info['channels'], 3                # RGB
-    assert_equal info['bits'], 8                    # depth
+    assert_equal 240,                       info[0] # width
+    assert_equal 89,                        info[1] # height
+    assert_equal 'GIF',                     info[2] # Image Type
+    assert_equal 'height="89" width="240"', info[3]
+    assert_equal 'image/gif',               info['mime']
+    assert_equal 3,                         info['channels'] # RGB
+    assert_equal 8,                         info['bits']     # depth
   end
 
   test "image getimagesize JPEG RGB test" do
@@ -77,13 +77,13 @@ class RbpdfTest < Test::Unit::TestCase
     pixw = info[0]
     pixh = info[1]
     fileinfo = info[2]
-    assert_equal info[0], 240                       # width
-    assert_equal info[1], 89                        # height
-    assert_equal info[2], 'JPEG'                    # Image Type
-    assert_equal info[3], 'height="89" width="240"'
-    assert_equal info['mime'], 'image/jpeg'
-    assert_equal info['channels'], 3                # RGB
-    assert_equal info['bits'], 8                    # depth
+    assert_equal 240,                       info[0] # width
+    assert_equal 89,                        info[1] # height
+    assert_equal 'JPEG',                    info[2] # Image Type
+    assert_equal 'height="89" width="240"', info[3]
+    assert_equal 'image/jpeg',              info['mime']
+    assert_equal 3,                         info['channels'] # RGB
+    assert_equal 8,                         info['bits']     # depth
   end
 
   test "image getimagesize JPEG monotone RGB test" do
@@ -97,13 +97,13 @@ class RbpdfTest < Test::Unit::TestCase
     pixw = info[0]
     pixh = info[1]
     fileinfo = info[2]
-    assert_equal info[0], 240                       # width
-    assert_equal info[1], 89                        # height
-    assert_equal info[2], 'JPEG'                    # Image Type
-    assert_equal info[3], 'height="89" width="240"'
-    assert_equal info['mime'], 'image/jpeg'
-    assert_equal info['channels'], 3                # RGB
-    assert_equal info['bits'], 8                    # depth
+    assert_equal 240,                       info[0] # width
+    assert_equal 89,                        info[1] # height
+    assert_equal 'JPEG',                    info[2] # Image Type
+    assert_equal 'height="89" width="240"', info[3]
+    assert_equal 'image/jpeg',              info['mime']
+    assert_equal 3,                         info['channels'] # RGB
+    assert_equal 8,                         info['bits']     # depth
   end
 
   test "image getimagesize JPEG monotone Gray test" do
@@ -117,13 +117,13 @@ class RbpdfTest < Test::Unit::TestCase
     pixw = info[0]
     pixh = info[1]
     fileinfo = info[2]
-    assert_equal info[0], 240                       # width
-    assert_equal info[1], 89                        # height
-    assert_equal info[2], 'JPEG'                    # Image Type
-    assert_equal info[3], 'height="89" width="240"'
-    assert_equal info['mime'], 'image/jpeg'
-    assert_equal info['channels'], 0                # Gray
-    assert_equal info['bits'], 8                    # depth
+    assert_equal 240,                       info[0] # width
+    assert_equal 89,                        info[1] # height
+    assert_equal 'JPEG',                    info[2] # Image Type
+    assert_equal 'height="89" width="240"', info[3]
+    assert_equal 'image/jpeg',              info['mime']
+    assert_equal 0,                         info['channels'] # Gray
+    assert_equal 8,                         info['bits']     # depth
   end
 
   test "image getimagesize PNG monotone test" do
@@ -135,11 +135,11 @@ class RbpdfTest < Test::Unit::TestCase
     pixw = info[0]
     pixh = info[1]
     fileinfo = info[2]
-    assert_equal info[0], 240                       # width
-    assert_equal info[1], 89                        # height
-    assert_equal info[2], 'PNG'                     # Image Type
-    assert_equal info[3], 'height="89" width="240"'
-    assert_equal info['mime'], 'image/png'
+    assert_equal 240,                       info[0] # width
+    assert_equal 89,                        info[1] # height
+    assert_equal 'PNG',                     info[2] # Image Type
+    assert_equal 'height="89" width="240"', info[3]
+    assert_equal 'image/png',               info['mime']
   end
 
   test "imageToPNG delete GIF test" do
@@ -149,13 +149,13 @@ class RbpdfTest < Test::Unit::TestCase
 
     if Object.const_defined?(:Magick)
       tempfile = pdf.imageToPNG(img_file)
-      assert_not_equal tempfile, false
+      assert_not_equal false,      tempfile
 
       info = pdf.parsepng(tempfile.path)
 
-      assert_not_equal info, 'pngalpha'
-      assert_equal info['bpc'], 8
-      assert_equal info['cs'], 'Indexed'
+      assert_not_equal 'pngalpha', info
+      assert_equal     8,          info['bpc']
+      assert_equal     'Indexed',  info['cs']
     end
   end
 
@@ -166,13 +166,13 @@ class RbpdfTest < Test::Unit::TestCase
 
     if Object.const_defined?(:Magick)
       tempfile = pdf.imageToPNG(img_file)
-      assert_not_equal tempfile, false
+      assert_not_equal false,      tempfile
 
       info = pdf.parsepng(tempfile.path)
 
-      assert_not_equal info, 'pngalpha'
-      assert_equal info['bpc'], 8
-      assert_equal info['cs'], 'Indexed'
+      assert_not_equal 'pngalpha', info
+      assert_equal     8,          info['bpc']
+      assert_equal     'Indexed',  info['cs']
     end
   end
 
@@ -183,13 +183,13 @@ class RbpdfTest < Test::Unit::TestCase
 
     if Object.const_defined?(:Magick)
       tempfile = pdf.imageToPNG(img_file)
-      assert_not_equal tempfile, false
+      assert_not_equal  false,       tempfile
 
       info = pdf.parsepng(tempfile.path)
 
-      assert_not_equal info, 'pngalpha'
-      assert_equal info['bpc'], 8
-      assert_equal info['cs'], 'DeviceRGB'
+      assert_not_equal 'pngalpha',   info
+      assert_equal      8,           info['bpc']
+      assert_equal      'DeviceRGB', info['cs']
     end
   end
 
@@ -203,9 +203,9 @@ class RbpdfTest < Test::Unit::TestCase
 
       info = pdf.parsepng(tempfile.path)
 
-      assert_not_equal info, 'pngalpha'
-      assert_equal info['bpc'], 8
-      assert_equal info['cs'], 'DeviceGray'
+      assert_not_equal 'pngalpha',    info
+      assert_equal      8,            info['bpc']
+      assert_equal      'DeviceGray', info['cs']
     end
   end
 
@@ -214,7 +214,7 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.add_page
     img_file = File.join(File.dirname(__FILE__), 'logo_rbpdf_8bit.png')
     info = pdf.image(img_file, 10, 10, 100, '', '', 'https://rubygems.org/gems/rbpdf', '', false, 300)
-    assert_equal info, 1
+    assert_equal 1, info
   end
 
   test "Image PNG alpha test" do
@@ -224,7 +224,7 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.add_page
     img_file = File.join(File.dirname(__FILE__), 'png_test_alpha.png')
     info = pdf.image(img_file, 10, 10, 100, '', '', 'https://rubygems.org/gems/rbpdf', '', false, 300)
-    assert_equal info, true
+    assert_equal true, info
   end
 
   test "Image GIF test" do
@@ -234,7 +234,7 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.add_page
     img_file = File.join(File.dirname(__FILE__), 'logo_rbpdf_8bit.gif')
     info = pdf.image(img_file, 10, 10, 100, '', '', 'https://rubygems.org/gems/rbpdf', '', false, 300)
-    assert_equal info, 1
+    assert_equal 1, info
   end
 
   test "Image GIF alpha test" do
@@ -244,7 +244,7 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.add_page
     img_file = File.join(File.dirname(__FILE__), 'logo_rbpdf_8bit_alpha.gif')
     info = pdf.image(img_file, 10, 10, 100, '', '', 'https://rubygems.org/gems/rbpdf', '', false, 300)
-    assert_equal info, 1
+    assert_equal 1, info
   end
 
   test "Image JPEG test" do
@@ -254,7 +254,7 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.add_page
     img_file = File.join(File.dirname(__FILE__), 'logo_rbpdf_8bit.jpg')
     info = pdf.image(img_file, 10, 10, 100, '', '', 'https://rubygems.org/gems/rbpdf', '', false, 300)
-    assert_equal info, 1
+    assert_equal 1, info
   end
 
   test "HTML Image test" do

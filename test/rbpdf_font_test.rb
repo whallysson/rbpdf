@@ -49,17 +49,17 @@ class RbpdfFontTest < Test::Unit::TestCase
     pdf.set_font('helvetica', 'BI', 18)
 
     font = pdf.getFontBuffer('helvetica')
-    assert_equal font['name'], 'Helvetica'
-    assert_equal font['dw'], 556
+    assert_equal 'Helvetica',             font['name']
+    assert_equal 556,                     font['dw']
     font = pdf.getFontBuffer('helveticaB')
-    assert_equal font['name'], 'Helvetica-Bold'
-    assert_equal font['dw'], 556
+    assert_equal 'Helvetica-Bold',        font['name']
+    assert_equal 556,                     font['dw']
     font = pdf.getFontBuffer('helveticaI')
-    assert_equal font['name'], 'Helvetica-Oblique'
-    assert_equal font['dw'], 556
+    assert_equal 'Helvetica-Oblique',     font['name']
+    assert_equal 556,                     font['dw']
     font = pdf.getFontBuffer('helveticaBI')
-    assert_equal font['name'], 'Helvetica-BoldOblique'
-    assert_equal font['dw'], 556
+    assert_equal 'Helvetica-BoldOblique', font['name']
+    assert_equal 556,                     font['dw']
 
     pdf.set_font('times', '', 18)
     pdf.set_font('times', 'B', 18)
@@ -67,13 +67,13 @@ class RbpdfFontTest < Test::Unit::TestCase
     pdf.set_font('times', 'BI', 18)
 
     font = pdf.getFontBuffer('times')
-    assert_equal font['name'], 'Times-Roman'
+    assert_equal 'Times-Roman',      font['name']
     font = pdf.getFontBuffer('timesB')
-    assert_equal font['name'], 'Times-Bold'
+    assert_equal 'Times-Bold',       font['name']
     font = pdf.getFontBuffer('timesI')
-    assert_equal font['name'], 'Times-Italic'
+    assert_equal 'Times-Italic',     font['name']
     font = pdf.getFontBuffer('timesBI')
-    assert_equal font['name'], 'Times-BoldItalic'
+    assert_equal 'Times-BoldItalic', font['name']
 
     pdf.set_font('courier', '', 18)
     pdf.set_font('courier', 'B', 18)
@@ -81,21 +81,21 @@ class RbpdfFontTest < Test::Unit::TestCase
     pdf.set_font('courier', 'BI', 18)
 
     font = pdf.getFontBuffer('courier')
-    assert_equal font['name'], 'Courier'
+    assert_equal 'Courier',             font['name']
     font = pdf.getFontBuffer('courierB')
-    assert_equal font['name'], 'Courier-Bold'
+    assert_equal 'Courier-Bold',        font['name']
     font = pdf.getFontBuffer('courierI')
-    assert_equal font['name'], 'Courier-Oblique'
+    assert_equal 'Courier-Oblique',     font['name']
     font = pdf.getFontBuffer('courierBI')
-    assert_equal font['name'], 'Courier-BoldOblique'
+    assert_equal 'Courier-BoldOblique', font['name']
 
     pdf.set_font('symbol', '', 18)
     font = pdf.getFontBuffer('symbol')
-    assert_equal font['name'], 'Symbol'
+    assert_equal 'Symbol',       font['name']
 
     pdf.set_font('zapfdingbats', '', 18)
     font = pdf.getFontBuffer('zapfdingbats')
-    assert_equal font['name'], 'ZapfDingbats'
+    assert_equal 'ZapfDingbats', font['name']
 
     pdf.putfonts()
   end
@@ -227,20 +227,20 @@ class RbpdfFontTest < Test::Unit::TestCase
     pdf.set_font('kozgopromedium', 'BI', 18)
 
     font = pdf.getFontBuffer('kozgopromedium')
-    assert_equal font['desc']['StemV'], 99
-    assert_equal font['desc']['ItalicAngle'], 0
+    assert_equal 99,     font['desc']['StemV']
+    assert_equal 0,      font['desc']['ItalicAngle']
 
     font = pdf.getFontBuffer('kozgopromediumB')
-    assert_equal font['desc']['StemV'], 99 * 2
-    assert_equal font['desc']['ItalicAngle'], 0
+    assert_equal 99 * 2, font['desc']['StemV']
+    assert_equal 0,      font['desc']['ItalicAngle']
 
     font = pdf.getFontBuffer('kozgopromediumI')
-    assert_equal font['desc']['StemV'], 99
-    assert_equal font['desc']['ItalicAngle'], -11
+    assert_equal 99,     font['desc']['StemV']
+    assert_equal -11,    font['desc']['ItalicAngle']
 
     font = pdf.getFontBuffer('kozgopromediumBI')
-    assert_equal font['desc']['StemV'], 99 * 2
-    assert_equal font['desc']['ItalicAngle'], -11
+    assert_equal 99 * 2, font['desc']['StemV']
+    assert_equal -11,    font['desc']['ItalicAngle']
 
     pdf.set_font('kozminproregular', '', 18)
     pdf.set_font('kozminproregular', 'B', 18)

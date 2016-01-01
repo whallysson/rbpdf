@@ -32,6 +32,6 @@ class RbpdfPageTest < Test::Unit::TestCase
     pdf.set_viewer_preferences(preferences)
     out = pdf.putviewerpreferences()
 
-    assert_equal out, '/ViewerPreferences << /Direction /L2R /HideToolbar true /HideMenubar true /HideWindowUI true /FitWindow true /CenterWindow true /DisplayDocTitle true /NonFullScreenPageMode /UseNone /ViewArea /CropBox /ViewClip /CropBox /PrintArea /CropBox /PrintClip /CropBox /PrintScaling /AppDefault /Duplex /DuplexFlipLongEdge /PickTrayByPDFSize true /PrintPageRange [0 0 1 2] /NumCopies 2 >>'
+    assert_equal '/ViewerPreferences << /Direction /L2R /HideToolbar true /HideMenubar true /HideWindowUI true /FitWindow true /CenterWindow true /DisplayDocTitle true /NonFullScreenPageMode /UseNone /ViewArea /CropBox /ViewClip /CropBox /PrintArea /CropBox /PrintClip /CropBox /PrintScaling /AppDefault /Duplex /DuplexFlipLongEdge /PickTrayByPDFSize true /PrintPageRange [0 0 1 2] /NumCopies 2 >>', out
   end
 end

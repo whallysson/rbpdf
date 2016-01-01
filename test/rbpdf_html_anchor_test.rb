@@ -15,7 +15,7 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.write_html(htmlcontent, true, 0, true, 0)
 
     position = pdf.get_html_anchor_position('foo')
-    assert_equal position, [1, 10.001249999999999]
+    assert_equal [1, 10.001249999999999], position
   end
 
   test "anchor with id" do
@@ -26,7 +26,7 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.write_html(htmlcontent, true, 0, true, 0)
 
     position = pdf.get_html_anchor_position('foo')
-    assert_equal position, [1, 10.001249999999999]
+    assert_equal [1, 10.001249999999999], position
   end
 
   test "empty anchor" do
@@ -37,7 +37,7 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.write_html(htmlcontent, true, 0, true, 0)
 
     position = pdf.get_html_anchor_position('foo')
-    assert_equal position, [1, 10.001249999999999]
+    assert_equal [1, 10.001249999999999], position
   end
 
 
@@ -49,7 +49,7 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.write_html(htmlcontent, true, 0, true, 0)
 
     position = pdf.get_html_anchor_position('foo')
-    assert_equal position, [1, 57.626249999999985]
+    assert_equal [1, 57.626249999999985], position
   end
 
 
@@ -63,7 +63,7 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.write_html(htmlcontent, true, 0, true, 0)
 
     position = pdf.get_html_anchor_position('foo')
-    assert_equal position, [3, 68.20958333333331]
+    assert_equal [3, 68.20958333333331], position
   end
 
 
@@ -82,7 +82,7 @@ class RbpdfTest < Test::Unit::TestCase
 
     pdf.send(:mapLinksToHtmlAnchors)
     link_position = pdf.instance_variable_get(:@links)[1]
-    assert_equal link_position,  [3, 73.50124999999998]
+    assert_equal [3, 73.50124999999998], link_position
   end
 
   test "maps when anchor before link" do
@@ -101,7 +101,7 @@ class RbpdfTest < Test::Unit::TestCase
     pdf.send(:mapLinksToHtmlAnchors)
 
     link_position = pdf.instance_variable_get(:@links)[1]
-    assert_equal link_position, [1, 10.001249999999999]
+    assert_equal [1, 10.001249999999999], link_position
   end
 
 end
