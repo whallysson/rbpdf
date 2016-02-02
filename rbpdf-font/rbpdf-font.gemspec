@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
                        Dir.glob("lib/fonts/ttf2ufm/enc/*") +
                        Dir.glob("test/*") +
                        ["Rakefile", "rbpdf-font.gemspec",
-                        "CHANGELOG", "MIT-LICENSE"]
+                        "CHANGELOG", "README.md", "LICENSE.TXT", "MIT-LICENSE"]
   spec.rdoc_options  += [ '--exclude', 'lib/fonts/' ]
 
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }

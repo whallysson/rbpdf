@@ -11,13 +11,13 @@ Gem::Specification.new do |spec|
   spec.summary       = %q{RBPDF via TCPDF.}
   spec.description   = %q{A template plugin allowing the inclusion of ERB-enabled RBPDF template files.}
   spec.homepage      = ""
-  spec.license       = "LGPL 2.1 or later"
+  spec.licenses      = ['MIT', 'LGPL 2.1 or later']
   spec.files         = Dir.glob("lib/rbpdf/version.rb") +
                        Dir.glob("lib/*.rb") +
                        Dir.glob("lib/core/rmagick.rb") +
                        Dir.glob("test/*") +
                        ["Rakefile", "rbpdf.gemspec", "Gemfile",
-                        "CHANGELOG", "test_unicode.rbpdf", "README.md", "LICENSE.TXT",
+                        "CHANGELOG", "test_unicode.rbpdf", "README.md", "LICENSE.TXT", "MIT-LICENSE",
                         "utf8test.txt", "logo_example.png" ]
   spec.rdoc_options  += [ '--exclude', 'lib/fonts/',
                           '--exclude', 'lib/htmlcolors.rb',
