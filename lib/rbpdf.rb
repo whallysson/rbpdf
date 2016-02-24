@@ -2674,10 +2674,12 @@ class RBPDF
       end
     end
 
+    fontname = family.gsub(' ', '') + style.downcase
+
     # search and include font file
     if empty_string(fontfile)
       # build a standard filenames for specified font
-      fontfile1 = family.gsub(' ', '') + style.downcase + '.rb'
+      fontfile1 = fontname + '.rb'
       fontfile2 = family.gsub(' ', '') + '.rb'
       # search files on various directories
       if (fontdir != false) and File.exists?(fontdir + fontfile1)
