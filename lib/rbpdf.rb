@@ -73,6 +73,7 @@ require 'rubygems' if RUBY_VERSION < '1.9' # Ruby 1.8.7
 require 'action_view'
 require 'tempfile'
 require 'uri'
+require 'net/http'
 
 #
 # RBPDF Class.
@@ -11732,6 +11733,26 @@ protected
   end
 
   #
+  # Get image file from remote URL
+  # [@param string :image_uri] image URI path
+  #
+  def get_image_file(image_uri)
+    uri = URI.parse(image_uri)
+    extname = File.extname(uri.path)
+
+    #use a temporary file....
+    tmpFile = Tempfile.new(['tmp_', extname], @@k_path_cache)
+    tmpFile.binmode
+    Net::HTTP.start(uri.host, uri.port) do |http|
+      res = http.get(uri.path)
+      tmpFile.print res.body
+    end
+    tmpFile
+  ensure
+    tmpFile.close  unless tmpFile.nil?
+  end
+
+  #
   # Convert to accessible url path
   # [@param string :url] url path
   #
@@ -13194,16 +13215,25 @@ public
         SetRightMargin(@r_margin + @c_margin)
 
         begin
+          if tag['attribute']['src'] =~ /^http/
+            tmpFile = get_image_file(tag['attribute']['src'])
+            img_file = tmpFile.path
+          else
+            img_file = tag['attribute']['src']
+          end
 #        if (type == 'eps') or (type == 'ai')
-#          ImageEps(tag['attribute']['src'], xpos, @y, iw, ih, imglink, true, align, '', border, true)
+#          ImageEps(img_file, xpos, @y, iw, ih, imglink, true, align, '', border, true)
 #        elsif type == 'svg'
-#          ImageSVG(tag['attribute']['src'], xpos, @y, iw, ih, imglink, align, '', border, true)
+#          ImageSVG(img_file, xpos, @y, iw, ih, imglink, align, '', border, true)
 #        else
-          result_img = Image(tag['attribute']['src'], xpos, @y, iw, ih, '', imglink, align, false, 300, '', false, false, border, false, false, true)
+          result_img = Image(img_file, xpos, @y, iw, ih, '', imglink, align, false, 300, '', false, false, border, false, false, true)
 #        end
         rescue => err
           logger.error "pdf: Image: error: #{err.message}"
           result_img = false
+        ensure
+          # remove temp files
+          tmpFile.delete unless tmpFile.nil?
         end
 
         if result_img or ih != 0
