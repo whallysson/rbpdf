@@ -11030,7 +11030,7 @@ protected
               end
             end
           when ':'  # pseudo-class or pseudo-element
-            if attrib{1} == ':'  # pseudo-element
+            if attrib[1] == ':'  # pseudo-element
               # pseudo-elements are not supported!
               # (::first-line, ::first-letter, ::before, ::after)
             else # pseudo-class
