@@ -258,7 +258,7 @@ class RBPDF
     #   mb_internal_encoding("ASCII");
     # }
 
-   if defined? Rails.root
+    if defined? Rails.root
       @@k_path_cache = Rails.root.join('tmp').to_s
       @@k_path_main = Rails.root.join('tmp').to_s
       @@k_path_url = Rails.root.join('tmp').to_s
@@ -1498,7 +1498,7 @@ class RBPDF
   def Error(msg)
     destroy(true)
     #Fatal error
-    raise ("RBPDF error: #{msg}")
+    raise "RBPDF error: #{msg}"
   end
   alias_method :error, :Error
 
@@ -5019,7 +5019,7 @@ class RBPDF
       return info['i']
     end
     xkimg = ximg * @k
-    out(sprintf('q %.2f 0 0 %.2f %.2f %.2f cm /I%d Do Q', w * @k, h * @k, xkimg, (@h -(y + h)) * @k, info['i']))
+    out(sprintf('q %.2f 0 0 %.2f %.2f %.2f cm /I%d Do Q', w * @k, h * @k, xkimg, (@h - (y + h)) * @k, info['i']))
 
     if border != 0
       bx = x
@@ -5833,7 +5833,7 @@ protected
       #Page content
       p=(@compress) ? Zlib::Deflate.deflate(temppage) : temppage
       newobj();
-      out('<<' + filter +' /Length ' + p.length.to_s  + '>> ' + getstream(p) + ' endobj')
+      out('<<' + filter + ' /Length ' + p.length.to_s  + '>> ' + getstream(p) + ' endobj')
       if @diskcache
         # remove temporary files
         File.delete(@pages[n].path)
@@ -6821,7 +6821,7 @@ protected
     font << [numTables].pack('n') # numTables
     entrySelector = (Math.log(numTables) / Math.log(2.0)).floor
 
-    searchRange = 2 **entrySelector * 16
+    searchRange = 2 ** entrySelector * 16
     rangeShift = numTables * 16 - searchRange
     font << [searchRange].pack('n') # searchRange
     font << [entrySelector].pack('n') # entrySelector
@@ -9282,7 +9282,7 @@ public
       Circle(x0, y0, r, 0, 360, circle_style, circle_outLine_style, circle_fill_color)
     end
     p = []
-    0.upto(ns -1) do |i|
+    0.upto(ns - 1) do |i|
       a = angle + i * 360 / ns
       a_rad = a * ::Math::PI / 180 # deg2rad
       p.push x0 + (r * ::Math.sin(a_rad))
@@ -9330,7 +9330,7 @@ public
     end
     p2 = []
     visited = []
-    0.upto(nv -1) do |i|
+    0.upto(nv - 1) do |i|
       a = angle + i * 360 / nv
       a_rad = a * ::Math::PI / 180 # deg2rad
       p2.push x0 + r * ::Math.sin(a_rad)
