@@ -27,7 +27,11 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_runtime_dependency "htmlentities", "= 4.3.1"
+  if RUBY_VERSION == "1.8.7"
+    spec.add_runtime_dependency "htmlentities", "= 4.3.1"
+  else
+    spec.add_runtime_dependency "htmlentities"
+  end
   spec.add_runtime_dependency "rbpdf-font", "~> 1.19.0"
   spec.required_ruby_version = '>= 1.8.7'
 
