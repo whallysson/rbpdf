@@ -51,7 +51,32 @@ class RbpdfTest < Test::Unit::TestCase
     assert_equal '', type
   end
 
-  test "Image basic filename test" do
+  test "Image basic ascii filename test" do
+    pdf = RBPDF.new
+    pdf.add_page
+    img_file = File.join(File.dirname(__FILE__), 'logo_rbpdf_8bit.png')
+    err = assert_nothing_raised(RuntimeError) { 
+      pdf.image(img_file)
+    }
+
+    img_file = File.join(File.dirname(__FILE__), 'logo_rbpdf_8bit .png')
+    err = assert_nothing_raised(RuntimeError) { 
+      pdf.image(img_file)
+    }
+  end
+
+  test "Image basic non ascii filename test" do
+    pdf = RBPDF.new
+    pdf.add_page
+
+    utf8_japanese_aiueo_str  = "\xe3\x81\x82\xe3\x81\x84\xe3\x81\x86\xe3\x81\x88\xe3\x81\x8a"
+    img_file = File.join(File.dirname(__FILE__), 'logo_rbpdf_8bit_' + utf8_japanese_aiueo_str + '.png')
+    err = assert_nothing_raised(RuntimeError) { 
+      pdf.image(img_file)
+    }
+  end
+
+  test "Image basic filename error test" do
     pdf = RBPDF.new
     err = assert_raises(RuntimeError) { 
       pdf.image(nil)
@@ -103,5 +128,38 @@ class RbpdfTest < Test::Unit::TestCase
 
     no = pdf.get_num_pages
     assert_equal 1, no
+  end
+
+  test "HTML Image test without RMagick" do
+    return if Object.const_defined?(:Magick)
+
+    utf8_japanese_aiueo_str  = "\xe3\x81\x82\xe3\x81\x84\xe3\x81\x86\xe3\x81\x88\xe3\x81\x8a"
+
+    images = {
+      'png_test_msk_alpha.png'    => 40.11,
+      'png_test_non_alpha.png'    => 40.11,
+      'logo_rbpdf_8bit.png'       => 36.58,
+      'logo_rbpdf_8bit .png'       => 36.58,
+      'logo_rbpdf_8bit+ .png'       => 36.58,
+      'logo_rbpdf_8bit_' + utf8_japanese_aiueo_str + '.png'       => 36.58,
+      'logo_rbpdf_8bit_%e3%81%82%e3%81%84%e3%81%86%e3%81%88%e3%81%8a.png'       => 36.58,
+      'ng.png'                    => 9.42
+    }
+
+    pdf = RBPDF.new
+    images.each {|image, h|
+      pdf.add_page
+      img_file = File.join(File.dirname(__FILE__), image)
+      htmlcontent = '<img src="'+ img_file + '"/>'
+
+      x_org = pdf.get_x
+      y_org = pdf.get_y
+      pdf.write_html(htmlcontent, true, 0, true, 0)
+      x = pdf.get_x
+      y = pdf.get_y
+
+      assert_equal '[' + image + ']:' + x_org.to_s, '[' + image + ']:' + x.to_s
+      assert_equal '[' + image + ']:' + (y_org + h).round(2).to_s, '[' + image + ']:' + y.round(2).to_s
+    }
   end
 end

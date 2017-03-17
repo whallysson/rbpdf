@@ -50,6 +50,7 @@ require "rbpdf/version"
 
 require 'htmlentities'
 require 'rbpdf-font' 
+require 'erb'
 
 begin
   # RMagick 2.14.0
@@ -11725,7 +11726,8 @@ protected
   # [@param string :attrname] image file name
   #
   def get_image_filename( attrname )
-    testscrtype = URI.parse(attrname)
+    attrname_escape = File.join(File.dirname(attrname),  ERB::Util.url_encode(File.basename(attrname)))
+    testscrtype = URI.parse(attrname_escape)
     if testscrtype.query.nil? or testscrtype.query.empty?
       # convert URL to server path
       attrname = attrname.gsub(@@k_path_url, @@k_path_main)
@@ -11737,6 +11739,7 @@ protected
   # [@param string :image_uri] image URI path
   #
   def get_image_file(image_uri)
+    image_uri = File.join(File.dirname(image_uri),  ERB::Util.url_encode(File.basename(image_uri)))
     uri = URI.parse(image_uri)
     extname = File.extname(uri.path)
 
@@ -13138,9 +13141,10 @@ public
         #    tag['attribute']['src'] = Rails.root.join('public') + tag['attribute']['src']
         #  end
         #end
-        img_name = tag['attribute']['src']
         ### T.B.D ### TCPDF 5.0.000 ###
-        # tag['attribute']['src'] = CGI.escape(tag['attribute']['src'])
+        tag['attribute']['src'].gsub!(/%([0-9a-fA-F]{2})/){$1.hex.chr}
+
+        img_name = tag['attribute']['src']
         type = getImageFileType(tag['attribute']['src'])
         tag['attribute']['src'] = get_image_filename(tag['attribute']['src'])
         if tag['width'].nil?
