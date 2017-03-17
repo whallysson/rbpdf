@@ -15,7 +15,7 @@ class RbpdfFontFileTest < Test::Unit::TestCase
                 'zapfdingbats', 'symbol']
     fontlist.each {|fontname|
       fontfile = File.join RBPDFFontDescriptor.getfontpath, fontname + '.rb'
-      require(fontfile) if File.exists?(fontfile)
+      require(fontfile) if File.exist?(fontfile)
       font_desc = RBPDFFontDescriptor.font(fontname)
 
       assert_equal fontname + 'core', fontname + font_desc[:type].to_s
@@ -109,9 +109,9 @@ class RbpdfFontFileTest < Test::Unit::TestCase
       assert_not_equal '[' + fontname + ']:', '[' + fontname + ']:' + font_desc[:diff].to_s
       end
       assert_not_equal '[' + fontname + ']:', '[' + fontname + ']:' + font_desc[:file].to_s
-      assert_true File.exists?( File.join font_path, font_desc[:file])
+      assert_true File.exist?( File.join font_path, font_desc[:file])
       assert_not_equal '[' + fontname + ']:', '[' + fontname + ']:' + font_desc[:ctg].to_s
-      assert_true File.exists?( File.join font_path, font_desc[:ctg])
+      assert_true File.exist?( File.join font_path, font_desc[:ctg])
       assert_not_equal '[' + fontname + ']:', '[' + fontname + ']:' + font_desc[:originalsize].to_s
     }
   end

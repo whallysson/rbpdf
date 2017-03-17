@@ -37,7 +37,7 @@ module RBPDFFontDescriptor
   def self.getfontpath()
     # Is it in this plugin's font folder?
     fpath = File.join File.dirname(__FILE__), 'fonts'
-    if File.exists?(fpath)
+    if File.exist?(fpath)
       return fpath
     end
     # Could not find it.

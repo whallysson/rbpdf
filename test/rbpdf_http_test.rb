@@ -36,7 +36,7 @@ class RbpdfHttpTest < Test::Unit::TestCase
       tmpFile = pdf.get_image_file('http://127.0.0.1:' + @port.to_s + '/' + image)
       img_file = tmpFile.path
       assert_not_equal "", img_file
-      unless File.exists?(img_file)
+      unless File.exist?(img_file)
         assert false, "file not found. :" + img_file
       end
 
@@ -47,7 +47,7 @@ class RbpdfHttpTest < Test::Unit::TestCase
       # remove temp files
       tmpFile.delete unless tmpFile.nil?
 
-      if File.exists?(img_file)
+      if File.exist?(img_file)
         assert false, "file found. :" + img_file
       end
     }

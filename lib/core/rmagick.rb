@@ -25,7 +25,7 @@ module Rbpdf
 
   # http://uk2.php.net/getimagesize
   def getimagesize(filename)
-    return nil unless File.exists?(filename)
+    return nil unless File.exist?(filename)
 
     out = Hash.new
     type = File::extname(filename)

@@ -2682,15 +2682,15 @@ class RBPDF
       fontfile1 = family.gsub(' ', '') + style.downcase + '.rb'
       fontfile2 = family.gsub(' ', '') + '.rb'
       # search files on various directories
-      if (fontdir != false) and File.exists?(fontdir + fontfile1)
+      if (fontdir != false) and File.exist?(fontdir + fontfile1)
         fontfile = fontdir + fontfile1
         fontname = fontfile1
       elsif fontfile = getfontpath(fontfile1)
         fontname = fontfile1
-      elsif File.exists?(fontfile1)
+      elsif File.exist?(fontfile1)
         fontfile = fontfile1
         fontname = fontfile1
-      elsif (fontdir != false) and File.exists?(fontdir + fontfile2)
+      elsif (fontdir != false) and File.exist?(fontdir + fontfile2)
         fontfile = fontdir + fontfile2
         fontname = fontfile2
       elsif fontfile = getfontpath(fontfile2)
@@ -2702,7 +2702,7 @@ class RBPDF
     end
 
     # include font file
-    if File.exists?(fontfile)
+    if File.exist?(fontfile)
       require(fontfile)
     else
       Error('Could not include font definition file: ' + family + '')
@@ -5622,13 +5622,13 @@ protected
     # Is it in the @@k_path_fonts?
     if @@k_path_fonts
       fpath = File.join @@k_path_fonts, file
-      if File.exists?(fpath)
+      if File.exist?(fpath)
         return fpath
       end
     end
     # Is it in this plugin's font folder?
     fpath = File.join File.dirname(__FILE__), 'fonts', file
-    if File.exists?(fpath)
+    if File.exist?(fpath)
       return fpath
     end
     # Could not find it.
@@ -7203,10 +7203,10 @@ protected
       # search and get ctg font file to embedd
       fontfile = ''
       # search files on various directories
-      if (fontdir != false) and File.exists?(fontdir + ctgfile)
+      if (fontdir != false) and File.exist?(fontdir + ctgfile)
         fontfile = fontdir + ctgfile
       elsif fontfile = getfontpath(ctgfile)
-      elsif File.exists?(ctgfile)
+      elsif File.exist?(ctgfile)
         fontfile = ctgfile
       end
 
@@ -11163,7 +11163,7 @@ protected
               uri_path = uri_path.join(path)
             }
             cssdata = ''
-            next unless File.exists?(uri_path)
+            next unless File.exist?(uri_path)
 
             open(uri_path) do |f|
               cssdata << f.read
