@@ -9,7 +9,7 @@ rvm:
   - 2.3.0
   - jruby
 matrix:
-  allow_failures:
+  exclude:
     - rvm: 1.8.7
       gemfile: Gemfile.rails4
     - rvm: 1.8.7
@@ -21,20 +21,19 @@ matrix:
     - rvm: jruby
       gemfile: Gemfile.rails3_rmagick
     - rvm: jruby
-      gemfile: Gemfile.rails4
-    - rvm: jruby
       gemfile: Gemfile.rails4_rmagick
+  allow_failures:
+    - rvm: jruby
+      gemfile: Gemfile.rails4
 install:
   - bundle install
-env:
-  - TEST_DIR=rbpdf-font
-  - TEST_DIR=.
 script:
-  - cd $TEST_DIR && bundle exec rake test
+  - if [[ "$BUNDLE_GEMFILE" =~ rbpdf-font$ ]]; then cd rbpdf-font && bundle exec rake test ; else bundle exec rake test ; fi
 gemfile:
   - Gemfile.rails3
   - Gemfile.rails3_rmagick
   - Gemfile.rails4
   - Gemfile.rails4_rmagick
+  - Gemfile.rbpdf-font 
 notifications:
   email: false
