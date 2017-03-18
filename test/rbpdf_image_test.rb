@@ -142,7 +142,6 @@ class RbpdfTest < Test::Unit::TestCase
       'logo_rbpdf_8bit .png'       => 36.58,
       'logo_rbpdf_8bit+ .png'       => 36.58,
       'logo_rbpdf_8bit_' + utf8_japanese_aiueo_str + '.png'       => 36.58,
-      'logo_rbpdf_8bit_%e3%81%82%e3%81%84%e3%81%86%e3%81%88%e3%81%8a.png'       => 36.58,
       'ng.png'                    => 9.42
     }
 

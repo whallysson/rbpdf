@@ -25,9 +25,7 @@ class RbpdfHttpTest < Test::Unit::TestCase
       'logo_rbpdf_8bit+ .png',
     ]
     if RUBY_VERSION >= '2.0' # Ruby 1.9.2/1.9.3
-      if !defined? JRUBY_VERSION
-        images << 'logo_rbpdf_8bit_' + utf8_japanese_aiueo_str + '.png'
-      end
+      images << 'logo_rbpdf_8bit_' + utf8_japanese_aiueo_str + '.png'
     end
 
     pdf = MYPDF.new
