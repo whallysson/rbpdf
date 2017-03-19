@@ -229,18 +229,22 @@ class RbpdfFontTest < Test::Unit::TestCase
     font = pdf.getFontBuffer('kozgopromedium')
     assert_equal 99,     font['desc']['StemV']
     assert_equal 0,      font['desc']['ItalicAngle']
+    assert_equal 'KozGoPro-Medium-Acro', font['name']
 
     font = pdf.getFontBuffer('kozgopromediumB')
     assert_equal 99 * 2, font['desc']['StemV']
     assert_equal 0,      font['desc']['ItalicAngle']
+    assert_equal 'KozGoPro-Medium-Acro,Bold', font['name']
 
     font = pdf.getFontBuffer('kozgopromediumI')
     assert_equal 99,     font['desc']['StemV']
     assert_equal -11,    font['desc']['ItalicAngle']
+    assert_equal 'KozGoPro-Medium-Acro,Italic', font['name']
 
     font = pdf.getFontBuffer('kozgopromediumBI')
     assert_equal 99 * 2, font['desc']['StemV']
     assert_equal -11,    font['desc']['ItalicAngle']
+    assert_equal 'KozGoPro-Medium-Acro,BoldItalic', font['name']
 
     pdf.set_font('kozminproregular', '', 18)
     pdf.set_font('kozminproregular', 'B', 18)
@@ -262,6 +266,15 @@ class RbpdfFontTest < Test::Unit::TestCase
     pdf.set_font('hysmyeongjostdmedium', 'I', 18)
     pdf.set_font('hysmyeongjostdmedium', 'BI', 18)
 
+    pdf.putfonts()
+  end
+
+  test "Set Font fontname test" do
+    pdf = MYPDF.new
+    pdf.set_font('helvetica', '', 18, pdf.send(:getfontpath, 'helvetica.rb'))
+    pdf.set_font('helvetica', 'B', 18, pdf.send(:getfontpath, 'helveticab.rb'))
+    pdf.set_font('helvetica', 'I', 18, pdf.send(:getfontpath, 'helveticai.rb'))
+    pdf.set_font('helvetica', 'BI', 18, pdf.send(:getfontpath, 'helveticabi.rb'))
     pdf.putfonts()
   end
 

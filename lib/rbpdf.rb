@@ -2710,7 +2710,7 @@ class RBPDF
       Error('Could not include font definition file: ' + family + '')
     end
 
-    font_desc = RBPDFFontDescriptor.font(fontname)
+    font_desc = RBPDFFontDescriptor.font(fontname).dup
     if font_desc[:desc].nil?
       desc = {}
     else
@@ -2749,7 +2749,7 @@ class RBPDF
     if font_desc[:type] == 'cidfont0'
       #  register CID font (all styles at once)
       styles = {'' => '', 'B' => ',Bold', 'I' => ',Italic', 'BI' => ',BoldItalic'}
-      sname = font_desc[:name] + styles[bistyle]
+      font_desc[:name] = font_desc[:name] + styles[bistyle]
       # artificial bold
       if bistyle.index('B') != nil
         if desc['StemV']
