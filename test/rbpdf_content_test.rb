@@ -144,6 +144,20 @@ class RbpdfPageTest < Test::Unit::TestCase
     assert_equal "BT 524.73 801.84 Td 0 Tr 0.00 w [(abc def)] TJ ET", content[21]
   end
 
+  test "write content back slash test" do
+    pdf = MYPDF.new
+    pdf.add_page()
+    page = pdf.get_page
+    assert_equal 1, page
+
+    content = []
+    line = pdf.write(0, "abc \\def") # use escape() method in getCellCode()
+    contents = pdf.getPageBuffer(page)
+    contents.each_line {|line| content.push line.chomp }
+    assert_equal 22, content.length
+    assert_equal "BT 31.19 801.84 Td 0 Tr 0.00 w [(abc \\\\def)] TJ ET", content[21]
+  end
+
   test "write Persian Sunday content test" do
     pdf = MYPDF.new
     pdf.set_font('dejavusans', '', 18)

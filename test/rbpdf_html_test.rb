@@ -439,6 +439,28 @@ class RbpdfHtmlTest < Test::Unit::TestCase
     end
   end
 
+  test "write_html no tag text test" do
+    pdf = MYPDF.new
+    pdf.set_print_header(false)
+    pdf.add_page()
+
+    text = ' abc def '
+    pdf.write_html(text, true, 0, true, 0)
+    pdf_text = pdf.get_html_text(1)
+    assert_equal 'abc def', pdf_text
+  end
+
+  test "write_html no tag back slash test" do
+    pdf = MYPDF.new
+    pdf.set_print_header(false)
+    pdf.add_page()
+
+    text = " abc \\def "
+    pdf.write_html(text, true, 0, true, 0)  # use escape() method in getCellCode()
+    pdf_text = pdf.get_html_text(1)
+    assert_equal "abc \\\\def", pdf_text
+  end
+
   test "write_html <b> tag test" do
     pdf = MYPDF.new
     pdf.set_print_header(false)
@@ -502,6 +524,32 @@ class RbpdfHtmlTest < Test::Unit::TestCase
     pdf.write_html(htmlcontent, true, 0, true, 0)
     pdf_text = pdf.get_html_text(1)
     assert_equal "\xa0" * 2 + 'A' * 70, pdf_text
+  end
+
+  test "write_html <table> tag text test" do
+    pdf = MYPDF.new
+    pdf.set_print_header(false)
+    pdf.add_page()
+
+    text = "abc"
+    htmlcontent = '<table border="1"><tr><td>' + text + '</td></tr></table>'
+
+    pdf.write_html(htmlcontent, true, 0, true, 0)
+    pdf_text = pdf.get_html_text(1)
+    assert_equal 'abc', pdf_text
+  end
+
+  test "write_html <table> tag back slash test" do
+    pdf = MYPDF.new
+    pdf.set_print_header(false)
+    pdf.add_page()
+
+    text = "a\\bc"
+    htmlcontent = '<table border="1"><tr><td>' + text + '</td></tr></table>'
+
+    pdf.write_html(htmlcontent, true, 0, true, 0) # use escape() method in getCellCode()
+    pdf_text = pdf.get_html_text(1)
+    assert_equal 'a\\\\bc', pdf_text
   end
 
   test "write_html Character Entities test" do

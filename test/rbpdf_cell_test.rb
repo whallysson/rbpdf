@@ -1,28 +1,57 @@
 require 'test_helper'
 
 class RbpdfTest < Test::Unit::TestCase
-  class MYPDF < RBPDF
-    def getCellCode(w, h=0, txt='', border=0, ln=0, align='', fill=0, link=nil, stretch=0, ignore_min_height=false, calign='T', valign='M')
-      super
-    end
-  end
-
-  test "getCellCode" do
-    pdf = MYPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+  test "getCellCode basic test" do
+    pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.add_page()
-    code = pdf.getCellCode(10)
+    code = pdf.send(:getCellCode, 10)
     assert_equal "0.57 w 0 J 0 j [] 0 d 0 G 0 g\n", code
     # 0.57 w 0 J 0 j [] 0 d 0 G 0 rg       # getCellCode
   end
 
-  test "getCellCode link url align test" do
-    pdf = MYPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+  test "getCellCode text test" do
+    pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.add_page()
     content = []
-    contents = pdf.getCellCode(10, 10, 'abc', 'LTRB', 0, '', 0, 'http://example.com')
+    contents = pdf.send(:getCellCode, 10, 10, 'abc')
     contents.each_line {|line| content.push line.chomp }
 
     assert_equal 2, content.length
+    assert_equal "0.57 w 0 J 0 j [] 0 d 0 G 0 g", content[0]
+    assert_equal "BT 31.19 795.17 Td 0 Tr 0.00 w [(abc)] TJ ET", content[1]
+    # BT
+    #    31.19 795.17 Td
+    #    0 Tr 0.00 w
+    #    [(abc)] TJ
+    # ET
+  end
+
+  test "getCellCode back slash text test" do
+    pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf.add_page()
+    content = []
+    contents = pdf.send(:getCellCode, 10, 10, "a\\bc") # use escape() method
+    contents.each_line {|line| content.push line.chomp }
+
+    assert_equal 2, content.length
+    assert_equal "0.57 w 0 J 0 j [] 0 d 0 G 0 g", content[0]
+    assert_equal "BT 31.19 795.17 Td 0 Tr 0.00 w [(a\\\\bc)] TJ ET", content[1]
+    # BT
+    #    31.19 795.17 Td
+    #    0 Tr 0.00 w
+    #    [(abc)] TJ
+    # ET
+  end
+
+  test "getCellCode text align test" do
+    pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf.add_page()
+    content = []
+    contents = pdf.send(:getCellCode, 10, 10, 'abc', 'LTRB')
+    contents.each_line {|line| content.push line.chomp }
+
+    assert_equal 2, content.length
+    assert_equal "0.57 w 0 J 0 j [] 0 d 0 G 0 g", content[0]
     assert_equal "28.35 813.83 m 28.35 784.91 l S 28.07 813.54 m 56.98 813.54 l S 56.70 813.83 m 56.70 784.91 l S 28.07 785.19 m 56.98 785.19 l S BT 31.19 795.17 Td 0 Tr 0.00 w [(abc)] TJ ET", content[1]
     # 28.35 813.82 m 28.35 784.91 l S
     # 28.07 813.54 m 56.98 813.54 l S
@@ -35,11 +64,18 @@ class RbpdfTest < Test::Unit::TestCase
     # ET
   end
 
-  test "getCellCode link page test" do
-    pdf = MYPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+  test "getCellCode link url test" do
+    pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
     pdf.add_page()
+
+    # Check Initialize Values
+    page_annots = pdf.instance_variable_get('@page_annots')
+    assert_equal 0, page_annots.length
+    annots = pdf.send(:getannotsrefs, 1)
+    assert_equal '', annots
+
     content = []
-    contents = pdf.getCellCode(10, 10, 'abc', 0, 0, '', 0, 1)
+    contents = pdf.send(:getCellCode, 10, 10, 'abc', '', 0, '', 0, 'http://example.com')
     contents.each_line {|line| content.push line.chomp }
 
     assert_equal 2, content.length
@@ -49,6 +85,46 @@ class RbpdfTest < Test::Unit::TestCase
     #    0 Tr 0.00 w
     #    [(abc)] TJ
     # ET
+
+    # Check Annots
+    page_annots = pdf.instance_variable_get('@page_annots')
+    assert_equal 2, page_annots.length
+    assert_equal nil, page_annots[0]
+    assert_equal 1, page_annots[1].length
+    assert_equal 0,                    page_annots[1][0]['numspaces']
+    assert_equal({"Subtype"=>"Link"},  page_annots[1][0]['opt'])
+    assert_equal 'http://example.com', page_annots[1][0]['txt']
+
+    annots = pdf.send(:getannotsrefs, 1)
+    assert_equal " /Annots [ 200001 0 R ]", annots
+  end
+
+  test "getCellCode link page test" do
+    pdf = RBPDF.new('P', 'mm', 'A4', true, "UTF-8", true)
+    pdf.add_page()
+    content = []
+    contents = pdf.send(:getCellCode, 10, 10, 'abc', 0, 0, '', 0, 1)
+    contents.each_line {|line| content.push line.chomp }
+
+    assert_equal 2, content.length
+    assert_equal "BT 31.19 795.17 Td 0 Tr 0.00 w [(abc)] TJ ET", content[1]
+    # BT
+    #    31.19 795.17 Td
+    #    0 Tr 0.00 w
+    #    [(abc)] TJ
+    # ET
+
+    # Check Annots
+    page_annots = pdf.instance_variable_get('@page_annots')
+    assert_equal 2, page_annots.length
+    assert_equal nil, page_annots[0]
+    assert_equal 1, page_annots[1].length
+    assert_equal 0,                    page_annots[1][0]['numspaces']
+    assert_equal({"Subtype"=>"Link"},  page_annots[1][0]['opt'])
+    assert_equal 1,                    page_annots[1][0]['txt']
+
+    annots = pdf.send(:getannotsrefs, 1)
+    assert_equal " /Annots [ 200001 0 R ]", annots
   end
 
   test "getStringHeight Basic test" do

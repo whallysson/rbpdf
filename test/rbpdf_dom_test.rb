@@ -22,6 +22,12 @@ class RbpdfTest < Test::Unit::TestCase
     assert_equal false, dom[0]['tag']
     assert_equal({'tag'=>false, 'value'=>'abc', 'elkey'=>0, 'parent'=>0, 'block'=>false}, dom[1])
 
+    # Back Slash Text
+    dom = pdf.getHtmlDomArray("a\\bc")
+    assert_equal 0,     dom[0]['parent'] # Root
+    assert_equal false, dom[0]['tag']
+    assert_equal({'tag'=>false, 'value'=>"a\\bc", 'elkey'=>0, 'parent'=>0, 'block'=>false}, dom[1])
+
     # Simple Tag
     dom = pdf.getHtmlDomArray('<b>abc</b>')
     assert_equal 4,     dom.length

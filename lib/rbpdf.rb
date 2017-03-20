@@ -11211,7 +11211,6 @@ protected
     html.gsub!(/<(table|tr|td|th|blockquote|dd|div|dt|h1|h2|h3|h4|h5|h6|br|hr|li|ol|ul|p)([^\>]*)>[\n\r\t]+/, '<\\1\\2>')
     html.gsub!(/@(\r\n|\r)@/, "\n")
     html.gsub!(/[\t\0\x0B]/, " ")
-    html.gsub!(/\\/, "\\\\\\")
 
     offset = 0
     while (offset < html.length) and ((pos = html.index('</pre>', offset)) != nil)
@@ -11714,7 +11713,7 @@ protected
         # text
         dom[key]['tag'] = false
         dom[key]['block'] = false
-        dom[key]['value'] = unhtmlentities(element).gsub(/\\\\/, "\\")
+        dom[key]['value'] = unhtmlentities(element)
         dom[key]['parent'] = level[-1]
       end
       elkey += 1
